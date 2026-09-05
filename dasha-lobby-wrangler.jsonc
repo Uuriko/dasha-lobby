@@ -1,0 +1,46 @@
+{
+  // Deploy: CLOUDFLARE_API_TOKEN=… npm run dasha:lobby:deploy
+  // Live: https://lobby.getdasha.com  ·  wss://lobby.getdasha.com/ws
+  "name": "dasha-lobby",
+  "account_id": "5a919d6c1785d47e15e10c24450a8ff7",
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "lobby.getdasha.com/*", "zone_name": "getdasha.com" },
+    { "pattern": "www.getdasha.com/*", "zone_name": "getdasha.com" },
+    // Path-only SIWG discovery on apex. Webflow owns apex /. Do NOT add getdasha.com/*.
+    { "pattern": "getdasha.com/.well-known/grok-bot.json*", "zone_name": "getdasha.com" },
+    { "pattern": "getdasha.com/.well-known/*", "zone_name": "getdasha.com" }
+  ],
+  "main": "dasha-lobby-worker.mjs",
+  "assets": { "directory": "./dasha-worker-assets", "binding": "ASSETS", "run_worker_first": true },
+  "compatibility_date": "2026-08-06",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "LOBBY",
+        "class_name": "DashaLobby"
+      },
+      {
+        "name": "FAUCET",
+        "class_name": "DashaFaucet"
+      }
+    ]
+  },
+  // Live is at tag v2 with DashaLobby + DashaFaucet already created. List full history.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DashaLobby"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["DashaFaucet"]
+    }
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://www.getdasha.com,https://getdasha.com,https://lobby.getdasha.com,http://127.0.0.1:8765,http://localhost:8765,http://127.0.0.1:8787,http://localhost:8787",
+    "MINT": "53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump",
+    "FAUCET_COOLDOWN_DAYS": "1"
+  },
+  "ai": { "binding": "AI" }
+}

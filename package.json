@@ -1,0 +1,1 @@
+{"name":"dasha-ship-src","private":true,"type":"module","dependencies":{"@noble/ed25519":"^2.3.0","puppeteer-core":"^24.43.1"}}
