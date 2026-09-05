@@ -109,3 +109,45 @@ export function faucetConfig(env = {}) {
     configured,
   };
 }
+
+/** Public GET/HEAD JSON on www + lobby. Claim POST stays lobby (SIWS/X cookies). */
+export function isFaucetPublicReadPath(pathname) {
+  const p = String(pathname || '').replace(/\/+$/, '') || '/';
+  return p === '/faucet/status' || p === '/faucet/me';
+}
+
+export function utcDayKey(now = Date.now()) {
+  return new Date(now).toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+export function utcHourKey(now = Date.now()) {
+  return new Date(now).toISOString().slice(0, 13); // YYYY-MM-DDTHH
+}
+
+/**
+ * Soft X age gate. Missing createdAt on old sessions → reauth (fail closed for new links only when field present).
+ * @returns {{ ok: true } | { ok: false, error: string }}
+ */
+export function checkXEligibility(session, { minXAgeDays = 7, minXFollowers = 0, now = Date.now() } = {}) {
+  if (!session?.xId) return { ok: false, error: 'link X first' };
+  if (minXAgeDays > 0) {
+    if (!Number.isFinite(session.xCreatedAt)) {
+      // Fail closed: an old cookie without created_at must re-link X before a funded tip.
+      return { ok: false, error: 'x_reauth' };
+    }
+    const ageMs = now - Number(session.xCreatedAt);
+    const need = minXAgeDays * 24 * 60 * 60 * 1000;
+    if (ageMs < need) return { ok: false, error: 'x_too_new' };
+  }
+  if (minXFollowers > 0 && typeof session.xFollowers === 'number' && session.xFollowers < minXFollowers) {
+    return { ok: false, error: 'x_too_new' }; // same public copy: account not seasoned enough
+  }
+  return { ok: true };
+}
+
+export function pruneRecentAts(ats, now = Date.now(), keepMs = FAUCET_RECENT_KEEP_MS) {
+  const list = (Array.isArray(ats) ? ats : [])
+    .map((t) => Number(t))
+    .filter((t) => Number.isFinite(t) && now - t >= 0 && now - t <= keepMs);
+  return list.length > FAUCET_RECENT_ATS_MAX ? list.slice(-FAUCET_RECENT_ATS_MAX) : list;
+}
