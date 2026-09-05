@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fill the jar</title>
+<meta name="description" content="Claim. Fill. Buy.">
+<link rel="canonical" href="https://www.getdasha.com/faucet">
+<meta name="theme-color" content="#070608">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.getdasha.com/faucet">
+<meta property="og:title" content="Fill the jar">
+<meta property="og:description" content="Claim. Fill. Buy.">
+<meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fill the jar">
+<meta name="twitter:description" content="Claim. Fill. Buy.">
+<meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+<style>:root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81;--line:rgba(244,237,219,.32)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--ink);color:var(--paper)}
+body{font:16px/1.45 Arial,Helvetica,sans-serif;min-height:100vh}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 18px;border-bottom:1px solid var(--line)}
+.word{color:var(--paper);font:900 17px/1 Arial,Helvetica,sans-serif;letter-spacing:-.03em;text-transform:uppercase;text-decoration:none;min-height:48px;display:inline-flex;align-items:center}
+.word b{color:var(--acid);font:inherit}
+.buy{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 16px;background:var(--acid);color:var(--ink);font:900 1rem/1 "Arial Black",Helvetica,Arial,sans-serif;text-transform:uppercase;letter-spacing:.04em;text-decoration:none;box-shadow:4px 4px 0 var(--hot)}
+.buy:focus-visible,.word:focus-visible{outline:3px solid var(--acid);outline-offset:3px}
+main{display:block;width:min(36rem,calc(100% - 32px));margin:0 auto;padding:28px 0 64px}
+#dasha-jar-tape{width:min(36rem,calc(100% - 32px));margin:48px auto 64px;color:rgba(244,237,219,.76);font:15px/1.45 Arial,Helvetica,sans-serif}
+#dasha-jar-tape p{margin:0 0 12px;font:inherit}
+#dasha-jar-tape ul{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+#dasha-jar-tape a{color:rgba(244,237,219,.76);text-decoration:underline;text-underline-offset:3px}
+</style>
+</head>
+<body>
+<header class="bar"><a class="word" href="https://www.getdasha.com/">$<b>dasha</b></a><a class="buy" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">Buy</a></header>
+<main id="dasha-faucet" data-faucet-api="https://lobby.getdasha.com"></main>
+<script>
+(function(){
+  if(typeof location!=='undefined'&&!/\/faucet\/?$/.test(location.pathname))return;
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function amountText(n){
+    var x=Number(n);
+    if(!isFinite(x)||x<=0)return '';
+    if(Math.abs(x-Math.round(x))<1e-9)return String(Math.round(x));
+    return String(x);
+  }
+  function whenText(at){
+    var when=new Date(Number(at));
+    if(isNaN(when.getTime()))return '';
+    return when.getUTCDate()+' '+months[when.getUTCMonth()];
+  }
+  function lineText(row){
+    var amt=amountText(row&&row.amountUi);
+    var when=whenText(row&&row.at);
+    var from=row&&row.from?String(row.from).trim():'';
+    var parts=[];
+    if(amt)parts.push(amt);
+    if(when)parts.push(when);
+    if(from)parts.push('from '+from);
+    return parts.join(' ');
+  }
+  fetch('/faucet/tape',{mode:'cors',credentials:'omit',cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    var fills=d&&d.fills;
+    if(!fills||!fills.length)return;
+    var box=document.createElement('section');
+    box.id='dasha-jar-tape';
+    var h=document.createElement('p');
+    h.textContent='Fills.';
+    box.appendChild(h);
+    var ul=document.createElement('ul');
+    fills.forEach(function(row){
+      if(!row||!row.sig)return;
+      var line=lineText(row);
+      if(!line)return;
+      var li=document.createElement('li');
+      var a=document.createElement('a');
+      a.href='/faucet/fill/'+row.sig;
+      a.textContent=line;
+      li.appendChild(a);
+      ul.appendChild(li);
+    });
+    if(!ul.childNodes.length)return;
+    box.appendChild(ul);
+    var main=document.getElementById('dasha-faucet');
+    if(main&&main.parentNode)main.parentNode.insertBefore(box,main.nextSibling);
+    else document.body.appendChild(box);
+  }).catch(function(){});
+})();
+</script>
+<script src="https://lobby.getdasha.com/client/faucet.js" integrity="sha384-LSNvl1mUDLnGLVel61mnmtvL4pk4j8TZf9ZO6fzIgoUw5zJ/SgbRkfYCpkXsw14x" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-DD4R1qMUUftlIFJU3g7ZEourjvxcSYVEgduLdXUFYfTr8DlnmAVh+Hm0EVLU/hQY" crossorigin="anonymous" defer></script>
+</body>
+</html>
