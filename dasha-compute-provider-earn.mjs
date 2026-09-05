@@ -249,8 +249,7 @@ export function isValidSolanaTxSignature(sig) {
 }
 
 export function computePayoutSecret(env = {}) {
-  const want = String(env?.COMPUTE_PAYOUT_SECRET || '').trim();
-  return want;
+  return String(env?.COMPUTE_PAYOUT_SECRET || '').trim();
 }
 
 /** Constant-time-ish compare for operator payout secret. */
