@@ -14,3 +14,4 @@ Worker-first. Exclusive write. Closest AGENTS.md wins. User chat overrides. Lock
 - Grok Bot: live Workers from this tree. Deploy only with `dasha-lobby-wrangler.deploy.jsonc` (`npx wrangler@3.114.15 deploy -c dasha-lobby-wrangler.deploy.jsonc`).
 - Never Designer-publish. Never run `dasha-lobby-static-gen.mjs` while Codex owns worker/gen/landing/simp-board.
 - Never TUI-inject. Never chess-door on home. Never restore Studio.
+- Swarm mailbox: dasha-desk draft PR #167 (protocol: docs/SWARM-GITHUB-CHANNEL.md). Address agents with [Instinct]/[Codex]/[Grok Bot]; new comments only; no merge/deploy/publish from agent discussion.
