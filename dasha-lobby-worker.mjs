@@ -2856,6 +2856,14 @@ const POTTER_LOGIN_308_PATHS = new Set([
   '/grok', '/grok/',
   '/siwg', '/siwg/',
 ]);
+/** Quiet signup/register already 308→/login (not login#grok). Live /signin /sign-in were html-404. */
+const POTTER_PLAIN_LOGIN_308_PATHS = new Set([
+  '/signup', '/signup/',
+  '/register', '/register/',
+  // Live /signin /sign-in html-404 while /login 200; peers of signup/register.
+  '/signin', '/signin/',
+  '/sign-in', '/sign-in/',
+]);
 const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/use', '/compute/use/',
   '/compute/provide', '/compute/provide/',
@@ -2871,6 +2879,14 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/market', '/compute/market/',
   '/compute/marketplace', '/compute/marketplace/',
   '/compute/you', '/compute/you/',
+  // Profile synonym peers of /compute/you (You hub). Live /account /compute/account already 308.
+  // Live /profile /settings /compute/profile /compute/settings were html-404.
+  '/compute/account', '/compute/account/',
+  '/account', '/account/',
+  '/profile', '/profile/',
+  '/settings', '/settings/',
+  '/compute/profile', '/compute/profile/',
+  '/compute/settings', '/compute/settings/',
   // Apex product doors: /provide /start /sponsor(s) already 308→/compute.
   // Leftover apex Ask/Pay/Credits/Host/Use/Night/Marketplace/Market/You/Build/Ocm
   // still html-404 while /compute/* peers already 308 (or /compute/ocm is a real 200 —
@@ -2949,6 +2965,7 @@ export function potterHome308Dest(path) {
   if (POTTER_HOWTO_308_PATHS.has(p)) return 'https://www.getdasha.com/how-to-buy';
   if (POTTER_HOME_308_PATHS.has(p)) return 'https://www.getdasha.com/';
   if (POTTER_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login#grok';
+  if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
   if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/faucet';
   if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) return 'https://www.getdasha.com/compute';
