@@ -22,7 +22,8 @@ assert.match(COMPUTE_PAGE_HTML, /queueForMac/);
 assert.match(COMPUTE_PAGE_HTML, /id=["']night-offer["'] hidden/);
 assert.doesNotMatch(COMPUTE_PAGE_HTML, /id=["']pick-night["']/);
 assert.match(COMPUTE_PAGE_HTML, /id=["']pick-provide["']/);
-assert.match(COMPUTE_PAGE_HTML, /id=["']ocm-door["']/);
+assert.doesNotMatch(COMPUTE_PAGE_HTML, /id=["']ocm-door["']/);
+assert.match(COMPUTE_PAGE_HTML, /id=["']ask-ocm["']/);
 
 const env = {
   AI: { run: async () => ({ response: 'ok' }) },

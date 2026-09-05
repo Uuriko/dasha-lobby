@@ -227,7 +227,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "CSS drop is per-token, not eat-the-p
   const compute = await edgeWorker.fetch(new Request("https://www.getdasha.com/compute"), {});
   assert.equal(compute.status, 200);
   const html = await compute.text();
-  assert.match(html, /hostedLive=status\.live===true/, "hosted live flag stays honest");
+  assert.match(html, /hostedLive=status\?\.live===true|hostedLive=status\.live===true/, "hosted live flag stays honest");
   assert.doesNotMatch(html, /plugin\.jup\.ag/);
 }
 

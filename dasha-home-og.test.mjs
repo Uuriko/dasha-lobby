@@ -126,11 +126,11 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
   assert.equal(page.headers.get('x-dasha-edge'), 'compute');
   const html = await page.text();
   assert.match(html, /property="og:title" content="Dasha Compute"/);
-  assert.match(html, /property="og:description" content="Use\. Provide\. Night\. Build\. Sponsor\."/);
+  assert.match(html, /property="og:description" content="Start\. Ask\. Provide\. Pay\. Credits\."/);
   assert.match(html, /property="og:url" content="https:\/\/www\.getdasha\.com\/compute"/);
   assert.match(html, /og:image" content="https:\/\/lobby\.getdasha\.com\/og\/dasha-social-card\.png"/);
   assert.match(html, /name="twitter:title" content="Dasha Compute"/);
-  assert.match(html, /name="twitter:description" content="Use\. Provide\. Night\. Build\. Sponsor\."/);
+  assert.match(html, /name="twitter:description" content="Start\. Ask\. Provide\. Pay\. Credits\."/);
   assert.match(html, /name="twitter:image" content="https:\/\/lobby\.getdasha\.com\/og\/dasha-social-card\.png"/);
   assert.doesNotMatch(html, /plugin\.jup\.ag/);
 }

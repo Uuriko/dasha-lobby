@@ -166,8 +166,8 @@ assertNoBuyDashaClass(stripHomeLeftoverBuyDashaClass(LIVE), "strip leftover fixt
   assert.equal(compute.status, 200);
   const html = await compute.text();
   assert.doesNotMatch(html, /\bid=["']code-python["']/, "prior leftover id=code-python stays dropped");
-  assert.match(html, /id=["']code-curl["']/, "#code-curl stays");
-  assert.match(html, /hostedLive=status\.live===true/, "hosted live flag stays honest");
+  assert.doesNotMatch(html, /id=["']code-curl["']/, "#code-curl retired with the Start gate");
+  assert.match(html, /hostedLive=status\?\.live===true|hostedLive=status\.live===true/, "hosted live flag stays honest");
 }
 
 {
