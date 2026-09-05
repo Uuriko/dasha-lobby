@@ -39,3 +39,34 @@ export function destShapeError(dest, four = '', opts = {}) {
   if (four && dest.slice(-4) !== four) return 'last-4 does not match';
   return '';
 }
+
+export function humanError(code) {
+  const key = String(code || '').trim();
+  if (!key || key.charAt(0) === '{') return 'claim failed.';
+  const map = {
+    dest_not_wallet: 'dest_not_wallet',
+    dest_token: 'dest_token',
+    dest_mint: 'dest_mint',
+    dest_treasury: 'dest_treasury',
+    dest_pda: 'dest_pda',
+    'last-4 does not match': 'last-4 does not match',
+    'link X first': 'link X first',
+    'prove wallet': 'prove wallet',
+    'already claimed': 'already claimed',
+    confirming: 'confirming',
+    treasury_empty: 'treasury_empty',
+    faucet_paused: 'faucet paused',
+    treasury_rent: 'treasury_rent',
+    rpc_unavailable: 'rpc_unavailable',
+    not_configured: 'not_configured',
+    'invalid faucet challenge': 'invalid faucet challenge',
+    siws_domain: 'siws_domain',
+    'non-json response': 'non-json response',
+    transfer_unready: 'faucet paused',
+    daily_cap: 'daily tip limit reached — try tomorrow',
+    hourly_cap: 'tips paused briefly — try later',
+    x_too_new: 'X account is too new for a tip',
+    x_reauth: 'Link X again to verify account age',
+  };
+  return map[key] || key;
+}
