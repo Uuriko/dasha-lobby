@@ -1,0 +1,872 @@
+#!/usr/bin/env bash
+# dasha-ship — live-source-of-truth ship gate for getdasha.com
+# Fail closed: no Designer, no stolen claims, no chess/privacy rollback, no TUI inject.
+set -euo pipefail
+
+OWNER="${DASHA_AGENT:-grok-bot}"
+ROOT="${DEMIGOD_ROOT:-${HOME:-/home/potter}}"
+HOST="https://www.getdasha.com"
+MINT="53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump"
+UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0"
+POTTER_308_PATHS=(/studio /verse /learn)
+CURL_PATHS=(/ /studio /privacy /dasha /desk /verse /learn /compute /chess /oauth/x/start)
+CLAIMED=()
+WORK=""
+STATUS="blocked"
+DEPLOYED=0
+BLOCKER=""
+
+log() { printf '%s\n' "$*"; }
+die() {
+  STATUS="blocked"
+  BLOCKER="$*"
+  log "BLOCKED: $*"
+  if [[ "${DASHA_SHIP_KEEP_CLAIMS:-}" != "1" ]]; then
+    release_claims || true
+  fi
+  exit 1
+}
+
+cleanup() {
+  if [[ -n "${WORK:-}" && -d "${WORK:-}" && "${DASHA_SHIP_KEEP_WORK:-}" != "1" ]]; then
+    rm -rf "$WORK" || true
+  fi
+}
+trap cleanup EXIT
+
+find_dasha2() {
+  local c
+  for c in \
+    "${DASHA_SHIP_ROOT:-}" \
+    "$ROOT/.grok/worktrees/potter/dasha-2" \
+    /home/potter/.grok/worktrees/potter/dasha-2 \
+    /workspace/dasha-ship-src
+  do
+    [[ -n "$c" && -f "$c/dasha-lobby-worker.mjs" && -f "$c/dasha-lobby-wrangler.deploy.jsonc" ]] && { printf '%s\n' "$c"; return 0; }
+  done
+  return 1
+}
+
+find_home_worker() {
+  local c
+  for c in \
+    "${DASHA_HOME_WORKER:-}" \
+    "$ROOT/dasha-lobby-worker.mjs" \
+    /home/potter/dasha-lobby-worker.mjs
+  do
+    [[ -n "$c" && -f "$c" ]] && { printf '%s\n' "$c"; return 0; }
+  done
+  return 1
+}
+
+find_preflight() {
+  local c
+  for c in \
+    "$ROOT/bin/dasha-claim-preflight" \
+    /home/potter/bin/dasha-claim-preflight \
+    "$(command -v dasha-claim-preflight 2>/dev/null || true)"
+  do
+    [[ -n "$c" && -x "$c" ]] && { printf '%s\n' "$c"; return 0; }
+  done
+  return 1
+}
+
+find_dg_claim() {
+  local c
+  for c in \
+    "$ROOT/bin/dg-claim" \
+    /home/potter/bin/dg-claim \
+    "$(command -v dg-claim 2>/dev/null || true)"
+  do
+    [[ -n "$c" && -x "$c" ]] && { printf '%s\n' "$c"; return 0; }
+  done
+  return 1
+}
+
+find_node() {
+  local c
+  for c in \
+    /home/box/node22/bin/node \
+    "$HOME/node22/bin/node" \
+    "$(command -v node 2>/dev/null || true)"
+  do
+    [[ -n "$c" && -x "$c" ]] && { printf '%s\n' "$c"; return 0; }
+  done
+  return 1
+}
+
+node_bin_dir() {
+  local n
+  n="$(find_node)" || return 1
+  dirname "$n"
+}
+
+export_node_path() {
+  local d
+  d="$(node_bin_dir || true)"
+  [[ -n "$d" ]] && export PATH="$d:$PATH"
+}
+
+auth_ready() {
+  # Exit 0 if wrangler can talk to CF without printing secrets.
+  if [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+    return 0
+  fi
+  local toml=""
+  for t in \
+    "${HOME}/.config/.wrangler/config/default.toml" \
+    /home/box/.config/.wrangler/config/default.toml \
+    /home/potter/.config/.wrangler/config/default.toml
+  do
+    [[ -f "$t" ]] && { toml="$t"; break; }
+  done
+  [[ -n "$toml" ]] || return 1
+  # Presence of oauth + refresh is enough to try whoami; expiry of access token is not fatal.
+  grep -q '^oauth_token' "$toml" || return 1
+  return 0
+}
+
+wrangler_cmd() {
+  export_node_path || true
+  if [[ -x /workspace/cf-tools/node_modules/.bin/wrangler ]]; then
+    printf '%s\n' /workspace/cf-tools/node_modules/.bin/wrangler
+    return 0
+  fi
+  if command -v wrangler >/dev/null 2>&1; then
+    command -v wrangler
+    return 0
+  fi
+  if command -v npx >/dev/null 2>&1; then
+    printf '%s\n' "npx --yes wrangler@3.114.15"
+    return 0
+  fi
+  die "wrangler not found (no PATH, no /workspace/cf-tools, no npx)"
+}
+
+release_claims() {
+  local dg path
+  dg="$(find_dg_claim || true)"
+  [[ -n "$dg" ]] || return 0
+  [[ ${#CLAIMED[@]} -gt 0 ]] || return 0
+  for path in "${CLAIMED[@]}"; do
+    "$dg" release "$path" --owner "$OWNER" >/dev/null 2>&1 || true
+  done
+  log "released ${#CLAIMED[@]} claim(s)"
+  CLAIMED=()
+}
+
+claim_paths() {
+  local dg preflight
+  dg="$(find_dg_claim || true)"
+  preflight="$(find_preflight || true)"
+  if [[ "${DASHA_SHIP_SKIP_CLAIMS:-}" == "1" ]]; then
+    if [[ -n "$preflight" ]]; then
+      log "== claim-preflight (skip claim writes) =="
+      if ! "$preflight" --owner "$OWNER" "$@"; then
+        die "dasha-claim-preflight failed (another owner holds a surface, or registry unreadable)"
+      fi
+    else
+      log "claim writes skipped (DASHA_SHIP_SKIP_CLAIMS=1, no preflight on this machine)"
+    fi
+    return 0
+  fi
+  if [[ -z "$preflight" ]]; then
+    die "dasha-claim-preflight missing — fail closed"
+  fi
+  log "== claim-preflight =="
+  if ! "$preflight" --owner "$OWNER" "$@"; then
+    die "dasha-claim-preflight failed (another owner holds a surface, or registry unreadable)"
+  fi
+  if [[ -z "$dg" ]]; then
+    log "dg-claim not on this machine — preflight only (no write lock taken here)"
+    return 0
+  fi
+  local p
+  for p in "$@"; do
+    if ! "$dg" claim "$p" --owner "$OWNER" --why "live SoT ship gate + home polish" --ttl 3600; then
+      die "dg-claim refused $p — not stealing"
+    fi
+    CLAIMED+=("$p")
+  done
+}
+
+mozilla_fetch() {
+  local path="$1" hdr="$2" body="$3"
+  curl -sS -D "$hdr" -o "$body" --max-redirs 0 -A "$UA" --compressed \
+    -H "Accept: text/html,application/xhtml+xml;q=0.9,*/*;q=0.8" \
+    "$HOST$path" || true
+}
+
+hdr_status() {
+  awk 'BEGIN{s=""} toupper($1) ~ /^HTTP\//{s=$2} END{print s}' "$1" | tr -d '\r'
+}
+
+hdr_location() {
+  awk 'BEGIN{IGNORECASE=1} /^[Ll]ocation:/{sub(/\r$/,""); sub(/^[Ll]ocation:[[:space:]]*/,""); print; exit}' "$1"
+}
+
+hdr_edge() {
+  awk 'BEGIN{IGNORECASE=1} /^[Xx]-[Dd]asha-[Ee]dge:/{sub(/\r$/,""); sub(/^[Xx]-[Dd]asha-[Ee]dge:[[:space:]]*/,""); print; exit}' "$1"
+}
+
+# --- resolve trees ---
+DASHA2="$(find_dasha2 || true)"
+HOME_WORKER="$(find_home_worker || true)"
+[[ -n "$DASHA2" ]] || die "dasha-2 worker + dasha-lobby-wrangler.deploy.jsonc not found"
+WORKER="$DASHA2/dasha-lobby-worker.mjs"
+STATIC="$DASHA2/dasha-lobby-static-gen.mjs"
+WCONF="$DASHA2/dasha-lobby-wrangler.deploy.jsonc"
+[[ -f "$WORKER" ]] || die "missing $WORKER"
+[[ -f "$STATIC" ]] || die "missing $STATIC"
+[[ -f "$WCONF" ]] || die "missing $WCONF"
+
+WORK="$(mktemp -d /tmp/dasha-ship.XXXXXX)"
+NODE="$(find_node || true)"
+[[ -n "$NODE" ]] || die "node not found"
+
+log "dasha-ship owner=$OWNER dasha2=$DASHA2"
+
+# --- 1. claims ---
+SHIP_PATHS=("$WORKER" "$WCONF")
+[[ -n "$HOME_WORKER" ]] && SHIP_PATHS+=("$HOME_WORKER")
+[[ -f "$STATIC" ]] && SHIP_PATHS+=("$STATIC")
+for extra in dasha-chess-page.html dasha-faucet-page.html dasha-lobby-page.html; do
+  [[ -f "$DASHA2/$extra" ]] && SHIP_PATHS+=("$DASHA2/$extra")
+done
+claim_paths "${SHIP_PATHS[@]}"
+
+# --- 2. live Mozilla curl ---
+log "== live Mozilla curl (max-redirs 0) =="
+declare -A LIVE_STATUS LIVE_LOC LIVE_EDGE LIVE_BYTES
+for p in "${CURL_PATHS[@]}" /faucet /lobby; do
+  safe="${p//\//_}"
+  mozilla_fetch "$p" "$WORK/h$safe" "$WORK/b$safe"
+  LIVE_STATUS["$p"]="$(hdr_status "$WORK/h$safe")"
+  LIVE_LOC["$p"]="$(hdr_location "$WORK/h$safe")"
+  LIVE_EDGE["$p"]="$(hdr_edge "$WORK/h$safe")"
+  LIVE_BYTES["$p"]="$(wc -c < "$WORK/b$safe" | tr -d ' ')"
+  log "  $p  status=${LIVE_STATUS[$p]}  bytes=${LIVE_BYTES[$p]}  edge=${LIVE_EDGE[$p]:--}  loc=${LIVE_LOC[$p]:--}"
+done
+
+# --- 3. refuse if live 308s would become 200s from disk ---
+log "== 308 disk vs live =="
+set +e
+"$NODE" --input-type=module - "$WORKER" <<'NODE308'
+import { readFileSync } from 'node:fs';
+const worker = readFileSync(process.argv[2], 'utf8');
+const home308 = ['/studio', '/verse', '/learn'];
+const howto308 = ['/dasha', '/desk'];
+const missingHome = home308.filter((p) => !worker.includes(`'${p}'`) || !worker.includes(`'${p}/'`));
+const missingHow = howto308.filter((p) => !worker.includes(`'${p}'`) || !worker.includes(`'${p}/'`));
+if (missingHome.length || missingHow.length) {
+  console.log('MISSING_308_SET ' + [...missingHome, ...missingHow].join(','));
+  process.exit(3);
+}
+if (!/potterHome308Response\(request, url\)/.test(worker)) {
+  console.log('MISSING_POTTER_308_CALL');
+  process.exit(3);
+}
+if (!/privacyPageResponse\(request\)/.test(worker) && !/PRIVACY_HTML/.test(worker)) {
+  console.log('PRIVACY_200_MISSING');
+  process.exit(3);
+}
+if (/POTTER_HOME_308_PATHS[\s\S]{0,220}'\/privacy'/.test(worker)) {
+  console.log('PRIVACY_STILL_308_HOME');
+  process.exit(3);
+}
+if (/Response\.redirect\('https:\/\/www\.getdasha\.com\/dasha',\s*308\)/.test(worker)) {
+  console.log('DESK_TO_DASHA_308');
+  process.exit(3);
+}
+if (!/computePageResponse\(request\)/.test(worker) || /retiredComputeResponse\(request\)/.test(worker) || /retired-compute/.test(worker)) {
+  console.log('COMPUTE_200_MISSING');
+  process.exit(3);
+}
+const studioIdx = worker.indexOf("url.pathname === '/studio'");
+const potterIdx = worker.indexOf('potterHome308Response(request, url)');
+if (studioIdx >= 0 && (potterIdx < 0 || potterIdx > studioIdx) && /retired-studio|status:\s*404/.test(worker.slice(studioIdx, studioIdx + 400))) {
+  console.log('STUDIO_404_BEFORE_308');
+  process.exit(3);
+}
+console.log('308_DISK_OK');
+NODE308
+_n308=$?
+set -e
+case "$_n308" in
+  0) log "  disk dest-by-path 308s present; privacy 200; compute 200; desk/dasha → how-to-buy" ;;
+  3) die "disk handlers would drop dest-by-path 308s, privacy 200, or compute 200" ;;
+  *) die "308 disk analysis failed" ;;
+esac
+
+for p in "${POTTER_308_PATHS[@]}"; do
+  st="${LIVE_STATUS[$p]}"
+  loc="${LIVE_LOC[$p]}"
+  if [[ "$st" == "308" && ( "$loc" == "https://www.getdasha.com/" || "$loc" == "https://www.getdasha.com" ) ]]; then
+    :
+  else
+    log "  live $p is $st (loc=${loc:--}) — disk Potter 308 will restore → home"
+  fi
+done
+log "  studio/verse/learn 308 home; privacy 200; dasha/desk 308 how-to-buy; compute 200"
+
+# --- 4/5. blob compare + pull live if stale ---
+log "== live vs disk HTML blobs =="
+set +e
+"$NODE" --input-type=module - "$STATIC" "$DASHA2" "$WORK" <<'NODEBLOB'
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const staticPath = process.argv[2];
+const dasha2 = process.argv[3];
+const work = process.argv[4];
+const mint = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
+
+const staticUrl = pathToFileURL(staticPath).href + '?ship=' + Date.now();
+const { CHESS_PAGE_HTML, FAUCET_PAGE_HTML, LOBBY_PAGE_HTML } = await import(staticUrl);
+
+function marks(s) {
+  const t = String(s || '');
+  return {
+    bytes: Buffer.byteLength(t),
+    chessStage: /id=["']chess-stage["']/.test(t) || t.includes('#chess-stage'),
+    dashaSlim: t.includes('dasha-slim') || /class=["'][^"']*\bbar\b/.test(t),
+    holders: /holders play/i.test(t),
+    faucet: /id=["']dasha-faucet["']/.test(t),
+    lobby: t.includes('dasha-lobby') && t.includes('lobby.js'),
+    jupPlugin: t.includes('plugin.jup.ag'),
+    jup: /jup\.ag/i.test(t),
+    mint: t.includes(mint),
+    buy: /Buy/i.test(t),
+    title: (t.match(/<title>[^<]+/i) || [''])[0].slice(0, 80),
+  };
+}
+
+function pullBody(name) {
+  const p = join(work, 'b_' + name);
+  if (!existsSync(p)) return '';
+  return readFileSync(p, 'utf8');
+}
+
+const liveChess = pullBody('chess');
+const liveFaucet = pullBody('faucet');
+const liveLobby = pullBody('lobby');
+
+const disk = {
+  chess: marks(CHESS_PAGE_HTML),
+  faucet: marks(FAUCET_PAGE_HTML),
+  lobby: marks(LOBBY_PAGE_HTML),
+};
+const live = {
+  chess: marks(liveChess),
+  faucet: marks(liveFaucet),
+  lobby: marks(liveLobby),
+};
+
+const report = { disk, live, pull: [], refuse: [], ok: [] };
+
+function wouldRegress(kind, d, l, extra) {
+  const reasons = [];
+  if (l.chessStage && !d.chessStage) reasons.push('disk missing #chess-stage (live has it)');
+  if (l.dashaSlim && !d.dashaSlim) reasons.push('disk missing dasha-slim/.bar (live has it)');
+  if (d.holders && !l.holders) reasons.push('disk is holders-play; live is slim');
+  if (l.faucet && !d.faucet) reasons.push('disk missing #dasha-faucet');
+  if (kind === 'chess' && l.chessStage && !l.holders && l.bytes > 20000 && d.bytes !== l.bytes) {
+    reasons.push(`keep live chess ${l.bytes}b (disk ${d.bytes}b) — skip chess rewrite`);
+  }
+  if (kind === 'chess' && l.bytes > 0 && d.bytes > l.bytes * 1.15 && l.chessStage) {
+    reasons.push(`disk chess ${d.bytes}b > live ${l.bytes}b with live slim markers`);
+  }
+  if (kind === 'chess' && l.chessStage && d.bytes > 200000 && l.bytes < 140000) {
+    reasons.push(`disk chess ${d.bytes}b would replace live slim ${l.bytes}b`);
+  }
+  if (kind === 'faucet' && l.bytes > 0 && d.bytes > l.bytes * 1.4 && l.faucet) {
+    reasons.push(`disk faucet ${d.bytes}b would replace live slim ${l.bytes}b`);
+  }
+  if (kind === 'lobby' && l.dashaSlim && l.bytes > 0 && d.bytes > 0) {
+    // fragment vs rendered is OK only if we will not lose live slim chrome
+    if (!d.dashaSlim && !d.lobby) reasons.push('disk lobby missing live chrome');
+  }
+  if (extra) reasons.push(...extra);
+  return reasons;
+}
+
+function escapeTpl(s) {
+  return String(s).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+}
+
+function replaceConst(src, name, html) {
+  const needle = `export const ${name} = \``;
+  const start = src.indexOf(needle);
+  if (start < 0) throw new Error('missing export ' + name);
+  let i = start + needle.length;
+  while (i < src.length) {
+    if (src[i] === '\\') { i += 2; continue; }
+    if (src[i] === '`') break;
+    i++;
+  }
+  if (src[i] !== '`') throw new Error('unclosed ' + name);
+  return src.slice(0, start) + `export const ${name} = \`${escapeTpl(html)}\`` + src.slice(i + 1);
+}
+
+const pulls = {};
+{
+  const r = wouldRegress('chess', disk.chess, live.chess);
+  if (r.length) {
+    if (!live.chess.chessStage || live.chess.holders || live.chess.bytes < 20000) {
+      report.refuse.push('chess: live page is not a safe slim source: ' + r.join('; '));
+    } else {
+      pulls.CHESS_PAGE_HTML = liveChess;
+      report.pull.push('CHESS_PAGE_HTML from live /chess (' + live.chess.bytes + 'b, #chess-stage, no holders-play) — ' + r.join('; '));
+    }
+  } else {
+    report.ok.push('chess disk will not regress live');
+  }
+}
+{
+  const r = wouldRegress('faucet', disk.faucet, live.faucet);
+  if (r.length) {
+    if (!live.faucet.faucet || live.faucet.jupPlugin) {
+      report.refuse.push('faucet: live page is not a safe source: ' + r.join('; '));
+    } else {
+      pulls.FAUCET_PAGE_HTML = liveFaucet;
+      report.pull.push('FAUCET_PAGE_HTML from live /faucet (' + live.faucet.bytes + 'b) — ' + r.join('; '));
+    }
+  } else {
+    report.ok.push('faucet disk will not regress live');
+  }
+}
+{
+  const r = wouldRegress('lobby', disk.lobby, live.lobby);
+  if (r.length) {
+    if (!live.lobby.lobby || live.lobby.jupPlugin) {
+      report.refuse.push('lobby: live page is not a safe source: ' + r.join('; '));
+    } else {
+      pulls.LOBBY_PAGE_HTML = liveLobby;
+      report.pull.push('LOBBY_PAGE_HTML from live /lobby (' + live.lobby.bytes + 'b) — ' + r.join('; '));
+    }
+  } else {
+    report.ok.push('lobby disk will not regress live chrome (fragment kept for thread inject)');
+  }
+}
+
+if (report.refuse.length) {
+  writeFileSync(join(work, 'blob-report.json'), JSON.stringify(report, null, 2));
+  console.log(JSON.stringify(report, null, 2));
+  process.exit(4);
+}
+
+if (Object.keys(pulls).length) {
+  let src = readFileSync(staticPath, 'utf8');
+  for (const [name, html] of Object.entries(pulls)) {
+    src = replaceConst(src, name, html);
+    const fileMap = {
+      CHESS_PAGE_HTML: 'dasha-chess-page.html',
+      FAUCET_PAGE_HTML: 'dasha-faucet-page.html',
+      LOBBY_PAGE_HTML: 'dasha-lobby-page.html',
+    };
+    const fp = join(dasha2, fileMap[name]);
+    if (existsSync(fp)) writeFileSync(fp, html);
+  }
+  writeFileSync(staticPath, src);
+}
+
+writeFileSync(join(work, 'blob-report.json'), JSON.stringify(report, null, 2));
+console.log(JSON.stringify(report, null, 2));
+NODEBLOB
+BLOB_RC=$?
+set -e
+if [[ "$BLOB_RC" -eq 4 ]]; then
+  die "disk HTML blobs would regress live and live is not a safe pull source — see above"
+fi
+if [[ "$BLOB_RC" -ne 0 ]]; then
+  die "blob compare/pull failed (exit $BLOB_RC)"
+fi
+
+# Re-import sanity: pulled chess must keep live slim markers
+set +e
+"$NODE" --input-type=module - "$STATIC" <<'NODESANITY'
+import { pathToFileURL } from 'node:url';
+const { CHESS_PAGE_HTML, FAUCET_PAGE_HTML, LOBBY_PAGE_HTML } = await import(pathToFileURL(process.argv[2]).href + '?post=' + Date.now());
+const bad = [];
+if (/holders play/i.test(CHESS_PAGE_HTML)) bad.push('CHESS_PAGE_HTML still holders-play');
+if (!/id=["']chess-stage["']/.test(CHESS_PAGE_HTML)) bad.push('CHESS_PAGE_HTML missing #chess-stage');
+if (Buffer.byteLength(CHESS_PAGE_HTML) > 200000) bad.push('CHESS_PAGE_HTML still >200k');
+if (CHESS_PAGE_HTML.includes('plugin.jup.ag') || FAUCET_PAGE_HTML.includes('plugin.jup.ag') || LOBBY_PAGE_HTML.includes('plugin.jup.ag')) {
+  bad.push('plugin.jup.ag in a blob');
+}
+if (bad.length) {
+  console.error(bad.join('\n'));
+  process.exit(5);
+}
+console.log('blob sanity OK chess=' + Buffer.byteLength(CHESS_PAGE_HTML) + ' faucet=' + Buffer.byteLength(FAUCET_PAGE_HTML) + ' lobby=' + Buffer.byteLength(LOBBY_PAGE_HTML));
+NODESANITY
+_nsan=$?
+set -e
+[[ "$_nsan" -eq 0 ]] || die "post-pull blob sanity failed — refusing deploy"
+
+# Jupiter / 308 / polish source checks on worker
+if grep -q 'plugin.jup.ag' "$WORKER"; then
+  die "worker still mentions plugin.jup.ag"
+fi
+if ! grep -q '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' "$WORKER"; then
+  die "worker missing mint"
+fi
+if ! grep -q 'jup.ag' "$WORKER"; then
+  die "worker missing jup.ag Buy"
+fi
+
+# --- 6. deploy ---
+if [[ "${DASHA_SHIP_SKIP_DEPLOY:-}" == "1" ]]; then
+  log "== deploy skipped (DASHA_SHIP_SKIP_DEPLOY=1); claims kept =="
+  STATUS="gated"
+  exit 0
+fi
+
+log "== wrangler auth =="
+if ! auth_ready; then
+  die "expired OAuth / missing token"
+fi
+
+export_node_path || true
+WBIN="$(wrangler_cmd)"
+log "  wrangler via: $WBIN"
+
+# whoami without leaking tokens
+set +e
+if [[ "$WBIN" == npx* ]]; then
+  WHO="$(eval "$WBIN whoami" 2>&1)"
+  WHO_RC=$?
+else
+  WHO="$("$WBIN" whoami 2>&1)"
+  WHO_RC=$?
+fi
+set -e
+if [[ "$WHO_RC" -ne 0 ]] || ! grep -qiE 'logged in|Account ID|Account Name' <<<"$WHO"; then
+  if grep -qiE 'expired|not logged in|unauthorized|OAuth token is invalid' <<<"$WHO"; then
+    die "expired OAuth / missing token"
+  fi
+  die "expired OAuth / missing token"
+fi
+if grep -qiE 'potter@trydemigod.com' <<<"$WHO"; then
+  log "  wrangler identity: potter@trydemigod.com (account check ok)"
+else
+  log "  wrangler whoami ok (email not printed if unexpected)"
+fi
+
+log "== deploy dasha-2 + dasha-lobby-wrangler.deploy.jsonc =="
+(
+  cd "$DASHA2"
+  if [[ "$WBIN" == npx* ]]; then
+    eval "$WBIN deploy -c dasha-lobby-wrangler.deploy.jsonc --keep-vars"
+  else
+    "$WBIN" deploy -c dasha-lobby-wrangler.deploy.jsonc --keep-vars
+  fi
+)
+log "  wrangler deploy exited 0"
+DEPLOYED=1
+
+# --- 7. Mozilla prove ---
+log "== post-deploy Mozilla prove =="
+sleep 2
+prove_fail=0
+mozilla_fetch / "$WORK/h_home2" "$WORK/b_home2"
+mozilla_fetch /chess "$WORK/h_chess2" "$WORK/b_chess2"
+HOME2="$(cat "$WORK/b_home2")"
+HOME2_BYTES="$(wc -c < "$WORK/b_home2" | tr -d ' ')"
+HOME2_ST="$(hdr_status "$WORK/h_home2")"
+
+ok() { log "  OK  $1"; }
+fail() { log "  FAIL $1"; prove_fail=1; }
+
+[[ "$HOME2_ST" == "200" ]] && ok "home HTTP 200" || fail "home HTTP 200"
+[[ "$HOME2_BYTES" -gt 20000 ]] && ok "home >20k" || fail "home >20k"
+grep -qi '<body' "$WORK/b_home2" && ok "home has <body>" || fail "home has <body>"
+grep -q 'Buy' "$WORK/b_home2" && ok "home has Buy" || fail "home has Buy"
+grep -qF '$dasha' "$WORK/b_home2" && ok "home has \$dasha" || fail "home has \$dasha"
+grep -q 'jup.ag' "$WORK/b_home2" && ok "home slim Buy is jup.ag" || fail "home slim Buy is jup.ag"
+grep -q 'plugin.jup.ag' "$WORK/b_home2" && fail "no plugin.jup.ag" || ok "no plugin.jup.ag"
+if grep -q 'chess-door' "$WORK/b_home2" || grep -q 'Open chess' "$WORK/b_home2"; then
+  fail "home has no chess-door / Open chess"
+else
+  ok "home has no chess-door / Open chess"
+fi
+if grep -q 'id="chat-door"' "$WORK/b_home2" && grep -q 'Open chat' "$WORK/b_home2"; then
+  ok "home has Chat section door"
+else
+  fail "home has Chat section door"
+fi
+if grep -q 'id="simp-door"' "$WORK/b_home2" && grep -q 'Take the quiz' "$WORK/b_home2"; then
+  ok "home has Simp Quiz door"
+else
+  fail "home has Simp Quiz door"
+fi
+if grep -qi 'Forum' "$WORK/b_home2"; then
+  fail "home has no Forum word"
+else
+  ok "home has no Forum word"
+fi
+if grep -q 'id="bag-door"' "$WORK/b_home2"; then
+  fail "home bag is not a major door"
+else
+  ok "home bag is not a major door"
+fi
+if grep -q 'id="grwm"' "$WORK/b_home2" && ! grep -q '#grwm,a[href^="/studio"]' "$WORK/b_home2" && ! grep -q '#grwm{display:none' "$WORK/b_home2"; then
+  ok "home #grwm visible after faucet"
+else
+  fail "home #grwm visible after faucet"
+fi
+grep -q 'dasha-faucet' "$WORK/b_home2" && ok "home has #dasha-faucet" || fail "home has #dasha-faucet"
+grep -q 'VVAIFU' "$WORK/b_home2" && fail "home has no VVAIFU" || ok "home has no VVAIFU"
+grep -q 'Not CoinGecko' "$WORK/b_home2" && fail "home has no Not CoinGecko" || ok "home has no Not CoinGecko"
+grep -qF 'Which $dasha?' "$WORK/b_home2" && fail "home has no Which \$dasha?" || ok "home has no Which \$dasha?"
+grep -q 'dasha-home-chrome-hide' "$WORK/b_home2" && ok "home first chrome hides footer/navlinks" || fail "home first chrome hides footer/navlinks"
+if grep -qiE 'px\.gif|/r/px\.gif' "$WORK/b_home2"; then
+  fail "home has no px.gif tracking pixel"
+else
+  ok "home has no px.gif tracking pixel"
+fi
+if grep -q '<nav class="dasha-nav">' "$WORK/b_home2"; then
+  fail "home has no leftover dasha-nav"
+else
+  ok "home has no leftover dasha-nav"
+fi
+if grep -q 'id="compute-door"' "$WORK/b_home2" || grep -q "id='compute-door'" "$WORK/b_home2"; then
+  fail "home has no leftover compute-door"
+else
+  ok "home has no leftover compute-door"
+fi
+if grep -q 'rel="describedby" href="/llms.txt"' "$WORK/b_home2" && grep -q 'rel="describedby" href="/llms-full.txt"' "$WORK/b_home2"; then
+  ok "home HTML describedby"
+else
+  fail "home HTML describedby"
+fi
+set +e
+"$NODE" --input-type=module - "$WORK/b_home2" <<'NODENAV'
+import { readFileSync } from 'node:fs';
+const html = readFileSync(process.argv[2], 'utf8');
+const navs = [...html.matchAll(/<nav\b[^>]*>[\s\S]*?<\/nav>/gi)].map((m) => m[0]);
+const bad = navs.filter((n) => /href=(["'])(?:https?:\/\/(?:www\.)?getdasha\.com)?\/simp(?:[/?#][^"']*)?\1/i.test(n));
+if (bad.length) process.exit(2);
+if (!/id=["']simp-door["']/.test(html) || !/href="\/simp">Take the quiz</.test(html)) process.exit(3);
+NODENAV
+nav_rc=$?
+set -e
+if [[ "$nav_rc" -eq 0 ]]; then
+  ok "no href=/simp in nav; quiz door stays"
+elif [[ "$nav_rc" -eq 3 ]]; then
+  fail "quiz door #simp-door still links /simp"
+else
+  fail "no href=/simp in nav"
+fi
+# first-chrome: $dasha + Chat + Buy. Extract ONLY <header class="bar">…</header>.
+# mawk RS="</header>" is a false positive: it takes the whole prefix through first
+# </header> (head JSON-LD / room hrefs) even when live slim is $dasha+Chat+Buy.
+if grep -q '<header class="bar">' "$WORK/b_home2"; then
+  set +e
+  "$NODE" --input-type=module - "$WORK/b_home2" <<'NODEHDR'
+import { readFileSync } from 'node:fs';
+const html = readFileSync(process.argv[2], 'utf8');
+const m = html.match(/<header class="bar">[\s\S]*?<\/header>/);
+if (!m) process.exit(2);
+const hdr = m[0];
+if (/href=(["'])\/(?:simp|chess|bounties)\1/.test(hdr)) process.exit(3);
+const hasWord = /\$dasha|\$<b>dasha<\/b>/.test(hdr);
+const hasChat = /class="chat"/.test(hdr) && /href="\/lobby"/.test(hdr) && />Chat</.test(hdr);
+const hasBuy = />Buy</.test(hdr);
+if (hasWord && hasChat && hasBuy) process.exit(0);
+process.exit(4);
+NODEHDR
+  hdr_rc=$?
+  set -e
+  case "$hdr_rc" in
+    0) log "  OK  slim header is \$dasha+Chat+Buy" ;;
+    3) log "  FAIL slim header still has room list hrefs"; prove_fail=1 ;;
+    2) log "  FAIL missing slim header.bar"; prove_fail=1 ;;
+    *) log "  FAIL slim header missing Chat door"; prove_fail=1 ;;
+  esac
+else
+  log "  FAIL missing slim header.bar"
+  prove_fail=1
+fi
+mozilla_fetch /lobby "$WORK/h_lobby2" "$WORK/b_lobby2"
+if grep -q 'id="forum-play"' "$WORK/b_lobby2" && grep -q 'id="forum-play-go"' "$WORK/b_lobby2" && grep -q 'id="dasha-chess"' "$WORK/b_lobby2"; then
+  ok "forum has in-page Play/chess"
+else
+  fail "forum has in-page Play/chess"
+fi
+if awk 'BEGIN{chat=0;th=0} /id="dasha-lobby"/{chat=NR} /id="dasha-forum"/{th=NR} END{exit !(chat && th && chat < th)}' "$WORK/b_lobby2"; then
+  ok "forum chat composer before threads"
+else
+  fail "forum chat composer before threads"
+fi
+
+for p in "${POTTER_308_PATHS[@]}" /graph; do
+  safe="${p//\//_}"
+  mozilla_fetch "$p" "$WORK/p2$safe" "$WORK/q2$safe"
+  st="$(hdr_status "$WORK/p2$safe")"
+  loc="$(hdr_location "$WORK/p2$safe")"
+  if [[ "$st" == "308" && ( "$loc" == "https://www.getdasha.com/" || "$loc" == "https://www.getdasha.com" ) ]]; then
+    log "  OK  $p 308 → home"
+  else
+    log "  FAIL $p status=$st loc=$loc"
+    prove_fail=1
+  fi
+done
+
+mozilla_fetch /privacy "$WORK/p2_privacy" "$WORK/q2_privacy"
+priv_st="$(hdr_status "$WORK/p2_privacy")"
+if [[ "$priv_st" == "200" ]] && grep -q '<h1>Privacy</h1>' "$WORK/q2_privacy" && grep -q 'Dasha never collects seed phrases, private keys, DMs, email, phone numbers, or payment cards.' "$WORK/q2_privacy"; then
+  log "  OK  /privacy 200 H1 Privacy never-collects"
+else
+  log "  FAIL /privacy status=$priv_st"
+  prove_fail=1
+fi
+mozilla_fetch /digest.json "$WORK/p2_digestjson" "$WORK/q2_digestjson"
+dj_st="$(hdr_status "$WORK/p2_digestjson")"
+dj_edge="$(hdr_edge "$WORK/p2_digestjson")"
+if [[ "$dj_st" == "200" ]] && [[ "$dj_edge" == "digest-json" ]] && grep -q '"items"' "$WORK/q2_digestjson" && grep -q '"at"' "$WORK/q2_digestjson"; then
+  log "  OK  /digest.json 200 tape"
+else
+  log "  FAIL /digest.json status=$dj_st edge=$dj_edge"
+  prove_fail=1
+fi
+for p in /dasha /desk; do
+  safe="${p//\//_}"
+  mozilla_fetch "$p" "$WORK/p2$safe" "$WORK/q2$safe"
+  st="$(hdr_status "$WORK/p2$safe")"
+  loc="$(hdr_location "$WORK/p2$safe")"
+  if [[ "$st" == "308" && "$loc" == "https://www.getdasha.com/how-to-buy" ]]; then
+    log "  OK  $p 308 → how-to-buy"
+  else
+    log "  FAIL $p status=$st loc=$loc"
+    prove_fail=1
+  fi
+done
+mozilla_fetch /compute "$WORK/p2_compute" "$WORK/q2_compute"
+comp_st="$(hdr_status "$WORK/p2_compute")"
+comp_edge="$(hdr_edge "$WORK/p2_compute")"
+if [[ "$comp_st" == "200" ]] && [[ "$comp_edge" == "compute" ]] && grep -q 'Dasha Compute' "$WORK/q2_compute" && grep -q 'Night Shift' "$WORK/q2_compute" && ! grep -q 'Compute is gone' "$WORK/q2_compute"; then
+  log "  OK  /compute 200 edge=compute"
+else
+  log "  FAIL /compute status=$comp_st edge=$comp_edge"
+  prove_fail=1
+fi
+
+# Potter lock: Simp out of Menu/footer. Cache-bust /crew (not the home quiz door).
+mozilla_fetch "/crew?cb=$(date +%s)" "$WORK/p2_crew" "$WORK/q2_crew"
+crew_st="$(hdr_status "$WORK/p2_crew")"
+crew_edge="$(hdr_edge "$WORK/p2_crew")"
+if [[ "$crew_st" == "200" ]] && [[ "$crew_edge" == "crew" ]] && grep -q '<h1>Dasha Crew</h1>' "$WORK/q2_crew"; then
+  log "  OK  /crew 200 edge=crew"
+else
+  log "  FAIL /crew status=$crew_st edge=$crew_edge"
+  prove_fail=1
+fi
+set +e
+"$NODE" --input-type=module - "$WORK/q2_crew" <<'NODECREW'
+import { readFileSync } from 'node:fs';
+const html = readFileSync(process.argv[2], 'utf8');
+const foots = [...html.matchAll(/<footer\b[^>]*>[\s\S]*?<\/footer>/gi)].map((m) => m[0]);
+if (foots.some((f) => /href=(["'])(?:https?:\/\/(?:www\.)?getdasha\.com)?\/simp/.test(f))) process.exit(2);
+if (/Lobby \/ simp \//.test(html) || /\/ simp \//.test(html)) process.exit(3);
+if (!/Lobby \/ @dash_eats/.test(html)) process.exit(4);
+NODECREW
+crew_rc=$?
+set -e
+if [[ "$crew_rc" -eq 0 ]]; then
+  ok "crew footer has no /simp"
+elif [[ "$crew_rc" -eq 3 ]]; then
+  fail "crew Vibe copy still names simp"
+elif [[ "$crew_rc" -eq 4 ]]; then
+  fail "crew Vibe is Lobby / @dash_eats"
+else
+  fail "crew footer has no /simp"
+fi
+
+mozilla_fetch /oauth/x/start "$WORK/p2_oauth" "$WORK/q2_oauth"
+oauth_st="$(hdr_status "$WORK/p2_oauth")"
+oauth_loc="$(hdr_location "$WORK/p2_oauth")"
+if [[ "$oauth_st" == "404" ]]; then
+  log "  FAIL /oauth/x/start www 404"
+  prove_fail=1
+elif [[ "$oauth_st" == "308" || "$oauth_st" == "302" || "$oauth_st" == "200" ]]; then
+  log "  OK  /oauth/x/start www status=$oauth_st loc=${oauth_loc:--}"
+else
+  log "  FAIL /oauth/x/start www status=$oauth_st loc=$oauth_loc"
+  prove_fail=1
+fi
+
+mozilla_fetch /faucet "$WORK/p2_faucet" "$WORK/q2_faucet"
+curl -sS -D "$WORK/h_fjs2" -o "$WORK/b_fjs2" --max-redirs 0 -A "$UA" --compressed "https://lobby.getdasha.com/client/faucet.js" || true
+if grep -q 'Once a day' "$WORK/b_fjs2" && grep -q 'Fill the jar' "$WORK/b_fjs2"; then
+  log "  OK  faucet.js Typeform (Once a day / Fill the jar)"
+else
+  log "  FAIL faucet.js missing Once a day / Fill the jar"
+  prove_fail=1
+fi
+# Live Typeform lives inside faucet.js (Once a day / Fill the jar). Pin is FAUCET_CLIENT_SRI,
+# not the leftover Typeform widget hash sha384-4cOqwGcf…. Match home + /faucet to disk/live client.
+DISK_FAUCET_SRI="$(awk -F'"' '/export const FAUCET_CLIENT_SRI/{print $2; exit}' "$DASHA2/dasha-lobby-static-gen.mjs")"
+if [[ -z "$DISK_FAUCET_SRI" ]]; then
+  log "  FAIL faucet SRI missing on disk"
+  prove_fail=1
+else
+  set +e
+  "$NODE" --input-type=module - "$WORK/b_home2" "$WORK/q2_faucet" "$DISK_FAUCET_SRI" <<'NODESRI'
+import { readFileSync } from 'node:fs';
+const home = readFileSync(process.argv[2], 'utf8');
+const faucet = readFileSync(process.argv[3], 'utf8');
+const want = process.argv[4];
+const pin = (html) => {
+  const m = html.match(/client\/faucet\.js[^>]*integrity="(sha384-[^"]+)"/) || html.match(/integrity="(sha384-[^"]+)"[^>]*client\/faucet\.js/);
+  return m ? m[1] : '';
+};
+const h = pin(home);
+const f = pin(faucet);
+if (!want || h !== want || f !== want) process.exit(2);
+NODESRI
+  sri_rc=$?
+  set -e
+  if [[ "$sri_rc" -eq 0 ]]; then
+    log "  OK  faucet page + home SRI match live faucet.js ($DISK_FAUCET_SRI)"
+  else
+    log "  FAIL faucet SRI mismatch on page/home (want $DISK_FAUCET_SRI)"
+    prove_fail=1
+  fi
+fi
+
+# Crawler HTML 200s that already have <link rel=describedby> must also send HTTP Link.
+# Cache-bust so a leftover ship cannot PASS on a stale edge copy.
+cb="$(date +%s)"
+for p in /lobby /compute /crew /digest /how-to-buy /privacy /faucet /bag /login /contribute /bounties; do
+  safe="link${p//\//_}"
+  mozilla_fetch "$p?cb=$cb" "$WORK/h$safe" "$WORK/b$safe"
+  st="$(hdr_status "$WORK/h$safe")"
+  link="$(awk 'BEGIN{IGNORECASE=1} /^[Ll]ink:/{sub(/\r$/,""); sub(/^[Ll]ink:[[:space:]]*/,""); print}' "$WORK/h$safe")"
+  if [[ "$st" == "200" ]] && grep -q '</llms.txt>; rel="describedby"' <<<"$link" && grep -q '</llms-full.txt>; rel="describedby"' <<<"$link"; then
+    log "  OK  $p HTTP Link describedby"
+  else
+    log "  FAIL $p HTTP Link describedby status=$st link=${link:--}"
+    prove_fail=1
+  fi
+done
+
+chess_st="$(hdr_status "$WORK/h_chess2")"
+chess_edge="$(hdr_edge "$WORK/h_chess2")"
+chess_bytes="$(wc -c < "$WORK/b_chess2" | tr -d ' ')"
+[[ "$chess_st" == "200" ]] && ok "chess 200" || fail "chess 200"
+[[ "$chess_edge" == "chess" ]] && ok "chess edge=chess" || fail "chess edge=chess"
+[[ "$chess_bytes" -lt 200000 ]] && ok "chess still under 200k" || fail "chess still under 200k"
+grep -q 'chess-stage' "$WORK/b_chess2" && ok "chess keeps #chess-stage" || fail "chess keeps #chess-stage"
+grep -qi 'holders play' "$WORK/b_chess2" && fail "chess not holders-play" || ok "chess not holders-play"
+
+if [[ "$prove_fail" -ne 0 ]]; then
+  die "post-deploy Mozilla prove failed — inspect live"
+fi
+
+STATUS="live"
+log "== LIVE home polish proved =="
+log "  home bytes=$HOME2_BYTES chess bytes=$chess_bytes"
+release_claims
+exit 0
