@@ -177,3 +177,22 @@ export function burstPressure(metrics, cfg = {}, { now = Date.now() } = {}) {
   const pressure = Math.min(1, volume * 0.25 + cluster * 0.45 + gap * 0.45);
   return { pressure, dayCount, recentCount, gapMs, volume, cluster, gap };
 }
+
+/** Quiet floor is 0. Above it, P rises with pressure². Full burst ≈ 75%. */
+export function burstPauseChance(pressure) {
+  const p = Math.max(0, Math.min(1, Number(pressure) || 0));
+  if (p < FAUCET_QUIET_PRESSURE) return 0;
+  return p * p * 0.75;
+}
+
+export function rollBurstPause(pressure, { now = Date.now(), rng = Math.random } = {}) {
+  const chance = burstPauseChance(pressure);
+  const roll = Number(typeof rng === 'function' ? rng() : rng);
+  if (!(roll < chance)) {
+    return { paused: false, chance, pressure, pauseMs: 0, autoPausedUntil: 0 };
+  }
+  const span = FAUCET_PAUSE_MAX_MS - FAUCET_PAUSE_MIN_MS;
+  const durRoll = Number(typeof rng === 'function' ? rng() : rng);
+  const pauseMs = FAUCET_PAUSE_MIN_MS + Math.floor((Number.isFinite(durRoll) ? Math.min(1, Math.max(0, durRoll)) : 0) * (span + 1));
+  return { paused: true, chance, pressure, pauseMs, autoPausedUntil: now + pauseMs };
+}
