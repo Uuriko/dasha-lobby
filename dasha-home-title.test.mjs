@@ -23,7 +23,7 @@ assert.match(workerSrc, /const HOME_TITLE = '\$dasha'/);
 assert.doesNotMatch(workerSrc, /const HOME_TITLE = '[^']*make the timeline stranger/);
 assert.doesNotMatch(workerSrc, /description: 'make the timeline stranger'/);
 assert.match(workerSrc, /description: HOME_OG_DESC/);
-assert.doesNotMatch(workerSrc, /if \(\/<title>\[^<\]*\(\?:dash_eats/, 'mintHomeTitle must not keep a dash_eats leftover title');
+assert.doesNotMatch(workerSrc, /if \(\/<title>\[\^<\]\*\(\?:dash_eats/, 'mintHomeTitle must not keep a dash_eats leftover title');
 assert.match(workerSrc, /if \(isHome\) html = mintHomeTitle\(html\);/);
 
 function firstPaint(html) {
