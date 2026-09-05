@@ -1,0 +1,15 @@
+# getdasha.com — public crawl rules (also served at lobby.getdasha.com/robots.txt)
+
+User-agent: *
+Allow: /
+Allow: /chess
+Allow: /faucet
+Allow: /which
+Allow: /forum
+Allow: /bag
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /ai.txt
+
+Sitemap: https://www.getdasha.com/sitemap.xml
+Sitemap: https://lobby.getdasha.com/sitemap.xml

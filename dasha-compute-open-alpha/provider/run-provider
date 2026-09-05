@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+APP_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+. "$APP_DIR/provider.env"
+unset DASHA_PROVIDER_KEY || true
+export DASHA_COORDINATOR_URL DASHA_PROVIDER_ID DASHA_MODEL_MAP DASHA_BENCHMARK_PATH
+if [ -n "${DASHA_PROVIDER_KEY_FILE:-}" ]; then
+  export DASHA_PROVIDER_KEY_FILE
+fi
+exec "$DASHA_PYTHON" "$APP_DIR/agent.py"
