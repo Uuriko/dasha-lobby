@@ -17,10 +17,10 @@ Worker name: `dasha-lobby`. Never commit secrets (`.dev.vars`, payout keys, OAut
 Product: https://www.getdasha.com/compute  
 OSS companion (OCM / Mac provider): [Uuriko/dasha-desk](https://github.com/Uuriko/dasha-desk)
 
+## Assets
+
+Large Worker media (`grwm` mp4, simp photos, open-alpha tarball) stay on the Cloudflare Worker / R2 and are gitignored here.
+
 ## Stay off
 
 Designer-publish · `plugin.jup.ag` · rewriting Graham OCM `#44` from this tree
-
-## Assets
-
-Worker assets (grwm mp4, simp photos, open-alpha tarball) live on the Cloudflare Worker R2/disk and are not in this first mirror.

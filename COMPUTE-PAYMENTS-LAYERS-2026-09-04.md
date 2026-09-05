@@ -44,4 +44,4 @@ Humans: session login → buy pack → pay USDC/`$dasha` with Solana Pay referen
 
 ## OpenRouter apply note (usage)
 
-v1 `POST /compute/api/v1/chat/completions` already returns `usage` on non-stream JSON and on the SSE final `finish_reason:"stop"` chunk (`dasha-compute-network.mjs` `streamResponse` ~L536; non-stream ~L750). Page Hosted `POST /compute/api/chat` SSE is UI-only and does **not** emit OpenAI `usage` (~L1754–1839) — out of OR apply scope.
+v1 `POST /compute/api/v1/chat/completions` returns `usage` on non-stream JSON and on the SSE final `finish_reason:"stop"` chunk (`dasha-compute-network.mjs` `streamResponse`; non-stream complete). Page Hosted `POST /compute/api/chat` SSE also emits OpenAI-style `usage` on the final stop chunk (parity with v1; see `dasha-compute-hosted-chat-usage-sse.test.mjs`). Gateway docs: `GET /compute/api/v1` → `usage.chat_completions` + `usage.hosted_chat`; status `GET /compute/api` notes the same.
