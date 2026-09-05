@@ -70,3 +70,42 @@ export function humanError(code) {
   };
   return map[key] || key;
 }
+
+/** Live CF secret is FAUCET_KEYPAIR; also accept TREASURY/SIGNER aliases. */
+export function faucetSignerSecret(env = {}) {
+  return String(
+    env.FAUCET_KEYPAIR || env.FAUCET_TREASURY_SECRET || env.FAUCET_SIGNER_SECRET || '',
+  ).trim();
+}
+
+export function faucetConfig(env = {}) {
+  const treasury = String(env.FAUCET_TREASURY || FAUCET_TREASURY_DEFAULT).trim();
+  const mint = String(env.MINT || FAUCET_MINT).trim();
+  const hasSession = Boolean(env.LOBBY_SESSION_SECRET);
+  const hasSigner = Boolean(faucetSignerSecret(env));
+  const paused = String(env.FAUCET_PAUSED || '') === '1' || String(env.FAUCET_PAUSED || '').toLowerCase() === 'true';
+  const amountUi = Number(env.FAUCET_AMOUNT_UI || FAUCET_AMOUNT_UI) || FAUCET_AMOUNT_UI;
+  const decimals = Number(env.FAUCET_DECIMALS || FAUCET_DECIMALS) || FAUCET_DECIMALS;
+  const amountRaw = BigInt(env.FAUCET_AMOUNT_RAW || FAUCET_AMOUNT_RAW);
+  const cooldownDays = Math.max(1, Number(env.FAUCET_COOLDOWN_DAYS || FAUCET_COOLDOWN_DAYS_DEFAULT) || FAUCET_COOLDOWN_DAYS_DEFAULT);
+  const dailyCap = Math.max(1, Number(env.FAUCET_DAILY_CAP || FAUCET_DAILY_CAP_DEFAULT) || FAUCET_DAILY_CAP_DEFAULT);
+  const hourlyCap = Math.max(1, Number(env.FAUCET_HOURLY_CAP || FAUCET_HOURLY_CAP_DEFAULT) || FAUCET_HOURLY_CAP_DEFAULT);
+  const minXAgeDays = Math.max(0, Number(env.FAUCET_MIN_X_AGE_DAYS ?? FAUCET_MIN_X_AGE_DAYS_DEFAULT));
+  const minXFollowers = Math.max(0, Number(env.FAUCET_MIN_X_FOLLOWERS ?? FAUCET_MIN_X_FOLLOWERS_DEFAULT));
+  const configured = hasSession && isValidSolanaAddress(treasury) && mint === FAUCET_MINT;
+  return {
+    treasury,
+    mint,
+    hasSigner,
+    paused,
+    amountUi,
+    decimals,
+    amountRaw,
+    cooldownDays,
+    dailyCap,
+    hourlyCap,
+    minXAgeDays,
+    minXFollowers,
+    configured,
+  };
+}
