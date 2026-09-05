@@ -151,3 +151,29 @@ export function pruneRecentAts(ats, now = Date.now(), keepMs = FAUCET_RECENT_KEE
     .filter((t) => Number.isFinite(t) && now - t >= 0 && now - t <= keepMs);
   return list.length > FAUCET_RECENT_ATS_MAX ? list.slice(-FAUCET_RECENT_ATS_MAX) : list;
 }
+
+/**
+ * 0..1 pressure from today's volume + how clustered the last 15–60 min were.
+ * Quiet day ≈ 0. Many claims close together ≈ 1.
+ */
+export function burstPressure(metrics, cfg = {}, { now = Date.now() } = {}) {
+  const day = utcDayKey(now);
+  const m = metrics || {};
+  const dayCount = m.dayKey === day ? Number(m.dayCount) || 0 : 0;
+  const recentAts = pruneRecentAts(m.recentAts, now, FAUCET_BURST_WINDOW_MS);
+  const recentCount = recentAts.length;
+  const lastAt = Number(m.lastClaimAt) || 0;
+  const gapMs = lastAt > 0 ? now - lastAt : Infinity;
+  const dailyCap = Math.max(1, Number(cfg.dailyCap) || FAUCET_DAILY_CAP_DEFAULT);
+  const hourlyCap = Math.max(1, Number(cfg.hourlyCap) || FAUCET_HOURLY_CAP_DEFAULT);
+  const volume = Math.min(1, dayCount / dailyCap);
+  const cluster = Math.min(1, recentCount / hourlyCap);
+  const tightMs = 2 * 60 * 1000;
+  const gap = !Number.isFinite(gapMs) || gapMs >= FAUCET_BURST_WINDOW_MS
+    ? 0
+    : gapMs <= tightMs
+      ? 1
+      : 1 - (gapMs - tightMs) / (FAUCET_BURST_WINDOW_MS - tightMs);
+  const pressure = Math.min(1, volume * 0.25 + cluster * 0.45 + gap * 0.45);
+  return { pressure, dayCount, recentCount, gapMs, volume, cluster, gap };
+}
