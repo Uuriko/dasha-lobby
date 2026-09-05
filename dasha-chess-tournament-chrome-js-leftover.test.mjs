@@ -143,3 +143,187 @@ assert.match(gone, /var form=element\('form',null,'tournament-form'\)/, "tournam
 keepLiveChrome(gone, "strip");
 assert.doesNotMatch(gone, /\.tournament-meta\{/, "does not restore leftover .tournament-meta CSS");
 assert.ok(gone.length > LIVE.length * 0.7, "className drop is per-string, not eat-the-page");
+
+{
+  const paints = `<!doctype html><html lang="en"><head>
+<title>Dasha Chess</title>
+<style>.tournament-form{display:flex}</style>
+</head><body>
+<div id="chess-stage"></div>
+<section id="tournament"><p class="tournament-meta">Open</p><p class="champion">wins</p></section>
+<div id="buy-sheet" hidden></div>
+<script>function renderTournament(){body.append(element('p','Open','tournament-meta'));var actions=element('div',null,'tournament-actions')}</script>
+</body></html>`;
+  const out = stripChessLeftoverTournamentChromeJs(paints);
+  assert.match(out, /,'tournament-meta'/, "do not strip if .tournament-meta still paints");
+  assert.match(out, /'tournament-actions'/, "do not strip if leftover class still paints");
+}
+
+{
+  const lobby = `<!doctype html><html><head><style>.dasha-lobby{display:flex}</style></head><body>
+<div id="dasha-lobby" class="dasha-lobby"></div>
+<button id="forum-play-go">Play</button>
+<div id="dasha-forum"></div>
+<script>function renderTournament(){body.append(element('p','Open','tournament-meta'));var actions=element('div',null,'tournament-actions');var entrants=element('ul',null,'entrants')}</script>
+</body></html>`;
+  const out = stripChessLeftoverTournamentChromeJs(lobby);
+  assert.match(out, /,'tournament-meta'/, "lobby does not eat leftover chess tournament-meta className");
+  assert.match(out, /'tournament-actions'/, "lobby does not eat leftover chess tournament-actions className");
+}
+
+const polished = polishServedSlim(LIVE);
+noLeftoverClassName(polished, "polish");
+assert.match(polished, /tournament\.entrants/, "polish keeps tournament.entrants");
+assert.match(polished, /tournament\.champion/, "polish keeps tournament.champion");
+keepLiveChrome(polished, "polish");
+assert.doesNotMatch(polished, /\.tournament-meta\{/, "polish does not restore leftover .tournament-meta CSS");
+assert.doesNotMatch(polished, /\.tournament-actions\{/, "polish does not restore leftover .tournament-actions CSS");
+assert.doesNotMatch(polished, /\.champion\{/, "polish does not restore leftover .champion CSS");
+
+assert.match(chessDisk, /,'tournament-meta'/, "chess disk still emits leftover 'tournament-meta' className (polish drops it)");
+assert.match(chessDisk, /'tournament-actions'/, "chess disk still emits leftover 'tournament-actions' className (polish drops it)");
+assert.match(chessDisk, /,null,'entrants'/, "chess disk still emits leftover 'entrants' className (polish drops it)");
+assert.match(chessDisk, /,null,'bracket'/, "chess disk still emits leftover 'bracket' className (polish drops it)");
+assert.match(chessDisk, /,'champion'/, "chess disk still emits leftover 'champion' className (polish drops it)");
+assert.match(CHESS_PAGE_HTML, /,'tournament-meta'/, "bundled chess still emits leftover 'tournament-meta' className (polish drops it)");
+assert.match(CHESS_PAGE_HTML, /'tournament-actions'/, "bundled chess still emits leftover 'tournament-actions' className (polish drops it)");
+assert.match(CHESS_PAGE_HTML, /,null,'entrants'/, "bundled chess still emits leftover 'entrants' className (polish drops it)");
+assert.match(CHESS_PAGE_HTML, /,null,'bracket'/, "bundled chess still emits leftover 'bracket' className (polish drops it)");
+assert.match(CHESS_PAGE_HTML, /,'champion'/, "bundled chess still emits leftover 'champion' className (polish drops it)");
+noPaintedClass(chessDisk, "tournament-meta", "chess disk");
+noPaintedClass(chessDisk, "tournament-actions", "chess disk");
+noPaintedClass(chessDisk, "entrants", "chess disk");
+noPaintedClass(chessDisk, "bracket", "chess disk");
+noPaintedClass(chessDisk, "champion", "chess disk");
+assert.match(afterStyleScript(chessDisk), /id=["']tournament["']/, "chess disk #tournament stays");
+assert.match(afterStyleScript(chessDisk), /class=["']tournament-form["']/, "chess disk .tournament-form stays");
+assert.match(chessDisk, /function wantTournamentChrome\(\)\{return false\}/, "chess disk wantTournamentChrome stays false");
+assert.match(chessDisk, /function renderTournament\(\)/, "chess disk renderTournament stays");
+assert.match(chessDisk, /function renderChallenge\(\)/, "chess disk renderChallenge stays");
+assert.match(chessDisk, /function showCasualBar\(\)/, "chess disk showCasualBar stays");
+assert.match(chessDisk, /function hidePlayPair\(\)/, "chess disk hidePlayPair stays");
+assert.match(chessDisk, /function hideLecture\(\)/, "chess disk hideLecture stays");
+assert.match(chessDisk, /id=["']gate-find["']/, "chess disk #gate-find stays");
+assert.match(chessDisk, /id=["']gate-action["']/, "chess disk #gate-action stays");
+assert.match(chessDisk, /function watchingGame\(g\)/, "chess disk watchingGame stays");
+assert.match(chessDisk, /g\.watch===true/, "chess disk g.watch===true stays");
+assert.match(chessDisk, /id=["']gate-invite["']/, "chess disk #gate-invite stays");
+assert.match(chessDisk, /textContent='Invite'/, "chess disk Invite textContent stays");
+assert.match(chessDisk, /Play\. Invite\. Find\./, "chess disk JSON-LD Invite copy stays");
+
+const HOME = `<!doctype html><html lang="en"><head>
+<title>$dasha</title>
+<style id="dasha-home-chrome-hide">.price,#price,.ticker,.ticker-loop,.price-main,.price-now,.price-chg,.price-note,#price-now,#price-chg,#price-note,#spark{display:none!important}</style>
+</head><body>
+<div id="dasha-home"><main class="dasha" id="top"><section id="chat-door"><h2>Chat.</h2></section><section id="simp-door"><h2>Simp Quiz.</h2><a class="pill primary" href="/simp">Take the quiz</a></section><section id="grwm"><div class="grwm-phone"></div></section><section id="grok-door"><h2>Sign in with Grok Bot.</h2></section></main></div>
+<script>function renderTournament(){body.append(element('p','Open','tournament-meta'))}</script>
+</body></html>`;
+
+assert.equal(stripChessLeftoverTournamentChromeJs(HOME), HOME, "home is not a chess leftover tournament-chrome JS page");
+
+{
+  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess"), {});
+  assert.equal(chess.status, 200);
+  assert.equal(chess.headers.get("x-dasha-edge"), "chess");
+  const html = await chess.text();
+  noLeftoverClassName(html, "served chess");
+  noPaintedClass(html, "tournament-meta", "served chess");
+  noPaintedClass(html, "tournament-actions", "served chess");
+  noPaintedClass(html, "entrants", "served chess");
+  noPaintedClass(html, "bracket", "served chess");
+  noPaintedClass(html, "champion", "served chess");
+  assert.match(html, /function tournamentClick\(/, "served tournamentClick stays");
+  assert.doesNotMatch(html, /\.tournament-meta\{/, "served leftover .tournament-meta CSS stays dropped");
+  assert.doesNotMatch(html, /\.tournament-actions\{/, "served leftover .tournament-actions CSS stays dropped");
+  assert.doesNotMatch(html, /\.entrants,\.bracket\{/, "served leftover .entrants,.bracket CSS stays dropped");
+  assert.doesNotMatch(html, /\.champion\{/, "served leftover .champion CSS stays dropped");
+  keepLiveChrome(html, "served chess");
+  assert.match(html, /id=["']gate-kicker["']/, "served #gate-kicker stays");
+  assert.match(html, /id=["']gate-title["']/, "served #gate-title stays");
+  assert.match(html, /id=["']gate-copy["']/, "served #gate-copy stays");
+  assert.match(html, /\.app\{/, "served .app CSS stays");
+  assert.match(html, /\.gate\{/, "served .gate CSS stays");
+  assert.doesNotMatch(html, /\bcasualRematch\b/, "prior leftover casualRematch stays dropped");
+  assert.doesNotMatch(html, /\bnextPlay\b/, "prior leftover nextPlay stays dropped");
+  assert.doesNotMatch(html, /\bplayReady\b/, "prior leftover playReady stays dropped");
+  assert.doesNotMatch(html, /\bshowPlayPair\b/, "prior leftover showPlayPair stays dropped");
+  assert.doesNotMatch(html, /function showLecture/, "prior leftover showLecture stays dropped");
+  assert.doesNotMatch(html, /\bloadLeaders\b/, "prior leftover loadLeaders stays dropped");
+  assert.doesNotMatch(html, /\bplayNow\b/, "prior leftover playNow stays dropped");
+  assert.doesNotMatch(html, /\bflashBought\b/, "prior leftover flashBought stays dropped");
+  assert.doesNotMatch(html, /\/\* Invite \/ 1v1 \*\//, "prior leftover Invite / 1v1 comment stays dropped");
+  assert.doesNotMatch(html, /\/\* watch:true \*\//, "prior leftover watch:true comment stays dropped");
+  assert.doesNotMatch(html, /id=["']compute-door["']/, "no compute-door");
+}
+
+{
+  const lobby = await edgeWorker.fetch(new Request("https://www.getdasha.com/lobby"), {});
+  assert.equal(lobby.status, 200);
+  const html = await lobby.text();
+  assert.match(html, /class=["']forum-play["']/, "class=forum-play stays");
+  assert.match(html, /id=["']forum-play-go["']/, "#forum-play-go stays");
+  assert.match(html, /id=["']dasha-forum["']/, "#dasha-forum stays");
+  assert.match(html, /\.dasha-lobby\{/, ".dasha-lobby stays");
+  assert.match(html, /class=["']lobby-form["']/, ".lobby-form stays");
+  assert.match(html, /\.lobby-body/, "lobby .lobby-body CSS stays");
+  assert.match(html, /\.lobby-status/, "lobby .lobby-status CSS stays");
+  assert.match(html, /x-connect\.js/, "lobby x-connect.js stays");
+}
+
+{
+  const home = await edgeWorker.fetch(new Request("https://www.getdasha.com/"), {});
+  assert.equal(home.status, 200);
+  const html = await home.text();
+  assert.match(html, /\.dasha a,\.dasha strong/, "home leftover mixed .dasha a,.dasha strong still paints (a under .dasha)");
+  assert.match(html, /\.dasha h1,\.dasha h2\{/, "served .dasha h1,.dasha h2 stays");
+  assert.doesNotMatch(html, /\.dasha h3/, "prior leftover .dasha h3 CSS stays dropped");
+  assert.match(html, /id=["']dasha-mobile-scroll["']/, "home mobile-scroll stays");
+  assert.match(html, /#grwm \.grwm-phone/, "GRWM phone CSS stays");
+  assert.match(html, /id=["']dasha-digest-remount["']/, "home remount stays");
+  assert.match(html, /\/digest\.json/, "home remount still fetches /digest.json");
+  assert.match(html, /id=["']dasha-home-chrome-hide["']/, "Watch chrome-hide stays");
+  assert.match(html, /\.price,#price,\.ticker/, "Watch price/ticker belt stays");
+  assert.match(html, /#spark\{display:none!important\}/, "Watch #spark hide stays");
+  assert.match(html, /id=["']chat-door["']/, "chat-door stays");
+  assert.match(html, /id=["']simp-door["']/, "simp-door stays");
+  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.match(html, /id=["']dasha-home-faucet["']/, "HOME_FAUCET_MOUNT stays");
+  assert.match(html, /@view-transition/, "product @view-transition stays");
+  assert.match(html, /johns-awesome/, "johns-awesome CSS stays");
+  assert.match(html, /data:image\/svg\+xml/, "cherries SVG stays");
+  assert.match(html, /faucet\.js/, "faucet.js stays");
+  assert.match(html, /x-connect\.js/, "x-connect.js stays");
+  assert.doesNotMatch(html, /plugin\.jup\.ag/, "home no plugin.jup.ag");
+  assert.doesNotMatch(html, /id=["']compute-door["']/, "no compute-door");
+}
+
+{
+  const howto = await edgeWorker.fetch(new Request("https://www.getdasha.com/how-to-buy"), {});
+  assert.equal(howto.status, 200);
+  const html = await howto.text();
+  assert.match(html, />Buy on Jupiter/, "Buy on Jupiter stays");
+  assert.match(html, /id=["']ca["']/, "#ca stays");
+  assert.match(html, /id=["']copy["']/, "id=copy stays");
+}
+
+{
+  const bounties = await edgeWorker.fetch(new Request("https://www.getdasha.com/bounties"), {});
+  assert.equal(bounties.status, 200);
+  const html = await bounties.text();
+  assert.match(html, /id=["']bb-x["']/, "#bb-x stays");
+  assert.match(html, /id=["']bb-app["']/, "#bb-app stays");
+  assert.doesNotMatch(html, /board\.js/, "do not mount board.js");
+}
+
+{
+  const studio = await edgeWorker.fetch(new Request("https://www.getdasha.com/studio"), {});
+  assert.equal(studio.status, 308);
+  assert.equal(studio.headers.get("location"), "https://www.getdasha.com/");
+}
+{
+  const forum = await edgeWorker.fetch(new Request("https://www.getdasha.com/forum"), {});
+  assert.equal(forum.status, 308);
+  assert.equal(forum.headers.get("location"), "https://www.getdasha.com/lobby");
+}
+
+console.log("dasha-chess-tournament-chrome-js-leftover.test.mjs: ok");
