@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Log in — $dasha</title>
+  <meta name="description" content="Log in to Dasha with Grok Bot, X, or a Solana wallet.">
+  <meta name="robots" content="noindex,follow">
+  <meta name="theme-color" content="#070608">
+  <style>
+    :root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81;--line:rgba(244,237,219,.24)}
+    *{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 70% 15%,rgba(124,77,255,.3),transparent 25rem),var(--ink);color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif}.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:12px 16px;background:var(--acid);color:var(--ink)!important;font-weight:900;text-decoration:none}.skip-link:focus{left:12px;top:12px;outline:3px solid var(--paper);outline-offset:2px}.login{width:min(28rem,100%);padding:28px;border:1px solid var(--line);background:#120c18;box-shadow:10px 10px 0 var(--hot)}.brand{color:var(--acid);font-size:13px;font-weight:900;letter-spacing:.12em;text-decoration:none;text-transform:uppercase}h1{margin:14px 0 8px;font-size:clamp(2.5rem,12vw,4.5rem);line-height:.9;letter-spacing:-.06em}p{margin:0 0 18px;color:rgba(244,237,219,.78)}.methods{display:grid;gap:12px}.button{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border:1px solid var(--paper);border-radius:999px;background:transparent;color:var(--paper);font:900 14px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em;text-decoration:none;cursor:pointer}.button.primary{border-color:var(--acid);background:var(--acid);color:var(--ink);box-shadow:4px 4px 0 var(--hot)}.button:disabled{opacity:.6;cursor:wait}.siwg{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#22d3ee);color:#fff;font:900 15px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em;text-decoration:none;cursor:pointer;box-shadow:0 0 22px rgba(124,58,237,.55),0 0 28px rgba(34,211,238,.4)}.siwg .siwg-icon{width:28px;height:28px;flex:0 0 28px;display:block;border-radius:6px}.siwg:focus-visible{outline:3px solid var(--paper);outline-offset:3px}.siwg[aria-disabled=true]{opacity:.6;cursor:wait}.status{min-height:1.45em;margin:16px 0 0;font-size:14px}.status[data-kind=ok]{color:var(--acid)}.status[data-kind=bad]{color:var(--hot)}.grok-pair{margin:16px 0 0}.grok-code{margin:0 0 8px;color:#fff;font:900 clamp(1.8rem,8vw,2.6rem)/1.05 Arial,Helvetica,sans-serif;letter-spacing:.12em}.grok-say{margin:0;color:rgba(244,237,219,.86)}.note{margin:14px 0 0;font-size:13px}.note a{display:inline-flex;align-items:center;min-height:44px;color:var(--paper)}[hidden]{display:none!important}:focus-visible{outline:3px solid var(--acid);outline-offset:4px}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#dasha-login">Skip to login</a>
+  <main class="login" id="dasha-login" data-dasha-login>
+    <a class="brand" href="https://www.getdasha.com/">$dasha</a>
+    <h1>Log in.</h1>
+    <p>Grok Bot, X, or a Solana wallet. One login at a time.</p>
+    <div class="methods" data-login-methods>
+      <a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>
+      <a class="button primary" href="https://lobby.getdasha.com/oauth/x/start" data-x-login>Continue with X</a>
+      <button class="button" type="button" data-wallet-login>Connect wallet</button>
+    </div>
+    <div class="grok-pair" data-grok-pair hidden>
+      <p class="grok-code" data-grok-code></p>
+      <p class="grok-say" data-grok-say></p>
+    </div>
+    <button class="button" type="button" data-logout hidden>Log out</button>
+    <p class="status" data-login-status role="status" aria-live="polite"></p>
+    <p class="note" data-login-next hidden><a href="/simp#holder">Verify holder perks →</a></p>
+    <p class="note"><a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&amp;buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">Buy</a> · <a href="https://www.getdasha.com/privacy">Privacy</a></p>
+  </main>
+  <script src="https://lobby.getdasha.com/client/x-connect.js" integrity="__X_CONNECT_SRI__" crossorigin="anonymous" defer></script>
+</body>
+</html>
