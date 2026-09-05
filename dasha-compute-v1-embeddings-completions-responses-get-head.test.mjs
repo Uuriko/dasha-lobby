@@ -38,7 +38,7 @@ const PATHS = [
 function assertNotGeneric404(status, body, label) {
   assert.notEqual(status, 404, `${label} must not be 404`);
   if (body && typeof body === 'object') {
-    assert.notEqual(body.error, 'not found', `${label} must not be generic not-found');
+    assert.notEqual(body.error, 'not found', `${label} must not be generic not-found`);
   }
 }
 

@@ -71,13 +71,13 @@ assert.match(kept, /href="https:\/\/www\.getdasha\.com\/bag"/);
 
 for (const path of ['/studio', '/verse', '/learn', '/graph', '/index.html']) {
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
-  assert.equal(res.status, 308, `${path} still 308');
+  assert.equal(res.status, 308, `${path} still 308`);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/');
 }
 for (const path of ['/dasha', '/desk']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/how-to-buy');
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
-  assert.equal(res.status, 308, `${path} 308');
+  assert.equal(res.status, 308, `${path} 308`);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/how-to-buy');
 }
 assert.equal(potterHome308Dest('/privacy'), null);

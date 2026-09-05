@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Night stays off chrome; no-Mac community path surfaces void offer via /compute/api/night. */
+/** Night stays off chrome; no-Mac community path surfaces queue offer via /compute/api/night. */
 import assert from 'node:assert/strict';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { ComputeNetwork } from './dasha-compute-network.mjs';

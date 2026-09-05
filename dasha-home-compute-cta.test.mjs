@@ -24,7 +24,7 @@ const LEFTOVER = `<!doctype html><html lang="en"><head>
 <title>$dasha dash_eats — make the timeline stranger</title>
 ${FORCE_SHOW}
 </head><body>
-<header class="bar"><a class="word" href="/">$<b>dasha</b></a><a class="chat" href="/lobby">Chat</a><a class="buy" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111112&amp;buy=${MINT}">Buy</a></header>
+<header class="bar"><a class="word" href="/">$<b>dasha</b></a><a class="chat" href="/lobby">Chat</a><a class="buy" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&amp;buy=${MINT}">Buy</a></header>
 ${DOOR}
 <p id="dasha-home-lede" class="dasha-home-lede">dash_eats culture. Match the mint.</p>
 <section id="chat-door"><h2>Chat.</h2></section>

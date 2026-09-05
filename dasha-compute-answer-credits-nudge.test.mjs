@@ -24,18 +24,18 @@ function assertAnswerCredits(html, label) {
   assert.match(html, /function paintAnswerMoney\(/, `${label} paintAnswerMoney`);
   assert.match(html, /function clearAnswerMoney\(/, `${label} clearAnswerMoney`);
   assert.match(html, /lastAskFailKind/, `${label} lastAskFailKind`);
-  assert.match(html, /lastAskFailKind=["']credits["']/, `${label} credits fail kind`);
-  assert.match(html, /lastAskFailKind=["']rate["']/, `${label} rate fail kind`);
+  assert.match(html, /lastAskFailKind=['"]credits['"]/, `${label} credits fail kind`);
+  assert.match(html, /lastAskFailKind=['"]rate['"]/, `${label} rate fail kind`);
   assert.match(html, /lastAskFailKind==='credits'\?'Top up':'Credits'/, `${label} Top up / Credits labels`);
   assert.match(html, /top up\|credits\|insufficient/i, `${label} credits error match`);
-  assert.match(html, /rate\.?limit\|limit reached\|try again shortly/i, `${label} rate error match`);
-  assert.match(html, /showTf\(["']pay-buy["']\)/, `${label} Top up → pay-buy`);
+  assert.match(html, /rate\.\?limit\|limit reached\|try again shortly/i, `${label} rate error match`);
+  assert.match(html, /showTf\(['"]pay-buy['"]\)/, `${label} Top up → pay-buy`);
   assert.match(html, /paintAnswerMoney\(\)/, `${label} paintAnswerMoney called`);
   assert.match(html, /clearAnswerMoney\(\)/, `${label} clearAnswerMoney called`);
   // Prefer stay on Answer — no yank to Credits on top-up error
   assert.doesNotMatch(
     html,
-    /Top up credits\.[\s\S]{0,120}showTf\(["']credits["']\)/,
+    /Top up credits\.[\s\S]{0,120}showTf\(['"]credits['"]\)/,
     `${label} no mid-read yank to Credits on top-up`
   );
   // Happy path must not set fail kind
