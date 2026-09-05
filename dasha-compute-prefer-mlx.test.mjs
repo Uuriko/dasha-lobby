@@ -92,7 +92,7 @@ async function withDoctor({ version, models }, run) {
       return;
     }
     if (req.url === '/api/version') {
-      res.end('{}');
+      res.end(JSON.stringify({ version }));
       return;
     }
     res.end('{}');
