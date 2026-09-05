@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dasha Crew — you keep the keys</title>
+<meta name="description" content="Five jobs. You keep the keys. Scout, Trace, Vibe, Clock, Kill. Public prompts. Live tape.">
+<link rel="canonical" href="https://www.getdasha.com/crew">
+<meta name="theme-color" content="#08070a">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.getdasha.com/crew">
+<meta property="og:title" content="Dasha Crew">
+<meta property="og:description" content="Five jobs. You keep the keys.">
+<meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dasha Crew">
+<meta name="twitter:description" content="Five jobs. You keep the keys.">
+<meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+<style>
+:root{--ink:#08070a;--panel:#121015;--paper:#f5eedb;--muted:#aaa1b2;--line:#3d3743;--acid:#dcff00;--hot:#ff3b81}
+*{box-sizing:border-box}
+html{background:var(--ink);scroll-behavior:smooth}
+body{margin:0;color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif;background:radial-gradient(circle at 12% 0,#3a1024 0,transparent 22rem),radial-gradient(circle at 88% 8%,#2a1730 0,transparent 24rem),var(--ink)}
+a{color:inherit}
+.shell{width:min(1100px,calc(100% - 28px));margin:auto;padding:18px 0 48px}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:14px;top:14px;z-index:9;background:var(--acid);color:var(--ink);padding:10px}
+.topbar{display:flex;align-items:center;justify-content:space-between;min-height:58px;border-bottom:1px solid var(--line);font-size:13px;font-weight:900;text-transform:uppercase}
+.brand,.home{text-decoration:none}
+.brand span,.acid{color:var(--acid)}
+.hot{color:var(--hot)}
+.hero{padding:56px 0 28px}
+.kicker{margin:0 0 10px;color:var(--muted);font:900 11px/1.2 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase}
+.hero h1{margin:0;font-size:clamp(56px,11vw,132px);line-height:.8;letter-spacing:-.07em;text-transform:uppercase}
+.line{margin:18px 0 0;font-size:clamp(22px,3.4vw,36px);letter-spacing:-.03em}
+.score{display:grid;grid-template-columns:160px 1fr;border:1px solid var(--line);margin:28px 0 18px}
+.score strong,.score span{padding:14px 16px}
+.score strong{background:var(--line);color:var(--paper);text-transform:uppercase;font-size:12px;letter-spacing:.08em}
+.score[data-verdict=yes] strong{background:var(--acid);color:var(--ink)}
+.score[data-verdict=no] strong{background:var(--hot);color:#fff}
+.score[data-verdict=sit] strong{background:var(--paper);color:var(--ink)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 34px}
+.primary,.secondary,.copy{min-height:48px;padding:0 16px;font-weight:900;text-transform:uppercase;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--paper)}
+.primary{background:var(--acid);border-color:var(--acid);color:var(--ink);box-shadow:4px 4px 0 var(--hot)}
+.secondary,.copy{background:transparent;color:var(--paper)}
+.copy{margin-top:14px;cursor:pointer;font:inherit}
+.reel{display:grid;gap:10px}
+.card{border:1px solid var(--line);background:rgba(18,16,21,.92);padding:22px;min-height:180px}
+.card h2{margin:0;font-size:clamp(36px,6vw,72px);line-height:.86;letter-spacing:-.05em;text-transform:uppercase}
+.card .job{margin:8px 0 0;color:var(--muted);font-size:15px}
+.card .note{margin:16px 0 0;font:13px/1.5 ui-monospace,monospace;color:#d8cfe0}
+.vote{display:inline-flex;align-items:center;min-height:28px;margin-top:14px;padding:0 10px;border:1px solid var(--line);font:900 11px/1 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase}
+.vote[data-vote=yes]{background:var(--acid);color:var(--ink);border-color:var(--acid)}
+.vote[data-vote=no]{background:var(--hot);color:#fff;border-color:var(--hot)}
+.vote[data-vote=sit]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.prompt{margin:14px 0 0;color:var(--muted);font-size:13px;max-width:62ch}
+footer{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-top:28px;color:var(--muted);font-size:12px}
+footer a{color:var(--muted)}
+:focus-visible{outline:3px solid var(--acid);outline-offset:3px}
+@media(max-width:720px){.hero{padding-top:36px}.score{grid-template-columns:1fr}.card{min-height:0}}
+</style>
+</head>
+<body>
+<main class="shell">
+<a class="skip" href="#jobs">Skip to jobs</a>
+<header class="topbar"><a class="brand" href="/"><span>$dasha</span> crew</a><a class="home" href="/">getdasha.com ↗</a></header>
+<section class="hero">
+  <p class="kicker">Public prompts · live tape · you keep the keys</p>
+  <h1>Dasha Crew</h1>
+  <p class="line">Five jobs. You keep the keys.</p>
+</section>
+<div class="score" id="score" data-verdict="sit"><strong id="verdict">Sit</strong><span id="score-note">Reading the tape…</span></div>
+<div class="actions">
+  <a class="primary" id="buy" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111112&amp;buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" target="_blank" rel="noopener noreferrer">Buy</a>
+  <a class="secondary" href="/dasha-crew.tar.gz" download>Download kit</a>
+</div>
+<section class="reel" id="jobs" aria-label="Five jobs">
+  <article class="card" id="card-scout"><p class="kicker acid">01</p><h2 id="scout">Scout</h2><p class="job">$dasha tape only.</p><div class="vote" data-vote="sit">Sit</div><p class="note" data-note>Mint and pair. No invented candle.</p><p class="prompt" data-prompt>You are Scout. $dasha tape only. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. Read public price, liquidity, volume, change on that pair. Do not invent a candle. No tape → sit. You do not hold keys.</p><button type="button" class="copy" data-copy>Copy prompt</button></article>
+  <article class="card" id="card-trace"><p class="kicker acid">02</p><h2 id="trace">Trace</h2><p class="job">Public holders / flow on that mint.</p><div class="vote" data-vote="sit">Sit</div><p class="note" data-note>Buys, sells, top accounts. Public only.</p><p class="prompt" data-prompt>You are Trace. Public holders and flow on the $dasha mint only. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Read buys, sells, top holders from public HTTP/RPC. No flow → sit. You do not hold keys. You do not invent a wallet list.</p><button type="button" class="copy" data-copy>Copy prompt</button></article>
+  <article class="card" id="card-vibe"><p class="kicker acid">03</p><h2 id="vibe">Vibe</h2><p class="job">Lobby / @dash_eats.</p><div class="vote" data-vote="sit">Sit</div><p class="note" data-note>Rooms, not a mood board.</p><p class="prompt" data-prompt>You are Vibe. Read the room: lobby, @dash_eats, official TG https://t.me/+xB7S8mIQaKFiZjRh. Public pages only. Rooms down → sit. You do not post. You do not hold those keys.</p><button type="button" class="copy" data-copy>Copy prompt</button></article>
+  <article class="card" id="card-clock"><p class="kicker acid">04</p><h2 id="clock">Clock</h2><p class="job">Sit if the tape is dumping.</p><div class="vote" data-vote="sit">Sit</div><p class="note" data-note>Dump → sit. No dip speech.</p><p class="prompt" data-prompt>You are Clock. If the tape is dumping, sit. Dump = 1h ≤ −5% or 24h ≤ −15%. No tape → sit. You do not buy the dip. You sit.</p><button type="button" class="copy" data-copy>Copy prompt</button></article>
+  <article class="card" id="card-kill"><p class="kicker hot">05</p><h2 id="kill">Kill</h2><p class="job">Default no. Only job is no.</p><div class="vote" data-vote="no">No</div><p class="note" data-note>No.</p><p class="prompt" data-prompt>You are Kill. Default no. Your only job is no. You never hold keys. You never say yes. If the others get loud, you still say no.</p><button type="button" class="copy" data-copy>Copy prompt</button></article>
+</section>
+<footer>
+  <span>$dasha crew</span>
+  <span>53ux…pump</span>
+  <a href="/lobby">lobby</a>
+  <a href="https://t.me/+xB7S8mIQaKFiZjRh" rel="noopener noreferrer">tg</a>
+</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function paint(card){
+  const verdict=card.verdict||'sit';
+  $('score').dataset.verdict=verdict;
+  $('verdict').textContent=verdict;
+  $('score-note').textContent=card.at?`Last card ${card.at}`:'Last card.';
+  if(card.buy&&card.buy.startsWith('https://jup.ag/')&&card.buy.includes('53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump')) $('buy').href=card.buy;
+  (card.agents||[]).forEach(agent=>{
+    const el=$('card-'+agent.id); if(!el) return;
+    const vote=el.querySelector('.vote');
+    vote.dataset.vote=agent.vote;
+    vote.textContent=agent.vote;
+    const note=el.querySelector('[data-note]');
+    if(note&&agent.note) note.textContent=agent.note;
+    const prompt=el.querySelector('[data-prompt]');
+    if(prompt&&agent.prompt) prompt.textContent=agent.prompt;
+  });
+}
+async function load(){
+  try{
+    const once=await fetch('/crew/api/once',{cache:'no-store'});
+    if(once.ok){paint(await once.json());return}
+    throw Error('once');
+  }catch{
+    try{
+      const log=await fetch('/crew/api/log',{cache:'no-store'});
+      const data=await log.json();
+      if(data.cards&&data.cards[0]) paint(data.cards[0]);
+      else paint({verdict:'sit',at:new Date().toISOString(),agents:[]});
+    }catch{
+      paint({verdict:'sit',at:new Date().toISOString(),agents:[]});
+    }
+  }
+}
+function copyPrompt(button){
+  const node=button.closest('.card')?.querySelector('[data-prompt]');
+  const text=node?.textContent.trim()||'';
+  if(!text){button.textContent='Empty';return}
+  const done=()=>{button.textContent='Copied';setTimeout(()=>button.textContent='Copy prompt',1400)};
+  const select=()=>{
+    if(!node){button.textContent='Select text';return}
+    const range=document.createRange();
+    range.selectNodeContents(node);
+    const sel=getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    button.textContent='Select text';
+  };
+  const legacy=()=>{
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok=false;
+    try{ok=document.execCommand('copy')}catch{}
+    ta.remove();
+    return ok;
+  };
+  const timed=p=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Error('copy')),600))]);
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    timed(navigator.clipboard.writeText(text)).then(done).catch(()=>{legacy()?done():select()});
+  }else if(legacy()) done();
+  else select();
+}
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>copyPrompt(b)));
+load();
+</script>
+</body>
+</html>
