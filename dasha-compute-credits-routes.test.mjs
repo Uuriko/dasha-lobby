@@ -69,7 +69,6 @@ assert.equal(order.amountRaw, '4850000');
 assert.match(order.pay_url, /^solana:/);
 assert.ok(order.reference);
 
-// Fake settle by injecting a verified tx path via settleCreditOrder with mocked rpc — use direct storage credit path:
 const sig = '5'.repeat(64);
 const fakeTx = {
   meta: {
@@ -81,10 +80,6 @@ const fakeTx = {
 };
 assert.equal(verifyCreditTx(fakeTx, { dest: CREDIT_DEST, mint: USDC_MINT, amountRaw: order.amountRaw, reference: order.reference }).ok, true);
 
-// Monkeypatch load via env rpc is hard; call settle with signature after stubbing global fetch? Instead put paid via settleCreditOrder internals:
-// Patch network.env and override find by directly putting after manual verify in settle — simplest: replace loadTxBySignature by storing and calling settle with a custom approach.
-
-// Direct unit of settle: temporarily attach a fake loader
 const origFetch = globalThis.fetch;
 globalThis.fetch = async (url, init) => {
   const u = String(url);
@@ -123,7 +118,6 @@ try {
   assert.equal(again.status, 'paid');
   assert.equal(again.balance_cents, 500, 'idempotent confirm does not double-credit');
 
-  // New order, same sig → replay guard
   const created2 = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/credits/orders', {
     method: 'POST',
     headers,
@@ -135,7 +129,6 @@ try {
     headers,
     body: JSON.stringify({ signature: sig }),
   }), origin);
-  // verify may fail reference miss first (different ref) before sig guard — either 400 or 409
   assert.ok([400, 409].includes(replay.status), `replay status ${replay.status}`);
 
   const bal2 = await (await network.fetch(new Request('https://lobby.getdasha.com/compute/api/credits', { headers: { Cookie: headers.Cookie, Origin: origin } }), origin)).json();
@@ -144,7 +137,6 @@ try {
   globalThis.fetch = origFetch;
 }
 
-// dasha order locks amount with env price
 const dashaOrder = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/credits/orders', {
   method: 'POST',
   headers,
