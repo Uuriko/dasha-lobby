@@ -196,3 +196,30 @@ export function rollBurstPause(pressure, { now = Date.now(), rng = Math.random }
   const pauseMs = FAUCET_PAUSE_MIN_MS + Math.floor((Number.isFinite(durRoll) ? Math.min(1, Math.max(0, durRoll)) : 0) * (span + 1));
   return { paused: true, chance, pressure, pauseMs, autoPausedUntil: now + pauseMs };
 }
+
+/**
+ * @param {{ dayKey?: string, dayCount?: number, hourKey?: string, hourCount?: number, autoPausedUntil?: number, recentAts?: number[], lastClaimAt?: number }} metrics
+ */
+export function checkRateLimits(metrics, cfg, { now = Date.now(), rng = Math.random } = {}) {
+  const m = metrics || {};
+  if (cfg.paused) return { ok: false, error: 'faucet_paused' };
+  if (Number(m.autoPausedUntil) > now) return { ok: false, error: 'hourly_cap', autoPausedUntil: m.autoPausedUntil };
+  const day = utcDayKey(now);
+  const hour = utcHourKey(now);
+  const dayCount = m.dayKey === day ? Number(m.dayCount) || 0 : 0;
+  const hourCount = m.hourKey === hour ? Number(m.hourCount) || 0 : 0;
+  if (dayCount >= cfg.dailyCap) return { ok: false, error: 'daily_cap', dayCount, dailyCap: cfg.dailyCap };
+  const { pressure } = burstPressure(m, cfg, { now });
+  const burst = rollBurstPause(pressure, { now, rng });
+  if (burst.paused) {
+    return {
+      ok: false,
+      error: 'hourly_cap',
+      hourCount,
+      hourlyCap: cfg.hourlyCap,
+      autoPausedUntil: burst.autoPausedUntil,
+      pressure,
+    };
+  }
+  return { ok: true, dayCount, hourCount, day, hour, pressure };
+}
