@@ -32,11 +32,11 @@ const LIVE = `<!doctype html><html lang="en"><head>
 <title>Dasha Chess</title>
 <style>#buy-sheet{position:fixed;--jupiter-plugin-primary:223,255,0;--jupiter-plugin-background:7,6,8}#dasha-jup{flex:1;min-height:520px}#dasha-jup[hidden]{display:none}</style>
 </head><body>
-<header class="dasha-slim"><a class="dasha-word" href="https://www.getdasha.com/">$dasha</a><a class="buy-dasha" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111112&amp;buy=${MINT}">Buy $dasha ↗</a></header>
+<header class="dasha-slim"><a class="dasha-word" href="https://www.getdasha.com/">$dasha</a><a class="buy-dasha" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&amp;buy=${MINT}">Buy $dasha ↗</a></header>
 <div id="chess-stage"></div>
 <script src="/client/chess-local.js"></script>
-<div id="buy-sheet" hidden><div class="buy-chips" id="buy-chips"></div><div id="dasha-jup"></div><div id="buy-sheet-fallback"><code id="buy-mint">${MINT}</code><a class="btn" id="buy-open" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111112&buy=${MINT}">Jupiter</a></div></div>
-<footer class="dasha-foot wrap"><p><a href="https://www.getdasha.com/">$dasha</a> · <a class="buy-dasha" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111112&buy=${MINT}">Buy</a> · <a href="https://www.getdasha.com/chess">Chess</a> · <a href="${TG}">Telegram</a></p></footer>
+<div id="buy-sheet" hidden><div class="buy-chips" id="buy-chips"></div><div id="dasha-jup"></div><div id="buy-sheet-fallback"><code id="buy-mint">${MINT}</code><a class="btn" id="buy-open" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=${MINT}">Jupiter</a></div></div>
+<footer class="dasha-foot wrap"><p><a href="https://www.getdasha.com/">$dasha</a> · <a class="buy-dasha" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=${MINT}">Buy</a> · <a href="https://www.getdasha.com/chess">Chess</a> · <a href="${TG}">Telegram</a></p></footer>
 </body></html>`;
 
 assert.match(afterStyleScript(LIVE), /id=["']dasha-jup["']/, 'fixture leftover empty mount paints after style/script strip');
