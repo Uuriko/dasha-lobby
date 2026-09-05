@@ -1,1 +1,1 @@
-LOAD_FROM_FILE
+file:///tmp/mcp-priority/static-gen.content.txt
