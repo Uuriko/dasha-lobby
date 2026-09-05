@@ -50,7 +50,8 @@ for (const [slug, edge] of PRODUCTS) {
     assert.equal(potterHome308Dest(path), dest, path);
   }
   assert.equal(potterHome308Dest(`/${slug}`), null, `lowercase /${slug} stays 200`);
-  assert.equal(potterHome308Dest(`/${slug}/`), null, `lowercase /${slug}/ stays 200`);
+  // /compute/ folds to /compute (P2-1 trailing-slash fold, dasha-compute-trailing-slash-pretty-path); other products keep slash 200.
+  assert.equal(potterHome308Dest(`/${slug}/`), slug === 'compute' ? dest : null, `lowercase /${slug}/ ${slug === 'compute' ? 'folds' : 'stays 200'}`);
 }
 
 const env = {};

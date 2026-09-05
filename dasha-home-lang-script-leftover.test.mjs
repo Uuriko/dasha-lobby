@@ -169,8 +169,9 @@ assert.ok(gone.length > LIVE.length * 0.7, "JS drop is per-script, not eat-the-p
   const res = await edgeWorker.fetch(new Request("https://www.getdasha.com/compute"), {});
   assert.equal(res.status, 200);
   const html = await res.text();
-  assert.match(html, /Mac Studio/, "Mac Studio stays");
-  assert.match(html, /Use\. Provide\. Night\. Build\. Sponsor\./, "compute OG stays");
+  assert.doesNotMatch(html, /Mac Studio/, "Mac Studio retired off the /compute page (sponsors API carries it)");
+  assert.match(html, /Start\. Ask\. Provide\. Pay\. Credits\./, "compute Start-gate copy");
+  assert.doesNotMatch(html, /Use\. Provide\. Night\. Build\./, "old compute slogan retired");
 }
 
 {

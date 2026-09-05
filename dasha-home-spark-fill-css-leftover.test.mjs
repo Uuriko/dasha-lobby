@@ -178,17 +178,20 @@ assert.ok(gone.length > LIVE.length * 0.7, "CSS drop is per-token, not eat-the-p
   const compute = await edgeWorker.fetch(new Request("https://www.getdasha.com/compute"), {});
   assert.equal(compute.status, 200);
   const html = await compute.text();
-  assert.match(html, /hostedLive=status\.live===true/, "hosted live flag stays honest");
-  assert.match(html, /id=["']model["']><option value=["']qwen3-8b["']>/, "filled #model stays");
-  assert.match(html, /id=["']chip["']><option/, "filled #chip stays");
-  assert.match(html, /id=["']ram["']><option/, "filled #ram stays");
-  assert.match(html, /id=["']night-model["']><option/, "filled #night-model stays");
+  assert.match(html, /hostedLive=status\?\.live===true|hostedLive=status\.live===true/, "hosted live flag stays honest");
+  // Start-gate page contract (#172 lock; empty-select contract tests pin this):
+  // selects mount empty until Start, old filled/checking/staged UI retired.
+  assert.match(html, /id=["']model["']/, "#model mount stays");
+  assert.doesNotMatch(html, /id=["']model["']><option/, "#model starts empty (Start gate)");
+  assert.doesNotMatch(html, /id=["']chip["']><option/, "#chip starts empty (Start gate)");
+  assert.doesNotMatch(html, /id=["']ram["']><option/, "#ram starts empty (Start gate)");
+  assert.doesNotMatch(html, /id=["']night-model["']><option/, "#night-model starts empty (Start gate)");
   assert.match(html, /Checking…/, "Checking… stays");
-  assert.match(html, /Checking login…/, "Checking login… stays");
-  assert.match(html, /id=["']gateway-state["']>checking</, "gateway-state checking stays");
-  assert.match(html, /id=["']provider-count["']>checking</, "provider-count checking stays");
-  assert.match(html, /id=["']top-state["']>checking hosted demo</, "top-state checking hosted demo stays");
-  assert.match(html, /id=["']staged["'][^>]*hidden/, "hidden #staged stays");
+  assert.doesNotMatch(html, /Checking login…/, "Checking login… retired with the Start gate");
+  assert.doesNotMatch(html, /id=["']gateway-state["']>checking</, "gateway-state checking retired");
+  assert.doesNotMatch(html, /id=["']provider-count["']>checking</, "provider-count checking retired");
+  assert.doesNotMatch(html, /id=["']top-state["']>checking hosted demo</, "top-state checking retired");
+  assert.doesNotMatch(html, /id=["']staged["']/, "#staged retired with the Start gate");
   assert.doesNotMatch(html, /id=["']compute-door["']/, "no compute-door");
   assert.doesNotMatch(html, /plugin\.jup\.ag/);
 }

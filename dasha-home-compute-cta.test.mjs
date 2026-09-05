@@ -94,7 +94,8 @@ assert.match(workerSrc, /dasha-home-compute/, 'worker still knows the leftover s
   assert.equal(page.status, 200, '/compute stays 200');
   assert.equal(page.headers.get('x-dasha-edge'), 'compute');
   const html = await page.text();
-  assert.match(html, /Use\. Provide\. Night\. Build\./);
+  assert.match(html, /Start\. Ask\. Provide\. Pay\. Credits\./, "compute Start-gate copy");
+  assert.doesNotMatch(html, /Use\. Provide\. Night\. Build\./, "old compute slogan retired");
   assert.doesNotMatch(html, /plugin\.jup\.ag/);
 }
 

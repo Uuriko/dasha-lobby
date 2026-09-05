@@ -28,7 +28,8 @@ assert.equal(res.status, 200);
 assert.equal(res.headers.get("x-dasha-edge"), "compute");
 const html = await res.text();
 assert.match(html, /Mixture · sub-24GB/);
-assert.match(html, /id=["']ocm-door["']/);
+assert.doesNotMatch(html, /id=["']ocm-door["']/);
+assert.match(html, /id=["']ask-ocm["']/);
 assert.doesNotMatch(html, /plugin\.jup\.ag/);
 assert.doesNotMatch(html, /id=["']tab-use["']/);
 

@@ -113,7 +113,10 @@ export function faucetConfig(env = {}) {
 /** Public GET/HEAD JSON on www + lobby. Claim POST stays lobby (SIWS/X cookies). */
 export function isFaucetPublicReadPath(pathname) {
   const p = String(pathname || '').replace(/\/+$/, '') || '/';
-  return p === '/faucet/status' || p === '/faucet/me';
+  if (p === '/faucet/status' || p === '/faucet/me') return true;
+  // Donate/burn evidence URLs are minted as https://www.getdasha.com/faucet/tx/{sig}
+  // (dasha-simp-score.mjs), so www must resolve them like lobby. Bare prefix is not a route.
+  return /^\/faucet\/tx\/[1-9A-HJ-NP-Za-km-z]{43,128}$/.test(p);
 }
 
 export function utcDayKey(now = Date.now()) {

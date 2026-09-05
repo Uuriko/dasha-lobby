@@ -212,7 +212,8 @@ try {
   assert.equal(computePage.status, 200);
   assert.equal(computePage.headers.get('x-dasha-edge'), 'compute');
   const pageHtml = await computePage.text();
-  assert.match(pageHtml, /id=["']ocm-door["']/);
+  assert.doesNotMatch(pageHtml, /id=["']ocm-door["']/);
+  assert.match(pageHtml, /id=["']ask-ocm["']/);
   assert.match(pageHtml, /href=["']\/compute\/ocm["']/);
   assert.match(pageHtml, />Marketplace</);
   assert.match(pageHtml, /id=["']ask-host["']/);

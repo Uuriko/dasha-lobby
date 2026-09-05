@@ -307,7 +307,7 @@ for (const path of ["/compute/use", "/compute/provide", "/compute/night", "/comp
   const compute = await edgeWorker.fetch(new Request("https://www.getdasha.com/compute"), {});
   assert.equal(compute.status, 200);
   const html = await compute.text();
-  assert.match(html, /hostedLive\s*=\s*status\.live\s*===\s*true/, "hostedLive=status.live===true stays");
+  assert.match(html, /hostedLive\s*=\s*status\?\.live\s*===\s*true|hostedLive\s*=\s*status\.live\s*===\s*true/, "hostedLive flag stays honest");
   assert.doesNotMatch(html, /plugin\.jup\.ag/);
 }
 
