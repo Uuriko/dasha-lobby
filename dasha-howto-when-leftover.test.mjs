@@ -21,7 +21,7 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /Read from the Solana mint account on 18 August 2026 at finalized commitment/);
 assert.match(
   workerSrc,
-  /page = page\.replace\(\/\\s\*Read from the Solana mint account on 18 August 2026 at finalized commitment\\\.\/g, ''\)/,
+  /page = page\.replace\(\/\\s\*Read from the Solana mint account on 18 August 2026 at finalized commitment\\\./g, ''\)/,
 );
 
 function afterStyleScript(html) {
