@@ -2943,6 +2943,25 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/model', '/model/',
   '/compute/models', '/compute/models/',
   '/compute/model', '/compute/model/',
+  // USDC/settle/topup/billing/wallet/phantom/solana leftovers while Pay/Credits
+  // already 308→/compute. Apex + /compute/* tabs (+slash / Title-case).
+  // Skip /openai /v1 /api/v1 /v1/models /status /health /healthz /resend.
+  '/usdc', '/usdc/',
+  '/settle', '/settle/',
+  '/topup', '/topup/',
+  '/top-up', '/top-up/',
+  '/billing', '/billing/',
+  '/wallet', '/wallet/',
+  '/phantom', '/phantom/',
+  '/solana', '/solana/',
+  '/compute/usdc', '/compute/usdc/',
+  '/compute/settle', '/compute/settle/',
+  '/compute/topup', '/compute/topup/',
+  '/compute/top-up', '/compute/top-up/',
+  '/compute/billing', '/compute/billing/',
+  '/compute/wallet', '/compute/wallet/',
+  '/compute/phantom', '/compute/phantom/',
+  '/compute/solana', '/compute/solana/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -3071,7 +3090,7 @@ export function potterHome308Dest(path) {
   // Title-case product pages (/Faucet /Compute /Lobby /Chess /Bag …) were html-404 while
   // lowercase siblings already 200 — 308 to the same dest (canonical lowercase).
   // Machine files (/Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Llms-Full.txt) same pattern.
-  // Quiet /fill /jar /fill-the-jar /tip /tip-me /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model → /compute. Apex /gateway|/compute/gateway → /compute/api. Exact lowercase product stays null for 200 handlers.
+  // Quiet /fill /jar /fill-the-jar /tip /tip-me /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana → /compute. Apex /gateway|/compute/gateway → /compute/api. Exact lowercase product stays null for 200 handlers.
   // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
   // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy → /how-to-buy.
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
