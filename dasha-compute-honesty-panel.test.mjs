@@ -35,6 +35,10 @@ assert.match(html, /api\(['"]\/compute\/api\/factory['"]\)/);
 
 assert.match(html, /No Mac online/);
 assert.match(html, /n\+' online'/);
+assert.match(html, /online · ~'\+tpsLabel\+' tok\/s/);
+assert.match(html, /measured_providers/);
+assert.match(html, /mp>=1&&Number\.isFinite\(tps\)&&tps>0/);
+assert.match(html, /never invent\/pad/);
 assert.match(html, /Hosted · live/);
 assert.match(html, /Hosted · —/);
 assert.match(html, /0 tok · 24h/);
