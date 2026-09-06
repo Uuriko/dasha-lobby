@@ -4,7 +4,9 @@
  * Honest zeros; no fake Macs; Prefer MLX stays on Provide only.
  * Quiet presence on #honesty-macs: N online · {model} · ~X tok/s
  * from /compute/api/network advertising only (providers_online + capacity/models).
- * Never pad enrolled OCM. Richer formatSettledLine() on #honesty-settled + #settled-24h.
+ * Never pad enrolled OCM. #honesty-enrolled is OCM hosts from /compute/ocm/healthz
+ * (N enrolled) — enrolled ≠ advertising / online. Fail closed: hide unless integer hosts≥1.
+ * Richer formatSettledLine() on #honesty-settled + #settled-24h.
  * Gate Start. unchanged — Room stays separate / no /room CTA.
  */
 import assert from 'node:assert/strict';
@@ -20,6 +22,8 @@ assert.equal(html, COMPUTE_PAGE_HTML, 'html ↔ page.mjs sync');
 assert.match(html, /id=["']honesty-panel["']/);
 assert.match(html, /id=["']honesty-hosted["'][^>]*>Hosted · live</);
 assert.match(html, /id=["']honesty-macs["'][^>]*>No Mac online</);
+assert.match(html, /id=["']honesty-enrolled-sep["'][^>]*\bhidden\b/);
+assert.match(html, /id=["']honesty-enrolled["'][^>]*\bhidden\b/);
 assert.match(html, /id=["']honesty-settled["'][^>]*>0 tok · 24h</);
 assert.match(html, /data-honesty=["']live["']/);
 assert.match(html, /aria-live=["']polite["']/);
@@ -27,7 +31,7 @@ assert.match(html, /id=["']honesty-panel["'][^>]*\bhidden\b/);
 
 const gate = html.slice(html.indexOf('id="step-gate"'), html.indexOf('id="step-how"'));
 assert.match(gate, /Start\./);
-assert.doesNotMatch(gate, /honesty-panel|honesty-macs|Hosted · live/);
+assert.doesNotMatch(gate, /honesty-panel|honesty-macs|honesty-enrolled|Hosted · live/);
 
 assert.match(html, /\/compute\/api\/network/);
 assert.match(html, /\/compute\/api\/factory/);
@@ -43,6 +47,12 @@ assert.match(html, /Quiet presence: N online · model id · ~tok\/s/);
 assert.match(html, /bits\.push\('~'\+tpsLabel\+' tok\/s'\)/);
 assert.match(html, /Advertising only \(providers_online\)/);
 assert.match(html, /never pad enrolled OCM/);
+assert.match(html, /ocmHosts\+' enrolled'/);
+assert.match(html, /OCM enrolled · not the same as online/);
+assert.match(html, /Number\.isInteger\(ocmHosts\)&&ocmHosts>=1/);
+assert.match(html, /Fail closed: integer hosts from \/compute\/ocm\/healthz/);
+assert.match(html, /function loadOcmHosts\(/);
+assert.match(html, /\/compute\/ocm\/healthz/);
 assert.match(html, /if\(!model&&networkModels&&networkModels\.size\)model=\[\.\.\.networkModels\]\[0\]\|\|''/);
 assert.match(html, /measured_providers/);
 assert.match(html, /mp>=1&&Number\.isFinite\(tps\)&&tps>0/);
@@ -62,8 +72,15 @@ assert.doesNotMatch(html, /\/room|Project Room/);
 assert.match(html, /if\(step===['"]gate['"]\)\{clearHonestyPoll\(\);paintHonestyPanel\(\)\}/);
 assert.match(html, /else\{paintHonestyPanel\(\);startHonestyPoll\(\)\}/);
 
+const refreshSrc = html.slice(html.indexOf('async function refreshHonesty'), html.indexOf('function formatTokPerSec'));
+assert.match(refreshSrc, /\/compute\/ocm\/healthz/);
+assert.match(refreshSrc, /ocmHosts=Number\.isInteger\(data\.hosts\)\?data\.hosts:null/);
+assert.match(refreshSrc, /catch\{ocmHosts=null\}/);
+assert.match(refreshSrc, /paintHonestyPanel\(\)/);
+
 const panelStart = html.indexOf('id="honesty-panel"');
 const panel = html.slice(panelStart, html.indexOf('</aside>', panelStart) + 8);
+assert.match(panel, /id=["']honesty-macs["'][\s\S]*?id=["']honesty-enrolled-sep["'][\s\S]*?id=["']honesty-enrolled["']/);
 assert.doesNotMatch(panel, /Prefer MLX|provide-prefer-mlx/);
 assert.match(html, /id=["']provide-prefer-mlx["'][^>]*>Prefer MLX when you can/);
 
@@ -155,6 +172,124 @@ if (puppeteer && existsSync(chrome)) {
     });
     assert.equal(noModel.text, '3 online', 'advertising count only — never pad enrolled OCM');
     assert.equal(noModel.title, '');
+
+    const enrolledClosed = await page.evaluate(() => {
+      ocmHosts = null;
+      providersOnline = 0;
+      networkCapacity = [];
+      networkModels = new Set();
+      showTf('ask');
+      paintHonestyPanel();
+      const el = document.getElementById('honesty-enrolled');
+      const sep = document.getElementById('honesty-enrolled-sep');
+      const macs = document.getElementById('honesty-macs');
+      return {
+        hidden: el.hidden === true,
+        text: el.textContent,
+        title: el.title || '',
+        sepHidden: sep.hidden === true,
+        macs: macs.textContent,
+      };
+    });
+    assert.equal(enrolledClosed.hidden, true, 'fail closed: hide enrolled when ocmHosts null');
+    assert.equal(enrolledClosed.text, '');
+    assert.equal(enrolledClosed.title, '');
+    assert.equal(enrolledClosed.sepHidden, true);
+    assert.equal(enrolledClosed.macs, 'No Mac online');
+
+    const enrolledZero = await page.evaluate(() => {
+      ocmHosts = 0;
+      paintHonestyPanel();
+      const el = document.getElementById('honesty-enrolled');
+      const sep = document.getElementById('honesty-enrolled-sep');
+      return { hidden: el.hidden === true, text: el.textContent, sepHidden: sep.hidden === true };
+    });
+    assert.equal(enrolledZero.hidden, true, 'fail closed: hide 0 enrolled');
+    assert.equal(enrolledZero.text, '');
+    assert.equal(enrolledZero.sepHidden, true);
+
+    const enrolledShow = await page.evaluate(() => {
+      ocmHosts = 2;
+      providersOnline = 0;
+      paintHonestyPanel();
+      const el = document.getElementById('honesty-enrolled');
+      const sep = document.getElementById('honesty-enrolled-sep');
+      const macs = document.getElementById('honesty-macs');
+      return {
+        hidden: el.hidden === true,
+        text: el.textContent,
+        title: el.title,
+        aria: el.getAttribute('aria-label'),
+        sepHidden: sep.hidden === true,
+        macs: macs.textContent,
+      };
+    });
+    assert.equal(enrolledShow.hidden, false);
+    assert.equal(enrolledShow.text, '2 enrolled');
+    assert.equal(enrolledShow.title, 'OCM enrolled · not the same as online');
+    assert.equal(enrolledShow.aria, enrolledShow.title);
+    assert.equal(enrolledShow.sepHidden, false);
+    assert.equal(enrolledShow.macs, 'No Mac online', 'enrolled never pads advertising online');
+
+    const noPad = await page.evaluate(() => {
+      ocmHosts = 5;
+      providersOnline = 3;
+      networkCapacity = [];
+      networkModels = new Set();
+      paintHonestyPanel();
+      const macs = document.getElementById('honesty-macs');
+      const el = document.getElementById('honesty-enrolled');
+      return { macs: macs.textContent, enrolled: el.textContent };
+    });
+    assert.equal(noPad.macs, '3 online', 'advertising only — never enrolled=online');
+    assert.equal(noPad.enrolled, '5 enrolled');
+
+    const refreshOcm = await page.evaluate(async () => {
+      const orig = window.fetch;
+      window.fetch = async (url) => {
+        if (String(url).includes('/compute/ocm/healthz')) {
+          return new Response(JSON.stringify({ hosts: 4 }), { status: 200, headers: { 'content-type': 'application/json' } });
+        }
+        throw new Error('offline');
+      };
+      tfStep = 'ask';
+      providersOnline = 1;
+      networkCapacity = [];
+      networkModels = new Set();
+      await refreshHonesty();
+      window.fetch = orig;
+      const el = document.getElementById('honesty-enrolled');
+      const macs = document.getElementById('honesty-macs');
+      return { enrolled: el.textContent, hidden: el.hidden === true, macs: macs.textContent, hosts: ocmHosts };
+    });
+    assert.equal(refreshOcm.hosts, 4);
+    assert.equal(refreshOcm.enrolled, '4 enrolled');
+    assert.equal(refreshOcm.hidden, false);
+    assert.equal(refreshOcm.macs, '1 online', 'refreshHonesty healthz never pads online');
+
+    const refreshFail = await page.evaluate(async () => {
+      const orig = window.fetch;
+      window.fetch = async () => { throw new Error('ocm'); };
+      tfStep = 'ask';
+      ocmHosts = 4;
+      await refreshHonesty();
+      window.fetch = orig;
+      const el = document.getElementById('honesty-enrolled');
+      const sep = document.getElementById('honesty-enrolled-sep');
+      return { hidden: el.hidden === true, text: el.textContent, sepHidden: sep.hidden === true, hosts: ocmHosts };
+    });
+    assert.equal(refreshFail.hosts, null);
+    assert.equal(refreshFail.hidden, true, 'fail closed on healthz error');
+    assert.equal(refreshFail.text, '');
+    assert.equal(refreshFail.sepHidden, true);
+
+    await page.evaluate(() => {
+      providersOnline = 3;
+      networkCapacity = [];
+      networkModels = new Set();
+      ocmHosts = null;
+      paintHonestyPanel();
+    });
 
     const settled = await page.evaluate(() => {
       const line = (s) => { settled24h = s; return formatSettledLine(); };
