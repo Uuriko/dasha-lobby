@@ -219,6 +219,9 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
       hosted_chat: 'POST /compute/api/chat SSE emits usage on the final stop chunk (Hosted UI)',
       jobs: 'GET /compute/api/jobs/:id returns stored usage (+ route) when present — never invent',
     },
+    billing: {
+      chat_completions: 'Prepaid credits ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection',
+    },
   }, 200, allowedOrigin || '*', credentials);
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
 }
@@ -670,7 +673,7 @@ export class ComputeNetwork {
         id, name, api_key: token,
         limit_cents: limitCents, limit_reset: limitReset, spend_cents: 0,
         limit_remaining_cents: limitCents == null ? null : limitCents,
-        note: 'Copy this key now. Dasha stores only its hash.',
+        note: 'Copy this key now. Dasha stores only its hash. Non-self chat spends prepaid credits; cap limits runaway.',
       }, 201, allowedOrigin, true);
     }
 
@@ -736,7 +739,7 @@ export class ComputeNetwork {
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method === 'POST') {
       const key = await this.apiKey(request);
       if (!key) return openaiError('invalid API key', 401, 'authentication_error');
-      // v1: flat HOSTED_ASK_PRICE_CENTS per successful API chat queue (community/mixture). Self-route free (own Mac). Hard key cap.
+      // v1: prepaid HOSTED_ASK_PRICE_CENTS per non-self API chat (community/mixture). Self-route free. Key limit_cents is runaway-only.
       const input = mergeRouteFromHeaders(await body(request, 12 * 1024), request);
       await this.prune(now);
       const providersPeek = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
@@ -744,10 +747,24 @@ export class ComputeNetwork {
       if (peek.route !== 'self') {
         const gate = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now, { checkOnly: true });
         if (!gate.ok) return openaiError(gate.error || 'key spend limit reached', gate.status || 402, 'invalid_request_error');
+        const balPeek = Math.max(0, Math.floor(Number((await this.state.storage.get(`compute:credit-balance:${key.owner}`))?.cents) || 0));
+        if (balPeek < HOSTED_ASK_PRICE_CENTS) {
+          return openaiError('top up credits', 402, 'invalid_request_error');
+        }
       }
       const queued = await this.queueJob(key.owner, input, now);
       if (queued.error) return openaiError(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error');
       if (queued.job.route !== 'self') {
+        const debit = await this.debitCredits(key.owner, {
+          cents: HOSTED_ASK_PRICE_CENTS,
+          reason: 'api-chat',
+          requestId: `api:${queued.job.id}`,
+          now,
+        });
+        if (!debit.ok) {
+          await this.state.storage.delete(`compute:job:${queued.job.id}`);
+          return openaiError(debit.error || 'top up credits', 402, 'invalid_request_error');
+        }
         const spend = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now);
         if (!spend.ok) {
           await this.state.storage.delete(`compute:job:${queued.job.id}`);

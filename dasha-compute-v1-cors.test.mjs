@@ -50,6 +50,7 @@ await storage.put('compute:provider:prov_cors', {
   lastSeenAt: Date.now(),
 });
 
+await storage.put('compute:credit-balance:x:cors', { owner: 'x:cors', cents: 1000, updatedAt: Date.now() });
 const auth = { Authorization: `Bearer ${token}` };
 const capped = { Authorization: `Bearer ${cappedToken}` };
 

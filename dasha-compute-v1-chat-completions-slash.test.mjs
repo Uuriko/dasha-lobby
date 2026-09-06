@@ -40,6 +40,8 @@ await storage.put(`compute:api-key:${workerId}`, {
   lastUsedAt: 0,
 });
 
+await storage.put('compute:credit-balance:x:chatslash', { owner: 'x:chatslash', cents: 1000, updatedAt: Date.now() });
+await storage.put('compute:credit-balance:x:chatslash-worker', { owner: 'x:chatslash-worker', cents: 1000, updatedAt: Date.now() });
 const chatBody = JSON.stringify({ model: 'qwen3-8b', messages: [{ role: 'user', content: 'hi' }] });
 
 async function pair(path, init = {}) {

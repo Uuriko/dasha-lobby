@@ -108,6 +108,7 @@ await storage.put('compute:provider:mac_spendcaps1', {
   tokenHash: 'x', createdAt: now, lastSeenAt: Date.now(),
 });
 
+await storage.put(`compute:credit-balance:x:spend-caps`, { owner: 'x:spend-caps', cents: 1000, updatedAt: Date.now() });
 const apiHeaders = { Authorization: `Bearer ${floor.api_key}`, 'Content-Type': 'application/json' };
 
 async function completeNextQueued(answer) {
@@ -161,10 +162,10 @@ assert.equal(floorRow2.limit_remaining_cents, 0);
 const html = readFileSync(new URL('./dasha-compute.html', import.meta.url), 'utf8');
 const page = readFileSync(new URL('./dasha-compute-page.mjs', import.meta.url), 'utf8');
 assert.match(html, /id=["']api-key-limit["']/, 'html #api-key-limit');
-assert.match(html, /Cap \$5 \/ month/, 'html default cap hint');
+assert.match(html, /Credits · Cap \$5 \/ month/, 'html default cap hint');
 assert.match(html, /limit_cents/, 'html posts limit_cents');
 assert.match(page, /api-key-limit/, 'page #api-key-limit');
-assert.match(page, /Cap \$5 \/ month/, 'page default cap hint');
+assert.match(page, /Credits · Cap \$5 \/ month/, 'page default cap hint');
 assert.match(page, /limit_cents/, 'page posts limit_cents');
 
 console.log('dasha-compute-api-key-spend-caps: PASS');

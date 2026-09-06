@@ -30,7 +30,7 @@ Primary: [AP2 announce](https://cloud.google.com/blog/products/ai-machine-learni
 | `$dasha` mint | `53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump` | same |
 | Provider settle | Operator `COMPUTE_PAYOUT_SECRET` → pending list + **manual mark-paid**; auto-send **off** unless `COMPUTE_PAYOUT_KEYPAIR` | `dasha-compute-provider-earn.mjs` · PARK-compute-provider-payout-settle.md |
 
-Humans: session login → buy pack → pay USDC/`$dasha` with Solana Pay reference → credits spend on Hosted Ask / API key chat (self-route free). Providers: earn ledger → payout request → operator settle.
+Humans: session login → buy pack → pay USDC/`$dasha` with Solana Pay reference → credits spend on Hosted Ask / API key chat (self-route free). Session UI Community Ask stays free. Key `limit_cents` is runaway-only (not a free allowance). Providers: earn ledger → payout request → operator settle. Never invent auto treasury send.
 
 ---
 
@@ -44,4 +44,4 @@ Humans: session login → buy pack → pay USDC/`$dasha` with Solana Pay referen
 
 ## OpenRouter apply note (usage)
 
-v1 `POST /compute/api/v1/chat/completions` returns `usage` on non-stream JSON and on the SSE final `finish_reason:"stop"` chunk (`dasha-compute-network.mjs` `streamResponse`; non-stream complete). Page Hosted `POST /compute/api/chat` SSE also emits OpenAI-style `usage` on the final stop chunk (parity with v1; see `dasha-compute-hosted-chat-usage-sse.test.mjs`). Gateway docs: `GET /compute/api/v1` → `usage.chat_completions` + `usage.hosted_chat`; status `GET /compute/api` notes the same.
+v1 `POST /compute/api/v1/chat/completions` returns `usage` on non-stream JSON and on the SSE final `finish_reason:"stop"` chunk (`dasha-compute-network.mjs` `streamResponse`; non-stream complete). Non-self community/mixture chat requires and debits prepaid credits ($0.05/job, reason `api-chat`); self-route (own Mac) is free. Key `limit_cents` is runaway protection, not a free allowance. Page Hosted `POST /compute/api/chat` SSE also emits OpenAI-style `usage` on the final stop chunk (parity with v1; see `dasha-compute-hosted-chat-usage-sse.test.mjs`). Gateway docs: `GET /compute/api/v1` → `usage.chat_completions` + `usage.hosted_chat` + `usage.jobs`; `billing.chat_completions` = prepaid $0.05/job for community/mixture, self-route free, key cap runaway-only. Status `GET /compute/api` notes usage.

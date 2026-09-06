@@ -61,15 +61,26 @@ let storedExpiryJob = { ...staleExpiryJob, stream: true, status: 'complete', chu
 let staleJobDeleted = false;
 const renewedKeyRows = new Map();
 const renewedNetwork = new ComputeNetwork({ storage: {
-  async get(key) { if (String(key).startsWith('compute:api-key:')) return renewedKeyRows.get(key); return structuredClone(storedExpiryJob); },
-  async put(key, value) { if (String(key).startsWith('compute:api-key:')) { renewedKeyRows.set(key, value); return; } },
+  async get(key) {
+    if (String(key).startsWith('compute:api-key:')) return renewedKeyRows.get(key);
+    if (String(key).startsWith('compute:credit-')) return renewedKeyRows.get(key);
+    return structuredClone(storedExpiryJob);
+  },
+  async put(key, value) {
+    if (String(key).startsWith('compute:api-key:') || String(key).startsWith('compute:credit-')) {
+      renewedKeyRows.set(key, value);
+      return;
+    }
+  },
   async delete() { staleJobDeleted = true; },
+  async list({ prefix = '' } = {}) { return new Map([...renewedKeyRows].filter(([k]) => k.startsWith(prefix))); },
 } }, {});
 const renewedStreamText = await renewedNetwork.streamResponse({ ...staleExpiryJob, stream: true }).text();
 assert.match(renewedStreamText, /renewed stream result/);
 assert.match(renewedStreamText, /"finish_reason":"stop"/);
 assert.doesNotMatch(renewedStreamText, /request timed out/);
 storedExpiryJob = { ...staleExpiryJob, stream: false, status: 'complete', answer: 'renewed complete result', expiresAt: Date.now() + 60_000 };
+renewedKeyRows.set('compute:credit-balance:x:test', { owner: 'x:test', cents: 1000, updatedAt: Date.now() });
 renewedNetwork.apiKey = async () => ({ id: 'key_renewed', owner: 'x:test', limitCents: null, limitReset: 'none', spendCents: 0, spendWindowStart: Date.now() });
 renewedNetwork.queueJob = async () => ({ job: staleExpiryJob });
 const renewedCompletion = await renewedNetwork.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/chat/completions', { method: 'POST', body: '{}' }));
@@ -219,6 +230,7 @@ assert.equal(result.status, 202);
 assert.equal(rows.get(`compute:job:${submitted.id}`).messages, null, 'prompt must be removed after completion');
 const completed = await (await lobby.fetch(new Request(`https://lobby.getdasha.com/compute/api/jobs/${submitted.id}`, { headers: userHeaders }))).json();
 assert.equal(completed.answer, 'Community inference works.');
+await storage.put('compute:credit-balance:x:123', { owner: 'x:123', cents: 1000, updatedAt: Date.now() });
 const keyCreated = await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/keys', { method: 'POST', headers: userHeaders, body: JSON.stringify({ name: 'SDK test' }) }));
 assert.equal(keyCreated.status, 201);
 const developerKey = await keyCreated.json();
