@@ -497,7 +497,7 @@ const SUB24=new Set(['qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b']);
 const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\n\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\n\n## Goal\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\n\n## Facts (do not invent others)\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\n- Coordinator: https://lobby.getdasha.com/compute/api\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\n- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)\n- Token goes in `.dasha-provider-key` mode 0600 \u2014 never put the provider key on argv or shell history\n- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending operator settle · not auto · $dasha payout +10% · never invent balances\n\n## Steps for the AI to run with the human\n1. Open https://www.getdasha.com/compute \u2192 Provide (quiet link) \u2192 name the Mac \u2192 Sign in (X) if needed \u2192 Register.\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once \u2014 refresh loses it. Prefer that block over this template.\n3. On the Mac, run the Setup command \u2014 or this template with the pasted values:\n\n```bash\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\n# install Ollama from https://ollama.com/download if missing\nollama pull qwen3:8b\numask 077\ncat > .dasha-provider-key <<'TOKEN'\nPASTE_ONE_TIME_TOKEN_HERE\nTOKEN\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b \\\n./install.sh\n```\n\n4. Verify after install (`install.sh` already ran doctor and moved the key):\n\n```bash\ndasha-compute doctor\ndasha-compute status\n```\n\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\n\n## Prefer MLX (Apple Silicon, optional)\n- Prefer MLX when you can \u2014 often faster on Apple Silicon; Ollama still works.\n- Recommend Ollama \u22650.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\n- Keep models on internal SSD \u2014 slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\n- Official Ollama path (live docs): Ollama \u22650.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\n- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks \u2014 never invent.\n- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.\n\n## Keep-alive (sub-24GB)\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service \u2014 a shell export alone is not enough for the macOS app).\n- Do not pin 27B on a 16\u201324GB Air for interactive chat; use 8B/12B.\n- `dasha-compute doctor` soft-hints when a mapped model looks \u226527B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.\n\n## Success\n- dasha-compute doctor exits 0\n- Heartbeats succeed\n- A Community Run from another session can complete on this Mac\n\n## If stuck\n- Re-register for a fresh token\n- Check dasha-compute logs\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\n";
 const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\n\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute — Hosted demo or community Macs — without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login). Credits → balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b · 3 free / 10 min · then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- API billing: non-self `v1/chat/completions` spends prepaid credits ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits.\n- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.\n- Ask top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.\n- When Macs are online, Ask shows a quiet Community · N door (measured tok/s in the title) — Hosted stays the default; Change engine still opens How.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. — Ask → Hosted Ask. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Ask · Top up → Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Community or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\n4. Sign in if prompted\n5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available\n\n## Optional API\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n- On stream, read `usage` from the final stop chunk (not earlier deltas)\n\n## If stuck\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n";
 const API='https://lobby.getdasha.com';
-let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacModels=new Set(),ownMacTps=0,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask';
+let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacModels=new Set(),ownMacTps=0,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask';
 
 function pendingMessages(){
   const content=$('prompt').value.trim()||'…',kept=[];
@@ -1276,7 +1276,7 @@ async function readSse(response){
   }
   const reader=response.body.getReader(),decoder=new TextDecoder();
   let buf='',out='',saw=false;const node=$('answer');
-  lastSseUsage=null;
+  lastSseUsage=null;lastSseSettle=null;
   while(true){
     const {done,value}=await reader.read();
     if(done||jobCancelled)break;
@@ -1289,7 +1289,7 @@ async function readSse(response){
         if(raw==='[DONE]')return out;
         let payload;try{payload=JSON.parse(raw)}catch{continue}
         if(payload?.error)throw Error(payload.error.message||payload.error||'stream error');
-        if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;
+        if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;if(payload?.settle&&typeof payload.settle==='object')lastSseSettle=payload.settle;
         const delta=typeof payload?.choices?.[0]?.delta?.content==='string'?payload.choices[0].delta.content:typeof payload?.choices?.[0]?.delta==='string'?payload.choices[0].delta:typeof payload?.response==='string'?payload.response:typeof payload?.delta==='string'?payload.delta:'';
         if(delta){if(!saw){saw=true;onFirstToken()}out+=delta;node.textContent=out}
       }
@@ -1348,7 +1348,14 @@ $('run-demo').addEventListener('click',async()=>{
           const tot=Number(u?.total_tokens);
           const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
           const eng=mixture?'mixture':selfRoute?'self':'community';
-          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||''),model:String($('model').value||'')};
+          // settle only from final SSE settle object or follow-up job JSON — never invent cents.
+          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||''),model:String($('model').value||''),...settleFieldsFrom(lastSseSettle)};
+          if(activeJob&&!(lastPaidReceipt.settle_cents>0)){
+            try{
+              const j=await api('/compute/api/jobs/'+activeJob);
+              if(j?.settle)lastPaidReceipt={...lastPaidReceipt,...settleFieldsFrom(j.settle)};
+            }catch{}
+          }
         }
       }
       else{
@@ -1382,7 +1389,7 @@ $('run-demo').addEventListener('click',async()=>{
           const tot=Number(u?.total_tokens);
           const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
           const eng=mixture?'mixture':selfRoute?'self':'community';
-          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String($('model').value||'')};
+          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String($('model').value||''),...settleFieldsFrom(data?.settle)};
         }
       }
     }else{
@@ -1402,7 +1409,7 @@ $('run-demo').addEventListener('click',async()=>{
       if(hostedPaid){
         const tot=Number(hostedUsage?.total_tokens);
         const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(hostedUsage?.prompt_tokens)||0)+(Number(hostedUsage?.completion_tokens)||0))));
-        lastPaidReceipt={tokens:tok,cents:5,engine:'hosted'};
+        lastPaidReceipt={tokens:tok,cents:5,engine:'hosted',settle_cents:5,settle_state:'settled'};
       }else{lastPaidReceipt=null}
     }
     conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
@@ -1792,6 +1799,12 @@ function paintSettled24h(){
   el.textContent=formatSettledLine();
   paintHonestyPanel();
 }
+function settleFieldsFrom(src){
+  const cents=Math.max(0,Math.floor(Number(src?.cents ?? src?.settle_cents)||0));
+  const state=String(src?.state ?? src?.settle_state ?? '').trim();
+  if(!(cents>0)||!state)return {};
+  return {settle_cents:cents,settle_state:state};
+}
 function paintAnswerReceipt(){
   const el=$('answer-receipt');
   if(!el)return;
@@ -1816,12 +1829,19 @@ function paintAnswerReceipt(){
   const job=String(r.job_id||'').trim();
   const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
   // Community / Mixture / self — job receipt; never show provider-earn cents as user $.
+  // Quiet settle face only when job/usage JSON provided settle_cents + settle_state (fail closed).
   if(eng==='community'||eng==='mixture'||eng==='self'){
     const label=eng==='mixture'?'Mixture':eng==='self'?'Your Mac':'Community';
     const parts=[label];
     if(model)parts.push(model);
     if(tok>0)parts.push(formatSettledTok(tok)+' tok');
     if(shortJob)parts.push(shortJob);
+    const settleCents=Math.max(0,Math.floor(Number(r.settle_cents)||0));
+    const settleState=String(r.settle_state||'').trim();
+    if(settleCents>0&&settleState){
+      parts.push(settleCents+'¢');
+      parts.push(settleState==='settled'||settleState==='paid'?'settled':'pending operator settle');
+    }
     if(parts.length<2){hide();return}
     show(parts.join(' · '));
     return;
