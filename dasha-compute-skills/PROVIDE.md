@@ -13,9 +13,10 @@ Register this Mac on the live Dasha community network, install Ollama + the Dash
 - Token goes in `.dasha-provider-key` mode 0600 — never put the provider key on argv or shell history
 - Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh
 - Do not send secrets in prompts. Operators can read jobs assigned to this Mac.
+- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending settle (operator/treasury) · $dasha payout +10% · never invent balances
 
 ## Steps for the AI to run with the human
-1. Open https://www.getdasha.com/compute → Provide (quiet link) → name the Mac → Log in (X) if needed → Register.
+1. Open https://www.getdasha.com/compute → Provide (quiet link) → name the Mac → Sign in (X) if needed → Register.
 2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once — refresh loses it. Prefer that block over this template.
 3. On the Mac, run the Setup command — or this template with the pasted values:
 
@@ -52,6 +53,7 @@ dasha-compute status
 - Official Ollama path (live docs): Ollama ≥0.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.
 - Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.
 - `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.
+- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks — never invent.
 - Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.
 
 ## Keep-alive (sub-24GB)

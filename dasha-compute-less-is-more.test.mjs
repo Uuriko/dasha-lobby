@@ -80,7 +80,9 @@ function assertLess(html, label) {
   assert.doesNotMatch(html, /mixture · no Mac/, `${label} no mixture · no Mac top`);
   assert.doesNotMatch(html, /hosted · gpt-oss-20b/, `${label} no hosted · gpt-oss top`);
   assert.doesNotMatch(html, /hosted idle/, `${label} no hosted idle`);
-  assert.match(html, /top\.textContent=modelName\?`\$\{n\} · \$\{modelName\}`:`\$\{n\}`/, `${label} N · model`);
+  assert.match(html, /top\.textContent=`\$\{n\} · \$\{modelName\} · \$\{tpsLabel\} tok\/s`/, `${label} N · model · measured tok/s`);
+  assert.match(html, /else if\(modelName\)top\.textContent=`\$\{n\} · \$\{modelName\}`/, `${label} N · model`);
+  assert.match(html, /else top\.textContent=`\$\{n\}`/, `${label} N only`);
   assert.match(html, /top\.textContent=''/, `${label} empty top when idle hosted`);
 
   // Ask hint hidden
@@ -94,7 +96,7 @@ function assertLess(html, label) {
   assert.match(html, /id=["']night-offer-copy["'][^>]*hidden/, `${label} night-offer-copy hidden`);
   assert.match(html, /id=["']night-use-hosted["'][^>]*>Hosted</, `${label} night Hosted`);
   assert.match(html, /id=["']queue-night["'][^>]*>Queue</, `${label} night Queue`);
-  assert.match(html, /id=["']queue-night-login["'][^>]*>Log in</, `${label} night Log in`);
+  assert.match(html, /id=["']queue-night-login["'][^>]*>Sign in</, `${label} night Sign in`);
   assert.doesNotMatch(html, /Use Hosted now/, `${label} no Use Hosted now`);
   assert.doesNotMatch(html, /Queue for when a Mac is up/, `${label} no Queue essay`);
   assert.doesNotMatch(html, /Log in to queue/, `${label} no Log in to queue`);
@@ -128,7 +130,7 @@ function assertLess(html, label) {
   assert.match(html, /providers_online/, `${label} providers_online`);
 
   // Soft login
-  assert.match(html, /'Log in\.'/, `${label} soft Log in.`);
+  assert.match(html, /'Sign in\.'/, `${label} soft Sign in.`);
 
   // Mixture honesty — no Raptor; capability on model chip only
   assert.doesNotMatch(html, /Raptor/, `${label} no Raptor`);

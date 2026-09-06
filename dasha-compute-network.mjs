@@ -38,6 +38,12 @@ import {
   usdcRawFromCents,
 } from './dasha-compute-provider-earn.mjs';
 import { sendTipTransfer } from './dasha-faucet-solana.mjs';
+import {
+  listReceiptsForOwner,
+  publicSettled24h,
+  recordSettledInference,
+  sumSettled24h,
+} from './dasha-compute-settled.mjs';
 
 export { HOSTED_ASK_PRICE_CENTS };
 
@@ -214,10 +220,6 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
     },
   }, 200, allowedOrigin || '*', credentials);
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
-}
-
-function openaiError(message, status = 400, type = 'invalid_request_error', origin = null) {
-  return json({ error: { message, type, code: null } }, status, origin, Boolean(origin && origin !== '*'));
 }
 
 async function body(request, limit = 4096) {
@@ -467,9 +469,12 @@ export class ComputeNetwork {
       jobs: counters.jobs,
       models: counters.models,
       providers_online_latest: providers.length,
-      note: 'counters only; prompts not included',
+      settled_24h: publicSettled24h(await sumSettled24h(this.state.storage, now)),
+      note: 'counters only; prompts not included; settled_24h = paid-inference only',
     };
   }
+
+  async recordPaidInferenceSettle(input) { return recordSettledInference(this.state.storage, input); }
 
   async apiKey(request) {
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
@@ -559,6 +564,7 @@ export class ComputeNetwork {
 
   async fetch(request, allowedOrigin) {
     const path = new URL(request.url).pathname, now = Date.now(), credentials = Boolean(allowedOrigin);
+    const openaiError = (message, status = 400, type = 'invalid_request_error') => json({ error: { message, type, code: null } }, status, allowedOrigin || '*', credentials);
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const res = json({ live: Boolean(this.env.AI), model: 'gpt-oss-20b', login_required: true, limit: '3 free / 10 min · then credits', usage: 'v1 chat/completions + Hosted /compute/api/chat SSE: OpenAI-style usage on final stop chunk (see /compute/api/v1)' }, 200, allowedOrigin || '*', credentials);
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
@@ -678,7 +684,7 @@ export class ComputeNetwork {
     }
 
     if ((path === '/compute/api/v1/models' || path === '/compute/api/v1/models/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*'));
+      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
@@ -687,48 +693,48 @@ export class ComputeNetwork {
 
     const modelRetrieve = path.match(/^\/compute\/api\/v1\/models\/([A-Za-z0-9._-]+)\/?$/);
     if (modelRetrieve && (request.method === 'GET' || request.method === 'HEAD')) {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*'));
+      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
       await this.prune(now);
       const id = modelRetrieve[1];
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
-      if (!models.includes(id)) return maybeHead(request, openaiError(`The model '${id}' does not exist`, 404, 'invalid_request_error', allowedOrigin || '*'));
+      if (!models.includes(id)) return maybeHead(request, openaiError(`The model '${id}' does not exist`, 404, 'invalid_request_error'));
       return maybeHead(request, json({ id, object: 'model', created: 0, owned_by: 'dasha-community' }, 200, allowedOrigin || '*', credentials));
     }
 
     if ((path === '/compute/api/v1/embeddings' || path === '/compute/api/v1/embeddings/') && request.method === 'POST') {
-      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*');
-      return openaiError('embeddings are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error', allowedOrigin || '*');
+      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error');
+      return openaiError('embeddings are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
     if ((path === '/compute/api/v1/embeddings' || path === '/compute/api/v1/embeddings/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*'));
-      return maybeHead(request, openaiError('Only POST is supported. Use POST /v1/embeddings', 405, 'invalid_request_error', allowedOrigin || '*'));
+      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
+      return maybeHead(request, openaiError('Only POST is supported. Use POST /v1/embeddings', 405, 'invalid_request_error'));
     }
 
     if ((path === '/compute/api/v1/completions' || path === '/compute/api/v1/completions/') && request.method === 'POST') {
-      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*');
-      return openaiError('legacy completions are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error', allowedOrigin || '*');
+      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error');
+      return openaiError('legacy completions are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
     if ((path === '/compute/api/v1/completions' || path === '/compute/api/v1/completions/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*'));
-      return maybeHead(request, openaiError('Only POST is supported. Use POST /v1/completions', 405, 'invalid_request_error', allowedOrigin || '*'));
+      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
+      return maybeHead(request, openaiError('Only POST is supported. Use POST /v1/completions', 405, 'invalid_request_error'));
     }
 
     if ((path === '/compute/api/v1/responses' || path === '/compute/api/v1/responses/') && request.method === 'POST') {
-      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*');
-      return openaiError('responses are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error', allowedOrigin || '*');
+      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error');
+      return openaiError('responses are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
     if ((path === '/compute/api/v1/responses' || path === '/compute/api/v1/responses/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*'));
-      return maybeHead(request, openaiError('Only POST is supported. Use POST /v1/responses', 405, 'invalid_request_error', allowedOrigin || '*'));
+      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
+      return maybeHead(request, openaiError('Only POST is supported. Use POST /v1/responses', 405, 'invalid_request_error'));
     }
 
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method === 'POST') {
       const key = await this.apiKey(request);
-      if (!key) return openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*');
+      if (!key) return openaiError('invalid API key', 401, 'authentication_error');
       // v1: flat HOSTED_ASK_PRICE_CENTS per successful API chat queue (community/mixture). Self-route free (own Mac). Hard key cap.
       const input = mergeRouteFromHeaders(await body(request, 12 * 1024), request);
       await this.prune(now);
@@ -736,38 +742,48 @@ export class ComputeNetwork {
       const peek = resolveJobRoute(key.owner, input, providersPeek, now);
       if (peek.route !== 'self') {
         const gate = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now, { checkOnly: true });
-        if (!gate.ok) return openaiError(gate.error || 'key spend limit reached', gate.status || 402, 'invalid_request_error', allowedOrigin || '*');
+        if (!gate.ok) return openaiError(gate.error || 'key spend limit reached', gate.status || 402, 'invalid_request_error');
       }
       const queued = await this.queueJob(key.owner, input, now);
-      if (queued.error) return openaiError(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error', allowedOrigin || '*');
+      if (queued.error) return openaiError(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error');
       if (queued.job.route !== 'self') {
         const spend = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now);
         if (!spend.ok) {
           await this.state.storage.delete(`compute:job:${queued.job.id}`);
-          return openaiError(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error', allowedOrigin || '*');
+          return openaiError(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error');
         }
       }
       if (input.stream) return this.streamResponse(queued.job, allowedOrigin);
       while (!request.signal.aborted) {
         const job = await this.state.storage.get(`compute:job:${queued.job.id}`);
-        if (!job) return openaiError('job expired', 410, 'server_error', allowedOrigin || '*');
+        if (!job) return openaiError('job expired', 410, 'server_error');
         if (Number(job.expiresAt) <= Date.now()) break;
         if (job.status === 'complete') return json({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, message: { role: 'assistant', content: job.answer }, finish_reason: 'stop' }], usage: job.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }, 200, allowedOrigin || '*', credentials);
-        if (job.status === 'failed') return openaiError(job.error || 'provider failed', 502, 'server_error', allowedOrigin || '*');
+        if (job.status === 'failed') return openaiError(job.error || 'provider failed', 502, 'server_error');
         await new Promise(resolve => setTimeout(resolve, 250));
       }
       await this.state.storage.delete(`compute:job:${queued.job.id}`);
-      return openaiError(request.signal.aborted ? 'request cancelled' : 'request timed out', request.signal.aborted ? 499 : 504, 'server_error', allowedOrigin || '*');
+      return openaiError(request.signal.aborted ? 'request cancelled' : 'request timed out', request.signal.aborted ? 499 : 504, 'server_error');
     }
 
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error', allowedOrigin || '*');
-      return openaiError('Only POST is supported. Use POST /v1/chat/completions', 405, 'invalid_request_error', allowedOrigin || '*');
+      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error');
+      return openaiError('Only POST is supported. Use POST /v1/chat/completions', 405, 'invalid_request_error');
     }
 
 
     if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && (request.method === 'GET' || request.method === 'HEAD')) {
       return maybeHead(request, json(await this.factoryPayload(now), 200, allowedOrigin || '*', credentials));
+    }
+    if ((path === '/compute/api/receipts' || path === '/compute/api/receipts/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      const zero = publicSettled24h(null);
+      if (!owner) return maybeHead(request, json({ schema: 'settled.receipts.v0', receipts: [], settled_24h: zero }, 401, allowedOrigin, credentials));
+      return maybeHead(request, json({
+        schema: 'settled.receipts.v0',
+        receipts: await listReceiptsForOwner(this.state.storage, owner),
+        settled_24h: publicSettled24h(await sumSettled24h(this.state.storage, now)),
+      }, 200, allowedOrigin, credentials));
     }
     if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && request.method === 'POST') {
       // Internal hosted bump from computeApi via DO stub. Low-sensitivity counters; rate-limited.
@@ -786,7 +802,8 @@ export class ComputeNetwork {
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
       const capacity = models.map(model => {
         const serving = providers.filter(provider => provider.models?.includes(model)), measured = serving.map(provider => provider.hardware?.benchmarks?.find(row => row.model === model)?.tokens_per_second).filter(Number.isFinite);
-        return { model, providers: serving.length, measured_providers: measured.length, tokens_per_second: Math.round(measured.reduce((sum, value) => sum + value, 0) * 100) / 100 };
+        const tps = measured.length ? measured.reduce((s, v) => s + v, 0) / measured.length : 0;
+        return { model, providers: serving.length, measured_providers: measured.length, tokens_per_second: Math.round(tps * 100) / 100 };
       });
       return maybeHead(request, json({ providers_online: providers.length, models_available: models, capacity, jobs_queued: jobs.filter(job => job.status === 'queued').length }, 200, allowedOrigin || '*', credentials));
     }
@@ -882,7 +899,18 @@ export class ComputeNetwork {
       await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, messages: null, completedAt: now, expiresAt: now + 10 * 60_000 });
       await this.finishNight(job, error ? 'failed' : 'complete', error ? null : answer, error || null, now);
       await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
-      if (!error && job.route !== 'self') await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+      if (!error && job.route !== 'self') {
+        const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+        if (earned?.ok) await this.recordPaidInferenceSettle({
+          owner: job.owner,
+          engine: job.route === 'mixture' ? 'mixture' : 'community',
+          usage,
+          cents: earned.usdc_cents,
+          jobId: job.id,
+          replayKey: `job:${job.id}`,
+          now,
+        });
+      }
       return json({ accepted: true }, 202);
     }
 
@@ -901,7 +929,18 @@ export class ComputeNetwork {
       if (error || input.done) {
         await this.finishNight(job, error ? 'failed' : 'complete', error ? null : chunks.join(''), error || null, now);
         await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
-        if (!error && input.done && job.route !== 'self') await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+        if (!error && input.done && job.route !== 'self') {
+          const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+          if (earned?.ok) await this.recordPaidInferenceSettle({
+            owner: job.owner,
+            engine: job.route === 'mixture' ? 'mixture' : 'community',
+            usage,
+            cents: earned.usdc_cents,
+            jobId: job.id,
+            replayKey: `job:${job.id}`,
+            now,
+          });
+        }
       }
       return json({ accepted: true }, 202);
     }
@@ -1340,6 +1379,18 @@ export class ComputeNetwork {
           price_cents: HOSTED_ASK_PRICE_CENTS,
         }, 402, allowedOrigin, true);
       }
+      if (result.charged_cents > 0) {
+        const spendNow = Date.now();
+        await this.recordPaidInferenceSettle({
+          owner,
+          engine: 'hosted',
+          tokens: 0,
+          cents: result.charged_cents,
+          requestId: requestId || null,
+          replayKey: requestId ? `hosted:${requestId}` : `hosted:${owner}:${spendNow}`,
+          now: spendNow,
+        });
+      }
       return json({
         ok: true,
         charged_cents: result.charged_cents,
@@ -1712,7 +1763,8 @@ export async function computeApi(request, env, allowedOrigin) {
       jobs: { hosted: 0, community: 0, mixture: 0, failed: 0 },
       models: {},
       providers_online_latest: 0,
-      note: 'counters only; prompts not included',
+      settled_24h: publicSettled24h(null),
+      note: 'counters only; prompts not included; settled_24h = paid-inference only',
     }, 200, allowedOrigin || '*', credentials));
   }
   if ((path === '/compute/api/v1' || path === '/compute/api/v1/') && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -1728,7 +1780,7 @@ export async function computeApi(request, env, allowedOrigin) {
     if (stub) return stub.fetch(request);
     return maybeHead(request, json({ error: 'login required', ...creditsCatalog(null) }, 401, allowedOrigin, Boolean(allowedOrigin)));
   }
-  if (path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/receipts' || path === '/compute/api/receipts/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     return stub ? stub.fetch(request) : json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
   }

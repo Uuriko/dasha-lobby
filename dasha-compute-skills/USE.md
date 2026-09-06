@@ -14,12 +14,13 @@ Get a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Commu
 - Marketplace: https://www.getdasha.com/compute/ocm
 - Do not paste secrets into prompts. Community Mac operators can read assigned prompts.
 - Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.
+- Ask top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.
 
 ## Steps for the AI to guide
 1. Open https://www.getdasha.com/compute
 2. Cold boot shows Start. — Ask → Hosted Ask. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Ask · Top up → Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Community or Mixture; quiet Provide / Marketplace / Host links
 3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)
-4. Log in if prompted
+4. Sign in if prompted
 5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back
 6. If no Mac is online on Community/Mixture: Hosted or Queue
 
