@@ -3359,6 +3359,11 @@ const POTTER_COMPUTE_API_NETWORK_308_PATHS = new Set([
   '/compute/network', '/compute/network/',
   '/api/network', '/api/network/',
 ]);
+/** /compute/factory /api/factory → /compute/api/factory. Bare /factory stays out. Exact /compute/api/factory stays handler. */
+const POTTER_COMPUTE_API_FACTORY_308_PATHS = new Set([
+  '/compute/factory', '/compute/factory/',
+  '/api/factory', '/api/factory/',
+]);
 /** Title-case leftover faucet GETs with lowercase siblings already 200. Not /faucet/jar (intentional gap). */
 const POTTER_FAUCET_LEAF_CASEFOLD = new Set([
   '/faucet/tape', '/faucet/tape/',
@@ -3411,6 +3416,16 @@ export function potterHome308Dest(path) {
   if (p === '/play' || p === '/play/' || p === '/game' || p === '/game/') {
     return 'https://www.getdasha.com/lobby';
   }
+  // Nested /lobby/play /lobby/game /lobby/chess (+slash / Title-case) → /lobby.
+  // /lobby/forum /lobby/chat stay OUT of potterHome308Dest (use isForumChatAliasPath + forumToLobbyRedirect).
+  // Do not fold /lobby /lobby/ /lobby/feed.xml /lobby/tape /lobby/ws /lobby/card/*.
+  if (
+    p === '/lobby/play' || p === '/lobby/play/' ||
+    p === '/lobby/game' || p === '/lobby/game/' ||
+    p === '/lobby/chess' || p === '/lobby/chess/'
+  ) {
+    return 'https://www.getdasha.com/lobby';
+  }
   if (POTTER_HOWTO_308_PATHS.has(p)) return 'https://www.getdasha.com/how-to-buy';
   if (POTTER_HOME_308_PATHS.has(p)) return 'https://www.getdasha.com/';
   if (POTTER_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login#grok';
@@ -3444,6 +3459,9 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_KEYS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/keys';
   if (POTTER_COMPUTE_API_STATUS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/status';
   if (POTTER_COMPUTE_API_NETWORK_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/network';
+  // Leftover /compute/factory /api/factory (+slash / Title-case) → /compute/api/factory.
+  // Bare /factory stays out. Never fold exact /compute/api/factory.
+  if (POTTER_COMPUTE_API_FACTORY_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/factory';
   // Live /compute/health + /compute/healthz (+slash / Title-case) → /compute/api/healthz.
   // Lobby same-host rewrite already covers /compute/api/* dests in potterHome308Response.
   if (POTTER_COMPUTE_HEALTHZ_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/healthz';
@@ -3946,10 +3964,13 @@ export function asStandaloneLobbyPage(html) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${LOBBY_TITLE}</title><meta name="description" content="${LOBBY_DESC}"><link rel="canonical" href="https://www.getdasha.com/lobby"><link rel="alternate" type="application/rss+xml" title="$dasha Lobby" href="https://www.getdasha.com/lobby/feed.xml"><meta name="theme-color" content="#070608"><meta property="og:type" content="website"><meta property="og:url" content="https://www.getdasha.com/lobby"><meta property="og:title" content="${LOBBY_TITLE}"><meta property="og:description" content="${LOBBY_DESC}"><meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${LOBBY_TITLE}"><meta name="twitter:description" content="${LOBBY_DESC}"><meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png"></head><body>${src}</body></html>`;
 }
 
-/** Title-case /Forum /Chat (and slash) must 308 via forumToLobbyRedirect — not potterHome308Dest (?t=). */
+/** Title-case /Forum /Chat /lobby/forum /lobby/chat (and slash) must 308 via forumToLobbyRedirect — not potterHome308Dest (?t=). */
 export function isForumChatAliasPath(pathname) {
   const p = String(pathname || '').toLowerCase();
-  return p === '/forum' || p === '/forum/' || p === '/chat' || p === '/chat/';
+  return (
+    p === '/forum' || p === '/forum/' || p === '/chat' || p === '/chat/' ||
+    p === '/lobby/forum' || p === '/lobby/forum/' || p === '/lobby/chat' || p === '/lobby/chat/'
+  );
 }
 
 /** /forum is the same room as /lobby. Keep ?t= so copied thread links still open. */
