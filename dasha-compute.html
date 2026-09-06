@@ -473,12 +473,12 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
   <span class="honesty-sep" aria-hidden="true">·</span>
   <span id="honesty-macs">No Mac online</span>
   <span class="honesty-sep" aria-hidden="true">·</span>
-  <span id="honesty-settled" title="Settled paid-inference tokens · last 24h">0 tok · 24h</span>
+  <span id="honesty-settled" title="Settled paid-inference · last 24h">0 tok · 24h</span>
 </aside>
 
 <footer>
   <span>$dasha compute · v0.3 open alpha</span>
-  <span id="settled-24h" title="Settled paid-inference tokens · last 24h">0 tok · 24h</span>
+  <span id="settled-24h" title="Settled paid-inference · last 24h">0 tok · 24h</span>
   <a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">53ux…pump</a>
   <a href="/privacy">Privacy</a>
   <span>local-first</span>
@@ -1709,22 +1709,33 @@ function paintHonestyPanel(){
       const tps=Number(row?.tokens_per_second);
       const mp=Number(row?.measured_providers||0);
       model=row?.model?String(row.model):'';
+      // Advertising only (providers_online) — never pad enrolled OCM hosts.
+      if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
       // Live measured only — stamp capacity[].tokens_per_second; never invent/pad.
       if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
     }
     if(n===0)macs.textContent='No Mac online';
-    else if(tpsLabel)macs.textContent=n+' online · ~'+tpsLabel+' tok/s';
-    else macs.textContent=n+' online';
+    else{
+      // Quiet presence: N online · model id · ~tok/s — only fields live network has.
+      const bits=[n+' online'];
+      if(model)bits.push(model);
+      if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
+      macs.textContent=bits.join(' · ');
+    }
     let title='';
-    if(n>=1&&tpsLabel)title=model?(model+' · '+tpsLabel+' tok/s measured'):(tpsLabel+' tok/s measured');
+    if(n>=1&&(model||tpsLabel)){
+      const tbits=[];
+      if(model)tbits.push(model);
+      if(tpsLabel)tbits.push(tpsLabel+' tok/s measured');
+      title=tbits.join(' · ');
+    }
     if(title){macs.title=title;macs.setAttribute('aria-label',title)}
     else{macs.removeAttribute('title');macs.removeAttribute('aria-label')}
   }
   const settled=$('honesty-settled');
   if(settled){
-    const tok=Math.max(0,Math.floor(Number(settled24h?.tokens)||0));
-    const jobs=Math.max(0,Math.floor(Number(settled24h?.jobs)||0));
-    settled.textContent=tok===0&&jobs===0?'0 tok · 24h':(formatSettledTok(tok)+' tok · 24h');
+    // Visible acts: factory settled_24h tokens/jobs/cents only — never invent.
+    settled.textContent=formatSettledLine();
   }
 }
 function clearHonestyPoll(){if(honestyPollTimer){clearInterval(honestyPollTimer);honestyPollTimer=null}}
@@ -1762,13 +1773,23 @@ function formatSettledTok(n){
   if(v>=1000)return (Math.round(v/100)/10)+'k';
   return String(v);
 }
+function formatSettledLine(){
+  const tok=Math.max(0,Math.floor(Number(settled24h?.tokens)||0));
+  const jobs=Math.max(0,Math.floor(Number(settled24h?.jobs)||0));
+  const cents=Math.max(0,Math.floor(Number(settled24h?.cents)||0));
+  // Honest zero stays finished; non-zero shows last settled / jobs (+¢ when present).
+  if(tok===0&&jobs===0&&cents===0)return '0 tok · 24h';
+  const bits=[formatSettledTok(tok)+' tok'];
+  if(jobs>0)bits.push(jobs===1?'1 job':(jobs+' jobs'));
+  if(cents>0)bits.push(cents+'¢');
+  bits.push('24h');
+  return bits.join(' · ');
+}
 function paintSettled24h(){
   const el=$('settled-24h');
   if(!el)return;
-  const tok=Math.max(0,Math.floor(Number(settled24h?.tokens)||0));
-  const jobs=Math.max(0,Math.floor(Number(settled24h?.jobs)||0));
   // Quiet footer — honest zero, never invent volume.
-  el.textContent=tok===0&&jobs===0?'0 tok · 24h':(formatSettledTok(tok)+' tok · 24h');
+  el.textContent=formatSettledLine();
   paintHonestyPanel();
 }
 function paintAnswerReceipt(){
