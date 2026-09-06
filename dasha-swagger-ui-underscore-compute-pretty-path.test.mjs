@@ -4,8 +4,9 @@
  * /api_docs /compute/swagger-ui /compute/swagger_ui /compute/api-docs
  * /compute/api_docs (+slash / Title-case) html-404 → 308 /compute/api.
  * Keep prior peers /swagger-ui /swagger-ui.html /api-docs /swagger /openapi.
- * Exact /compute/api stays 200 (null dest). Do not invent /docs /redoc
- * /compute/swagger-ui.html. Disk only. No Designer. Never plugin.jup.ag.
+ * Exact /compute/api stays 200 (null dest). /docs already 308→/compute/api.
+ * Do not invent /redoc /compute/swagger-ui.html. Disk only. No Designer.
+ * Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -50,7 +51,6 @@ const STAY_OUT = [
   '/compute/skill/provide.md',
   '/compute/skill/use.md',
   '/compute/skill/ocm-host.md',
-  '/docs',
   '/redoc',
   '/swaggerui',
   '/compute/swagger-ui.html',
