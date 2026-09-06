@@ -2952,6 +2952,11 @@ const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set([
   '/compute/api-docs', '/compute/api-docs/',
   '/compute/api_docs', '/compute/api_docs/',
 ]);
+/** Leftover /security /security.txt (+slash / Title-case) → /.well-known/security.txt. */
+const POTTER_SECURITY_TXT_308_PATHS = new Set([
+  '/security', '/security/',
+  '/security.txt', '/security.txt/',
+]);
 /** /jobs /compute/jobs /api/jobs → /compute/api/jobs. */
 const POTTER_COMPUTE_API_JOBS_308_PATHS = new Set([
   '/jobs', '/jobs/',
@@ -3017,6 +3022,9 @@ export function potterHome308Dest(path) {
   if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
   if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/faucet';
+  // Leftover /security /security.txt (+slash / Title-case) → /.well-known/security.txt.
+  // Exact /.well-known/security.txt stays null (200 handler). Do not invent /humans.txt /ads.txt /terms /tos.
+  if (POTTER_SECURITY_TXT_308_PATHS.has(p)) return 'https://www.getdasha.com/.well-known/security.txt';
   // Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs (+slash / Title-case) → /compute/api.
   // Lobby same-host rewrite covers /compute/api dests in potterHome308Response.
   if (POTTER_COMPUTE_API_DOCS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api';
