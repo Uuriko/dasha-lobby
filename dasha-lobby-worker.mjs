@@ -154,6 +154,8 @@ Allow: /faucet
 Allow: /which
 Allow: /forum
 Allow: /bag
+Allow: /listings
+Allow: /listings.json
 Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /ai.txt
@@ -187,6 +189,8 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/faucet</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/bag</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/which</loc><lastmod>2026-09-01</lastmod></url>
+  <url><loc>https://www.getdasha.com/listings</loc><lastmod>2026-09-06</lastmod></url>
+  <url><loc>https://www.getdasha.com/listings.json</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/crew</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/digest</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-01</lastmod></url>
@@ -286,6 +290,8 @@ const LLMS_TXT = `# $dasha is dash_eats on Solana
 site https://www.getdasha.com/
 which https://www.getdasha.com/which
 bag https://www.getdasha.com/bag
+listings https://www.getdasha.com/listings
+listings.json https://www.getdasha.com/listings.json
 login https://www.getdasha.com/login
 contribute https://www.getdasha.com/contribute
 bounties https://www.getdasha.com/bounties
@@ -303,6 +309,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [getdasha.com](https://www.getdasha.com/)
 - [Which $dasha](https://www.getdasha.com/which)
 - [The bag](https://www.getdasha.com/bag)
+- [Dasha List](https://www.getdasha.com/listings)
 - [Login](https://www.getdasha.com/login)
 - [Contribute](https://www.getdasha.com/contribute)
 - [Bounties](https://www.getdasha.com/bounties)
@@ -376,6 +383,17 @@ Mint-dead. Freeze-dead. Burned Raydium LP.
 LP mint 8GDvsE3NbiKuo5uUFR9zgRY76mdhXuJfeDsy8hn7h3Aj.
 
 Page: https://www.getdasha.com/bag
+
+## Dasha List
+
+First-party coin listing. We list $dasha here.
+
+associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump
+pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7
+status listed
+
+Page: https://www.getdasha.com/listings
+Feed: https://www.getdasha.com/listings.json
 
 ## Site
 
@@ -605,6 +623,134 @@ const BAG_HTML = `<!doctype html>
 </html>
 `;
 
+const LISTINGS_HTML = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dasha List · $dasha</title>
+  <meta name="description" content="We list $dasha here. dash_eats on Solana. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump.">
+  <link rel="canonical" href="https://www.getdasha.com/listings">
+  <link rel="describedby" href="/llms.txt" type="text/plain">
+  <link rel="describedby" href="/llms-full.txt" type="text/plain">
+  <meta property="og:type" content="website"><meta property="og:url" content="https://www.getdasha.com/listings"><meta property="og:title" content="Dasha List · $dasha"><meta property="og:description" content="We list $dasha here."><meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Dasha List · $dasha"><meta name="twitter:description" content="We list $dasha here."><meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Dasha List","url":"https://www.getdasha.com/listings","description":"First-party listing for dash_eats / $dasha on Solana. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7."}</script>
+  <style>
+    :root { color-scheme: dark; font: 18px/1.5 Arial, Helvetica, sans-serif; background: #070608; color: #f4eddb; }
+    body { max-width: 44rem; margin: auto; padding: 2rem 1rem; }
+    h1 { line-height: 1; }
+    h2 { margin: 2.2rem 0 0.8rem; font-size: 1.15rem; }
+    code { display: block; padding: 1rem; border: 1px solid #666; overflow-wrap: anywhere; }
+    a { color: #dfff00; }
+    a:focus-visible { outline: 3px solid #dfff00; outline-offset: 3px; }
+    .card { border: 1px solid #666; padding: 1.1rem 1rem; margin: 1.4rem 0; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.55rem 0; }
+    .row code { display: inline; padding: 0.35rem 0.5rem; flex: 1 1 12rem; }
+    button.copy { font: inherit; color: #dfff00; background: transparent; border: 1px solid #666; padding: 0.35rem 0.7rem; cursor: pointer; }
+    button.copy:focus-visible { outline: 3px solid #dfff00; outline-offset: 3px; }
+    .status { color: #dfff00; font-weight: 800; letter-spacing: 0.02em; }
+    .cta { display: flex; flex-wrap: wrap; gap: 0.75rem 1.1rem; margin: 1rem 0 0.2rem; }
+    .cta a.primary { font-weight: 800; }
+    .venues { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.55rem; margin: 0.6rem 0 0; }
+    .venues a { display: block; border: 1px solid #666; padding: 0.55rem 0.7rem; text-decoration: none; }
+    .venues a:hover { border-color: #dfff00; }
+    .quiet { opacity: 0.72; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Dasha List</h1>
+    <p>We list <code style="display:inline;padding:0.1rem 0.35rem">$dasha</code> here.</p>
+    <article class="card" aria-labelledby="feat-name">
+      <h2 id="feat-name">$dasha / dash_eats</h2>
+      <p>Chain: Solana</p>
+      <div class="row"><span>Mint</span><code id="mint">53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code><button type="button" class="copy" data-copy="mint">Copy</button></div>
+      <div class="row"><span>Pair</span><code id="pair">9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code><button type="button" class="copy" data-copy="pair">Copy</button></div>
+      <p>Status: <span class="status">Listed</span> <span class="quiet">(on getdasha)</span></p>
+      <p class="cta"><a class="primary" href="/">Buy →</a><a href="/which">Which</a><a href="/bag">Bag</a><a href="/lobby">Lobby</a></p>
+    </article>
+    <h2>Listed on</h2>
+    <div class="venues">
+      <a href="https://www.getdasha.com/listings">getdasha</a>
+      <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&amp;buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Jupiter</a>
+      <a href="https://raydium.io/swap/?inputMint=sol&amp;outputMint=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Raydium</a>
+      <a href="https://dexscreener.com/solana/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7" rel="noopener noreferrer">DexScreener</a>
+      <a href="https://birdeye.so/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump?chain=solana" rel="noopener noreferrer">Birdeye</a>
+      <a href="https://pump.fun/coin/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Pump</a>
+      <a href="https://www.geckoterminal.com/solana/pools/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7" rel="noopener noreferrer">GeckoTerminal</a>
+      <a href="https://trade.phantom.com/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Phantom</a>
+    </div>
+    <p class="quiet">More listings soon.</p>
+    <p class="quiet"><a href="/listings.json">listings.json</a> · <a href="/which">Which</a></p>
+  </main>
+  <script>
+  (function () {
+    function copyText(text, btn) {
+      function done() { if (btn) { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1200); } }
+      function legacy() {
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+          document.body.appendChild(ta);
+          ta.select();
+          var ok = false;
+          try { ok = document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta);
+          return ok;
+        } catch (e) { return false; }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () { if (legacy()) done(); });
+      } else if (legacy()) done();
+    }
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('button.copy');
+      if (!btn) return;
+      var id = btn.getAttribute('data-copy');
+      var node = id && document.getElementById(id);
+      var text = node ? (node.textContent || '').trim() : '';
+      if (!text) return;
+      copyText(text, btn);
+    });
+  })();
+  </script>
+</body>
+</html>
+`;
+
+/** First-party coin list. Featured only $dasha / dash_eats. Venues from buy-sheet. Never plugin.jup.ag. */
+export function listingsJsonBody() {
+  const jup = `https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=${MINT}`;
+  return {
+    schema: 'dasha.listings.v0',
+    updated_at: '2026-09-06T23:05:00.000Z',
+    listings: [
+      {
+        id: 'dasha',
+        symbol: '$dasha',
+        name: 'dash_eats',
+        chain: 'solana',
+        mint: MINT,
+        pair: PAIR,
+        status: 'listed',
+        url: 'https://www.getdasha.com/listings',
+        buy: 'https://www.getdasha.com/',
+        venues: [
+          { id: 'getdasha', name: 'getdasha', href: 'https://www.getdasha.com/listings' },
+          { id: 'jupiter', name: 'Jupiter', href: jup },
+          { id: 'raydium', name: 'Raydium', href: `https://raydium.io/swap/?inputMint=sol&outputMint=${MINT}` },
+          { id: 'dexscreener', name: 'DexScreener', href: `https://dexscreener.com/solana/${PAIR}` },
+          { id: 'birdeye', name: 'Birdeye', href: `https://birdeye.so/token/${MINT}?chain=solana` },
+          { id: 'pump', name: 'Pump', href: `https://pump.fun/coin/${MINT}` },
+          { id: 'geckoterminal', name: 'GeckoTerminal', href: `https://www.geckoterminal.com/solana/pools/${PAIR}` },
+          { id: 'phantom', name: 'Phantom', href: `https://trade.phantom.com/token/${MINT}` },
+        ],
+      },
+    ],
+  };
+}
 
 const SECURITY = {
   'Cache-Control': 'no-store',
@@ -1785,6 +1931,7 @@ const HOME_LEDE = `<p id="dasha-home-lede" class="dasha-home-lede">dash_eats cul
 const HOME_CHAT_DOOR = `<section id="chat-door" aria-labelledby="chat-title"><div class="wrap door"><div><p class="section-kicker">Lobby</p><h2 class="section-title" id="chat-title">Chat.</h2><p class="door-line">Chat in the lobby.</p></div><a class="pill primary" href="/lobby">Open chat →</a></div></section>`;
 const HOME_SIMP_DOOR = `<section id="simp-door" aria-labelledby="simp-title"><div class="wrap door"><div><p class="section-kicker">Simp Quiz</p><h2 class="section-title" id="simp-title">Simp Quiz.</h2><p class="door-line">Take the quiz.</p></div><a class="pill primary" href="/simp">Take the quiz</a></div></section>`;
 const HOME_BAG_LINE = `<p class="dasha-bag-line"><a href="/bag">Bag</a></p>`;
+const HOME_LIST_DOOR = `<section id="list-door" aria-labelledby="list-title"><style id="dasha-list-door">#list-door{margin:0;padding:36px 0 48px;background:#070608}#list-door .door{display:grid;gap:14px;justify-items:start}#list-door .section-kicker{color:#dfff00;font:800 12px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase}#list-door .section-title{margin:0;color:#f4eddb;font:900 clamp(1.6rem,4vw,2.2rem)/1 Arial,Helvetica,sans-serif}#list-door .door-line{margin:0;color:rgba(244,237,219,.78);font:700 1rem/1.4 Arial,Helvetica,sans-serif}#list-door .pill.list{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #dfff00;color:#dfff00;background:transparent;font:800 14px/1 Arial,Helvetica,sans-serif;text-decoration:none}#list-door .pill.list:focus-visible{outline:3px solid #dfff00;outline-offset:3px}</style><div class="wrap door"><div><p class="section-kicker">List</p><h2 class="section-title" id="list-title">List.</h2><p class="door-line">We list $dasha here.</p></div><a class="pill list" href="/listings">Open List →</a></div></section>`;
 const HOME_GRWM_AIR = '<style id="dasha-grwm-air">#grwm{display:block;margin:0;padding:min(18vh,8rem) 0 min(14vh,6rem);box-sizing:border-box}#grwm video,#grwm .grwm-go{touch-action:pan-y}@media(max-width:800px){#grwm{padding:min(10vh,4rem) 0 min(8vh,3rem)}#grwm .grwm-phone{max-height:min(52svh,420px);width:min(100%,calc(52svh * 720 / 1280))}}</style>';
 const HOME_GROK_DOOR = `<section id="grok-door" aria-labelledby="grok-title"><style id="dasha-siwg">.siwg{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#22d3ee);color:#fff;font:900 15px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em;text-decoration:none;cursor:pointer;box-shadow:0 0 22px rgba(124,58,237,.55),0 0 28px rgba(34,211,238,.4)}.siwg .siwg-icon{width:28px;height:28px;flex:0 0 28px;display:block;border-radius:6px}.siwg:focus-visible{outline:3px solid #f4eddb;outline-offset:3px}#grok-door{margin:0;padding:36px 0 56px;background:#070608}#grok-door .door{display:grid;gap:16px;justify-items:start}#grok-door .siwg-credit{margin:4px 0 0;font:700 13px/1.3 Arial,Helvetica,sans-serif}#grok-door .siwg-credit a{color:rgba(244,237,219,.72);text-decoration:underline;text-underline-offset:3px}</style><div class="wrap door"><div><p class="section-kicker">Grok Bot</p><h2 class="section-title" id="grok-title">Sign in with Grok Bot.</h2></div><a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a><p class="siwg-credit"><a href="https://x.com/RayFernando1337/status/2092696487637737929">Ray Fernando</a></p></div></section>`;
 export const SIWG_BUTTON_HTML = `<a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>`;
@@ -2046,6 +2193,8 @@ export function orderHomeLongPage(html) {
   out = grwm.html;
   const grokDoor = cutIded(out, 'section', 'grok-door');
   out = grokDoor.html;
+  const listDoor = cutIded(out, 'section', 'list-door');
+  out = listDoor.html;
   const bag = cutIded(out, 'section', 'bag-door');
   out = bag.html;
   const lede = /id=["']dasha-home-lede["']/.test(out) ? '' : HOME_LEDE;
@@ -2055,7 +2204,8 @@ export function orderHomeLongPage(html) {
   const styleBit = HOME_FAUCET_STYLE;
   const grwmBit = grwm.cut || '';
   const grokBit = grokDoor.cut || HOME_GROK_DOOR;
-  const block = `${lede}${chatBit}${simpBit}${faucetBit}${styleBit}${grwmBit}${grokBit}`;
+  const listBit = listDoor.cut || HOME_LIST_DOOR;
+  const block = `${lede}${chatBit}${simpBit}${faucetBit}${styleBit}${grwmBit}${grokBit}${listBit}`;
   const hero = /<header\b(?=[^>]*\bid=["']content["'])[^>]*>[\s\S]*?<\/header>/i.exec(out)
     || /<header\b(?=[^>]*\bclass=["'][^"']*\bdasha-hero\b)[^>]*>[\s\S]*?<\/header>/i.exec(out);
   if (hero) {
@@ -3264,6 +3414,22 @@ const POTTER_WHICH_308_PATHS = new Set([
   // Traders search CA and land dead. Fold to /which (dash_eats vs VVAIFU). Exact /which stays 200.
   '/ca', '/ca/',
 ]);
+/** Leftover /listing /listings/ /coins /coin /listed /list /dex /dexscreener /cmc /coingecko
+ * (+slash / Title-case) still html-404 while /listings is 200. Fold to Dasha List.
+ * Exact /listings stays 200. Do not fold /market (stays compute-tab → /compute).
+ */
+const POTTER_LISTINGS_308_PATHS = new Set([
+  '/listing', '/listing/',
+  '/listings/',
+  '/coins', '/coins/',
+  '/coin', '/coin/',
+  '/listed', '/listed/',
+  '/list', '/list/',
+  '/dex', '/dex/',
+  '/dexscreener', '/dexscreener/',
+  '/cmc', '/cmc/',
+  '/coingecko', '/coingecko/',
+]);
 /** Leftover /bounty (+slash / Title-case) still html-404 while /bounties is 200. */
 const POTTER_BOUNTIES_308_PATHS = new Set([
   '/bounty', '/bounty/',
@@ -3416,6 +3582,8 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/contribute', 'https://www.getdasha.com/contribute'],
   ['/privacy', 'https://www.getdasha.com/privacy'],
   ['/which', 'https://www.getdasha.com/which'],
+  ['/listings', 'https://www.getdasha.com/listings'],
+  ['/listings.json', 'https://www.getdasha.com/listings.json'],
   ['/how-to-buy', 'https://www.getdasha.com/how-to-buy'],
   ['/bounties', 'https://www.getdasha.com/bounties'],
   ['/login', 'https://www.getdasha.com/login'],
@@ -3465,6 +3633,9 @@ export function potterHome308Dest(path) {
   if (POTTER_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login#grok';
   if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
   if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
+  // Leftover /listing /listings/ /coins /coin /listed /list /dex /dexscreener /cmc /coingecko
+  // (+slash / Title-case) → /listings. Exact /listings stays 200. /market stays compute-tab.
+  if (POTTER_LISTINGS_308_PATHS.has(p)) return 'https://www.getdasha.com/listings';
   // Leftover /bounty (+slash / Title-case) → /bounties. Exact /bounties stays 200.
   if (POTTER_BOUNTIES_308_PATHS.has(p)) return 'https://www.getdasha.com/bounties';
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/faucet';
@@ -10022,6 +10193,28 @@ export default {
           'X-Dasha-Edge': 'which',
           Link: LLMS_DESCRIBEDBY,
         }),
+      });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings') {
+      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LISTINGS_HTML), {
+        headers: htmlHeaders({
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+          'X-Dasha-Edge': 'listings',
+          Link: LLMS_DESCRIBEDBY,
+        }),
+      });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings.json') {
+      return new Response(request.method === 'HEAD' ? null : JSON.stringify(listingsJsonBody()), {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+          'Strict-Transport-Security': 'max-age=31536000',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Dasha-Edge': 'listings-json',
+          Link: LLMS_DESCRIBEDBY,
+        },
       });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/bag' || url.pathname === '/bag/')) {

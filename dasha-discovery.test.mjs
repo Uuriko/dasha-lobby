@@ -95,6 +95,8 @@ const EXTRA_SITEMAP_URLS = [
   `${ORIGIN}/faucet`,
   `${ORIGIN}/bag`,
   `${ORIGIN}/which`,
+  `${ORIGIN}/listings`,
+  `${ORIGIN}/listings.json`,
   `${ORIGIN}/contribute`,
   `${ORIGIN}/bounties`,
   `${ORIGIN}/chess`,

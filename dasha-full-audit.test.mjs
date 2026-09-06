@@ -157,6 +157,7 @@ describe('route contract (worker, offline)', () => {
       ['/bounties', 200, 'bounties'],
       ['/contribute', 200, 'contribute'],
       ['/which', 200, 'which'],
+      ['/listings', 200, 'listings'],
       ['/login', 200, 'login'],
     ];
     for (const [path, status, edge] of cases) {
@@ -285,7 +286,7 @@ describe('sitemap vs retired rooms', () => {
   it('sitemap has privacy/forum/bag and omits 308/410 rooms', () => {
     const sitemap = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
     const robots = workerSrc.match(/const ROBOTS_TXT = `([\s\S]*?)`;/)[1];
-    for (const path of ['/forum', '/privacy', '/bag', '/which', '/crew', '/digest', '/compute']) {
+    for (const path of ['/forum', '/privacy', '/bag', '/which', '/listings', '/crew', '/digest', '/compute']) {
       assert.ok(sitemap.includes(`https://www.getdasha.com${path}</loc>`), path);
     }
     for (const path of ['/studio', '/dasha', '/desk', '/login', '/verse', '/learn', '/graph']) {
