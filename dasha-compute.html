@@ -472,6 +472,8 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
   <span id="honesty-hosted" class="honesty-ok">Hosted · live</span>
   <span class="honesty-sep" aria-hidden="true">·</span>
   <span id="honesty-macs">No Mac online</span>
+  <span class="honesty-sep" id="honesty-enrolled-sep" aria-hidden="true" hidden>·</span>
+  <span id="honesty-enrolled" hidden></span>
   <span class="honesty-sep" aria-hidden="true">·</span>
   <span id="honesty-settled" title="Settled paid-inference · last 24h">0 tok · 24h</span>
 </aside>
@@ -1732,6 +1734,24 @@ function paintHonestyPanel(){
     if(title){macs.title=title;macs.setAttribute('aria-label',title)}
     else{macs.removeAttribute('title');macs.removeAttribute('aria-label')}
   }
+  const enrolled=$('honesty-enrolled');
+  const enrolledSep=$('honesty-enrolled-sep');
+  if(enrolled){
+    // Fail closed: integer hosts from /compute/ocm/healthz only — never invent; never pad advertising.
+    if(Number.isInteger(ocmHosts)&&ocmHosts>=1){
+      enrolled.hidden=false;
+      enrolled.textContent=ocmHosts+' enrolled';
+      enrolled.title='OCM enrolled · not the same as online';
+      enrolled.setAttribute('aria-label',enrolled.title);
+      if(enrolledSep)enrolledSep.hidden=false;
+    }else{
+      enrolled.hidden=true;
+      enrolled.textContent='';
+      enrolled.removeAttribute('title');
+      enrolled.removeAttribute('aria-label');
+      if(enrolledSep)enrolledSep.hidden=true;
+    }
+  }
   const settled=$('honesty-settled');
   if(settled){
     // Visible acts: factory settled_24h tokens/jobs/cents only — never invent.
@@ -1763,6 +1783,12 @@ async function refreshHonesty(){
     $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
   }catch{}
   await loadSettled24h();
+  try{
+    const res=await fetch('/compute/ocm/healthz',{cache:'no-store'});
+    if(!res.ok)throw Error('ocm');
+    const data=await res.json();
+    ocmHosts=Number.isInteger(data.hosts)?data.hosts:null;
+  }catch{ocmHosts=null}
   paintHonestyPanel();
 }
 function formatTokPerSec(n){const v=Number(n);if(!Number.isFinite(v)||v<=0)return '';if(v>=100)return String(Math.round(v));if(v>=10)return String(Math.round(v*10)/10);return String(Math.round(v*100)/100)}
