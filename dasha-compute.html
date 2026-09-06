@@ -274,6 +274,7 @@ footer a:hover{color:var(--paper)}
   </div>
   <div class="tf-choices" id="sponsor-macs" role="group" aria-label="Mac." hidden></div>
   <p class="fine" id="sponsor-raised">$0 raised</p>
+  <p class="fine" id="sponsor-credit" hidden></p>
   <p class="fine" id="sponsor-fine">Tip face · USDC or $dasha · wallet OK without login · name on board when signed in.</p>
 </section>
 
@@ -1976,6 +1977,20 @@ function paintSponsorRaised(data){
   // Honesty: tip pledge cents only — never catalog machine.usd / goal.
   const cents=data&&data.raised_cents!=null?data.raised_cents:(data&&data.raised_usd!=null?Math.round(Number(data.raised_usd)*100):0);
   el.textContent=formatSponsorRaised(cents);
+  el.hidden=false;
+  paintSponsorCredit(data);
+}
+function paintSponsorCredit(data){
+  const el=$('sponsor-credit');
+  if(!el)return;
+  // Quiet named tip credits only — anonymous tips stay nameless (no invented Mac names).
+  const rows=Array.isArray(data&&data.credit)?data.credit.filter(r=>r&&String(r.name||'').trim()):[];
+  if(!rows.length){el.textContent='';el.hidden=true;return}
+  el.textContent=rows.slice(0,6).map(r=>{
+    const raw=String(r.handle||'').trim()||String(r.name||'').trim();
+    const label=r.handle?('@'+String(r.handle).replace(/^@+/,'')):raw;
+    return label+' · '+formatCredits(r.cents);
+  }).join(' · ');
   el.hidden=false;
 }
 function paintSponsorTargets(){
