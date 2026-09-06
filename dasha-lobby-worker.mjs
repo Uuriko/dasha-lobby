@@ -125,6 +125,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import { isComputeOcmPath, proxyComputeOcm } from './dasha-compute-ocm-proxy.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
+import { arcadeResponse, addArcadeLobbyLink } from './dasha-arcade.mjs';
 import { applyCrewShareOg, crewApi, isCrewPagePath } from './dasha-crew.mjs';
 import { bagRecordApi, isBagRecordPath, lookupRecord, normalizeMint, renderBagShareHtml } from './dasha-bag-record.mjs';
 import { appendFill, collectInboundFills, FAUCET_TAPE_SCAN_CAP, fillShareApi, isBareFaucetFillPath, isFaucetFillPath, isFaucetTapePath, shouldScanTape, tapeApi } from './dasha-faucet-tape.mjs';
@@ -2703,6 +2704,7 @@ export function stripChessLeftoverTournamentActionReplaceStateJs(html) {
 
 export function polishServedSlim(html) {
   let out = dropBagFromSlim(String(html || ''));
+  out = addArcadeLobbyLink(out);
   /* Leftover home #dasha-mobile-scroll on /lobby after polish always injected HOME GRWM CSS. Home mobile-scroll + GRWM stay. */
   out = stripLobbyLeftoverHomeMobileScroll(out);
   /* Leftover home #dasha-mobile-scroll on /chess after polish always injected HOME GRWM CSS. Home mobile-scroll + GRWM stay. */
@@ -9816,6 +9818,8 @@ export default {
     }
     const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
+    const arcade = arcadeResponse(request);
+    if (arcade) return arcade;
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/privacy' || url.pathname === '/privacy/')) {
       return privacyPageResponse(request);
     }
