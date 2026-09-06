@@ -170,7 +170,23 @@ function expectLoc(host, dest) {
   return dest;
 }
 
-const env = { LOBBY_SESSION_SECRET: 'hosts-tips-job-receipt-pretty-path-secret', AI: { run: async () => ({ response: 'ok' }) } };
+const env = {
+  LOBBY_SESSION_SECRET: 'hosts-tips-job-receipt-pretty-path-secret',
+  AI: { run: async () => ({ response: 'ok' }) },
+  FAUCET: {
+    idFromName() { return 'main'; },
+    get() {
+      return {
+        async fetch() {
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { 'content-type': 'application/json; charset=utf-8' },
+          });
+        },
+      };
+    },
+  },
+};
 const FETCH_FOLDS = [
   ...TO_COMPUTE.map((path) => [path, COMPUTE]),
   ...TO_FAUCET.map((path) => [path, FAUCET]),
@@ -199,7 +215,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     assert.equal(compute.headers.get('x-dasha-edge'), 'compute');
   }
   const faucetMe = await edgeWorker.fetch(new Request(`https://${host}/faucet/me`), env);
-  assert.notEqual(faucetMe.status, 308, `${host} /faucet/me stays non-308`);
+  assert.equal(faucetMe.status, 200, `${host} /faucet/me stays 200`);
+  assert.notEqual(faucetMe.headers.get('location'), COMPUTE, `${host} /faucet/me not folded to compute`);
   for (const path of STAY_OUT) {
     for (const method of ['GET', 'HEAD']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);

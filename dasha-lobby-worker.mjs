@@ -2977,7 +2977,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // /host /pay /usdc already 308→/compute. Fold to plain /compute (no hash).
   // Skip /openai /v1 /resend /email /health /status /healthz. Do NOT fold
   // /api/keys here — that lands on POTTER_COMPUTE_API_KEYS_308_PATHS.
-  // Exact /faucet/me stays 200 (POTTER_FAUCET_LEAF_CASEFOLD). Never Demigod.
+  // Exact /faucet/me stays 200 (Title-case leaf only). Never Demigod.
   '/hosts', '/hosts/',
   '/inferences', '/inferences/',
   '/key', '/key/',
