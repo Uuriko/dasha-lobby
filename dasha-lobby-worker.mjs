@@ -125,6 +125,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import { isComputeOcmPath, proxyComputeOcm } from './dasha-compute-ocm-proxy.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
+import { multichainResponse, addMultichainHowtoLink } from './dasha-multichain.mjs';
 import { applyCrewShareOg, crewApi, isCrewPagePath } from './dasha-crew.mjs';
 import { bagRecordApi, isBagRecordPath, lookupRecord, normalizeMint, renderBagShareHtml } from './dasha-bag-record.mjs';
 import { appendFill, collectInboundFills, FAUCET_TAPE_SCAN_CAP, fillShareApi, isBareFaucetFillPath, isFaucetFillPath, isFaucetTapePath, shouldScanTape, tapeApi } from './dasha-faucet-tape.mjs';
@@ -896,7 +897,7 @@ export function polishHowtoHtml(html) {
   page = stripHowtoLeftoverNavBtnCss(page);
   /* Leftover /how-to-buy x-connect.js after CSS/JS strip. No login mount. Home/lobby/chess/login/faucet/bounties x-connect.js stay. */
   page = stripHowtoLeftoverXConnectJs(page);
-  return page;
+  return addMultichainHowtoLink(page);
 }
 
 /** iOS: view() rise + overflow-x:hidden + GRWM video steal the swipe. Unlock page scroll. Leftover home dropped-selector CSS after .lobby-log was never in the home DOM. Leftover home dropped-selector CSS after #dasha-chess was never in the home DOM. Humans see it in view-source. GRWM + Watch belt stay. Lobby .lobby-log stays. Lobby #dasha-chess stays. */
@@ -9830,6 +9831,8 @@ export default {
     }
     const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
+    const multichain = multichainResponse(request);
+    if (multichain) return multichain;
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/privacy' || url.pathname === '/privacy/')) {
       return privacyPageResponse(request);
     }

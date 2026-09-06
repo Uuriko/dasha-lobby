@@ -1,0 +1,22 @@
+{
+  "claims": [
+    {
+      "holder": "Codex",
+      "repository": "Uuriko/dasha-lobby",
+      "ref": "refs/heads/codex/dasha-multichain-20260906",
+      "paths": [
+        "CLAIMS.json",
+        "dasha-multichain.mjs",
+        "dasha-multichain-page.mjs",
+        "dasha-multichain-policy.mjs",
+        "dasha-multichain.test.mjs",
+        "dasha-multichain-policy.test.mjs",
+        "DASHA-MULTICHAIN.md",
+        "dasha-lobby-worker.mjs"
+      ],
+      "scope": "Isolated review branch only. This claim does not cover main or the live ship tree.",
+      "status": "released",
+      "release": "Implementation handed off for review on 2026-09-06. No live ship-tree claim was acquired."
+    }
+  ]
+}
