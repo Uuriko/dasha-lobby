@@ -2855,6 +2855,9 @@ const POTTER_HOWTO_308_PATHS = new Set([
   // while /howtobuy /how-to already 308→/how-to-buy. Exact /how-to-buy stays 200.
   '/how-tobuy', '/how-tobuy/',
   '/howto_buy', '/howto_buy/',
+  // Leftover: /purchase (+slash / Title-case) still html-404
+  // while /buy /howto already 308→/how-to-buy. Exact /how-to-buy stays 200.
+  '/purchase', '/purchase/',
 ]);
 const POTTER_LOGIN_308_PATHS = new Set([
   '/grok', '/grok/',
@@ -3083,6 +3086,34 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/prefer', '/compute/prefer/',
   '/compute/preference', '/compute/preference/',
   '/compute/preferences', '/compute/preferences/',
+  // Settlement/billing + getting-started leftovers (Worker 66c5ac55). Apex +
+  // /compute/* tabs (+slash / Title-case) html-404 while /settle /billing /pay
+  // /usdc /mac-kit already 308→/compute. Fold to plain /compute (no hash).
+  // Skip /health /status /openai /v1 /admin /blog /tos.
+  '/settlement', '/settlement/',
+  '/settlements', '/settlements/',
+  '/invoice', '/invoice/',
+  '/invoices', '/invoices/',
+  '/credit', '/credit/',
+  '/refill', '/refill/',
+  '/kits', '/kits/',
+  '/try', '/try/',
+  '/getting-started', '/getting-started/',
+  '/get-started', '/get-started/',
+  '/getstarted', '/getstarted/',
+  '/mac_kit', '/mac_kit/',
+  '/compute/settlement', '/compute/settlement/',
+  '/compute/settlements', '/compute/settlements/',
+  '/compute/invoice', '/compute/invoice/',
+  '/compute/invoices', '/compute/invoices/',
+  '/compute/credit', '/compute/credit/',
+  '/compute/refill', '/compute/refill/',
+  '/compute/kits', '/compute/kits/',
+  '/compute/try', '/compute/try/',
+  '/compute/getting-started', '/compute/getting-started/',
+  '/compute/get-started', '/compute/get-started/',
+  '/compute/getstarted', '/compute/getstarted/',
+  '/compute/mac_kit', '/compute/mac_kit/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -3106,6 +3137,11 @@ const POTTER_FAUCET_DOOR_308_PATHS = new Set([
   // Leftover /donate /donate/ (+ Title-case) still html-404 while /tip /tips
   // already 308→/faucet. Apex only — do not invent /compute/donate.
   '/donate', '/donate/',
+  // Leftover /once-a-day /once_a_day (+slash / Title-case) still html-404
+  // while /donate /tip already 308→/faucet. Apex only — do not invent
+  // /compute/once-a-day.
+  '/once-a-day', '/once-a-day/',
+  '/once_a_day', '/once_a_day/',
   // Leftover product bridge: /compute/faucet (+slash / Title-case) still
   // html-404 while /faucet is 200 — fold to /faucet. Inverse
   // /faucet/compute lives on POTTER_COMPUTE_TAB_308_PATHS → /compute.
@@ -3124,7 +3160,7 @@ const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
   '/api/healthz', '/api/healthz/',
   '/api/health', '/api/health/',
 ]);
-/** Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway (+slash) → /compute/api. */
+/** Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /compute/sdk /compute/cli (+slash) → /compute/api. */
 const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set([
   '/swagger-ui', '/swagger-ui/',
   '/swagger-ui.html', '/swagger-ui.html/',
@@ -3142,6 +3178,17 @@ const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set([
   // Skip /openai /v1 (stay 404). Do NOT invent /docs /redoc.
   '/gateway', '/gateway/',
   '/compute/gateway', '/compute/gateway/',
+  // Leftover /endpoint /endpoints /sdk /cli + /compute/* tabs (Worker 66c5ac55).
+  // Live apex/tabs html-404 while /swagger|/openapi|/gateway already 308→/compute/api.
+  // Skip /openai /v1 /admin /blog /tos. Do NOT invent /docs /redoc.
+  '/endpoint', '/endpoint/',
+  '/endpoints', '/endpoints/',
+  '/sdk', '/sdk/',
+  '/cli', '/cli/',
+  '/compute/endpoint', '/compute/endpoint/',
+  '/compute/endpoints', '/compute/endpoints/',
+  '/compute/sdk', '/compute/sdk/',
+  '/compute/cli', '/compute/cli/',
 ]);
 /** Leftover /security /security.txt (+slash / Title-case) → /.well-known/security.txt. */
 const POTTER_SECURITY_TXT_308_PATHS = new Set([
@@ -3236,9 +3283,9 @@ export function potterHome308Dest(path) {
   // Title-case product pages (/Faucet /Compute /Lobby /Chess /Bag …) were html-404 while
   // lowercase siblings already 200 — 308 to the same dest (canonical lowercase).
   // Machine files (/Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Llms-Full.txt) same pattern.
-  // Quiet /fill /jar /fill-the-jar /tip /tip-me /tips /compute/tips /donate /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana /hosted|/community|/mixture|/compute/hosted|/compute/community|/compute/mixture /hosts|/inferences|/key|/keys|/apikey|/api-key|/api_key|/install|/doctor|/me|/usage|/inference|/gpu|/gpus|/pricing|/providing|/mac-kit|/compute/hosts|/compute/inferences|/compute/key|/compute/keys|/compute/apikey|/compute/api-key|/compute/api_key|/compute/install|/compute/doctor|/compute/me|/compute/usage|/compute/inference|/compute/gpu|/compute/gpus|/compute/pricing|/compute/providing|/compute/mac-kit /rent|/capacity|/offer|/offers|/worker|/workers|/node|/nodes|/cluster|/pool|/machines|/benchmark|/queue|/dashboard|/console|/balance|/pay-usdc|/apple-silicon|/macos|/silicon|/local|/edge|/onboard|/setup|/quickstart|/playground|/sandbox|/hello|/example|/examples|/prefer|/preference|/preferences|/compute/rent|/compute/capacity|/compute/offer|/compute/offers|/compute/worker|/compute/workers|/compute/node|/compute/nodes|/compute/cluster|/compute/pool|/compute/machines|/compute/benchmark|/compute/queue|/compute/dashboard|/compute/console|/compute/balance|/compute/pay-usdc|/compute/apple-silicon|/compute/macos|/compute/silicon|/compute/local|/compute/edge|/compute/onboard|/compute/setup|/compute/quickstart|/compute/playground|/compute/sandbox|/compute/hello|/compute/example|/compute/examples|/compute/prefer|/compute/preference|/compute/preferences → /compute. Apex /gateway|/compute/gateway → /compute/api. Exact lowercase product stays null for 200 handlers.
+  // Quiet /fill /jar /fill-the-jar /tip /tip-me /tips /compute/tips /donate /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar /once-a-day|/once_a_day → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana /hosted|/community|/mixture|/compute/hosted|/compute/community|/compute/mixture /hosts|/inferences|/key|/keys|/apikey|/api-key|/api_key|/install|/doctor|/me|/usage|/inference|/gpu|/gpus|/pricing|/providing|/mac-kit|/compute/hosts|/compute/inferences|/compute/key|/compute/keys|/compute/apikey|/compute/api-key|/compute/api_key|/compute/install|/compute/doctor|/compute/me|/compute/usage|/compute/inference|/compute/gpu|/compute/gpus|/compute/pricing|/compute/providing|/compute/mac-kit /rent|/capacity|/offer|/offers|/worker|/workers|/node|/nodes|/cluster|/pool|/machines|/benchmark|/queue|/dashboard|/console|/balance|/pay-usdc|/apple-silicon|/macos|/silicon|/local|/edge|/onboard|/setup|/quickstart|/playground|/sandbox|/hello|/example|/examples|/prefer|/preference|/preferences|/compute/rent|/compute/capacity|/compute/offer|/compute/offers|/compute/worker|/compute/workers|/compute/node|/compute/nodes|/compute/cluster|/compute/pool|/compute/machines|/compute/benchmark|/compute/queue|/compute/dashboard|/compute/console|/compute/balance|/compute/pay-usdc|/compute/apple-silicon|/compute/macos|/compute/silicon|/compute/local|/compute/edge|/compute/onboard|/compute/setup|/compute/quickstart|/compute/playground|/compute/sandbox|/compute/hello|/compute/example|/compute/examples|/compute/prefer|/compute/preference|/compute/preferences /settlement|/settlements|/invoice|/invoices|/credit|/refill|/kits|/try|/getting-started|/get-started|/getstarted|/mac_kit|/compute/settlement|/compute/settlements|/compute/invoice|/compute/invoices|/compute/credit|/compute/refill|/compute/kits|/compute/try|/compute/getting-started|/compute/get-started|/compute/getstarted|/compute/mac_kit → /compute. Apex /gateway|/compute/gateway|/endpoint|/endpoints|/sdk|/cli|/compute/endpoint|/compute/endpoints|/compute/sdk|/compute/cli → /compute/api. Exact lowercase product stays null for 200 handlers.
   // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
-  // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy → /how-to-buy.
+  // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy|/purchase → /how-to-buy.
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
   const raw = String(path || '');
   const p = raw.toLowerCase();
@@ -3261,7 +3308,7 @@ export function potterHome308Dest(path) {
   if (POTTER_LLMS_FULL_AEO_308_PATHS.has(p)) return 'https://www.getdasha.com/llms-full.txt';
   if (POTTER_LLMS_AEO_308_PATHS.has(p)) return 'https://www.getdasha.com/llms.txt';
   if (POTTER_AI_TXT_WELLKNOWN_308_PATHS.has(p)) return 'https://www.getdasha.com/ai.txt';
-  // Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway (+slash / Title-case) → /compute/api.
+  // Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /compute/sdk /compute/cli (+slash / Title-case) → /compute/api.
   // Lobby same-host rewrite covers /compute/api dests in potterHome308Response.
   if (POTTER_COMPUTE_API_DOCS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api';
   // apex /api/{jobs,status,network,healthz,health} (+ /jobs /job /compute/jobs /compute/job /api/job and
