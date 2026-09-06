@@ -3016,7 +3016,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // (Worker e8adc1ad). Apex + trailing slash + /compute/* tab peers
   // (+ Title-case) html-404 while /host /pay /usdc /mac-kit already 308→/compute.
   // Skip /admin /blog /news /faq /waitlist /join /oauth /status /health.
-  // Never plugin.jup.ag. Do not invent /compute/donate (apex /donate is faucet).
+  // Do not invent /compute/donate (apex /donate is faucet).
   '/rent', '/rent/',
   '/capacity', '/capacity/',
   '/offer', '/offer/',
