@@ -720,7 +720,7 @@ const LISTINGS_HTML = `<!doctype html>
 </html>
 `;
 
-/** First-party coin list. Featured only $dasha / dash_eats. Venues from buy-sheet. Never plugin.jup.ag. */
+/** First-party coin list. Featured only $dasha / dash_eats. Venues from buy-sheet. jup.ag only. */
 export function listingsJsonBody() {
   const jup = `https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=${MINT}`;
   return {
