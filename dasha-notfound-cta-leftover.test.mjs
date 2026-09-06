@@ -61,7 +61,7 @@ assert.match(keepContribute, /\.cta\{/, 'non-404 htmlPage .cta CSS stays');
 assert.match(keepContribute, /class="cta"/, 'contribute .cta class stays');
 
 {
-  const res = await edgeWorker.fetch(new Request('https://www.getdasha.com/checkout'), {});
+  const res = await edgeWorker.fetch(new Request('https://www.getdasha.com/paypal-checkout'), {});
   assert.equal(res.status, 404);
   assert.equal(res.headers.get('x-dasha-edge'), 'retired-commerce');
   const html = await res.text();
