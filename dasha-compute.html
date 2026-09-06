@@ -274,7 +274,7 @@ footer a:hover{color:var(--paper)}
   </div>
   <div class="tf-choices" id="sponsor-macs" role="group" aria-label="Mac." hidden></div>
   <p class="fine" id="sponsor-raised">$0 raised</p>
-  <p class="fine" id="sponsor-fine">USDC or $dasha · name on board when logged in.</p>
+  <p class="fine" id="sponsor-fine">Tip face · USDC or $dasha · name on board when logged in.</p>
 </section>
 
 <section class="tf-step" id="step-sponsor-buy" data-tf="sponsor-buy" hidden>
@@ -287,11 +287,12 @@ footer a:hover{color:var(--paper)}
   </div>
   <label class="field" id="sponsor-custom-wrap"><span class="fine">Custom</span><input id="sponsor-custom" type="number" min="1" max="1000" step="1" inputmode="numeric" autocomplete="off" aria-label="Custom dollars" placeholder="$"></label>
   <div class="tf-choices" role="group" aria-label="Pay with.">
-    <button type="button" class="tf-choice primary" id="sponsor-usdc" data-sponsor-method="usdc">USDC</button>
-    <button type="button" class="tf-choice secondary" id="sponsor-dasha" data-sponsor-method="dasha">$dasha</button>
+    <button type="button" class="tf-choice primary" id="sponsor-usdc" data-sponsor-method="usdc">USDC · $5</button>
+    <button type="button" class="tf-choice secondary" id="sponsor-dasha" data-sponsor-method="dasha">$dasha · $5</button>
     <a class="tf-choice secondary" id="sponsor-method-login" href="/login?return=/compute%23sponsor" hidden>Sign in</a>
   </div>
   <p class="fine" id="sponsor-method-err" hidden></p>
+  <p class="fine" id="sponsor-buy-fine">$5 tip · face · no crypto discount.</p>
 </section>
 
 <section class="tf-step" id="step-sponsor-send" data-tf="sponsor-send" hidden>
@@ -1893,6 +1894,18 @@ function sponsorFaceCents(){
   if(pack==='50')return 5000;
   return 500;
 }
+function formatSponsorTip(cents){
+  const n=Math.max(0,Math.floor(Number(cents)||0));
+  if(!(n>0))return '$0 tip';
+  return formatCredits(n)+' tip';
+}
+function paintSponsorBuyFine(){
+  const el=$('sponsor-buy-fine');
+  if(!el)return;
+  const face=sponsorFaceCents();
+  if(!(face>0)){el.textContent='Tip face · no crypto discount.';return}
+  el.textContent=formatSponsorTip(face)+' · face · no crypto discount.';
+}
 function formatSponsorRaised(cents){
   const n=Math.max(0,Math.floor(Number(cents)||0));
   const dollars=n%100? (n/100).toFixed(2) : String(n/100);
@@ -1945,10 +1958,15 @@ function paintSponsorBuy(){
   if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23sponsor'}
   if(usdc)usdc.hidden=!loggedIn;
   if(dasha)dasha.hidden=!loggedIn;
+  const face=sponsorFaceCents();
+  const faceLabel=face>0?formatCredits(face):'$5';
+  if(usdc)usdc.textContent='USDC · '+faceLabel;
+  if(dasha)dasha.textContent='$dasha · '+faceLabel;
   const err=$('sponsor-method-err');
   if(err&&loggedIn){err.hidden=true;err.textContent=''}
   const custom=$('sponsor-custom');
   if(custom&&sponsorCustomCents!=null)custom.value=String(Math.round(sponsorCustomCents/100));
+  paintSponsorBuyFine();
 }
 function paintSponsorSend(){
   const line=$('sponsor-send-line'),wait=$('sponsor-wait'),err=$('sponsor-send-err'),open=$('sponsor-open');
@@ -1960,7 +1978,8 @@ function paintSponsorSend(){
     return;
   }
   const meth=sponsorOrder.method==='dasha'?'$dasha':'USDC';
-  if(line)line.textContent=sponsorOrder.amount+' '+meth+' → '+shortDest(sponsorOrder.dest);
+  const tip=formatSponsorTip(sponsorOrder.face_cents||sponsorOrder.charge_cents||sponsorFaceCents());
+  if(line)line.textContent=sponsorOrder.amount+' '+meth+' · '+tip+' → '+shortDest(sponsorOrder.dest);
   if(open&&sponsorOrder.pay_url){
     open.href=sponsorOrder.pay_url;
     open.setAttribute('href',sponsorOrder.pay_url);
