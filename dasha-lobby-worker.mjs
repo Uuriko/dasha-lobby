@@ -3376,6 +3376,11 @@ export function potterHome308Dest(path) {
   // (not /privacy). Still skip /terms /tos /legal /faq — do not invent a privacy dest.
   const raw = String(path || '');
   const p = raw.toLowerCase();
+  // Leftover /play /game (+slash / Title-case) → /lobby. /arcade /games stay 404
+  // (Arcade is draft PR #44 only; this worker does not own arcade).
+  if (p === '/play' || p === '/play/' || p === '/game' || p === '/game/') {
+    return 'https://www.getdasha.com/lobby';
+  }
   if (POTTER_HOWTO_308_PATHS.has(p)) return 'https://www.getdasha.com/how-to-buy';
   if (POTTER_HOME_308_PATHS.has(p)) return 'https://www.getdasha.com/';
   if (POTTER_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login#grok';
