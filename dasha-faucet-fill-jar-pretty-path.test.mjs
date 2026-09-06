@@ -3,6 +3,7 @@
  * Leftover: live GET /fill /jar /fill-the-jar (and Title-case / slash) → html-404.
  * Fill the jar is the quiet faucet side door; bare /faucet/fill already 308→/faucet.
  * Pretty doors /fill /jar /fill-the-jar must 308 → https://www.getdasha.com/faucet (casefold).
+ * Worker 2608ea9d leftover: /faucet/fill-the-jar /faucet/fill_the_jar (+slash / Title-case) same dest.
  * Never plugin.jup.ag. Never Designer.
  */
 import assert from 'node:assert/strict';
@@ -22,6 +23,8 @@ const CASES = [
   '/fill', '/fill/', '/Fill', '/FILL', '/fIll/',
   '/jar', '/jar/', '/Jar', '/JAR', '/jAr/',
   '/fill-the-jar', '/fill-the-jar/', '/Fill-the-jar', '/FILL-THE-JAR', '/Fill-The-Jar/',
+  '/faucet/fill-the-jar', '/faucet/fill-the-jar/', '/Faucet/fill-the-jar', '/FAUCET/FILL-THE-JAR',
+  '/faucet/fill_the_jar', '/faucet/fill_the_jar/', '/Faucet/fill_the_jar', '/FAUCET/FILL_THE_JAR',
 ];
 
 for (const path of CASES) {
@@ -55,4 +58,4 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   assert.equal(bare.headers.get('x-dasha-edge'), 'faucet-fill');
 }
 
-console.log('dasha-faucet-fill-jar-pretty-path: PASS (/fill+/jar+/fill-the-jar casefold 308→/faucet www+lobby GET+HEAD)');
+console.log('dasha-faucet-fill-jar-pretty-path: PASS (/fill+/jar+/fill-the-jar+/faucet/fill-the-jar+/faucet/fill_the_jar casefold 308→/faucet www+lobby GET+HEAD)');

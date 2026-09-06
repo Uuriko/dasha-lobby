@@ -22,10 +22,13 @@ const PATHS = [
   '/howto', '/howto/',
   '/how-to', '/how-to/',
   '/howtobuy', '/howtobuy/',
+  '/how-tobuy', '/how-tobuy/',
+  '/howto_buy', '/howto_buy/',
   '/buy', '/buy/',
   '/Buy', '/BUY', '/Buy/',
   '/Howto', '/HowTo', '/HOWTO',
   '/How-To', '/Howtobuy',
+  '/How-tobuy', '/Howto_buy',
 ];
 
 for (const path of PATHS) {
@@ -61,7 +64,9 @@ assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/how-to-buy<\/loc>/);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/howto</);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/how-to</);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/howtobuy</);
+assert.doesNotMatch(sitemapXml, /getdasha\.com\/how-tobuy</);
+assert.doesNotMatch(sitemapXml, /getdasha\.com\/howto_buy</);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/buy</);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/how</);
 
-console.log('dasha-howto-pretty-path: PASS (case-fold /Buy+/Howto+/how family 308 /how-to-buy www+lobby GET+HEAD, page 200, sitemap omits leftover)');
+console.log('dasha-howto-pretty-path: PASS (case-fold /Buy+/Howto+/how+/how-tobuy+/howto_buy family 308 /how-to-buy www+lobby GET+HEAD, page 200, sitemap omits leftover)');

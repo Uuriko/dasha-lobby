@@ -136,11 +136,23 @@ assert.equal(potterHome308Dest('/compute/api'), null);
 assert.equal(potterHome308Dest('/compute/api/healthz'), null);
 assert.equal(potterHome308Dest('/faucet'), null);
 assert.equal(potterHome308Dest('/faucet/'), null);
-for (const path of ['/fill-the-jar', '/fill-the-jar/', '/Fill-the-jar', '/FILL-THE-JAR']) {
+for (const path of ['/fill-the-jar', '/fill-the-jar/', '/Fill-the-jar', '/FILL-THE-JAR', '/faucet/fill-the-jar', '/faucet/fill_the_jar', '/Faucet/fill-the-jar', '/FAUCET/FILL_THE_JAR']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/faucet', path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
   assert.equal(res.status, 308, path);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/faucet', path);
+}
+for (const path of ['/bounty', '/bounty/', '/Bounty', '/BOUNTY']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/bounties', path);
+  const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
+  assert.equal(res.status, 308, path);
+  assert.equal(res.headers.get('location'), 'https://www.getdasha.com/bounties', path);
+}
+for (const path of ['/how-tobuy', '/how-tobuy/', '/howto_buy', '/Howto_buy']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/how-to-buy', path);
+  const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
+  assert.equal(res.status, 308, path);
+  assert.equal(res.headers.get('location'), 'https://www.getdasha.com/how-to-buy', path);
 }
 for (const path of ['/provide', '/Provide', '/start', '/Start', '/sponsor', '/sponsors', '/Sponsors', '/ask', '/Ask', '/pay', '/Pay', '/credits', '/Credits', '/host', '/Host', '/use', '/night', '/marketplace', '/market', '/you', '/build', '/ocm', '/Ocm']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
