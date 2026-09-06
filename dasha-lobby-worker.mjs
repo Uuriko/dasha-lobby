@@ -2850,6 +2850,10 @@ const POTTER_HOME_308_PATHS = new Set([
   '/learn', '/learn/',
   '/graph', '/graph/',
   '/index.html', '/index.html/',
+  // Leftover /chart (Worker 8266782e): live /chart /Chart /CHART (+slash)
+  // html-404 → 308 home. Do not fold /mint /token here (already home on live;
+  // this tree keeps those as today). Skip /terms /tos /discord /status /openai.
+  '/chart', '/chart/',
 ]);
 const POTTER_HOWTO_308_PATHS = new Set([
   '/dasha', '/dasha/',
@@ -2866,6 +2870,11 @@ const POTTER_HOWTO_308_PATHS = new Set([
   // Leftover: /purchase (+slash / Title-case) still html-404
   // while /buy /howto already 308→/how-to-buy. Exact /how-to-buy stays 200.
   '/purchase', '/purchase/',
+  // Leftover /swap /trade (Worker 8266782e): live /swap /trade (+slash /
+  // Title-case) html-404 → 308 /how-to-buy. Do not fold /buy differently
+  // (already how-to-buy).
+  '/swap', '/swap/',
+  '/trade', '/trade/',
 ]);
 const POTTER_LOGIN_308_PATHS = new Set([
   '/grok', '/grok/',
@@ -3306,9 +3315,22 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
-  // Leftover /ca /ca/ (+slash / Title-case) still html-404 while /verify already 308→/which.
-  // Traders search CA and land dead. Fold to /which (dash_eats vs VVAIFU). Exact /which stays 200.
+]);
+/** Leftover /ca /contract /holder /holders (Worker 8266782e). Live already 308→/bag.
+ * /ca used to fold /which; bag is the contract/holder facts page. Exact /bag stays 200.
+ * Title-case via potterHome308Dest toLowerCase. Skip /terms /tos /discord /status /openai.
+ * Never fold /price (200 JSON) or /privacy (200). */
+const POTTER_BAG_308_PATHS = new Set([
   '/ca', '/ca/',
+  '/contract', '/contract/',
+  '/holder', '/holder/',
+  '/holders', '/holders/',
+]);
+/** Leftover /leaderboard /board (Worker 8266782e). Live already 308→/simp.
+ * Exact /simp stays 200. Do not fold /simp/board (board API). */
+const POTTER_SIMP_BOARD_308_PATHS = new Set([
+  '/leaderboard', '/leaderboard/',
+  '/board', '/board/',
 ]);
 /** Leftover /bounty (+slash / Title-case) still html-404 while /bounties is 200. */
 const POTTER_BOUNTIES_308_PATHS = new Set([
@@ -3486,6 +3508,7 @@ export function potterHome308Dest(path) {
   // Quiet /fill /jar /fill-the-jar /tip /tip-me /tips /compute/tips /donate /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar /once-a-day|/once_a_day → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana /hosted|/community|/mixture|/compute/hosted|/compute/community|/compute/mixture /hosts|/inferences|/key|/keys|/apikey|/api-key|/api_key|/install|/doctor|/me|/usage|/inference|/gpu|/gpus|/pricing|/providing|/mac-kit|/compute/hosts|/compute/inferences|/compute/key|/compute/keys|/compute/apikey|/compute/api-key|/compute/api_key|/compute/install|/compute/doctor|/compute/me|/compute/usage|/compute/inference|/compute/gpu|/compute/gpus|/compute/pricing|/compute/providing|/compute/mac-kit /fleet|/rent|/capacity|/offer|/offers|/worker|/workers|/node|/nodes|/cluster|/pool|/machines|/benchmark|/queue|/dashboard|/console|/balance|/pay-usdc|/apple-silicon|/macos|/silicon|/local|/edge|/onboard|/setup|/quickstart|/playground|/sandbox|/hello|/example|/examples|/prefer|/preference|/preferences|/compute/fleet|/compute/rent|/compute/capacity|/compute/offer|/compute/offers|/compute/worker|/compute/workers|/compute/node|/compute/nodes|/compute/cluster|/compute/pool|/compute/machines|/compute/benchmark|/compute/queue|/compute/dashboard|/compute/console|/compute/balance|/compute/pay-usdc|/compute/apple-silicon|/compute/macos|/compute/silicon|/compute/local|/compute/edge|/compute/onboard|/compute/setup|/compute/quickstart|/compute/playground|/compute/sandbox|/compute/hello|/compute/example|/compute/examples|/compute/prefer|/compute/preference|/compute/preferences /settlement|/settlements|/invoice|/invoices|/credit|/refill|/kits|/try|/getting-started|/get-started|/getstarted|/mac_kit|/compute/settlement|/compute/settlements|/compute/invoice|/compute/invoices|/compute/credit|/compute/refill|/compute/kits|/compute/try|/compute/getting-started|/compute/get-started|/compute/getstarted|/compute/mac_kit /plan|/plans|/prices|/payout|/payouts|/withdraw|/cashout|/payment|/payments|/checkout|/getting_started|/mac-setup|/mac_setup|/agents|/agent|/mcp|/tools|/tool|/earn|/mac|/kit|/compute/plan|/compute/plans|/compute/prices|/compute/price|/compute/payout|/compute/payouts|/compute/withdraw|/compute/cashout|/compute/payment|/compute/payments|/compute/checkout|/compute/getting_started|/compute/mac-setup|/compute/mac_setup|/compute/agents|/compute/agent|/compute/mcp|/compute/tools|/compute/tool| /compute/earn|/compute/mac|/compute/kit /help|/guide|/tutorial|/support|/docs-help|/getting-help|/contact|/free-credits|/buy-credits|/get-credits|/compute/help|/compute/guide|/compute/tutorial|/compute/support|/compute/contact|/compute/free-credits|/compute/buy-credits|/compute/get-credits|/compute/docs-help|/compute/getting-help|/app|/application|/compute/app|/compute/application /prefermlx|/compute/prefermlx|/m4|/compute/m4|/balances|/compute/balances|/credits/buy|/compute/credits/buy|/prefer-mlx|/prefer_mlx|/mlx|/compute/prefer-mlx|/compute/prefer_mlx|/compute/mlx /provider-kit|/provide-kit|/host-kit|/install-kit|/dasha-kit|/compute-kit|/provider_kit|/provide_kit|/host_kit|/install_kit|/dasha_kit|/compute_kit|/compute/provider-kit|/compute/provide-kit|/compute/host-kit|/compute/install-kit|/compute/dasha-kit|/compute/compute-kit|/compute/provider_kit|/compute/provide_kit|/compute/host_kit|/compute/install_kit|/compute/dasha_kit|/compute/compute_kit → /compute. Apex /gateway|/compute/gateway|/docs|/endpoint|/endpoints|/sdk|/cli|/compute/endpoint|/compute/endpoints|/compute/sdk|/compute/cli → /compute/api. Exact lowercase product stays null for 200 handlers.
   // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
   // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy|/purchase → /how-to-buy.
+  // Leftover /ca|/contract|/holder|/holders → /bag. Leftover /chart → /. Leftover /swap|/trade → /how-to-buy. Leftover /leaderboard|/board → /simp (Worker 8266782e).
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
   // Privacy synonyms: /privacy stays 200 (null). /help now folds via COMPUTE_TAB → /compute
   // (not /privacy). Still skip /terms /tos /legal /faq — do not invent a privacy dest.
@@ -3511,6 +3534,11 @@ export function potterHome308Dest(path) {
   if (POTTER_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login#grok';
   if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
   if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
+  // Leftover /ca /contract /holder /holders (+slash / Title-case) → /bag. Exact /bag stays 200.
+  if (POTTER_BAG_308_PATHS.has(p)) return 'https://www.getdasha.com/bag';
+  // Leftover /leaderboard /board (+slash / Title-case) → /simp. Exact /simp stays 200.
+  // Do not fold /simp/board.
+  if (POTTER_SIMP_BOARD_308_PATHS.has(p)) return 'https://www.getdasha.com/simp';
   // Leftover /bounty (+slash / Title-case) → /bounties. Exact /bounties stays 200.
   if (POTTER_BOUNTIES_308_PATHS.has(p)) return 'https://www.getdasha.com/bounties';
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/faucet';
