@@ -6,7 +6,8 @@
  * Leftover /profile /settings /compute/profile /compute/settings html-404 while
  * /account /you already 308→https://www.getdasha.com/compute and /compute is 200.
  * Disk only. No Designer. Never plugin.jup.ag.
- * Do not invent /terms /tos /legal /help /faq /cookie /aeo /shorts /dev.
+ * Do not invent /terms /tos /legal /faq /cookie /aeo /shorts /dev.
+ * /help now folds via help/credits leftover → /compute (not /privacy).
  * /sdk /cli now fold via settlement-billing-endpoint leftover → /compute/api.
  */
 import assert from 'node:assert/strict';
@@ -40,7 +41,7 @@ const COMPUTE_TABS = [
   '/you', '/you/', '/You', '/YOU',
 ];
 const INVENTED = [
-  '/terms', '/tos', '/legal', '/help', '/faq',
+  '/terms', '/tos', '/legal', '/faq',
   '/cookie', '/aeo', '/shorts', '/dev',
 ];
 

@@ -5,8 +5,9 @@
  * /mac_setup /agents|/agent /mcp /tools|/tool (+ /compute/* tabs, Title-case)
  * html-404 → 308 /compute. /compute/price folds; bare /price stays the
  * 200 JSON token-price API. Peers /pricing /pay /earn /getting-started
- * /mac /kit still → /compute. Skip /help /terms /admin /blog /waitlist
- * /tos /legal /news. Disk only. No Designer. Never plugin.jup.ag.
+ * /mac /kit still → /compute. /help now folds via help/credits leftover
+ * → /compute. Skip /terms /admin /blog /waitlist /tos /legal /news.
+ * Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -50,9 +51,9 @@ for (const leaf of COMPUTE_LEAVES) {
   assert.match(tab, new RegExp(`'/compute/${leaf}'`));
 }
 assert.match(tab, /'\/compute\/price'/);
+assert.match(tab, /'\/help'/, '/help now ships in help/credits leftover');
 assert.doesNotMatch(tab, /['"]\/price['"]/, 'do not fold bare /price');
 assert.doesNotMatch(tab, /['"]\/price\/['"]/, 'do not fold bare /price/');
-assert.doesNotMatch(tab, /['"]\/help['"]/, 'do not invent /help');
 assert.doesNotMatch(tab, /['"]\/terms['"]/, 'do not invent /terms');
 assert.doesNotMatch(tab, /['"]\/admin['"]/, 'do not invent /admin');
 assert.doesNotMatch(tab, /['"]\/blog['"]/, 'do not invent /blog');
@@ -84,7 +85,6 @@ const PRIOR_PEERS = [
 ];
 const FOLDS = [...NEW_PATHS, ...PRIOR_PEERS];
 const STAY_OUT = [
-  '/help', '/help/', '/Help',
   '/terms', '/terms/', '/Terms',
   '/admin', '/admin/', '/Admin',
   '/blog', '/blog/', '/Blog',
@@ -93,10 +93,14 @@ const STAY_OUT = [
   '/legal', '/legal/', '/Legal',
   '/news', '/news/', '/News',
 ];
+const HELP_NOW_COMPUTE = ['/help', '/help/', '/Help'];
 const BARE_PRICE = ['/price', '/price/', '/Price', '/PRICE'];
 
 for (const path of FOLDS) {
   assert.equal(potterHome308Dest(path), COMPUTE, path);
+}
+for (const path of HELP_NOW_COMPUTE) {
+  assert.equal(potterHome308Dest(path), COMPUTE, `${path} now folds via help leftover`);
 }
 assert.equal(potterHome308Dest('/compute/price'), COMPUTE, '/compute/price folds');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
@@ -175,4 +179,4 @@ for (const path of [
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-apex-plans-payout-agents-pretty-path: PASS (/plan(s)+/prices+/payout(s)+/withdraw+/cashout+/payment(s)+/checkout+/getting_started+/mac-setup+/agents|/agent+/mcp+/tools|/tool + /compute/* tabs 308 /compute; /compute/price folds; bare /price untouched; /pricing+/pay+/earn+/getting-started+/mac+/kit peers; Title-case+slash; www+lobby GET+HEAD sample; /compute 200; /help+/terms+/admin+/blog+/waitlist+/tos+/legal stay out; no plugin.jup.ag)');
+console.log('dasha-apex-plans-payout-agents-pretty-path: PASS (/plan(s)+/prices+/payout(s)+/withdraw+/cashout+/payment(s)+/checkout+/getting_started+/mac-setup+/agents|/agent+/mcp+/tools|/tool + /compute/* tabs 308 /compute; /compute/price folds; bare /price untouched; /pricing+/pay+/earn+/getting-started+/mac+/kit peers; Title-case+slash; www+lobby GET+HEAD sample; /compute 200; /help now /compute; /terms+/admin+/blog+/waitlist+/tos+/legal stay out; no plugin.jup.ag)');
