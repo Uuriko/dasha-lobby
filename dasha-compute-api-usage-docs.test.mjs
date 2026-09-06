@@ -13,7 +13,7 @@ const src = readFileSync(new URL('./dasha-compute-network.mjs', import.meta.url)
 assert.match(src, /usage\.chat_completions|hosted_chat/);
 assert.match(src, /Hosted \/compute\/api\/chat SSE/);
 assert.match(src, /jobs\/:id when stored/);
-assert.match(src, /usage \(\+ route\) when present/);
+assert.match(src, /usage \(\+ route \+ settle\) when present/);
 
 const html = readFileSync(new URL('./dasha-compute.html', import.meta.url), 'utf8');
 assert.equal(html, COMPUTE_PAGE_HTML, 'html ↔ page.mjs');

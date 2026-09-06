@@ -38,10 +38,14 @@ function assertReceiptUx(html, label) {
   assert.match(html, /if\(eng==='community'\|\|eng==='mixture'\|\|eng==='self'\)/, `${label} community/mixture/self branch`);
   assert.match(html, /Hosted paid settle only \(user charged\)/, `${label} hosted paid settle comment`);
   assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok \u00b7 '\+formatUsdCents\(cents\)/, `${label} hosted Settled · tok · $`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\)\}/, `${label} SSE community receipt cents:0`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\)\}/, `${label} poll community receipt cents:0`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\)\}/, `${label} SSE community receipt cents:0 + settleFieldsFrom`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\)\}/, `${label} poll community receipt cents:0 + settle`);
   assert.doesNotMatch(html, /data\?\.model\|\|\$\(['"]model['"]\)\.value/, `${label} never trust data?.model`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted'\}/, `${label} hosted paid cents:5`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted',settle_cents:5,settle_state:'settled'\}/, `${label} hosted paid cents:5 settled`);
+  assert.match(html, /function settleFieldsFrom\(/, `${label} settleFieldsFrom`);
+  assert.match(html, /lastSseSettle=null/, `${label} lastSseSettle`);
+  assert.match(html, /pending operator settle/, `${label} pending operator settle face`);
+  assert.match(html, /Quiet settle face only when job\/usage JSON provided settle_cents \+ settle_state \(fail closed\)/, `${label} fail-closed settle comment`);
   assert.match(html, /const u=data\?\.usage&&typeof data\.usage==='object'\?data\.usage:null/, `${label} poll reads job usage`);
   assert.match(html, /const u=lastSseUsage/, `${label} SSE reads lastSseUsage`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
@@ -168,8 +172,11 @@ if (puppeteer && existsSync(chrome)) {
       return {
         none: run(null),
         communityEarn: run({ tokens: 40, cents: 100, engine: "community", job_id: "job_abc123xyz", model: "gemma3-27b" }),
+        communitySettle: run({ tokens: 40, cents: 100, engine: "community", job_id: "job_abc123xyz", model: "gemma3-27b", settle_cents: 6, settle_state: "pending_operator" }),
+        communitySettled: run({ tokens: 12, cents: 7, engine: "mixture", job_id: "job_mix_1", model: "gemma3-12b", settle_cents: 6, settle_state: "settled" }),
         mixture: run({ tokens: 12, cents: 7, engine: "mixture", job_id: "job_mix_1", model: "gemma3-12b" }),
         self: run({ tokens: 9, cents: 50, engine: "self", job_id: "job_self_1", model: "qwen3-8b" }),
+        centsOnly: run({ tokens: 8, cents: 0, engine: "community", job_id: "job_cents", model: "qwen3-8b", settle_cents: 6 }),
         communityBare: (() => {
           const modelEl = document.getElementById("model");
           const prev = modelEl.value;
@@ -192,7 +199,16 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.communityEarn.visible, true, "Community receipt actually visible");
     assert.equal(painted.communityEarn.text, "Community · gemma3-27b · 40 tok · job_abc123xyz");
     assert.doesNotMatch(painted.communityEarn.text, /\$/);
-    assert.doesNotMatch(painted.communityEarn.text, /1\.00|Settled/);
+    assert.doesNotMatch(painted.communityEarn.text, /1\.00|Settled|pending operator settle|¢/);
+
+    assert.equal(painted.communitySettle.hidden, false);
+    assert.equal(painted.communitySettle.text, "Community · gemma3-27b · 40 tok · job_abc123xyz · 6¢ · pending operator settle");
+    assert.doesNotMatch(painted.communitySettle.text, /\$/);
+    assert.doesNotMatch(painted.communitySettle.text, /1\.00/);
+
+    assert.equal(painted.communitySettled.hidden, false);
+    assert.equal(painted.communitySettled.text, "Mixture · gemma3-12b · 12 tok · job_mix_1 · 6¢ · settled");
+    assert.doesNotMatch(painted.communitySettled.text, /\$/);
 
     assert.equal(painted.mixture.hidden, false);
     assert.equal(painted.mixture.text, "Mixture · gemma3-12b · 12 tok · job_mix_1");
@@ -201,6 +217,9 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.self.hidden, false);
     assert.equal(painted.self.text, "Your Mac · qwen3-8b · 9 tok · job_self_1");
     assert.doesNotMatch(painted.self.text, /\$/);
+
+    assert.equal(painted.centsOnly.text, "Community · qwen3-8b · 8 tok · job_cents", "settle_cents without state omits face");
+    assert.doesNotMatch(painted.centsOnly.text, /¢|pending operator settle/);
 
     assert.equal(painted.communityBare.hidden, true, "Community with only label hides");
     assert.equal(painted.communityBare.text, "");
