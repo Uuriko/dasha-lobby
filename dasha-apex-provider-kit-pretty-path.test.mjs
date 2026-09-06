@@ -137,6 +137,19 @@ const FETCH_SAMPLE = [
 const env = {
   LOBBY_SESSION_SECRET: 'apex-provider-kit-pretty-path-secret',
   AI: { run: async () => ({ response: 'ok' }) },
+  LOBBY: {
+    idFromName() { return 'public'; },
+    get() {
+      return {
+        async fetch() {
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { 'content-type': 'application/json; charset=utf-8' },
+          });
+        },
+      };
+    },
+  },
 };
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   for (const path of FETCH_SAMPLE) {
