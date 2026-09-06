@@ -3229,6 +3229,9 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
+  // Leftover /ca /ca/ (+slash / Title-case) still html-404 while /verify already 308→/which.
+  // Traders search CA and land dead. Fold to /which (dash_eats vs VVAIFU). Exact /which stays 200.
+  '/ca', '/ca/',
 ]);
 /** Leftover /bounty (+slash / Title-case) still html-404 while /bounties is 200. */
 const POTTER_BOUNTIES_308_PATHS = new Set([
