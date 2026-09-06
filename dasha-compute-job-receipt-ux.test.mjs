@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Live Worker 84c82ecb: Community/Mixture/self job receipt UX.
- * After Community/Mixture/self Ask, #answer-receipt shows
- * Community|Mixture|Your Mac · model · N tok · job…
+ * Live Worker 114f0e02: Community/Mixture/self job receipt UX + visibility.
+ * After Community/Mixture/self Ask, #answer-receipt stays visible
+ * (keep Answer open; removeAttribute hidden; CSS display:block).
+ * Paints Community|Mixture|Your Mac · model · N tok · job…
  * Never paints provider-earn cents as user $. Hosted paid settle unchanged.
  * Job GET returns honest usage + route when present.
  */
@@ -20,10 +21,18 @@ const disk = readFileSync(join(root, "dasha-compute.html"), "utf8");
 assert.equal(disk, COMPUTE_PAGE_HTML, "embed matches dasha-compute.html");
 
 function assertReceiptUx(html, label) {
-  assert.match(html, /id=["']answer-receipt["']/, `${label} #answer-receipt`);
+  assert.match(html, /id=["']answer-receipt["'][^>]*aria-live=["']polite["']/, `${label} #answer-receipt aria-live`);
+  assert.match(html, /#answer-receipt:not\(\[hidden\]\)\{display:block!important\}/, `${label} receipt CSS override`);
+  assert.match(html, /\.panel\[hidden\],\[hidden\]\{display:none!important\}/, `${label} hidden CSS`);
   assert.match(html, /function paintAnswerReceipt\(/, `${label} paintAnswerReceipt`);
+  assert.match(html, /Keep Answer step open so receipt is actually visible/, `${label} keep-open comment`);
+  assert.match(html, /if\(tfStep!=='answer'\)showTf\('answer'\)/, `${label} keep Answer step open`);
+  assert.match(html, /el\.removeAttribute\(['"]hidden['"]\)/, `${label} removeAttribute hidden`);
+  assert.match(html, /el\.setAttribute\(['"]hidden['"],['"]['"]\)/, `${label} setAttribute hidden`);
+  assert.match(html, /paintAnswerMoney\(\);paintAnswerReceipt\(\);updateRun\(\)/, `${label} finally re-paint`);
   assert.match(html, /never show provider-earn cents as user \$/, `${label} never provider-earn cents as user $`);
   assert.match(html, /selected\/routed model id from client\/job only \(never trust answer self-description\)/, `${label} never trust answer self-description`);
+  assert.match(html, /const model=String\(r\.model\|\|\$\(['"]model['"]\)\?\.value\|\|''\)\.trim\(\)/, `${label} model from receipt or select`);
   assert.match(html, /const label=eng==='mixture'\?'Mixture':eng==='self'\?'Your Mac':'Community'/, `${label} Community|Mixture|Your Mac`);
   assert.match(html, /parts\.join\(' · '\)/, `${label} · joined receipt`);
   assert.match(html, /if\(eng==='community'\|\|eng==='mixture'\|\|eng==='self'\)/, `${label} community/mixture/self branch`);
@@ -148,7 +157,8 @@ if (puppeteer && existsSync(chrome)) {
     const painted = await page.evaluate(() => {
       const read = () => {
         const el = document.getElementById("answer-receipt");
-        return { hidden: el?.hidden === true, text: (el?.textContent || "").trim() };
+        const visible = !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
+        return { hidden: el?.hidden === true, text: (el?.textContent || "").trim(), visible };
       };
       const run = (receipt) => {
         lastPaidReceipt = receipt;
@@ -157,10 +167,17 @@ if (puppeteer && existsSync(chrome)) {
       };
       return {
         none: run(null),
-        communityEarn: run({ tokens: 40, cents: 100, engine: "community", job_id: "job_abc123xyz", model: "qwen3-8b" }),
+        communityEarn: run({ tokens: 40, cents: 100, engine: "community", job_id: "job_abc123xyz", model: "gemma3-27b" }),
         mixture: run({ tokens: 12, cents: 7, engine: "mixture", job_id: "job_mix_1", model: "gemma3-12b" }),
         self: run({ tokens: 9, cents: 50, engine: "self", job_id: "job_self_1", model: "qwen3-8b" }),
-        communityBare: run({ tokens: 0, cents: 25, engine: "community" }),
+        communityBare: (() => {
+          const modelEl = document.getElementById("model");
+          const prev = modelEl.value;
+          modelEl.value = "";
+          const out = run({ tokens: 0, cents: 25, engine: "community" });
+          modelEl.value = prev;
+          return out;
+        })(),
         longJob: run({ tokens: 128, cents: 9, engine: "community", job_id: "job_abcdefghijklmno", model: "qwen3-8b" }),
         hostedPaid: run({ tokens: 33, cents: 5, engine: "hosted" }),
         hostedTokOnly: run({ tokens: 8, cents: 0, engine: "hosted" }),
@@ -172,7 +189,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.none.text, "");
 
     assert.equal(painted.communityEarn.hidden, false);
-    assert.equal(painted.communityEarn.text, "Community · qwen3-8b · 40 tok · job_abc123xyz");
+    assert.equal(painted.communityEarn.visible, true, "Community receipt actually visible");
+    assert.equal(painted.communityEarn.text, "Community · gemma3-27b · 40 tok · job_abc123xyz");
     assert.doesNotMatch(painted.communityEarn.text, /\$/);
     assert.doesNotMatch(painted.communityEarn.text, /1\.00|Settled/);
 
