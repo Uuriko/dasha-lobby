@@ -6,7 +6,8 @@
  * Leftover /profile /settings /compute/profile /compute/settings html-404 while
  * /account /you already 308→https://www.getdasha.com/compute and /compute is 200.
  * Disk only. No Designer. Never plugin.jup.ag.
- * Do not invent /terms /tos /legal /help /faq /cookie /aeo /shorts /sdk /cli /dev.
+ * Do not invent /terms /tos /legal /help /faq /cookie /aeo /shorts /dev.
+ * /sdk /cli now fold via settlement-billing-endpoint leftover → /compute/api.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -40,7 +41,7 @@ const COMPUTE_TABS = [
 ];
 const INVENTED = [
   '/terms', '/tos', '/legal', '/help', '/faq',
-  '/cookie', '/aeo', '/shorts', '/sdk', '/cli', '/dev',
+  '/cookie', '/aeo', '/shorts', '/dev',
 ];
 
 for (const path of PLAIN_LOGIN) {

@@ -48,16 +48,16 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 
 | Path | Status | Dest |
 | --- | --- | --- |
-| `/dasha` `/desk` `/howto` `/howtobuy` `/buy` | 308 | `https://www.getdasha.com/how-to-buy` |
+| `/dasha` `/desk` `/howto` `/howtobuy` `/buy` `/purchase` | 308 | `https://www.getdasha.com/how-to-buy` |
 | `/verify` | 308 | `https://www.getdasha.com/which` |
 | `/studio` `/verse` `/learn` `/graph` `/index.html` | 308 | `https://www.getdasha.com/` |
 | `/grok` `/siwg` | 308 | `https://www.getdasha.com/login#grok` |
-| `/compute/use` `/compute/provide` `/compute/night` `/compute/build` `/compute/sponsor` `/run` `/ollama` `/compute/run` `/compute/ollama` `/models` `/model` `/compute/models` `/compute/model` `/usdc` `/settle` `/topup` `/top-up` `/billing` `/wallet` `/phantom` `/solana` `/compute/usdc` `/compute/settle` `/compute/topup` `/compute/top-up` `/compute/billing` `/compute/wallet` `/compute/phantom` `/compute/solana` `/hosted` `/community` `/mixture` `/compute/hosted` `/compute/community` `/compute/mixture` `/hosts` `/inferences` `/key` `/keys` `/apikey` `/api-key` `/api_key` `/install` `/doctor` `/me` `/usage` `/inference` `/gpu` `/gpus` `/pricing` `/providing` `/mac-kit` `/rent` `/capacity` `/offer` `/offers` `/worker` `/workers` `/node` `/nodes` `/cluster` `/pool` `/machines` `/benchmark` `/queue` `/dashboard` `/console` `/balance` `/pay-usdc` `/apple-silicon` `/macos` `/silicon` `/local` `/edge` `/onboard` `/setup` `/quickstart` `/playground` `/sandbox` `/hello` `/example` `/examples` `/prefer` `/preference` `/preferences` + `/compute/*` peers | 308 | `https://www.getdasha.com/compute` |
-| `/tips` `/compute/tips` `/donate` | 308 | `https://www.getdasha.com/faucet` |
+| `/compute/use` `/compute/provide` `/compute/night` `/compute/build` `/compute/sponsor` `/run` `/ollama` `/compute/run` `/compute/ollama` `/models` `/model` `/compute/models` `/compute/model` `/usdc` `/settle` `/topup` `/top-up` `/billing` `/wallet` `/phantom` `/solana` `/compute/usdc` `/compute/settle` `/compute/topup` `/compute/top-up` `/compute/billing` `/compute/wallet` `/compute/phantom` `/compute/solana` `/hosted` `/community` `/mixture` `/compute/hosted` `/compute/community` `/compute/mixture` `/hosts` `/inferences` `/key` `/keys` `/apikey` `/api-key` `/api_key` `/install` `/doctor` `/me` `/usage` `/inference` `/gpu` `/gpus` `/pricing` `/providing` `/mac-kit` `/rent` `/capacity` `/offer` `/offers` `/worker` `/workers` `/node` `/nodes` `/cluster` `/pool` `/machines` `/benchmark` `/queue` `/dashboard` `/console` `/balance` `/pay-usdc` `/apple-silicon` `/macos` `/silicon` `/local` `/edge` `/onboard` `/setup` `/quickstart` `/playground` `/sandbox` `/hello` `/example` `/examples` `/prefer` `/preference` `/preferences` `/settlement` `/settlements` `/invoice` `/invoices` `/credit` `/refill` `/kits` `/try` `/getting-started` `/get-started` `/getstarted` `/mac_kit` + `/compute/*` peers | 308 | `https://www.getdasha.com/compute` |
+| `/tips` `/compute/tips` `/donate` `/once-a-day` `/once_a_day` | 308 | `https://www.getdasha.com/faucet` |
 | `/job` `/compute/job` `/api/job` | 308 | `https://www.getdasha.com/compute/api/jobs` |
 | `/receipt` `/receipts` `/compute/receipt` `/compute/receipts` `/api/receipt` `/api/receipts` | 308 | `https://www.getdasha.com/compute/api/receipts` |
 | `/api/keys` | 308 | `https://www.getdasha.com/compute/api/keys` |
-| `/gateway` `/compute/gateway` | 308 | `https://www.getdasha.com/compute/api` |
+| `/gateway` `/compute/gateway` `/endpoint` `/endpoints` `/sdk` `/cli` + `/compute/*` peers | 308 | `https://www.getdasha.com/compute/api` |
 
 Do not restore Studio. Do not list retired rooms or leftover 308s (`/siwg`, compute tab paths) in sitemap, README, or chrome as 200s. `/compute` stays the 200 product page; tab leftovers 308 there with no hash. `/compute/api` stays JSON.
 
