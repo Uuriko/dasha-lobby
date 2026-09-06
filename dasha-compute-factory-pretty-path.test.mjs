@@ -3,7 +3,7 @@
  * Leftover pretty path (Worker 0ff8cee2): live /compute/factory /api/factory
  * (+slash / Title-case) html-404 → 308 https://www.getdasha.com/compute/api/factory.
  * Lobby keeps same-host /compute/api/* via potterHome308Response.
- * Bare /factory stays out. Exact /compute/api/factory stays the 200 JSON handler.
+ * Bare /factory folds via COMPUTE_TAB → /compute. Exact /compute/api/factory stays the 200 JSON handler.
  * Disk only. No Designer. Never plugin.jup.ag. Do not invent arcade routes.
  */
 import assert from 'node:assert/strict';
@@ -21,7 +21,7 @@ assert.match(
   /Leftover \/compute\/factory \/api\/factory \(\+slash \/ Title-case\) → \/compute\/api\/factory/,
   'factory leftover comment',
 );
-assert.match(workerSrc, /Bare \/factory stays out/, 'bare /factory stay-out comment');
+assert.match(workerSrc, /Bare \/factory folds via POTTER_COMPUTE_TAB/, 'bare /factory folds via POTTER_COMPUTE_TAB');
 assert.match(workerSrc, /Never fold exact \/compute\/api\/factory/, 'exact API factory stay-out comment');
 assert.match(workerSrc, /'\/compute\/factory'/, 'set lists /compute/factory');
 assert.match(workerSrc, /'\/api\/factory'/, 'set lists /api/factory');
@@ -46,12 +46,15 @@ const FOLDS = [
   '/api/factory', '/api/factory/', '/Api/Factory', '/API/FACTORY/',
 ];
 const STAY_OUT = [
-  '/factory', '/factory/', '/Factory',
   '/compute/api/factory', '/compute/api/factory/',
 ];
+const BARE_FACTORY = ['/factory', '/factory/', '/Factory'];
 
 for (const path of FOLDS) {
   assert.equal(potterHome308Dest(path), FACTORY, path);
+}
+for (const path of BARE_FACTORY) {
+  assert.equal(potterHome308Dest(path), `${WWW}/compute`, `${path} folds via COMPUTE_TAB`);
 }
 for (const path of STAY_OUT) {
   assert.equal(potterHome308Dest(path), null, `stay out ${path}`);
@@ -82,12 +85,10 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     }
   }
   const bare = await edgeWorker.fetch(new Request(`https://${host}/factory`), env);
-  assert.notEqual(bare.status, 308, `${host} /factory is not a 308 fold`);
-  assert.equal(potterHome308Dest('/factory'), null, '/factory dest stays null');
-  if (host === 'www.getdasha.com') {
-    assert.equal(bare.status, 404, 'www /factory stays 404');
-    assert.equal(bare.headers.get('x-dasha-edge'), 'html-404');
-  }
+  assert.equal(bare.status, 308, `${host} /factory folds to /compute`);
+  assert.equal(bare.headers.get('location'), `${WWW}/compute`, `${host} /factory loc`);
+  assert.equal(potterHome308Dest('/factory'), `${WWW}/compute`, '/factory dest is /compute');
+  assert.equal(potterHome308Dest('/factory/'), `${WWW}/compute`, '/factory/ dest is /compute');
 }
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
@@ -95,4 +96,4 @@ for (const path of ['/compute/factory', '/api/factory', '/factory']) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-compute-factory-pretty-path: PASS (/compute/factory+/api/factory 308 /compute/api/factory www+lobby GET+HEAD; bare /factory out; exact API 200; no plugin.jup.ag)');
+console.log('dasha-compute-factory-pretty-path: PASS (/compute/factory+/api/factory 308 /compute/api/factory www+lobby GET+HEAD; bare /factory folds via COMPUTE_TAB → /compute; exact API 200; no plugin.jup.ag)');

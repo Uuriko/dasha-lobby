@@ -3265,6 +3265,44 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/install_kit', '/compute/install_kit/',
   '/compute/dasha_kit', '/compute/dasha_kit/',
   '/compute/compute_kit', '/compute/compute_kit/',
+  // Leftover llm/onboard/macbook/providerkit/factory/beta batch (2026-09-06 keep-working):
+  // live /llm /llms-api /onboarding /on-boarding /macbook /m-series /silicon-mac
+  // /ollama-setup /providerkit /factory /beta /early /early-access /earlyaccess
+  // (+ /compute/* tabs, Title-case) html-404 while /inference /onboard /alpha
+  // /mac-setup /provider_kit /ollama peers already 308→/compute. Fold product doors
+  // to plain /compute (no hash). Bare /factory = Compute factory face (product page);
+  // /compute/factory|/api/factory stay dedicated → /compute/api/factory (JSON). Do NOT
+  // put /compute/factory in this set. /llms stays AEO → /llms.txt (not this set).
+  // Skip locks: /arcade /games /multichain /room /project* /rooms /chatroom /connect
+  // /v1 /openai /openai-api /admin /blog /news /faq /waitlist /join /oauth /terms /tos
+  // /legal /status /health /discord /slack. Never /price (200 JSON) /privacy.
+  '/llm', '/llm/',
+  '/llms-api', '/llms-api/',
+  '/onboarding', '/onboarding/',
+  '/on-boarding', '/on-boarding/',
+  '/macbook', '/macbook/',
+  '/m-series', '/m-series/',
+  '/silicon-mac', '/silicon-mac/',
+  '/ollama-setup', '/ollama-setup/',
+  '/providerkit', '/providerkit/',
+  '/factory', '/factory/',
+  '/beta', '/beta/',
+  '/early', '/early/',
+  '/early-access', '/early-access/',
+  '/earlyaccess', '/earlyaccess/',
+  '/compute/llm', '/compute/llm/',
+  '/compute/llms-api', '/compute/llms-api/',
+  '/compute/onboarding', '/compute/onboarding/',
+  '/compute/on-boarding', '/compute/on-boarding/',
+  '/compute/macbook', '/compute/macbook/',
+  '/compute/m-series', '/compute/m-series/',
+  '/compute/silicon-mac', '/compute/silicon-mac/',
+  '/compute/ollama-setup', '/compute/ollama-setup/',
+  '/compute/providerkit', '/compute/providerkit/',
+  '/compute/beta', '/compute/beta/',
+  '/compute/early', '/compute/early/',
+  '/compute/early-access', '/compute/early-access/',
+  '/compute/earlyaccess', '/compute/earlyaccess/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -3401,7 +3439,7 @@ const POTTER_COMPUTE_API_NETWORK_308_PATHS = new Set([
   '/compute/network', '/compute/network/',
   '/api/network', '/api/network/',
 ]);
-/** /compute/factory /api/factory → /compute/api/factory. Bare /factory stays out. Exact /compute/api/factory stays handler. */
+/** /compute/factory /api/factory → /compute/api/factory. Bare /factory folds via POTTER_COMPUTE_TAB → /compute. Exact /compute/api/factory stays handler. */
 const POTTER_COMPUTE_API_FACTORY_308_PATHS = new Set([
   '/compute/factory', '/compute/factory/',
   '/api/factory', '/api/factory/',
@@ -3501,8 +3539,10 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_KEYS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/keys';
   if (POTTER_COMPUTE_API_STATUS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/status';
   if (POTTER_COMPUTE_API_NETWORK_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/network';
-  // Leftover /compute/factory /api/factory (+slash / Title-case) → /compute/api/factory.
-  // Bare /factory stays out. Never fold exact /compute/api/factory.
+  // Factory JSON synonym: live /compute/factory|/api/factory (+slash / Title-case)
+  // html-404 while /compute/api/factory is 200 JSON (same pattern as status/network).
+  // Bare /factory folds via POTTER_COMPUTE_TAB → /compute (product face). Never fold
+  // exact /compute/api/factory.
   if (POTTER_COMPUTE_API_FACTORY_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/factory';
   // Live /compute/health + /compute/healthz (+slash / Title-case) → /compute/api/healthz.
   // Lobby same-host rewrite already covers /compute/api/* dests in potterHome308Response.

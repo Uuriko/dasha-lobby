@@ -68,7 +68,7 @@ for (const leaf of COMPUTE_LEAVES) {
   assert.match(tab, new RegExp(`'/compute/${leaf}/'`));
 }
 for (const skip of [
-  '/openai', '/openai-api', '/v1', '/llm', '/status', '/health',
+  '/openai', '/openai-api', '/v1', '/status', '/health',
   '/connect', '/arcade', '/games', '/room', '/terms',
 ]) {
   assert.doesNotMatch(tab, new RegExp(`['"]${skip}['"]`), `${skip} stays out of compute-tab set`);
@@ -104,7 +104,6 @@ const SKIP_404 = [
   '/openai', '/openai/', '/OpenAI',
   '/openai-api', '/openai-api/',
   '/v1', '/v1/',
-  '/llm', '/llm/', '/Llm',
   '/status', '/status/', '/Status',
   '/health', '/health/', '/Health',
   '/connect', '/connect/', '/Connect',
