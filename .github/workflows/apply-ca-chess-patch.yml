@@ -1,0 +1,28 @@
+name: apply-ca-chess-patch
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  apply:
+    if: github.head_ref == 'cursor/ca-which-chess-apply-d9aa'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Apply /ca and chess patch
+        run: |
+          set -euo pipefail
+          if grep -Fq "'/ca', '/ca/'" dasha-lobby-worker.mjs; then
+            echo "patch already in worker"
+            exit 0
+          fi
+          git apply patches/ca-which-chess.patch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ROUTES.md dasha-canary-contract.test.mjs dasha-chess-page.html dasha-lobby-static-gen.mjs dasha-lobby-worker.mjs
+          git commit -m "Apply /ca 308 and chess regex parse fixes"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
