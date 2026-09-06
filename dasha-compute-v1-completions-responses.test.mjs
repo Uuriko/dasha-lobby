@@ -28,6 +28,7 @@ await storage.put(`compute:api-key:${id}`, {
   createdAt: Date.now(),
   lastUsedAt: 0,
 });
+await storage.put('compute:credit-balance:x:complete', { owner: 'x:complete', cents: 1000, updatedAt: Date.now() });
 const completeBody = JSON.stringify({ model: 'qwen3-8b', prompt: 'hi' });
 const responseBody = JSON.stringify({ model: 'qwen3-8b', input: 'hi' });
 const chatBody = JSON.stringify({ model: 'qwen3-8b', messages: [{ role: 'user', content: 'hi' }] });

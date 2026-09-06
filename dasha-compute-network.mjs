@@ -219,6 +219,9 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
       hosted_chat: 'POST /compute/api/chat SSE emits usage on the final stop chunk (Hosted UI)',
       jobs: 'GET /compute/api/jobs/:id returns stored usage (+ route) when present — never invent',
     },
+    billing: {
+      chat_completions: 'Prepaid credits ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection',
+    },
   }, 200, allowedOrigin || '*', credentials);
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
 }
@@ -670,7 +673,7 @@ export class ComputeNetwork {
         id, name, api_key: token,
         limit_cents: limitCents, limit_reset: limitReset, spend_cents: 0,
         limit_remaining_cents: limitCents == null ? null : limitCents,
-        note: 'Copy this key now. Dasha stores only its hash.',
+        note: 'Copy this key now. Dasha stores only its hash. Non-self chat spends prepaid credits; cap limits runaway.',
       }, 201, allowedOrigin, true);
     }
 
@@ -736,7 +739,7 @@ export class ComputeNetwork {
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method === 'POST') {
       const key = await this.apiKey(request);
       if (!key) return openaiError('invalid API key', 401, 'authentication_error');
-      // v1: flat HOSTED_ASK_PRICE_CENTS per successful API chat queue (community/mixture). Self-route free (own Mac). Hard key cap.
+      // v1: prepaid HOSTED_ASK_PRICE_CENTS per non-self API chat (community/mixture). Self-route free. Key limit_cents is runaway-only.
       const input = mergeRouteFromHeaders(await body(request, 12 * 1024), request);
       await this.prune(now);
       const providersPeek = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
@@ -744,10 +747,24 @@ export class ComputeNetwork {
       if (peek.route !== 'self') {
         const gate = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now, { checkOnly: true });
         if (!gate.ok) return openaiError(gate.error || 'key spend limit reached', gate.status || 402, 'invalid_request_error');
+        const balPeek = Math.max(0, Math.floor(Number((await this.state.storage.get(`compute:credit-balance:${key.owner}`))?.cents) || 0));
+        if (balPeek < HOSTED_ASK_PRICE_CENTS) {
+          return openaiError('top up credits', 402, 'invalid_request_error');
+        }
       }
       const queued = await this.queueJob(key.owner, input, now);
       if (queued.error) return openaiError(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error');
       if (queued.job.route !== 'self') {
+        const debit = await this.debitCredits(key.owner, {
+          cents: HOSTED_ASK_PRICE_CENTS,
+          reason: 'api-chat',
+          requestId: `api:${queued.job.id}`,
+          now,
+        });
+        if (!debit.ok) {
+          await this.state.storage.delete(`compute:job:${queued.job.id}`);
+          return openaiError(debit.error || 'top up credits', 402, 'invalid_request_error');
+        }
         const spend = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now);
         if (!spend.ok) {
           await this.state.storage.delete(`compute:job:${queued.job.id}`);
@@ -1037,8 +1054,9 @@ export class ComputeNetwork {
       if (!allowedOrigin) return json({ error: 'origin required' }, 403);
       const session = await authSessionFromRequest(this.env, request);
       const actor = sponsorActor(session);
-      if (!actor) return json({ error: 'login required' }, 401, allowedOrigin, true);
-      if (!takeRate(this.rates, `sponsor-order:${actor.owner}`, 8)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
+      const ip = (request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() || 'unknown').slice(0, 64);
+      const rateOwner = actor ? actor.owner : `ip:${ip || 'unknown'}`;
+      if (!takeRate(this.rates, `sponsor-order:${rateOwner}`, 8)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
       const input = await body(request);
       const method = String(input.method || '').toLowerCase();
       const cents = tipCentsFromInput({ pack: input.pack, cents: input.cents });
@@ -1056,13 +1074,16 @@ export class ComputeNetwork {
       const reference = await generateReference();
       const id = `spr_${randomUrlToken(12)}`;
       const nowMs = Date.now();
-      const name = String(input.name || '').trim().slice(0, 40) || actor.fallback;
+      const anonymous = !actor;
+      const owner = actor ? actor.owner : `anon:${randomUrlToken(12)}`;
+      const name = anonymous ? null : String(input.name || '').trim().slice(0, 40) || actor.fallback;
       const order = {
         id,
         kind: 'sponsor',
-        owner: actor.owner,
-        handle: actor.handle,
+        owner,
+        handle: actor?.handle || null,
         name,
+        anonymous,
         machine: machineId,
         method,
         face_cents: locked.face_cents,
@@ -1096,6 +1117,7 @@ export class ComputeNetwork {
         reference: order.reference,
         pay_url,
         name: order.name,
+        anonymous: !!order.anonymous,
         expires_at: order.expiresAt,
       }, 201, allowedOrigin, true);
     }
@@ -1104,12 +1126,9 @@ export class ComputeNetwork {
     if (sponsorOrderMatch) {
       const orderId = sponsorOrderMatch[1];
       const isConfirm = sponsorOrderMatch[2] === 'confirm' || path.endsWith('/confirm') || path.endsWith('/confirm/');
-      const session = await authSessionFromRequest(this.env, request);
-      const actor = sponsorActor(session);
-      if (!actor) return json({ error: 'login required' }, 401, allowedOrigin, true);
       const key = `compute:sponsor-order:${orderId}`;
       let order = await this.state.storage.get(key);
-      if (!order || order.owner !== actor.owner) return maybeHead(request, json({ error: 'order not found' }, 404, allowedOrigin, true));
+      if (!order) return maybeHead(request, json({ error: 'order not found' }, 404, allowedOrigin, true));
 
       if (isConfirm) {
         if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, true));
@@ -1145,6 +1164,7 @@ export class ComputeNetwork {
         reference: order.reference,
         signature: order.signature || null,
         name: order.name || null,
+        anonymous: !!order.anonymous || String(order.owner || '').startsWith('anon:'),
         expires_at: order.expiresAt,
       }, 200, allowedOrigin, true));
     }
@@ -1587,6 +1607,7 @@ export class ComputeNetwork {
       owner: fresh.owner,
       handle: fresh.handle || null,
       name: fresh.name || null,
+      anonymous: !!fresh.anonymous || String(fresh.owner || '').startsWith('anon:'),
       machine: fresh.machine || 'network',
       method: fresh.method,
       cents,
@@ -1604,7 +1625,10 @@ export class ComputeNetwork {
     if (pledge.machine && pledge.machine !== 'network') {
       const macKey = `compute:sponsor:${pledge.machine}`;
       const existing = await this.state.storage.get(macKey);
-      if (!existing) {
+      if (existing) {
+        const nextCents = Math.floor(Number(existing.cents) || 0) + cents;
+        await this.state.storage.put(macKey, { ...existing, status: 'funded', cents: nextCents });
+      } else if (pledge.name) {
         await this.state.storage.put(macKey, {
           machine: pledge.machine,
           owner: pledge.owner,
@@ -1615,10 +1639,6 @@ export class ComputeNetwork {
           cents,
           createdAt: now,
         });
-      } else if (existing.status !== 'funded') {
-        await this.state.storage.put(macKey, { ...existing, status: 'funded', cents: Math.floor(Number(existing.cents) || 0) + cents });
-      } else {
-        await this.state.storage.put(macKey, { ...existing, cents: Math.floor(Number(existing.cents) || 0) + cents });
       }
     }
 

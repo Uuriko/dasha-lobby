@@ -973,6 +973,7 @@ if (puppeteer && existsSync(chrome)) {
 
   // Gate first-paint auth · You profile
   await page.goto(new URL("./dasha-compute.html", import.meta.url).href, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__dashaAuthReady === true, { timeout: 8000 }).catch(() => {});
   await page.evaluate(() => { loggedIn = false; sessionLabel = ''; paintGateAuth(); showTf("gate"); });
   const guestGate = await page.evaluate(() => {
     const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);

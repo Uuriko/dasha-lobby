@@ -48,6 +48,7 @@ const keyCreated = await network.fetch(new Request('https://lobby.getdasha.com/c
 }), origin);
 assert.equal(keyCreated.status, 201, await keyCreated.clone().text());
 const developerKey = await keyCreated.json();
+await storage.put('compute:credit-balance:x:usage-sse', { owner: 'x:usage-sse', cents: 1000, updatedAt: Date.now() });
 const apiHeaders = { Authorization: `Bearer ${developerKey.api_key}`, 'Content-Type': 'application/json' };
 
 async function pollJob() {

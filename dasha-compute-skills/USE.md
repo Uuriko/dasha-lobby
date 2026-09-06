@@ -7,10 +7,11 @@ Get a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Commu
 
 ## Facts
 - URL: https://www.getdasha.com/compute
-- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha). Credits → balance + Use credits / Top up. No card yet.
+- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login). Credits → balance + Use credits / Top up. No card yet.
 - Login with X is required to Run or queue
 - Hosted model: gpt-oss-20b · 3 free / 10 min · then credits
 - API base (power users): https://lobby.getdasha.com/compute/api/v1
+- API billing: non-self `v1/chat/completions` spends prepaid credits ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits.
 - API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.
 - Marketplace: https://www.getdasha.com/compute/ocm
 - Do not paste secrets into prompts. Community Mac operators can read assigned prompts.

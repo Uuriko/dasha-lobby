@@ -69,7 +69,10 @@ const headers = { Cookie: `${COOKIE}=${session}`, Origin: origin, 'Content-Type'
 const unauth = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/sponsors/orders', {
   method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ pack: '5', method: 'usdc' }),
 }), origin);
-assert.equal(unauth.status, 401);
+assert.equal(unauth.status, 201);
+const guestOrder = await unauth.json();
+assert.equal(guestOrder.anonymous, true);
+assert.equal(guestOrder.name, null);
 
 const created = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/sponsors/orders', {
   method: 'POST', headers, body: JSON.stringify({ pack: '5', method: 'usdc', machine: 'network' }),
@@ -84,6 +87,8 @@ assert.equal(order.charge_cents, 500);
 assert.match(order.pay_url, new RegExp(`^solana:${COMPUTE_SPONSOR_TREASURY}`));
 assert.match(order.pay_url, /amount=5/);
 assert.equal(order.mint, USDC_MINT);
+assert.equal(order.anonymous, false);
+assert.ok(order.name);
 
 const pendingConfirm = await network.fetch(new Request(`https://lobby.getdasha.com/compute/api/sponsors/orders/${order.id}/confirm`, {
   method: 'POST', headers, body: '{}',
