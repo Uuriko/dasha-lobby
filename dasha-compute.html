@@ -1801,7 +1801,7 @@ function paintSettled24h(){
 }
 function settleFieldsFrom(src){
   const cents=Math.max(0,Math.floor(Number(src?.cents ?? src?.settle_cents)||0));
-  const state=String(src?.state ?? src?.settle_state||'').trim();
+  const state=String(src?.state ?? src?.settle_state ?? '').trim();
   if(!(cents>0)||!state)return {};
   return {settle_cents:cents,settle_state:state};
 }
