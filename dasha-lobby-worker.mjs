@@ -2957,6 +2957,21 @@ const POTTER_SECURITY_TXT_308_PATHS = new Set([
   '/security', '/security/',
   '/security.txt', '/security.txt/',
 ]);
+/** Leftover /llms-full /llms_full (+slash / Title-case) + /.well-known/llms-full.txt → /llms-full.txt. */
+const POTTER_LLMS_FULL_AEO_308_PATHS = new Set([
+  '/llms-full', '/llms-full/',
+  '/llms_full', '/llms_full/',
+  '/.well-known/llms-full.txt',
+]);
+/** Existing /llms (+slash / Title-case) + /.well-known/llms.txt → /llms.txt. */
+const POTTER_LLMS_AEO_308_PATHS = new Set([
+  '/llms', '/llms/',
+  '/.well-known/llms.txt',
+]);
+/** Leftover /.well-known/ai.txt (Title-case) → /ai.txt. Exact /ai.txt stays 200. */
+const POTTER_AI_TXT_WELLKNOWN_308_PATHS = new Set([
+  '/.well-known/ai.txt',
+]);
 /** /jobs /compute/jobs /api/jobs → /compute/api/jobs. */
 const POTTER_COMPUTE_API_JOBS_308_PATHS = new Set([
   '/jobs', '/jobs/',
@@ -3025,6 +3040,14 @@ export function potterHome308Dest(path) {
   // Leftover /security /security.txt (+slash / Title-case) → /.well-known/security.txt.
   // Exact /.well-known/security.txt stays null (200 handler). Do not invent /humans.txt /ads.txt /terms /tos.
   if (POTTER_SECURITY_TXT_308_PATHS.has(p)) return 'https://www.getdasha.com/.well-known/security.txt';
+  // Leftover /llms-full /llms_full (+slash / Title-case) + /.well-known/llms-full.txt → /llms-full.txt.
+  // Existing /llms (+slash / Title-case) + /.well-known/llms.txt → /llms.txt.
+  // Leftover /.well-known/ai.txt (Title-case) → /ai.txt.
+  // Exact /llms-full.txt /llms.txt /ai.txt stay null (200 handlers).
+  // Well-known trailing slash stays out (live 404). Do not invent /llm /humans.txt /ads.txt /terms /tos /social.
+  if (POTTER_LLMS_FULL_AEO_308_PATHS.has(p)) return 'https://www.getdasha.com/llms-full.txt';
+  if (POTTER_LLMS_AEO_308_PATHS.has(p)) return 'https://www.getdasha.com/llms.txt';
+  if (POTTER_AI_TXT_WELLKNOWN_308_PATHS.has(p)) return 'https://www.getdasha.com/ai.txt';
   // Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs (+slash / Title-case) → /compute/api.
   // Lobby same-host rewrite covers /compute/api dests in potterHome308Response.
   if (POTTER_COMPUTE_API_DOCS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api';
