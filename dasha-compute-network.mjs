@@ -332,6 +332,18 @@ function chatMessages(input) {
   return messages.at(-1)?.role === 'user' ? messages : null;
 }
 
+export function modelIdentitySystemContent(modelId) {
+  const id = String(modelId || '').trim();
+  return id ? `You are model ${id} on Dasha Compute. If asked your name/model, answer with exactly that id.` : '';
+}
+
+export function withModelIdentityHint(messages, modelId) {
+  const tip = modelIdentitySystemContent(modelId);
+  if (!tip || !Array.isArray(messages)) return messages;
+  if (messages.some((row) => row?.role === 'system' && typeof row.content === 'string' && row.content.includes('on Dasha Compute') && row.content.includes('answer with exactly that id'))) return messages;
+  return [{ role: 'system', content: tip }, ...messages];
+}
+
 function providerHardware(input, allowedModels) {
   const source = input?.hardware;
   if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
@@ -513,9 +525,10 @@ export class ComputeNetwork {
 
 
   async queueJob(owner, input, now) {
-    const messages = chatMessages(input), model = String(input.model || '');
-    if (!messages) return { error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total', status: 400 };
+    const parsed = chatMessages(input), model = String(input.model || '');
+    if (!parsed) return { error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total', status: 400 };
     if (!MODELS.has(model)) return { error: 'unsupported model', status: 400 };
+    const messages = withModelIdentityHint(parsed, model);
     if (!takeRate(this.rates, owner, 5)) return { error: 'community limit reached; try again shortly', status: 429 };
     await this.prune(now);
     const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];

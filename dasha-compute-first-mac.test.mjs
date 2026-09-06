@@ -72,7 +72,12 @@ const queued = await (await lobby.fetch(new Request(`https://lobby.getdasha.com/
 assert.equal(queued.queue_position, 1);
 const poll = await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/providers/poll', { method: 'POST', headers: providerHeaders, body: JSON.stringify(heartbeat) }));
 assert.equal(poll.status, 200);
-assert.equal((await poll.json()).job.messages[0].content, 'Community hello.');
+{
+  const leased = (await poll.json()).job;
+  assert.equal(leased.messages[0].role, 'system');
+  assert.match(leased.messages[0].content, /You are model qwen3-8b on Dasha Compute/);
+  assert.equal(leased.messages.at(-1).content, 'Community hello.');
+}
 const result = await lobby.fetch(new Request(`https://lobby.getdasha.com/compute/api/providers/jobs/${submitted.id}/result`, { method: 'POST', headers: providerHeaders, body: JSON.stringify({ provider_id: credentials.provider_id, content: 'Community inference works.' }) }));
 assert.equal(result.status, 202);
 assert.equal(rows.get(`compute:job:${submitted.id}`).messages, null, 'prompt must be removed after completion');
