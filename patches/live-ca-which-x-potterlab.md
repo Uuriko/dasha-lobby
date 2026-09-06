@@ -1,6 +1,6 @@
 # Live leftover: keep /ca → /which, ship /x → @potterlab
 
-Re-proved against **live** www on 2026-09-06 23:16 UTC:
+Re-proved against **live** www on 2026-09-06 23:40 UTC:
 
 ```
 GET https://www.getdasha.com/ca       → 308 https://www.getdasha.com/which  OK now — keep it
