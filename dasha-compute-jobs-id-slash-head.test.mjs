@@ -125,6 +125,20 @@ assert.equal(streaming.status, 200);
 assert.equal(streaming.body.status, 'leased');
 assert.equal(streaming.body.answer, 'Hello', 'stream job GET must join chunks before complete');
 assert.equal(streaming.body.model, 'gemma3-27b');
+assert.equal('usage' in streaming.body, false, 'no usage when absent');
+assert.equal('route' in streaming.body, false, 'no route when absent');
+
+const honestId = 'job_honest';
+await storage.put(`compute:job:${honestId}`, {
+  id: honestId, owner: 'x:jobs-id-owner', status: 'complete', model: 'qwen3-8b',
+  route: 'community', answer: 'done',
+  usage: { prompt_tokens: 4, completion_tokens: 6, total_tokens: 10 },
+  createdAt: now, expiresAt: now + 5 * 60_000,
+});
+const honest = await pair('lobby.getdasha.com', `/compute/api/jobs/${honestId}`, { headers: cookie }, (req) => network.fetch(req));
+assert.equal(honest.status, 200);
+assert.equal(honest.body.route, 'community');
+assert.deepEqual(honest.body.usage, { prompt_tokens: 4, completion_tokens: 6, total_tokens: 10 });
 
 assert.equal([...rows.keys()].some(key => key.startsWith('compute:provider:')), false, 'must not invent Macs');
 console.log('dasha-compute-jobs-id-slash-head: PASS');

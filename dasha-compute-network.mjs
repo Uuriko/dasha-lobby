@@ -986,7 +986,24 @@ export class ComputeNetwork {
       if (Number(job.expiresAt) <= now) { await this.state.storage.delete(key); return maybeHead(request, json({ error: 'job expired' }, 410, allowedOrigin, credentials)); }
       const queued = job.status === 'queued' ? [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].filter(candidate => candidate.status === 'queued' && candidate.model === job.model).sort((a, b) => a.createdAt - b.createdAt) : [];
       const queuePosition = queued.findIndex(candidate => candidate.id === job.id) + 1;
-      return maybeHead(request, json({ id: job.id, status: job.status, model: job.model, answer: (job.chunks || []).join('') || job.answer || null, error: job.error || null, provider: job.providerId || null, queue_position: queuePosition || null, expires_at: job.expiresAt }, 200, allowedOrigin, credentials));
+      const usage = job.usage && typeof job.usage === 'object' ? {
+        prompt_tokens: Math.max(0, Math.floor(Number(job.usage.prompt_tokens) || 0)),
+        completion_tokens: Math.max(0, Math.floor(Number(job.usage.completion_tokens) || 0)),
+        total_tokens: Math.max(0, Math.floor(Number(job.usage.total_tokens) || 0)),
+      } : null;
+      const route = ['community', 'mixture', 'self'].includes(String(job.route || '')) ? String(job.route) : null;
+      return maybeHead(request, json({
+        id: job.id,
+        status: job.status,
+        model: job.model,
+        answer: (job.chunks || []).join('') || job.answer || null,
+        error: job.error || null,
+        provider: job.providerId || null,
+        queue_position: queuePosition || null,
+        expires_at: job.expiresAt,
+        ...(usage && (usage.total_tokens > 0 || usage.prompt_tokens > 0 || usage.completion_tokens > 0) ? { usage } : {}),
+        ...(route ? { route } : {}),
+      }, 200, allowedOrigin, credentials));
     }
 
     if ((path === '/compute/api/sponsors' || path === '/compute/api/sponsors/') && (request.method === 'GET' || request.method === 'HEAD')) {
