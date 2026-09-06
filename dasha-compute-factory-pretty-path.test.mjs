@@ -18,11 +18,11 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /POTTER_COMPUTE_API_FACTORY_308_PATHS/, 'factory 308 set present');
 assert.match(
   workerSrc,
-  /Leftover \/compute\/factory \/api\/factory \(\+slash \/ Title-case\) → \/compute\/api\/factory/,
+  /Factory JSON synonym: live \/compute\/factory\|\/api\/factory \(\+slash \/ Title-case\)/,
   'factory leftover comment',
 );
 assert.match(workerSrc, /Bare \/factory folds via POTTER_COMPUTE_TAB/, 'bare /factory folds via POTTER_COMPUTE_TAB');
-assert.match(workerSrc, /Never fold exact \/compute\/api\/factory/, 'exact API factory stay-out comment');
+assert.match(workerSrc, /Never fold\s+\/\/ exact \/compute\/api\/factory/, 'exact API factory stay-out comment');
 assert.match(workerSrc, /'\/compute\/factory'/, 'set lists /compute/factory');
 assert.match(workerSrc, /'\/api\/factory'/, 'set lists /api/factory');
 assert.doesNotMatch(
