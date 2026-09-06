@@ -56,6 +56,7 @@ if (puppeteer && existsSync(chrome)) {
   try {
     const page = await browser.newPage();
     await page.goto(new URL("./dasha-compute.html", import.meta.url).href, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => window.__dashaAuthReady === true, { timeout: 8000 }).catch(() => {});
     const painted = await page.evaluate(() => {
       loggedIn = true;
       earnLoaded = true;

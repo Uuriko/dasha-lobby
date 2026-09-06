@@ -52,6 +52,7 @@ if (puppeteer && existsSync(chrome)) {
   try {
     const page = await browser.newPage();
     await page.goto(new URL("./dasha-compute.html", import.meta.url).href, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => window.__dashaAuthReady === true, { timeout: 8000 }).catch(() => {});
     await page.click("#pick-ask");
     const idle = await page.evaluate(() => {
       const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
@@ -97,14 +98,23 @@ if (puppeteer && existsSync(chrome)) {
     assert.match(live.howTitle, /qwen3-8b · 42\.5 tok\/s measured/);
     assert.equal(live.floor, "2 · qwen3-8b · 42.5 tok/s · Hosted floor.");
 
-    await page.evaluate(() => { showTf("ask"); updateRun(); });
     const onAsk = await page.evaluate(() => {
       const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
+      providersOnline = 2;
+      networkModels = new Set(["qwen3-8b"]);
+      networkCapacity = [{ model: "qwen3-8b", measured_providers: 1, tokens_per_second: 42.5 }];
+      showTf("ask");
+      updateRun();
+      const chip = document.getElementById("ask-community");
       return {
-        door: vis(document.getElementById("ask-community")),
-        text: (document.getElementById("ask-community")?.textContent || "").trim(),
+        door: vis(chip),
+        hidden: chip?.hidden === true,
+        text: (chip?.textContent || "").trim(),
+        n: providersOnline,
       };
     });
+    assert.equal(onAsk.n, 2);
+    assert.equal(onAsk.hidden, false, "Community door not hidden attr");
     assert.equal(onAsk.door, true, "Community door on Ask when Macs up");
     assert.equal(onAsk.text, "Community · 2");
   } finally {
