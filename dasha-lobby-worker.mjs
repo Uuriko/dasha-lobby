@@ -2922,6 +2922,10 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/providers', '/providers/',
   '/products', '/products/',
   '/compute/products', '/compute/products/',
+  // Leftover product bridge: /faucet/compute (+slash / Title-case) still
+  // html-404 while /compute is 200 — fold to /compute. Inverse
+  // /compute/faucet lives on POTTER_FAUCET_DOOR_308_PATHS → /faucet.
+  '/faucet/compute', '/faucet/compute/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -2934,6 +2938,11 @@ const POTTER_FAUCET_DOOR_308_PATHS = new Set([
   // Claim path ends tip me; apex /tip /tip-me were html-404.
   '/tip', '/tip/',
   '/tip-me', '/tip-me/',
+  // Leftover product bridge: /compute/faucet (+slash / Title-case) still
+  // html-404 while /faucet is 200 — fold to /faucet. Inverse
+  // /faucet/compute lives on POTTER_COMPUTE_TAB_308_PATHS → /compute.
+  // Do not invent /faucet/jar (intentional 404 gap).
+  '/compute/faucet', '/compute/faucet/',
 ]);
 /** Pretty health probes: live /compute/health(z) (+slash) 308 → /compute/api/healthz. */
 const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
@@ -3033,7 +3042,8 @@ export function potterHome308Dest(path) {
   // Title-case product pages (/Faucet /Compute /Lobby /Chess /Bag …) were html-404 while
   // lowercase siblings already 200 — 308 to the same dest (canonical lowercase).
   // Machine files (/Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Llms-Full.txt) same pattern.
-  // Quiet /fill /jar /fill-the-jar /tip /tip-me → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products → /compute. Exact lowercase product stays null for 200 handlers.
+  // Quiet /fill /jar /fill-the-jar /tip /tip-me /compute/faucet → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute → /compute. Exact lowercase product stays null for 200 handlers.
+  // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
   const raw = String(path || '');
   const p = raw.toLowerCase();
