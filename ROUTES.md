@@ -52,7 +52,8 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 | `/verify` | 308 | `https://www.getdasha.com/which` |
 | `/studio` `/verse` `/learn` `/graph` `/index.html` | 308 | `https://www.getdasha.com/` |
 | `/grok` `/siwg` | 308 | `https://www.getdasha.com/login#grok` |
-| `/compute/use` `/compute/provide` `/compute/night` `/compute/build` `/compute/sponsor` `/run` `/ollama` `/compute/run` `/compute/ollama` | 308 | `https://www.getdasha.com/compute` |
+| `/compute/use` `/compute/provide` `/compute/night` `/compute/build` `/compute/sponsor` `/run` `/ollama` `/compute/run` `/compute/ollama` `/models` `/model` `/compute/models` `/compute/model` | 308 | `https://www.getdasha.com/compute` |
+| `/gateway` `/compute/gateway` | 308 | `https://www.getdasha.com/compute/api` |
 
 Do not restore Studio. Do not list retired rooms or leftover 308s (`/siwg`, compute tab paths) in sitemap, README, or chrome as 200s. `/compute` stays the 200 product page; tab leftovers 308 there with no hash. `/compute/api` stays JSON.
 
