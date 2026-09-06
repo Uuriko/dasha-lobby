@@ -2,7 +2,10 @@
 /**
  * Compute honesty panel — post-Start live /network + /factory strip.
  * Honest zeros; no fake Macs; Prefer MLX stays on Provide only.
- * Quiet measured tok/s on #honesty-macs when capacity.measured_providers≥1.
+ * Quiet presence on #honesty-macs: N online · {model} · ~X tok/s
+ * from /compute/api/network advertising only (providers_online + capacity/models).
+ * Never pad enrolled OCM. Richer formatSettledLine() on #honesty-settled + #settled-24h.
+ * Gate Start. unchanged — Room stays separate / no /room CTA.
  */
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -36,7 +39,11 @@ assert.match(html, /api\(['"]\/compute\/api\/factory['"]\)/);
 
 assert.match(html, /No Mac online/);
 assert.match(html, /n\+' online'/);
-assert.match(html, /online · ~'\+tpsLabel\+' tok\/s/);
+assert.match(html, /Quiet presence: N online · model id · ~tok\/s/);
+assert.match(html, /bits\.push\('~'\+tpsLabel\+' tok\/s'\)/);
+assert.match(html, /Advertising only \(providers_online\)/);
+assert.match(html, /never pad enrolled OCM/);
+assert.match(html, /if\(!model&&networkModels&&networkModels\.size\)model=\[\.\.\.networkModels\]\[0\]\|\|''/);
 assert.match(html, /measured_providers/);
 assert.match(html, /mp>=1&&Number\.isFinite\(tps\)&&tps>0/);
 assert.match(html, /never invent\/pad/);
@@ -44,6 +51,13 @@ assert.match(html, /Hosted · live/);
 assert.match(html, /Hosted · —/);
 assert.match(html, /0 tok · 24h/);
 assert.match(html, /tok\/s measured/);
+assert.match(html, /function formatSettledLine\(/);
+assert.match(html, /cents\+'¢'/);
+assert.match(html, /jobs===1\?'1 job':\(jobs\+' jobs'\)/);
+assert.match(html, /settled\.textContent=formatSettledLine\(\)/);
+assert.match(html, /el\.textContent=formatSettledLine\(\)/);
+assert.match(html, /title=["']Settled paid-inference · last 24h["']/);
+assert.doesNotMatch(html, /\/room|Project Room/);
 
 assert.match(html, /if\(step===['"]gate['"]\)\{clearHonestyPoll\(\);paintHonestyPanel\(\)\}/);
 assert.match(html, /else\{paintHonestyPanel\(\);startHonestyPoll\(\)\}/);
@@ -98,7 +112,7 @@ if (puppeteer && existsSync(chrome)) {
       const macs = document.getElementById('honesty-macs');
       return { text: macs.textContent, title: macs.title, aria: macs.getAttribute('aria-label') };
     });
-    assert.equal(measured.text, '1 online · ~2.93 tok/s');
+    assert.equal(measured.text, '1 online · gemma3-27b · ~2.93 tok/s');
     assert.equal(measured.title, 'gemma3-27b · 2.93 tok/s measured');
     assert.equal(measured.aria, measured.title);
 
@@ -109,17 +123,62 @@ if (puppeteer && existsSync(chrome)) {
       const macs = document.getElementById('honesty-macs');
       return { text: macs.textContent, title: macs.title || '', aria: macs.getAttribute('aria-label') };
     });
-    assert.equal(unmeasured.text, '2 online');
-    assert.equal(unmeasured.title, '');
-    assert.equal(unmeasured.aria, null);
+    assert.equal(unmeasured.text, '2 online · qwen3-8b');
+    assert.equal(unmeasured.title, 'qwen3-8b');
+    assert.equal(unmeasured.aria, 'qwen3-8b');
+
+    const fromModels = await page.evaluate(() => {
+      providersOnline = 1;
+      networkCapacity = [{ measured_providers: 1, tokens_per_second: 3.1 }];
+      networkModels = new Set(['qwen3-8b']);
+      paintHonestyPanel();
+      return document.getElementById('honesty-macs').textContent;
+    });
+    assert.equal(fromModels, '1 online · qwen3-8b · ~3.1 tok/s', 'model from models_available when capacity omits it');
 
     const fakeZero = await page.evaluate(() => {
       providersOnline = 1;
       networkCapacity = [{ model: 'qwen3-8b', measured_providers: 1, tokens_per_second: 0 }];
+      networkModels = new Set();
       paintHonestyPanel();
       return document.getElementById('honesty-macs').textContent;
     });
-    assert.equal(fakeZero, '1 online', 'never invent/pad tok/s zeros');
+    assert.equal(fakeZero, '1 online · qwen3-8b', 'never invent/pad tok/s zeros');
+
+    const noModel = await page.evaluate(() => {
+      providersOnline = 3;
+      networkCapacity = [];
+      networkModels = new Set();
+      paintHonestyPanel();
+      const macs = document.getElementById('honesty-macs');
+      return { text: macs.textContent, title: macs.title || '' };
+    });
+    assert.equal(noModel.text, '3 online', 'advertising count only — never pad enrolled OCM');
+    assert.equal(noModel.title, '');
+
+    const settled = await page.evaluate(() => {
+      const line = (s) => { settled24h = s; return formatSettledLine(); };
+      paintHonestyPanel();
+      const zero = document.getElementById('honesty-settled').textContent;
+      settled24h = { tokens: 261, jobs: 4, cents: 20 };
+      paintSettled24h();
+      return {
+        zeroLine: line({ tokens: 0, jobs: 0, cents: 0 }),
+        rich: line({ tokens: 261, jobs: 4, cents: 20 }),
+        jobsOnly: line({ tokens: 10, jobs: 1, cents: 0 }),
+        centsOnly: line({ tokens: 5, jobs: 0, cents: 3 }),
+        footer: document.getElementById('settled-24h').textContent,
+        panel: document.getElementById('honesty-settled').textContent,
+        zero,
+      };
+    });
+    assert.equal(settled.zero, '0 tok · 24h');
+    assert.equal(settled.zeroLine, '0 tok · 24h');
+    assert.equal(settled.rich, '261 tok · 4 jobs · 20¢ · 24h');
+    assert.equal(settled.jobsOnly, '10 tok · 1 job · 24h');
+    assert.equal(settled.centsOnly, '5 tok · 3¢ · 24h');
+    assert.equal(settled.footer, '261 tok · 4 jobs · 20¢ · 24h');
+    assert.equal(settled.panel, '261 tok · 4 jobs · 20¢ · 24h');
 
     const stillGate = await page.evaluate(() => {
       providersOnline = 1;
@@ -130,7 +189,7 @@ if (puppeteer && existsSync(chrome)) {
       return { hidden: panel.hidden === true, text: macs.textContent };
     });
     assert.equal(stillGate.hidden, true, 'gate stays hidden even with measured capacity');
-    assert.equal(stillGate.text, '1 online', 'gate return leaves prior macs text');
+    assert.equal(stillGate.text, '3 online', 'gate return leaves prior macs text');
   } finally {
     await browser.close();
   }

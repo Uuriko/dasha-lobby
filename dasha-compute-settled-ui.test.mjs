@@ -9,11 +9,15 @@ assert.equal(html, COMPUTE_PAGE_HTML, 'html \u2194 page.mjs sync');
 
 assert.match(html, /id=["']settled-24h["']/);
 assert.match(html, /0 tok \u00b7 24h/);
+assert.match(html, /function formatSettledLine\(/);
+assert.match(html, /cents\+'¢'/);
+assert.match(html, /el\.textContent=formatSettledLine\(\)/);
 assert.match(html, /id=["']answer-receipt["']/);
 assert.match(html, /settled_24h/);
 assert.match(html, /loadSettled24h/);
 assert.match(html, /Settled \u00b7/);
 assert.match(html, /paintAnswerReceipt/);
+assert.doesNotMatch(html, /\/room|Project Room/);
 
 // Must not compete with Start. first paint
 const gate = html.slice(html.indexOf('id="step-gate"'), html.indexOf('id="step-ask"'));
