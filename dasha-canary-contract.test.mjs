@@ -169,7 +169,7 @@ for (const path of ['/tip', '/tip/', '/tip-me', '/Tip-me', '/TIP-ME', '/tips', '
 for (const path of ['/hosts', '/Hosts', '/compute/hosts', '/me', '/usage', '/mac-kit', '/inference', '/gpu']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
-for (const path of ['/rent', '/Rent', '/compute/rent', '/capacity', '/dashboard', '/apple-silicon', '/setup', '/hello']) {
+for (const path of ['/fleet', '/Fleet', '/compute/fleet', '/rent', '/Rent', '/compute/rent', '/capacity', '/workers', '/dashboard', '/apple-silicon', '/setup', '/hello']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
 for (const path of ['/donate', '/donate/', '/Donate']) {
