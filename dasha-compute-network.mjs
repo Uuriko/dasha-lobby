@@ -217,6 +217,7 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
     usage: {
       chat_completions: 'OpenAI-style usage on non-stream JSON and on the SSE final finish_reason=stop chunk',
       hosted_chat: 'POST /compute/api/chat SSE emits usage on the final stop chunk (Hosted UI)',
+      jobs: 'GET /compute/api/jobs/:id returns stored usage (+ route) when present — never invent',
     },
   }, 200, allowedOrigin || '*', credentials);
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
@@ -566,7 +567,7 @@ export class ComputeNetwork {
     const path = new URL(request.url).pathname, now = Date.now(), credentials = Boolean(allowedOrigin);
     const openaiError = (message, status = 400, type = 'invalid_request_error') => json({ error: { message, type, code: null } }, status, allowedOrigin || '*', credentials);
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const res = json({ live: Boolean(this.env.AI), model: 'gpt-oss-20b', login_required: true, limit: '3 free / 10 min · then credits', usage: 'v1 chat/completions + Hosted /compute/api/chat SSE: OpenAI-style usage on final stop chunk (see /compute/api/v1)' }, 200, allowedOrigin || '*', credentials);
+      const res = json({ live: Boolean(this.env.AI), model: 'gpt-oss-20b', login_required: true, limit: '3 free / 10 min · then credits', usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)' }, 200, allowedOrigin || '*', credentials);
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
     }
     if ((path === '/compute/api/healthz' || path === '/compute/api/healthz/') && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -1765,7 +1766,7 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 export async function computeApi(request, env, allowedOrigin) {
   const path = new URL(request.url).pathname, credentials = Boolean(allowedOrigin);
   if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
-    const res = json({ live: Boolean(env.AI), model: 'gpt-oss-20b', login_required: true, limit: '3 free / 10 min · then credits', usage: 'v1 chat/completions + Hosted /compute/api/chat SSE: OpenAI-style usage on final stop chunk (see /compute/api/v1)' }, 200, allowedOrigin || '*', credentials);
+    const res = json({ live: Boolean(env.AI), model: 'gpt-oss-20b', login_required: true, limit: '3 free / 10 min · then credits', usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)' }, 200, allowedOrigin || '*', credentials);
     return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
   }
   if ((path === '/compute/api/healthz' || path === '/compute/api/healthz/') && (request.method === 'GET' || request.method === 'HEAD')) {
