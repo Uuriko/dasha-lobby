@@ -176,7 +176,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "CSS drop is per-token, not eat-the-p
 }
 
 {
-  const res = await edgeWorker.fetch(new Request("https://www.getdasha.com/checkout"), {});
+  const res = await edgeWorker.fetch(new Request("https://www.getdasha.com/paypal-checkout"), {});
   assert.equal(res.status, 404);
   const html = await res.text();
   assert.match(html, /<code>/, "404 mint <code> stays");
