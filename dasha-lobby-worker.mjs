@@ -2909,6 +2909,10 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/night', '/night/',
   '/build', '/build/',
   '/ocm', '/ocm/',
+  // Redo: /skills.md|/compute/skills.md (+slash) still html-404 while singular
+  // /skill.md peers already 308 — fold the plural .md doors too.
+  '/skills.md', '/skills.md/',
+  '/compute/skills.md', '/compute/skills.md/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -2929,6 +2933,12 @@ const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
   // apex /api/{jobs,status,network,healthz,health} — health aliases land here.
   '/api/healthz', '/api/healthz/',
   '/api/health', '/api/health/',
+]);
+/** Leftover /swagger-ui /swagger-ui.html /api-docs (+slash) → /compute/api. */
+const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set([
+  '/swagger-ui', '/swagger-ui/',
+  '/swagger-ui.html', '/swagger-ui.html/',
+  '/api-docs', '/api-docs/',
 ]);
 /** /jobs /compute/jobs /api/jobs → /compute/api/jobs. */
 const POTTER_COMPUTE_API_JOBS_308_PATHS = new Set([
@@ -2995,6 +3005,9 @@ export function potterHome308Dest(path) {
   if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
   if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/faucet';
+  // Leftover /swagger-ui /swagger-ui.html /api-docs (+slash / Title-case) → /compute/api.
+  // Lobby same-host rewrite covers /compute/api dests in potterHome308Response.
+  if (POTTER_COMPUTE_API_DOCS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api';
   // apex /api/{jobs,status,network,healthz,health} (+ /jobs /compute/jobs and
   // /compute/{status,network,healthz,health}) → /compute/api/{jobs|status|network|healthz}.
   // Bare /status|/network|/healthz|/health stay out. Exact /compute/api/* stay for handlers.
