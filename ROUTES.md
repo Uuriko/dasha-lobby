@@ -49,7 +49,7 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 | Path | Status | Dest |
 | --- | --- | --- |
 | `/dasha` `/desk` `/howto` `/howtobuy` `/buy` `/purchase` | 308 | `https://www.getdasha.com/how-to-buy` |
-| `/verify` | 308 | `https://www.getdasha.com/which` |
+| `/verify` `/ca` | 308 | `https://www.getdasha.com/which` |
 | `/studio` `/verse` `/learn` `/graph` `/index.html` | 308 | `https://www.getdasha.com/` |
 | `/grok` `/siwg` | 308 | `https://www.getdasha.com/login#grok` |
 | `/compute/use` `/compute/provide` `/compute/night` `/compute/build` `/compute/sponsor` `/run` `/ollama` `/compute/run` `/compute/ollama` `/models` `/model` `/compute/models` `/compute/model` `/usdc` `/settle` `/topup` `/top-up` `/billing` `/wallet` `/phantom` `/solana` `/compute/usdc` `/compute/settle` `/compute/topup` `/compute/top-up` `/compute/billing` `/compute/wallet` `/compute/phantom` `/compute/solana` `/hosted` `/community` `/mixture` `/compute/hosted` `/compute/community` `/compute/mixture` `/hosts` `/inferences` `/key` `/keys` `/apikey` `/api-key` `/api_key` `/install` `/doctor` `/me` `/usage` `/inference` `/gpu` `/gpus` `/pricing` `/providing` `/mac-kit` `/fleet` `/rent` `/capacity` `/offer` `/offers` `/worker` `/workers` `/node` `/nodes` `/cluster` `/pool` `/machines` `/benchmark` `/queue` `/dashboard` `/console` `/balance` `/pay-usdc` `/apple-silicon` `/macos` `/silicon` `/local` `/edge` `/onboard` `/setup` `/quickstart` `/playground` `/sandbox` `/hello` `/example` `/examples` `/prefer` `/preference` `/preferences` `/settlement` `/settlements` `/invoice` `/invoices` `/credit` `/refill` `/kits` `/try` `/getting-started` `/get-started` `/getstarted` `/mac_kit` + `/compute/*` peers | 308 | `https://www.getdasha.com/compute` |
