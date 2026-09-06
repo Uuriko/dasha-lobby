@@ -2923,6 +2923,25 @@ const POTTER_FAUCET_DOOR_308_PATHS = new Set([
 const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
   '/compute/health', '/compute/health/',
   '/compute/healthz', '/compute/healthz/',
+  // apex /api/{jobs,status,network,healthz,health} — health aliases land here.
+  '/api/healthz', '/api/healthz/',
+  '/api/health', '/api/health/',
+]);
+/** /jobs /compute/jobs /api/jobs → /compute/api/jobs. */
+const POTTER_COMPUTE_API_JOBS_308_PATHS = new Set([
+  '/jobs', '/jobs/',
+  '/compute/jobs', '/compute/jobs/',
+  '/api/jobs', '/api/jobs/',
+]);
+/** /compute/status /api/status → /compute/api/status. Bare /status|/network|/healthz|/health stay out. */
+const POTTER_COMPUTE_API_STATUS_308_PATHS = new Set([
+  '/compute/status', '/compute/status/',
+  '/api/status', '/api/status/',
+]);
+/** /compute/network /api/network → /compute/api/network. */
+const POTTER_COMPUTE_API_NETWORK_308_PATHS = new Set([
+  '/compute/network', '/compute/network/',
+  '/api/network', '/api/network/',
 ]);
 /** Title-case leftover faucet GETs with lowercase siblings already 200. Not /faucet/jar (intentional gap). */
 const POTTER_FAUCET_LEAF_CASEFOLD = new Set([
@@ -2973,6 +2992,13 @@ export function potterHome308Dest(path) {
   if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
   if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/faucet';
+  // apex /api/{jobs,status,network,healthz,health} (+ /jobs /compute/jobs and
+  // /compute/{status,network,healthz,health}) → /compute/api/{jobs|status|network|healthz}.
+  // Bare /status|/network|/healthz|/health stay out. Exact /compute/api/* stay for handlers.
+  // Do not invent /api/sponsors /api/providers. Lobby same-host rewrite covers /compute/api/*.
+  if (POTTER_COMPUTE_API_JOBS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/jobs';
+  if (POTTER_COMPUTE_API_STATUS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/status';
+  if (POTTER_COMPUTE_API_NETWORK_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/network';
   // Live /compute/health + /compute/healthz (+slash / Title-case) → /compute/api/healthz.
   // Lobby same-host rewrite already covers /compute/api/* dests in potterHome308Response.
   if (POTTER_COMPUTE_HEALTHZ_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/healthz';
