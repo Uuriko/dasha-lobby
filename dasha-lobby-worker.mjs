@@ -4240,7 +4240,7 @@ function corsHeaders(origin, { credentials = false } = {}) {
 }
 
 const PRICE_TTL_MS = 30_000;
-const PRICE_STALE_MS = 10 * 60_000;
+const PRICE_STALE_MS = 10 * 60_000; // not a /price 503 gate
 const PRICE_SERIES_TTL_MS = 5 * 60_000;
 
 function json(body, status, origin, { credentials = false, headers: extraHeaders = {} } = {}) {
@@ -7482,6 +7482,9 @@ export class DashaLobby {
   /**
    * One Gecko/Dexscreener fetch per TTL for the whole site. Lives on the lobby DO so
    * isolates cannot stampede the free API. Failure never invents a number.
+   * Upstream gecko/dex 429/fail: 503 only when !priceCache.body (cold DO).
+   * Last-known body falls through as 200 + stale:true / staleForMs / reason.
+   * PRICE_STALE_MS does not gate 503.
    */
   async handlePrice(request, allowedOrigin) {
     const now = Date.now();
@@ -7569,7 +7572,7 @@ export class DashaLobby {
         await this.state.storage.put('priceCache', this.priceCache);
       } catch (err) {
         this.priceError = String(err?.message || err).slice(0, 120);
-        if (!this.priceCache.body || now - this.priceCache.at > PRICE_STALE_MS) {
+        if (!this.priceCache.body) {
           return json({ ok: false, error: 'price unavailable', reason: this.priceError }, 503, allowedOrigin || '*');
         }
       }
