@@ -1701,18 +1701,21 @@ function paintHonestyPanel(){
   const macs=$('honesty-macs');
   if(macs){
     const n=Number.isInteger(providersOnline)?providersOnline:0;
-    macs.textContent=n===0?'No Mac online':(n+' online');
-    let title='';
+    let tpsLabel='';
+    let model='';
     if(n>=1){
       const row=(networkCapacity||[])[0];
       const tps=Number(row?.tokens_per_second);
       const mp=Number(row?.measured_providers||0);
-      const model=row?.model?String(row.model):'';
-      if(mp>=1&&Number.isFinite(tps)&&tps>0){
-        const tpsLabel=formatTokPerSec(tps);
-        if(tpsLabel)title=model?(model+' · '+tpsLabel+' tok/s measured'):(tpsLabel+' tok/s measured');
-      }
+      model=row?.model?String(row.model):'';
+      // Live measured only — stamp capacity[].tokens_per_second; never invent/pad.
+      if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
     }
+    if(n===0)macs.textContent='No Mac online';
+    else if(tpsLabel)macs.textContent=n+' online · ~'+tpsLabel+' tok/s';
+    else macs.textContent=n+' online';
+    let title='';
+    if(n>=1&&tpsLabel)title=model?(model+' · '+tpsLabel+' tok/s measured'):(tpsLabel+' tok/s measured');
     if(title){macs.title=title;macs.setAttribute('aria-label',title)}
     else{macs.removeAttribute('title');macs.removeAttribute('aria-label')}
   }
