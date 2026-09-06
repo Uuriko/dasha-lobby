@@ -4,8 +4,9 @@
  * /api_docs /compute/swagger-ui /compute/swagger_ui /compute/api-docs
  * /compute/api_docs (+slash / Title-case) html-404 → 308 /compute/api.
  * Keep prior peers /swagger-ui /swagger-ui.html /api-docs /swagger /openapi.
- * Exact /compute/api stays 200 (null dest). Do not invent /docs /redoc
- * /compute/swagger-ui.html. Disk only. No Designer. Never plugin.jup.ag.
+ * Exact /compute/api stays 200 (null dest). Do not invent /redoc
+ * /compute/swagger-ui.html. /docs /documentation fold with compute/api peers.
+ * Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -50,14 +51,12 @@ const STAY_OUT = [
   '/compute/skill/provide.md',
   '/compute/skill/use.md',
   '/compute/skill/ocm-host.md',
-  '/docs',
   '/redoc',
   '/swaggerui',
   '/compute/swagger-ui.html',
   '/compute/swagger_ui.html',
   '/api-doc',
   '/apidocs',
-  '/documentation',
 ];
 
 for (const path of FOLDS) {
