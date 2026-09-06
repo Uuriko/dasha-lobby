@@ -57,6 +57,7 @@ for (const path of UNTOUCHED) {
 }
 assert.equal(potterHome308Dest('/playground'), COMPUTE, '/playground still compute-tab, not lobby');
 assert.equal(potterHome308Dest('/compute/playground'), COMPUTE, '/compute/playground still compute-tab');
+assert.equal(potterHome308Dest('/app'), COMPUTE, '/app → compute (shipped next hop)');
 
 const env = {
   LOBBY_SESSION_SECRET: 'play-game-pretty-path-secret',
