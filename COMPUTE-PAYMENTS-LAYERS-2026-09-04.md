@@ -30,7 +30,7 @@ Primary: [AP2 announce](https://cloud.google.com/blog/products/ai-machine-learni
 | `$dasha` mint | `53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump` | same |
 | Provider settle | Operator `COMPUTE_PAYOUT_SECRET` → pending list + **manual mark-paid**; auto-send **off** unless `COMPUTE_PAYOUT_KEYPAIR` | `dasha-compute-provider-earn.mjs` · PARK-compute-provider-payout-settle.md |
 
-Humans: session login → buy pack → pay USDC/`$dasha` with Solana Pay reference → credits spend on Hosted Ask / API key chat (self-route free). Session UI Community Ask stays free. Key `limit_cents` is runaway-only (not a free allowance). Providers: earn ledger → payout request → operator settle. Never invent auto treasury send.
+Humans: session login → buy pack → pay USDC/`$dasha` with Solana Pay reference → credits spend on Hosted Ask / API key chat (self-route free). Session UI Community Ask stays free. Key `limit_cents` is runaway-only (not a free allowance). Sponsor tip accepts a wallet-only guest (`anonymous:true`, `name:null`); Name-a-Mac still needs login. Providers: earn ledger → payout request → operator settle. Never invent auto treasury send.
 
 ---
 

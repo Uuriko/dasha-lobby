@@ -7,7 +7,7 @@ Get a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Commu
 
 ## Facts
 - URL: https://www.getdasha.com/compute
-- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha). Credits → balance + Use credits / Top up. No card yet.
+- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login). Credits → balance + Use credits / Top up. No card yet.
 - Login with X is required to Run or queue
 - Hosted model: gpt-oss-20b · 3 free / 10 min · then credits
 - API base (power users): https://lobby.getdasha.com/compute/api/v1
