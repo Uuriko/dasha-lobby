@@ -1,0 +1,66 @@
+diff --git a/ROUTES.md b/ROUTES.md
+index 55b036e..8b8ffaa 100644
+--- a/ROUTES.md
++++ b/ROUTES.md
+@@ -49,7 +49,7 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
+ | Path | Status | Dest |
+ | --- | --- | --- |
+ | `/dasha` `/desk` `/howto` `/howtobuy` `/buy` `/purchase` | 308 | `https://www.getdasha.com/how-to-buy` |
+-| `/verify` | 308 | `https://www.getdasha.com/which` |
++| `/verify` `/ca` | 308 | `https://www.getdasha.com/which` |
+ | `/studio` `/verse` `/learn` `/graph` `/index.html` | 308 | `https://www.getdasha.com/` |
+ | `/grok` `/siwg` | 308 | `https://www.getdasha.com/login#grok` |
+ | `/compute/use` `/compute/provide` `/compute/night` `/compute/build` `/compute/sponsor` `/run` `/ollama` `/compute/run` `/compute/ollama` `/models` `/model` `/compute/models` `/compute/model` `/usdc` `/settle` `/topup` `/top-up` `/billing` `/wallet` `/phantom` `/solana` `/compute/usdc` `/compute/settle` `/compute/topup` `/compute/top-up` `/compute/billing` `/compute/wallet` `/compute/phantom` `/compute/solana` `/hosted` `/community` `/mixture` `/compute/hosted` `/compute/community` `/compute/mixture` `/hosts` `/inferences` `/key` `/keys` `/apikey` `/api-key` `/api_key` `/install` `/doctor` `/me` `/usage` `/inference` `/gpu` `/gpus` `/pricing` `/providing` `/mac-kit` `/fleet` `/rent` `/capacity` `/offer` `/offers` `/worker` `/workers` `/node` `/nodes` `/cluster` `/pool` `/machines` `/benchmark` `/queue` `/dashboard` `/console` `/balance` `/pay-usdc` `/apple-silicon` `/macos` `/silicon` `/local` `/edge` `/onboard` `/setup` `/quickstart` `/playground` `/sandbox` `/hello` `/example` `/examples` `/prefer` `/preference` `/preferences` `/settlement` `/settlements` `/invoice` `/invoices` `/credit` `/refill` `/kits` `/try` `/getting-started` `/get-started` `/getstarted` `/mac_kit` + `/compute/*` peers | 308 | `https://www.getdasha.com/compute` |
+diff --git a/dasha-canary-contract.test.mjs b/dasha-canary-contract.test.mjs
+index 19cb9cb..93d3c90 100644
+--- a/dasha-canary-contract.test.mjs
++++ b/dasha-canary-contract.test.mjs
+@@ -242,7 +242,7 @@ assert.equal(potterHome308Dest('/lobby'), null);
+ assert.equal(potterHome308Dest('/chess'), null);
+ assert.equal(potterHome308Dest('/privacy'), null);
+ assert.equal(potterHome308Dest('/how-to-buy'), null);
+-for (const path of ['/verify', '/verify/']) {
++for (const path of ['/verify', '/verify/', '/ca', '/ca/', '/CA', '/Ca']) {
+   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/which', path);
+   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
+   assert.equal(res.status, 308, path);
+diff --git a/dasha-chess-page.html b/dasha-chess-page.html
+index 7ee5c62..e00ac45 100644
+--- a/dasha-chess-page.html
++++ b/dasha-chess-page.html
+@@ -118,7 +118,7 @@ function stepLocal(ply){var e=engine();if(!e||!localFull)return;var moves=localF
+ function playTone(kind){if(muted)return;try{var Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;audioCtx=audioCtx||new Ctx();if(audioCtx.state==='suspended')audioCtx.resume();var osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),now=audioCtx.currentTime,freq=kind==='mate'?880:kind==='check'?640:kind==='capture'?420:kind==='own'?720:480,hold=kind==='mate'?0.16:0.1;osc.type='sine';osc.frequency.value=freq;gain.gain.setValueAtTime(0.07,now);gain.gain.exponentialRampToValueAtTime(0.001,now+hold);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(now);osc.stop(now+hold)}catch(e){}}
+ function playMoveSound(own,move){if(muted)return;var kind=move&&move.mate?'mate':move&&move.check?'check':move&&move.captured?'capture':own?'own':'move';playTone(kind)}
+ function paintMute(){var b=$('mute');if(!b)return;b.textContent=muted?'Muted':'Mute';b.setAttribute('aria-pressed',String(muted))}
+-function chessApiError(path){return /^/chess/(challenge|queue|tournament)/.test(path)?'Table unavailable. Try again.':'Chess is down. Play locally.'}function fetchJson(path,init){return fetch(API+path,Object.assign({credentials:'include',mode:'cors'},init||{})).then(function(r){return r.json().catch(function(){return{error:chessApiError(path)}}).then(function(data){return{ok:r.ok,status:r.status,data:data}})}).catch(function(){return{ok:false,status:0,data:{error:'Network unavailable'}}})}
++function chessApiError(path){return /^\/chess\/(challenge|queue|tournament)/.test(path)?'Table unavailable. Try again.':'Chess is down. Play locally.'}function fetchJson(path,init){return fetch(API+path,Object.assign({credentials:'include',mode:'cors'},init||{})).then(function(r){return r.json().catch(function(){return{error:chessApiError(path)}}).then(function(data){return{ok:r.ok,status:r.status,data:data}})}).catch(function(){return{ok:false,status:0,data:{error:'Network unavailable'}}})}
+ function setStatus(text,kind){$('status').textContent=text||'';$('status').dataset.kind=kind||''}
+ function chessTitle(){try{var p=String(location.pathname||'/').replace(/\/+$/,'')||'/';if(p==='/'||p==='/index'||p==='/index.html')return '$dasha — make the timeline stranger'}catch(e){}return 'Chess — $dasha'}
+ function restoreChessTitle(){document.title=chessTitle()}
+diff --git a/dasha-lobby-static-gen.mjs b/dasha-lobby-static-gen.mjs
+index 4c65076..43f7627 100644
+--- a/dasha-lobby-static-gen.mjs
++++ b/dasha-lobby-static-gen.mjs
+@@ -729,7 +729,7 @@ function stepLocal(ply){var e=engine();if(!e||!localFull)return;var moves=localF
+ function playTone(kind){if(muted)return;try{var Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;audioCtx=audioCtx||new Ctx();if(audioCtx.state==='suspended')audioCtx.resume();var osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),now=audioCtx.currentTime,freq=kind==='mate'?880:kind==='check'?640:kind==='capture'?420:kind==='own'?720:480,hold=kind==='mate'?0.16:0.1;osc.type='sine';osc.frequency.value=freq;gain.gain.setValueAtTime(0.07,now);gain.gain.exponentialRampToValueAtTime(0.001,now+hold);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(now);osc.stop(now+hold)}catch(e){}}
+ function playMoveSound(own,move){if(muted)return;var kind=move&&move.mate?'mate':move&&move.check?'check':move&&move.captured?'capture':own?'own':'move';playTone(kind)}
+ function paintMute(){var b=$('mute');if(!b)return;b.textContent=muted?'Muted':'Mute';b.setAttribute('aria-pressed',String(muted))}
+-function chessApiError(path){return /^/chess/(challenge|queue|tournament)/.test(path)?'Table unavailable. Try again.':'Chess is down. Play locally.'}function fetchJson(path,init){return fetch(API+path,Object.assign({credentials:'include',mode:'cors'},init||{})).then(function(r){return r.json().catch(function(){return{error:chessApiError(path)}}).then(function(data){return{ok:r.ok,status:r.status,data:data}})}).catch(function(){return{ok:false,status:0,data:{error:'Network unavailable'}}})}
++function chessApiError(path){return /^\\/chess\\/(challenge|queue|tournament)/.test(path)?'Table unavailable. Try again.':'Chess is down. Play locally.'}function fetchJson(path,init){return fetch(API+path,Object.assign({credentials:'include',mode:'cors'},init||{})).then(function(r){return r.json().catch(function(){return{error:chessApiError(path)}}).then(function(data){return{ok:r.ok,status:r.status,data:data}})}).catch(function(){return{ok:false,status:0,data:{error:'Network unavailable'}}})}
+ function setStatus(text,kind){$('status').textContent=text||'';$('status').dataset.kind=kind||''}
+ function chessTitle(){try{var p=String(location.pathname||'/').replace(/\\/+$/,'')||'/';if(p==='/'||p==='/index'||p==='/index.html')return '$dasha — make the timeline stranger'}catch(e){}return 'Chess — $dasha'}
+ function restoreChessTitle(){document.title=chessTitle()}
+diff --git a/dasha-lobby-worker.mjs b/dasha-lobby-worker.mjs
+index 69929b2..105f3b6 100644
+--- a/dasha-lobby-worker.mjs
++++ b/dasha-lobby-worker.mjs
+@@ -3229,6 +3229,9 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
+ ]);
+ const POTTER_WHICH_308_PATHS = new Set([
+   '/verify', '/verify/',
++  // Leftover /ca /ca/ (+slash / Title-case) still html-404 while /verify already 308→/which.
++  // Traders search CA and land dead. Fold to /which (dash_eats vs VVAIFU). Exact /which stays 200.
++  '/ca', '/ca/',
+ ]);
+ /** Leftover /bounty (+slash / Title-case) still html-404 while /bounties is 200. */
+ const POTTER_BOUNTIES_308_PATHS = new Set([
