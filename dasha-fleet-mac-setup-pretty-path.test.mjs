@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
- * Leftover pretty path (Worker e8adc1ad): live fleet/capacity + console/credits
- * + Mac/local + setup/try + kit/prefer leftovers (+ /compute/* tabs, slash /
- * Title-case) html-404 → 308 /compute. Apex /donate /donate/ → /faucet.
- * Title-case works via existing dest lowercasing.
- * Exact /compute stays 200 (null dest). Skip /admin /blog /news /faq /waitlist
- * /join /oauth /status /health — do not invent a fold. Do not invent
- * /compute/donate. Disk only. No Designer. Never plugin.jup.ag.
+ * Leftover pretty path (Worker e8adc1ad + 0d7b2adc): live fleet/capacity +
+ * console/credits + Mac/local + setup/try + kit/prefer leftovers (+ /compute/*
+ * tabs, slash / Title-case) html-404 → 308 /compute. Redo: /fleet /compute/fleet
+ * (+slash / Title-case) while /rent /capacity /workers already 308.
+ * Apex /donate /donate/ → /faucet. Title-case works via existing dest
+ * lowercasing. Exact /compute stays 200 (null dest). Skip /admin /blog /news
+ * /faq /waitlist /join /oauth /status /health /openai /v1 — do not invent a
+ * fold. Do not invent /compute/donate. Disk only. No Designer. Never
+ * plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -31,8 +33,13 @@ assert.match(
 );
 assert.match(
   workerSrc,
-  /\/rent\|\/capacity\|\/offer\|\/offers\|\/worker\|\/workers\|\/node\|\/nodes\|\/cluster\|\/pool\|\/machines\|\/benchmark\|\/queue/,
-  'potterHome308Dest comment lists fleet/capacity family',
+  /Leftover \/fleet \/compute\/fleet/,
+  'compute leftover comment lists /fleet /compute/fleet',
+);
+assert.match(
+  workerSrc,
+  /\/fleet\|\/rent\|\/capacity\|\/offer\|\/offers\|\/worker\|\/workers\|\/node\|\/nodes\|\/cluster\|\/pool\|\/machines\|\/benchmark\|\/queue/,
+  'potterHome308Dest comment lists /fleet + fleet/capacity family',
 );
 assert.match(
   workerSrc,
@@ -54,7 +61,7 @@ const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s
 const faucet = workerSrc.match(/const POTTER_FAUCET_DOOR_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 
 const FLEET_LEAVES = [
-  'rent', 'capacity', 'offer', 'offers', 'worker', 'workers', 'node', 'nodes',
+  'fleet', 'rent', 'capacity', 'offer', 'offers', 'worker', 'workers', 'node', 'nodes',
   'cluster', 'pool', 'machines', 'benchmark', 'queue',
 ];
 const CONSOLE_LEAVES = ['dashboard', 'console', 'balance', 'pay-usdc'];
@@ -80,6 +87,8 @@ assert.doesNotMatch(tab, /['"]\/join['"]/, 'do not invent /join');
 assert.doesNotMatch(tab, /['"]\/oauth['"]/, 'do not invent /oauth');
 assert.doesNotMatch(tab, /['"]\/status['"]/, 'do not invent /status');
 assert.doesNotMatch(tab, /['"]\/health['"]/, 'do not invent /health');
+assert.doesNotMatch(tab, /['"]\/openai['"]/, 'do not invent /openai');
+assert.doesNotMatch(tab, /['"]\/v1['"]/, 'do not invent /v1');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 
 const COMPUTE = 'https://www.getdasha.com/compute';
@@ -115,6 +124,8 @@ const SKIP_UNTOUCHED = [
   '/oauth', '/oauth/', '/OAuth',
   '/status', '/status/', '/Status',
   '/health', '/health/', '/Health',
+  '/openai', '/openai/', '/OpenAI',
+  '/v1', '/v1/',
 ];
 const STAY_OUT = [...SKIP_404, ...SKIP_UNTOUCHED];
 
@@ -190,12 +201,13 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 for (const path of [
-  '/rent', '/capacity', '/offer', '/dashboard', '/console', '/balance', '/pay-usdc',
+  '/fleet', '/rent', '/capacity', '/workers', '/offer', '/dashboard', '/console', '/balance', '/pay-usdc',
   '/apple-silicon', '/macos', '/local', '/edge', '/onboard', '/setup', '/quickstart',
   '/playground', '/sandbox', '/hello', '/example', '/examples', '/prefer', '/donate',
   '/admin', '/blog', '/news', '/faq', '/waitlist', '/join', '/oauth', '/status', '/health',
+  '/openai', '/v1',
 ]) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-fleet-mac-setup-pretty-path: PASS (fleet/capacity+console+Mac+setup+kit 308 /compute; /donate 308 /faucet; Title-case+slash+tab peers; /host+/pay+/usdc+/mac-kit+/tip+/tips regression; /compute+/faucet 200; /admin+/blog+/news+/faq+/waitlist+/join 404; /oauth+/status+/health stay out; no /compute/donate; no plugin.jup.ag)');
+console.log('dasha-fleet-mac-setup-pretty-path: PASS (/fleet+/compute/fleet + fleet/capacity+console+Mac+setup+kit 308 /compute; /donate 308 /faucet; Title-case+slash+tab peers; /rent+/capacity+/workers+/host+/pay+/usdc+/mac-kit+/tip+/tips regression; /compute+/faucet 200; /admin+/blog+/news+/faq+/waitlist+/join 404; /oauth+/status+/health+/openai+/v1 stay out; no /compute/donate; no plugin.jup.ag)');
