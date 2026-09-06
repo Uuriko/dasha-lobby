@@ -2919,6 +2919,11 @@ const POTTER_FAUCET_DOOR_308_PATHS = new Set([
   '/tip', '/tip/',
   '/tip-me', '/tip-me/',
 ]);
+/** Pretty health probes: live /compute/health(z) (+slash) 308 → /compute/api/healthz. */
+const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
+  '/compute/health', '/compute/health/',
+  '/compute/healthz', '/compute/healthz/',
+]);
 /** Title-case leftover faucet GETs with lowercase siblings already 200. Not /faucet/jar (intentional gap). */
 const POTTER_FAUCET_LEAF_CASEFOLD = new Set([
   '/faucet/tape', '/faucet/tape/',
@@ -2968,6 +2973,9 @@ export function potterHome308Dest(path) {
   if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
   if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/faucet';
+  // Live /compute/health + /compute/healthz (+slash / Title-case) → /compute/api/healthz.
+  // Lobby same-host rewrite already covers /compute/api/* dests in potterHome308Response.
+  if (POTTER_COMPUTE_HEALTHZ_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/healthz';
   if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) return 'https://www.getdasha.com/compute';
   // P2-1 COMPUTE-FULL-REVIEW: lowercase HTML /compute/ (+ /compute/index.html) → /compute
   // same www host (cache/SEO). Exact /compute stays null (200). GET/HEAD only via
