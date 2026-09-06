@@ -23,7 +23,7 @@ Get a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Commu
 3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)
 4. Sign in if prompted
 5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back
-6. If no Mac is online on Community/Mixture: Hosted or Queue
+6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available
 
 ## Optional API
 

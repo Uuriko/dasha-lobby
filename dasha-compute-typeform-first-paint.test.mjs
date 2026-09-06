@@ -259,7 +259,8 @@ function assertMarkup(html, label) {
   assert.doesNotMatch(html, /id=["']gate-signin["'][^>]*class=["']tf-choice/, `${label} Log in not primary door`);
   assert.match(html, /function paintNightH1\(/, `${label} paintNightH1`);
   assert.match(html, /No Mixture Mac/, `${label} No Mixture Mac copy`);
-  assert.match(html, /if\(mixEmpty\)\{\s*engMix\.title='No Mixture Mac · opens Night'/, `${label} Mixture dim title whenever mixEmpty`);
+  assert.match(html, /if\(mixEmpty\)\{\s*if\(providersOnline>=1\)\{\s*engMix\.title=`No Mixture Mac · Community · \$\{providersOnline\} online`/, `${label} Mixture dim title Community · N when Macs up`);
+  assert.match(html, /engMix\.title='No Mixture Mac · opens Night'/, `${label} Mixture dim title opens Night at 0`);
   assert.match(html, /engCom\.title='No Mac · opens Night'/, `${label} Community dim title opens Night`);
   assert.match(html, /Community · offline · opens Night/, `${label} Community dim aria-label`);
   assert.match(html, /provideBack/, `${label} provideBack`);
