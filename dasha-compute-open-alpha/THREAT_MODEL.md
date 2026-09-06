@@ -16,7 +16,7 @@
 - The provider process and the person controlling that machine can read prompts and outputs.
 - Local bearer keys are shared secrets, not user accounts, and have no revocation store.
 - Local jobs disappear on coordinator restart and are not replicated.
-- There is no hardware attestation, trusted execution environment, signed binary, encrypted memory isolation, billing ledger, tax handling or content moderation. Basic live rate limits and body caps are not comprehensive denial-of-service protection.
+- There is no hardware attestation, trusted execution environment, signed binary, encrypted memory isolation, tax handling or content moderation. The local coordinator has no billing ledger. Live getdasha.com uses prepaid credits (not a full tax ledger). Basic live rate limits and body caps are not comprehensive denial-of-service protection.
 - Ollama and every model are separate dependencies with their own security and licenses.
 
 ## Assets
@@ -24,7 +24,7 @@
 - Consumer prompts and model responses.
 - Consumer and provider bearer secrets.
 - Provider capacity, model inventory and hardware metadata.
-- Future balances and metering records, which do not exist in this release.
+- Live prepaid credit balances on getdasha.com (outside this kit process). Local mode has no balances or metering records.
 
 ## Trust boundaries
 

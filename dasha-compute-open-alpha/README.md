@@ -12,7 +12,7 @@ Version 0.3 supports both a local coordinator and the live getdasha.com communit
 
 `console/` also includes the full React/CSS interface and the deliberately unavailable hosted-alpha routes, so the public artifact contains both sides of the product rather than only the daemon code.
 
-It has real request routing, streaming and end-to-end tests. The live queue instead stores short-lived jobs in a Durable Object and adds account-bound registration, hashed revocable credentials, rate limits, and complete or SSE-streamed responses. Neither mode has billing, hardware attestation or operator-blind prompts. Do not send secrets. See `THREAT_MODEL.md`.
+It has real request routing, streaming and end-to-end tests. The live queue instead stores short-lived jobs in a Durable Object and adds account-bound registration, hashed revocable credentials, rate limits, and complete or SSE-streamed responses. Local mode has no billing. Live non-self `v1/chat/completions` spends prepaid credits ($0.05/job); self-route (own Mac) stays free; Hosted Ask is 3 free / 10 min then credits. Neither mode has hardware attestation or operator-blind prompts. Do not send secrets. See `THREAT_MODEL.md`.
 
 ## Join the live community network
 
@@ -109,6 +109,8 @@ curl https://lobby.getdasha.com/compute/api/v1/chat/completions \
   -d '{"model":"qwen3-8b","messages":[{"role":"user","content":"hello"}]}'
 ```
 
+Non-self live chat spends prepaid credits ($0.05/job); self-route free; key spend cap is runaway protection only. See `GET /compute/api/v1` → `billing`. Top up via Pay / Credits on the product page — no card yet.
+
 ## Deliberate differences
 
 - The protocol is small, original and documented by the code itself.
@@ -127,7 +129,7 @@ The live queue already uses durable storage, hashed account-bound credentials an
 4. Sign model manifests and provider releases; publish reproducible build instructions.
 5. Encrypt queued payloads to provider keys and extend this threat model for that design.
 6. Commission a security review before any stronger privacy claim.
-7. Add USDC/USD metering and compliant payouts only after demand exists.
+7. Live already meters prepaid USDC/`$dasha` credits and pending provider settle — local coordinator still has no ledger; add local metering only if you need it, and keep tax/compliant auto-payouts off until demand exists.
 
 ## Test
 
