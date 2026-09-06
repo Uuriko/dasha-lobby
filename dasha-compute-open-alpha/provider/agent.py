@@ -208,7 +208,61 @@ def stream_ollama(job, cancelled):
 OLLAMA_MLX_MIN = (0, 33, 1)
 
 
+def model_billions(name):
+    """Best-effort parameter billions from tags like gemma3:27b / qwen3:8b / 12b-mlx. Never invents."""
+    found = [float(part) for part in re.findall(r"(\d+(?:\.\d+)?)[bB]", str(name or ""))]
+    return max(found) if found else None
+
+
+def size_soft_report():
+    """Soft warn when mapped models look ≥27B. Never fails doctor."""
+    large = []
+    for public, local in MODELS.items():
+        billions = model_billions(local)
+        if billions is None:
+            billions = model_billions(public)
+        if billions is not None and billions >= 27:
+            label = int(billions) if billions == int(billions) else billions
+            large.append(f"{public}→{local} (~{label}B)")
+    if not large:
+        return
+    print("size     soft · " + ", ".join(large) + " · prefer sub-24GB chat (8B/12B) for interactive · never fails doctor")
+    mem = hardware(False).get("memory_gb")
+    if isinstance(mem, (int, float)) and mem <= 24:
+        print(f"size     soft · host ~{mem}GB RAM · large mapped models risk swap/slow · Prefer 8B/12B")
+
+
+def keepalive_soft_report(ready_locals):
+    """Soft Prefer keep-alive when mapped models are cold in Ollama /api/ps. Never fails doctor."""
+    if not ready_locals:
+        return
+    try:
+        ps = request_json(f"{OLLAMA_URL}/api/ps", timeout=3)
+    except Exception:
+        print("keepalive soft · could not read Ollama /api/ps · set OLLAMA_KEEP_ALIVE=-1 on the Ollama service so chat stays hot")
+        return
+    loaded = set()
+    rows = ps.get("models") if isinstance(ps, dict) else None
+    if isinstance(rows, list):
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            name = row.get("name") or row.get("model")
+            if isinstance(name, str) and name.strip():
+                loaded.add(name.strip())
+    cold = [local for local in ready_locals if local not in loaded]
+    if not cold:
+        print("keepalive ok · mapped model(s) loaded in Ollama")
+        return
+    print(
+        "keepalive soft · mapped model not loaded ("
+        + ", ".join(cold[:4])
+        + ") · set OLLAMA_KEEP_ALIVE=-1 on the Ollama launch agent/service — a shell export alone is not enough on macOS"
+    )
+
+
 def parse_ollama_version(raw):
+
     match = re.search(r"(\d+)\.(\d+)\.(\d+)", str(raw or ""))
     if not match:
         return None
@@ -318,8 +372,10 @@ def doctor():
         except Exception as error:
             failures += 1
             print(f"gateway   failed · {error}", file=sys.stderr)
+    ready_locals = []
     try:
         installed = installed_models()
+        ready_locals = [local for local in MODELS.values() if local in installed]
         ready = [f"{public}→{local}" for public, local in MODELS.items() if local in installed]
         missing = [local for local in MODELS.values() if local not in installed]
         print("ollama    ok" + (f" · ready: {', '.join(ready)}" if ready else " · no mapped model installed"))
@@ -331,19 +387,32 @@ def doctor():
         failures += 1
         print(f"ollama    failed · {error}", file=sys.stderr)
     prefer_mlx_report()
+    size_soft_report()
+    keepalive_soft_report(ready_locals)
     benchmark_path = os.getenv("DASHA_BENCHMARK_PATH")
-    measured = False
+    has_bench = False
     if benchmark_path:
         try:
             with open(benchmark_path, encoding="utf-8") as source:
                 saved = json.load(source)
-            measured = bool(saved.get("results"))
-        except (OSError, ValueError, KeyError, TypeError):
-            measured = False
-    if measured:
-        print("benchmark ok · measured tok/s present — never invent")
+            rows = saved.get("results") if isinstance(saved, dict) else None
+            if isinstance(rows, list):
+                for row in rows:
+                    if not isinstance(row, dict):
+                        continue
+                    try:
+                        tps = float(row.get("tokens_per_second"))
+                    except (TypeError, ValueError):
+                        continue
+                    if tps > 0:
+                        has_bench = True
+                        break
+        except Exception:
+            has_bench = False
+    if has_bench:
+        print("benchmark ok · measured tok/s will post on heartbeat")
     else:
-        print("benchmark soft · run dasha-compute benchmark for measured tok/s — never invent")
+        print("benchmark soft · run dasha-compute benchmark so measured tok/s can show on Ask")
     return failures
 
 

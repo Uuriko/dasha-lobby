@@ -46,9 +46,7 @@ dasha-compute uninstall
 
 ## Prefer MLX (Apple Silicon)
 
-Prefer MLX when you can. On Mac providers, recommend **Ollama ≥0.33.1** (soft warn if older — doctor never fails solely for an older build). That release adds MLX structured output and a Metal timeout fix when models load from slow/external storage — **keep models on internal SSD**. Latest Ollama can run `*-mlx` models on Apple Silicon; LM Studio MLX server or `mlx_lm` are fine alternatives for speed. The Dasha provider still talks to Ollama over `:11434` — do not invent kit env flags for MLX. `dasha-compute doctor` prints a soft mlx hint plus an engine/MLX badge when a ≥0.33.1 or `*-mlx` build is detected, and never fails solely for missing MLX. Keep sub-24GB chat models (8B/12B).
-
-`dasha-compute benchmark` writes **measured tok/s**. Doctor soft-hints if that file is missing. Ask and `/compute/api/network` capacity show measured tok/s only from heartbeat benchmarks (mean of measured providers) — **never invent**.
+Prefer MLX when you can. On Mac providers, recommend **Ollama ≥0.33.1** (soft warn if older — doctor never fails solely for an older build). That release adds MLX structured output and a Metal timeout fix when models load from slow/external storage — **keep models on internal SSD**. Latest Ollama can run `*-mlx` models on Apple Silicon; LM Studio MLX server or `mlx_lm` are fine alternatives for speed. The Dasha provider still talks to Ollama over `:11434` — do not invent kit env flags for MLX. `dasha-compute doctor` prints a soft mlx hint plus an engine/MLX badge when a ≥0.33.1 or `*-mlx` build is detected, and never fails solely for missing MLX. Keep sub-24GB chat models (8B/12B). Doctor soft-hints mapped ≥27B tags and cold `/api/ps` keep-alive — never fails solely for those.
 
 ## Run it
 
@@ -84,7 +82,7 @@ python3 provider/agent.py --doctor
 
 The doctor exits nonzero when the coordinator, Ollama, or any configured model is unavailable.
 
-Measure actual model throughput with `python3 provider/agent.py --benchmark`. Set `DASHA_BENCHMARK_TOKENS` between 16 and 256 to trade speed for a longer calibrated run.
+Measure actual model throughput with `python3 provider/agent.py --benchmark`. Set `DASHA_BENCHMARK_TOKENS` between 16 and 256 to trade speed for a longer calibrated run. Doctor soft-hints when no measured file is present. Ask shows measured tok/s only from heartbeat benchmarks — never invents speed.
 
 ## API
 

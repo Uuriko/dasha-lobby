@@ -59,6 +59,7 @@ dasha-compute status
 ## Keep-alive (sub-24GB)
 - Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service — a shell export alone is not enough for the macOS app).
 - Do not pin 27B on a 16–24GB Air for interactive chat; use 8B/12B.
+- `dasha-compute doctor` soft-hints when a mapped model looks ≥27B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.
 
 ## Success
 - dasha-compute doctor exits 0
