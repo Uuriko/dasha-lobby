@@ -54,7 +54,6 @@ const STAY_200 = [
   '/ai.txt',
 ];
 const STAY_OUT = [
-  '/llm',
   '/humans.txt',
   '/ads.txt',
   '/terms',
@@ -80,6 +79,8 @@ for (const path of STAY_200) {
 for (const path of STAY_OUT) {
   assert.equal(potterHome308Dest(path), null, `stay out ${path}`);
 }
+assert.notEqual(potterHome308Dest('/llm'), LLMS, '/llm is not AEO /llms.txt');
+assert.equal(potterHome308Dest('/llm'), 'https://www.getdasha.com/compute', '/llm folds via compute-tab');
 
 const env = { LOBBY_SESSION_SECRET: 'llms-full-aeo-pretty-path-secret', AI: { run: async () => ({ response: 'ok' }) } };
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {

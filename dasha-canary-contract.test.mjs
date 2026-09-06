@@ -57,6 +57,11 @@ function firstPaint(html) {
   return at >= 0 ? html.slice(0, at) : html;
 }
 
+/** which-door first-paint copy names VVAIFU on purpose ("This mint. Not VVAIFU."). */
+function withoutWhichDoor(html) {
+  return String(html).replace(/<section\b[^>]*\bid=["']which-door["'][^>]*>[\s\S]*?<\/section>/i, '');
+}
+
 function assertHomeContract(html, label) {
   assert.match(html, /id=["']chat-door["']/, `${label} chat-door`);
   assert.match(html, /id=["']simp-door["']/, `${label} simp`);
@@ -71,7 +76,7 @@ function assertHomeContract(html, label) {
   const paint = firstPaint(html);
   assert.match(paint, /id=["']chat-door["']/, `${label} chat on first paint`);
   assert.doesNotMatch(paint, /id=["']chess-door["']/, `${label} no chess on first paint`);
-  assert.doesNotMatch(paint, /VVAIFU|Not CoinGecko/i, `${label} no other-coin lecture on first paint`);
+  assert.doesNotMatch(withoutWhichDoor(paint), /VVAIFU|Not CoinGecko/i, `${label} no other-coin lecture on first paint`);
   const grokAt = html.indexOf('id="grok-door"');
   const grwmAt = html.indexOf('id="grwm"');
   assert.ok(grokAt > grwmAt, `${label} grok-door AFTER grwm`);
@@ -101,7 +106,7 @@ assert.match(taped, /id=["']dasha-digest["']/, 'home tape lands');
 assert.ok(taped.indexOf('id="dasha-digest"') > taped.indexOf('id="grwm"'), 'tape AFTER grwm');
 assert.ok(taped.indexOf('id="dasha-digest"') > taped.indexOf('id="grok-door"'), 'tape AFTER grok-door');
 assert.doesNotMatch(firstPaint(taped), /id=["']dasha-digest["']/, 'first paint no tape');
-assert.doesNotMatch(firstPaint(taped), /VVAIFU/, 'first paint still no VVAIFU');
+assert.doesNotMatch(withoutWhichDoor(firstPaint(taped)), /VVAIFU/, 'first paint still no VVAIFU outside which-door');
 assert.match(firstPaint(taped), /id=["']chat-door["']/, 'first paint still chat-door');
 assert.equal((taped.match(/<li>/g) || []).length, 5, 'home tape cap 5');
 
@@ -209,8 +214,11 @@ for (const path of ['/app', '/App', '/application', '/Application', '/compute/ap
 for (const path of ['/provider-kit', '/Provider-kit', '/compute/provider-kit', '/provide-kit', '/host-kit', '/compute-kit', '/provider_kit']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
+for (const path of ['/llm', '/Llm', '/onboarding', '/macbook', '/factory', '/Factory', '/beta', '/providerkit', '/early-access', '/compute/llm']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
+}
 assert.equal(potterHome308Dest('/docs'), 'https://www.getdasha.com/compute/api', '/docs stays /compute/api');
-for (const path of ['/openai', '/openai-api', '/v1', '/llm', '/resend', '/email', '/health', '/status', '/healthz', '/connect', '/arcade', '/games', '/room', '/admin', '/blog', '/news', '/faq', '/waitlist', '/join', '/oauth', '/tos', '/terms', '/legal']) {
+for (const path of ['/openai', '/openai-api', '/v1', '/resend', '/email', '/health', '/status', '/healthz', '/connect', '/arcade', '/games', '/room', '/admin', '/blog', '/news', '/faq', '/waitlist', '/join', '/oauth', '/tos', '/terms', '/legal']) {
   assert.equal(potterHome308Dest(path), null, path);
 }
 for (const path of ['/Faucet', '/Faucet/', '/FAUCET']) {
