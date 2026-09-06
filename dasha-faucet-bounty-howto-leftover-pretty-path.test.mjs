@@ -6,7 +6,8 @@
  * /how-tobuy /howto_buy (+slash / Title-case) html-404 → 308 /how-to-buy.
  * Keep existing peers (/fill-the-jar, /bounties, /how-to-buy, /howtobuy, …).
  * Exact /faucet /bounties /how-to-buy stay 200 (null dest).
- * Never invent /aeo /shorts /social /me. Disk only. No Designer.
+ * Never invent /aeo /shorts /social. Bare /me now folds via compute-door leftover
+ * (dasha-hosts-tips-job-receipt-pretty-path). Disk only. No Designer.
  * Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -44,7 +45,6 @@ assert.doesNotMatch(
 assert.doesNotMatch(workerSrc, /['"]\/aeo['"]/, 'do not invent /aeo');
 assert.doesNotMatch(workerSrc, /['"]\/shorts['"]/, 'do not invent /shorts');
 assert.doesNotMatch(workerSrc, /['"]\/social['"]/, 'do not invent /social');
-assert.doesNotMatch(workerSrc, /['"]\/me['"]/, 'do not invent bare /me');
 
 const FAUCET = 'https://www.getdasha.com/faucet';
 const BOUNTIES = 'https://www.getdasha.com/bounties';
@@ -89,7 +89,6 @@ const STAY_OUT = [
   '/aeo',
   '/shorts',
   '/social',
-  '/me',
   '/faucet/jar',
   '/Faucet/jar',
 ];
@@ -175,9 +174,9 @@ assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/how-to-buy<\/loc>/);
 for (const path of [
   '/faucet/fill-the-jar', '/faucet/fill_the_jar', '/fill-the-jar',
   '/bounty', '/how-tobuy', '/howto_buy', '/howtobuy', '/howto', '/buy',
-  '/aeo', '/shorts', '/social', '/me',
+  '/aeo', '/shorts', '/social',
 ]) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-faucet-bounty-howto-leftover-pretty-path: PASS (/faucet/fill-the-jar+/faucet/fill_the_jar 308 /faucet; /bounty 308 /bounties; /how-tobuy+/howto_buy 308 /how-to-buy; Title-case+slash; peers; /faucet+/bounties+/how-to-buy 200; no /aeo /shorts /social /me; no plugin.jup.ag)');
+console.log('dasha-faucet-bounty-howto-leftover-pretty-path: PASS (/faucet/fill-the-jar+/faucet/fill_the_jar 308 /faucet; /bounty 308 /bounties; /how-tobuy+/howto_buy 308 /how-to-buy; Title-case+slash; peers; /faucet+/bounties+/how-to-buy 200; no /aeo /shorts /social; no plugin.jup.ag)');

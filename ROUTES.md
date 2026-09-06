@@ -52,7 +52,11 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 | `/verify` | 308 | `https://www.getdasha.com/which` |
 | `/studio` `/verse` `/learn` `/graph` `/index.html` | 308 | `https://www.getdasha.com/` |
 | `/grok` `/siwg` | 308 | `https://www.getdasha.com/login#grok` |
-| `/compute/use` `/compute/provide` `/compute/night` `/compute/build` `/compute/sponsor` `/run` `/ollama` `/compute/run` `/compute/ollama` `/models` `/model` `/compute/models` `/compute/model` `/usdc` `/settle` `/topup` `/top-up` `/billing` `/wallet` `/phantom` `/solana` `/compute/usdc` `/compute/settle` `/compute/topup` `/compute/top-up` `/compute/billing` `/compute/wallet` `/compute/phantom` `/compute/solana` `/hosted` `/community` `/mixture` `/compute/hosted` `/compute/community` `/compute/mixture` | 308 | `https://www.getdasha.com/compute` |
+| `/compute/use` `/compute/provide` `/compute/night` `/compute/build` `/compute/sponsor` `/run` `/ollama` `/compute/run` `/compute/ollama` `/models` `/model` `/compute/models` `/compute/model` `/usdc` `/settle` `/topup` `/top-up` `/billing` `/wallet` `/phantom` `/solana` `/compute/usdc` `/compute/settle` `/compute/topup` `/compute/top-up` `/compute/billing` `/compute/wallet` `/compute/phantom` `/compute/solana` `/hosted` `/community` `/mixture` `/compute/hosted` `/compute/community` `/compute/mixture` `/hosts` `/inferences` `/key` `/keys` `/apikey` `/api-key` `/api_key` `/install` `/doctor` `/me` `/usage` `/inference` `/gpu` `/gpus` `/pricing` `/providing` `/mac-kit` + `/compute/*` peers | 308 | `https://www.getdasha.com/compute` |
+| `/tips` `/compute/tips` | 308 | `https://www.getdasha.com/faucet` |
+| `/job` `/compute/job` `/api/job` | 308 | `https://www.getdasha.com/compute/api/jobs` |
+| `/receipt` `/receipts` `/compute/receipt` `/compute/receipts` `/api/receipt` `/api/receipts` | 308 | `https://www.getdasha.com/compute/api/receipts` |
+| `/api/keys` | 308 | `https://www.getdasha.com/compute/api/keys` |
 | `/gateway` `/compute/gateway` | 308 | `https://www.getdasha.com/compute/api` |
 
 Do not restore Studio. Do not list retired rooms or leftover 308s (`/siwg`, compute tab paths) in sitemap, README, or chrome as 200s. `/compute` stays the 200 product page; tab leftovers 308 there with no hash. `/compute/api` stays JSON.

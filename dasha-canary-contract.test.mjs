@@ -160,11 +160,25 @@ for (const path of ['/provide', '/Provide', '/start', '/Start', '/sponsor', '/sp
   assert.equal(res.status, 308, path);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/compute', path);
 }
-for (const path of ['/tip', '/tip/', '/tip-me', '/Tip-me', '/TIP-ME']) {
+for (const path of ['/tip', '/tip/', '/tip-me', '/Tip-me', '/TIP-ME', '/tips', '/tips/', '/compute/tips']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/faucet', path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
   assert.equal(res.status, 308, path);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/faucet', path);
+}
+for (const path of ['/hosts', '/Hosts', '/compute/hosts', '/me', '/usage', '/mac-kit', '/inference', '/gpu']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
+}
+for (const path of ['/job', '/compute/job', '/api/job']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/api/jobs', path);
+}
+for (const path of ['/receipt', '/receipts', '/compute/receipts', '/api/receipts']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/api/receipts', path);
+}
+assert.equal(potterHome308Dest('/api/keys'), 'https://www.getdasha.com/compute/api/keys');
+assert.equal(potterHome308Dest('/faucet/me'), null);
+for (const path of ['/openai', '/v1', '/resend', '/email', '/health', '/status', '/healthz']) {
+  assert.equal(potterHome308Dest(path), null, path);
 }
 for (const path of ['/Faucet', '/Faucet/', '/FAUCET']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/faucet', path);
