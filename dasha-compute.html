@@ -1315,7 +1315,18 @@ $('run-demo').addEventListener('click',async()=>{
       else if(selfRoute)body.route='self';
       const res=await fetch(API+'/compute/api/jobs',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:runAbort.signal});
       const ct=res.headers.get('content-type')||'';
-      if(ct.includes('event-stream')){activeJob=res.headers.get('X-Dasha-Job')||'';$('cancel-job').hidden=false;answer=await readSse(res)}
+      if(ct.includes('event-stream')){
+        activeJob=res.headers.get('X-Dasha-Job')||'';
+        $('cancel-job').hidden=false;
+        answer=await readSse(res);
+        {
+          const u=lastSseUsage;
+          const tot=Number(u?.total_tokens);
+          const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
+          const eng=mixture?'mixture':selfRoute?'self':'community';
+          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||''),model:String($('model').value||'')};
+        }
+      }
       else{
         if(!res.ok){
           const err=await res.json().catch(()=>({}));
@@ -1342,6 +1353,13 @@ $('run-demo').addEventListener('click',async()=>{
         if(jobCancelled)throw Error('Request cancelled. Prompt deleted.');
         if(data?.status!=='complete')throw Error('Community request timed out. Try again.');
         answer=String(data.answer||'');
+        {
+          const u=data?.usage&&typeof data.usage==='object'?data.usage:null;
+          const tot=Number(u?.total_tokens);
+          const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
+          const eng=mixture?'mixture':selfRoute?'self':'community';
+          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String(data?.model||$('model').value||'')};
+        }
       }
     }else{
       const res=await fetch(API+'/compute/api/chat',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,stream:true}),signal:runAbort.signal});
@@ -1652,9 +1670,27 @@ function paintAnswerReceipt(){
   const el=$('answer-receipt');
   if(!el)return;
   const r=lastPaidReceipt;
-  if(!r||!(Number(r.tokens)>0||Number(r.cents)>0)){el.hidden=true;el.textContent='';return}
+  if(!r){el.hidden=true;el.textContent='';return}
   const tok=Math.max(0,Math.floor(Number(r.tokens)||0));
   const cents=Math.max(0,Math.floor(Number(r.cents)||0));
+  const eng=String(r.engine||'');
+  const model=String(r.model||'').trim();
+  const job=String(r.job_id||'').trim();
+  const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
+  // Community / Mixture / self — job receipt; never show provider-earn cents as user $.
+  if(eng==='community'||eng==='mixture'||eng==='self'){
+    const label=eng==='mixture'?'Mixture':eng==='self'?'Your Mac':'Community';
+    const parts=[label];
+    if(model)parts.push(model);
+    if(tok>0)parts.push(formatSettledTok(tok)+' tok');
+    if(shortJob)parts.push(shortJob);
+    if(parts.length<2){el.hidden=true;el.textContent='';return}
+    el.hidden=false;
+    el.textContent=parts.join(' · ');
+    return;
+  }
+  // Hosted paid settle only (user charged). Free floor stays quiet.
+  if(!(tok>0||cents>0)){el.hidden=true;el.textContent='';return}
   el.hidden=false;
   el.textContent=cents>0
     ?('Settled · '+formatSettledTok(tok)+' tok · '+formatUsdCents(cents))
