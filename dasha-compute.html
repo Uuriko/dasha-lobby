@@ -513,6 +513,13 @@ function mixtureFraming(messages){
   const tip='You are Dasha Mixture · sub-24GB. Prefer a hot small specialist on the selected model. Be short, fun, useful.';
   return[{role:'system',content:tip},...messages];
 }
+function modelIdentityFraming(messages,modelId){
+  const id=String(modelId||'').trim();
+  if(!id)return messages;
+  const tip='You are model '+id+' on Dasha Compute. If asked your name/model, answer with exactly that id.';
+  if(messages.some(m=>m?.role==='system'&&typeof m.content==='string'&&m.content.includes('on Dasha Compute')&&m.content.includes('answer with exactly that id')))return messages;
+  return[{role:'system',content:tip},...messages];
+}
 function paintRequest(){/* character chrome cut from typeform flow */}
 function renderConversation(){
   const answer=$('answer');
@@ -1299,6 +1306,7 @@ $('run-demo').addEventListener('click',async()=>{
   let messages=pendingMessages();
   const button=$('run-demo'),eng=$('engine').value,community=eng==='community'||eng==='mixture'||eng==='self',mixture=eng==='mixture',selfRoute=eng==='self';
   if(mixture)messages=mixtureFraming(messages);
+  if(community)messages=modelIdentityFraming(messages,$('model').value);
   if(!prompt){$('answer').textContent='Write a prompt first.';return}
   if(prompt.length>2000){$('answer').textContent='Keep the prompt under 2,000 characters.';return}
   if(selfRoute&&!ownMacModels.has($('model').value)){
@@ -1373,7 +1381,7 @@ $('run-demo').addEventListener('click',async()=>{
           const tot=Number(u?.total_tokens);
           const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
           const eng=mixture?'mixture':selfRoute?'self':'community';
-          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String(data?.model||$('model').value||'')};
+          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String($('model').value||'')};
         }
       }
     }else{
@@ -1770,7 +1778,7 @@ function paintAnswerReceipt(){
   const model=String(r.model||'').trim();
   const job=String(r.job_id||'').trim();
   const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
-  // Community / Mixture / self — job receipt; never show provider-earn cents as user $.
+  // Community / Mixture / self — job receipt; selected/routed model id from client/job only (never trust answer self-description); never show provider-earn cents as user $.
   if(eng==='community'||eng==='mixture'||eng==='self'){
     const label=eng==='mixture'?'Mixture':eng==='self'?'Your Mac':'Community';
     const parts=[label];
