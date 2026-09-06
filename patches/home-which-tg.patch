@@ -1,0 +1,40 @@
+diff --git a/dasha-lobby-worker.mjs b/dasha-lobby-worker.mjs
+index 191881d..0bf3aa4 100644
+--- a/dasha-lobby-worker.mjs
++++ b/dasha-lobby-worker.mjs
+@@ -1784,6 +1784,8 @@ const FAUCET_STILL_SRI = 'sha384-gBA7pSgRRjXqzLiv5Efw8XzPjimgMxeDt3R1sP8svmrzZnj
+ const HOME_LEDE = `<p id="dasha-home-lede" class="dasha-home-lede">dash_eats culture. Match the mint.</p>`;
+ const HOME_CHAT_DOOR = `<section id="chat-door" aria-labelledby="chat-title"><div class="wrap door"><div><p class="section-kicker">Lobby</p><h2 class="section-title" id="chat-title">Chat.</h2><p class="door-line">Chat in the lobby.</p></div><a class="pill primary" href="/lobby">Open chat →</a></div></section>`;
+ const HOME_SIMP_DOOR = `<section id="simp-door" aria-labelledby="simp-title"><div class="wrap door"><div><p class="section-kicker">Simp Quiz</p><h2 class="section-title" id="simp-title">Simp Quiz.</h2><p class="door-line">Take the quiz.</p></div><a class="pill primary" href="/simp">Take the quiz</a></div></section>`;
++const HOME_WHICH_DOOR = `<section id="which-door" aria-labelledby="which-title"><div class="wrap door"><div><p class="section-kicker">dash_eats</p><h2 class="section-title" id="which-title">Which $dasha?</h2><p class="door-line">This mint. Not VVAIFU.</p></div><a class="pill primary" href="/which">This mint</a></div></section>`;
++const HOME_TG_DOOR = `<section id="tg-door" aria-labelledby="tg-title"><div class="wrap door"><div><p class="section-kicker">Telegram</p><h2 class="section-title" id="tg-title">The one group.</h2><p class="door-line">Official room only.</p></div><a class="pill primary" href="https://t.me/+xB7S8mIQaKFiZjRh" target="_blank" rel="noopener noreferrer">Open Telegram</a></div></section>`;
+ const HOME_BAG_LINE = `<p class="dasha-bag-line"><a href="/bag">Bag</a></p>`;
+ const HOME_GRWM_AIR = '<style id="dasha-grwm-air">#grwm{display:block;margin:0;padding:min(18vh,8rem) 0 min(14vh,6rem);box-sizing:border-box}#grwm video,#grwm .grwm-go{touch-action:pan-y}@media(max-width:800px){#grwm{padding:min(10vh,4rem) 0 min(8vh,3rem)}#grwm .grwm-phone{max-height:min(52svh,420px);width:min(100%,calc(52svh * 720 / 1280))}}</style>';
+ const HOME_GROK_DOOR = `<section id="grok-door" aria-labelledby="grok-title"><style id="dasha-siwg">.siwg{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#22d3ee);color:#fff;font:900 15px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em;text-decoration:none;cursor:pointer;box-shadow:0 0 22px rgba(124,58,237,.55),0 0 28px rgba(34,211,238,.4)}.siwg .siwg-icon{width:28px;height:28px;flex:0 0 28px;display:block;border-radius:6px}.siwg:focus-visible{outline:3px solid #f4eddb;outline-offset:3px}#grok-door{margin:0;padding:36px 0 56px;background:#070608}#grok-door .door{display:grid;gap:16px;justify-items:start}#grok-door .siwg-credit{margin:4px 0 0;font:700 13px/1.3 Arial,Helvetica,sans-serif}#grok-door .siwg-credit a{color:rgba(244,237,219,.72);text-decoration:underline;text-underline-offset:3px}</style><div class="wrap door"><div><p class="section-kicker">Grok Bot</p><h2 class="section-title" id="grok-title">Sign in with Grok Bot.</h2></div><a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a><p class="siwg-credit"><a href="https://x.com/RayFernando1337/status/2092696487637737929">Ray Fernando</a></p></div></section>`;
+@@ -2033,6 +2035,10 @@ export function orderHomeLongPage(html) {
+   let out = String(html || '');
+   const chat = cutIded(out, 'section', 'chat-door');
+   out = chat.html;
++  const whichDoor = cutIded(out, 'section', 'which-door');
++  out = whichDoor.html;
++  const tgDoor = cutIded(out, 'section', 'tg-door');
++  out = tgDoor.html;
+   const simp = cutIded(out, 'section', 'simp-door');
+   out = simp.html;
+   const faucet = cutIded(out, 'section', 'dasha-home-faucet');
+@@ -2050,12 +2056,14 @@ export function orderHomeLongPage(html) {
+   out = bag.html;
+   const lede = /id=["']dasha-home-lede["']/.test(out) ? '' : HOME_LEDE;
+   const chatBit = HOME_CHAT_DOOR;
++  const whichBit = HOME_WHICH_DOOR;
++  const tgBit = HOME_TG_DOOR;
+   const simpBit = HOME_SIMP_DOOR;
+   const faucetBit = faucet.cut || HOME_FAUCET_MOUNT;
+   const styleBit = HOME_FAUCET_STYLE;
+   const grwmBit = grwm.cut || '';
+   const grokBit = grokDoor.cut || HOME_GROK_DOOR;
+-  const block = `${lede}${chatBit}${simpBit}${faucetBit}${styleBit}${grwmBit}${grokBit}`;
++  const block = `${lede}${chatBit}${whichBit}${tgBit}${simpBit}${faucetBit}${styleBit}${grwmBit}${grokBit}`;
+   const hero = /<header\b(?=[^>]*\bid=["']content["'])[^>]*>[\s\S]*?<\/header>/i.exec(out)
+     || /<header\b(?=[^>]*\bclass=["'][^"']*\bdasha-hero\b)[^>]*>[\s\S]*?<\/header>/i.exec(out);
+   if (hero) {
