@@ -94,7 +94,7 @@ function assertLess(html, label) {
   assert.match(html, /id=["']night-offer-copy["'][^>]*hidden/, `${label} night-offer-copy hidden`);
   assert.match(html, /id=["']night-use-hosted["'][^>]*>Hosted</, `${label} night Hosted`);
   assert.match(html, /id=["']queue-night["'][^>]*>Queue</, `${label} night Queue`);
-  assert.match(html, /id=["']queue-night-login["'][^>]*>Log in</, `${label} night Log in`);
+  assert.match(html, /id=["']queue-night-login["'][^>]*>Sign in</, `${label} night Sign in`);
   assert.doesNotMatch(html, /Use Hosted now/, `${label} no Use Hosted now`);
   assert.doesNotMatch(html, /Queue for when a Mac is up/, `${label} no Queue essay`);
   assert.doesNotMatch(html, /Log in to queue/, `${label} no Log in to queue`);
@@ -128,7 +128,7 @@ function assertLess(html, label) {
   assert.match(html, /providers_online/, `${label} providers_online`);
 
   // Soft login
-  assert.match(html, /'Log in\.'/, `${label} soft Log in.`);
+  assert.match(html, /'Sign in\.'/, `${label} soft Sign in.`);
 
   // Mixture honesty — no Raptor; capability on model chip only
   assert.doesNotMatch(html, /Raptor/, `${label} no Raptor`);

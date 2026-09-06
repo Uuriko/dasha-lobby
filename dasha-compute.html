@@ -6,6 +6,7 @@
 <title>Dasha Compute — ask the Macs</title>
 <meta name="description" content="Start. Ask. Provide. Pay. Credits.">
 <link rel="canonical" href="https://www.getdasha.com/compute">
+<link rel="icon" type="image/png" href="https://cdn.prod.website-files.com/5f1458122ba25e70a3ff2bd0/6a767a48e1dd29d210f01235_dasha-icon-32.png">
 <meta name="theme-color" content="#08070a">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.getdasha.com/compute">
@@ -34,8 +35,9 @@ button,input,select,textarea{font:inherit}
 .tf-choice.primary,.primary{background:var(--acid);border-color:var(--acid);color:var(--ink)}
 .tf-choice[aria-pressed=true]{background:var(--acid);border-color:var(--acid);color:var(--ink)}
 .tf-choice.secondary,.secondary{border-color:var(--line);color:var(--paper);font-size:17px;font-weight:800}
-.tf-choice.is-dim{opacity:.5;border-color:var(--line);color:var(--muted);cursor:pointer}
-.tf-choice.is-dim:hover,.tf-choice.is-dim:focus-visible{opacity:.78;color:var(--paper);border-color:color-mix(in srgb,var(--paper) 45%,var(--line))}
+.tf-choice.is-dim{border-color:var(--line);color:var(--muted);cursor:pointer}
+.tf-choice.is-dim:hover,.tf-choice.is-dim:focus-visible{color:var(--paper);border-color:color-mix(in srgb,var(--paper) 45%,var(--line))}
+.tf-choice.is-dim:disabled{cursor:not-allowed;opacity:1;color:var(--muted)}
 .tf-back{border:0;background:transparent;color:var(--paper-muted);font:700 14px/1 Arial,Helvetica,sans-serif;cursor:pointer;padding:0 0 20px;display:inline-flex}
 .tf-back:hover{color:var(--paper)}
 .tf-progress{display:flex;justify-content:center;align-items:center;gap:6px;padding:12px 0 0;min-height:18px}
@@ -60,7 +62,7 @@ button,input,select,textarea{font:inherit}
 /* Gate / Pay / Credits: quiet under choices share one top gap */
 #step-gate>.tf-quiet,#step-pay>.fine,#step-pay-buy>.fine,#step-sponsor>.fine,#step-sponsor-buy>.fine,#step-sponsor-buy>.field,#step-credits>.fine,#step-you>.fine,#step-earn>.fine,#step-pay-send>.tf-quiet,#step-sponsor-send>.fine{margin-top:14px}
 .tf-choices+.tf-choices{margin-top:12px}
-.ask-links{display:flex;flex-wrap:wrap;gap:0 14px;margin-top:4px}
+.ask-links{display:flex;flex-wrap:wrap;gap:0 14px;margin-top:4px}#step-gate>.ask-links{margin-top:14px}
 .ask-links .tf-quiet{padding:6px 0}
 .ask-doors{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:2px;margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
 .ask-doors .tf-quiet{padding:4px 0;font-size:12px}
@@ -102,7 +104,7 @@ footer a:hover{color:var(--paper)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.tf-step{animation:none!important}}
 @media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:7rem}#ask-starters{gap:0 12px;margin-bottom:8px}.ask-doors{column-gap:4px;row-gap:4px;margin-top:6px;padding-top:6px}.ask-doors .tf-quiet{padding:6px 4px 6px 0}.ask-links{gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}}
 </style>
-</head>
+<link rel="describedby" href="/llms.txt" type="text/plain"><link rel="describedby" href="/llms-full.txt" type="text/plain"></head>
 <body data-step="gate">
 <main class="shell">
 <a class="skip" href="#prompt">Skip to ask</a>
@@ -116,12 +118,14 @@ footer a:hover{color:var(--paper)}
 <section class="tf-step" id="step-gate" data-tf="gate">
   <h1 class="tf-q">Start.</h1>
   <div class="tf-choices" role="group" aria-label="Start.">
-    <button type="button" class="tf-choice primary" id="pick-ask">Ask</button>
+    <button type="button" class="tf-choice primary" id="pick-ask" title="Run a prompt">Ask</button>
     <button type="button" class="tf-choice secondary" id="pick-provide" title="Join with a Mac">Provide</button>
-    <button type="button" class="tf-choice secondary" id="pick-pay" title="Top up or sponsor">Pay</button>
-    <button type="button" class="tf-choice secondary" id="pick-credits" title="Use prepaid">Credits</button>
   </div>
-  <a id="gate-signin" class="tf-quiet" href="/login?return=/compute">Log in</a>
+  <div class="ask-links" role="group" aria-label="Money.">
+    <button type="button" class="tf-quiet" id="pick-pay" title="Top up or sponsor">Pay</button>
+    <button type="button" class="tf-quiet" id="pick-credits" title="Use prepaid">Credits</button>
+  </div>
+  <a id="gate-signin" class="tf-quiet" href="/login?return=/compute">Sign in</a>
   <button type="button" id="gate-you" class="tf-quiet" hidden>You</button>
 </section>
 
@@ -165,9 +169,10 @@ footer a:hover{color:var(--paper)}
     <button type="button" class="tf-quiet" id="ask-starter-2" data-prompt="Summarize this in three short bullets:">Summarize this</button>
     <button type="button" class="tf-quiet" id="ask-starter-3" data-prompt="Draft a curl that POSTs JSON to an HTTPS API.">Draft a curl</button>
   </div>
+  <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
   <div class="actions">
     <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
-    <a class="primary" id="login" href="/login?return=/compute">Log in</a>
+    <a class="primary" id="login" href="/login?return=/compute%23ask">Sign in</a>
     <div class="ask-links">
       <button class="tf-quiet" id="copy-skill-use" type="button">Copy AI skill</button>
       <button class="tf-quiet" id="change-engine" type="button" title="Change engine" aria-label="Change engine">Hosted</button>
@@ -231,9 +236,10 @@ footer a:hover{color:var(--paper)}
   <div class="tf-choices" role="group" aria-label="Pay with.">
     <button type="button" class="tf-choice primary" id="pay-usdc" data-method="usdc">USDC · $4.85</button>
     <button type="button" class="tf-choice secondary" id="pay-dasha" data-method="dasha">$dasha · $4.75</button>
-    <a class="tf-choice secondary" id="pay-method-login" href="/login?return=/compute" hidden>Log in</a>
+    <a class="tf-choice secondary" id="pay-method-login" href="/login?return=/compute%23pay" hidden>Sign in</a>
   </div>
   <p class="fine" id="pay-method-err" hidden></p>
+  <p class="fine" id="pay-buy-fine">USDC or $dasha · no card yet.</p>
 </section>
 
 <section class="tf-step" id="step-pay-send" data-tf="pay-send" hidden>
@@ -242,11 +248,11 @@ footer a:hover{color:var(--paper)}
   <p class="fine" id="pay-send-line">·</p>
   <div class="tf-choices" role="group" aria-label="Send.">
     <button type="button" class="tf-choice primary" id="pay-copy">Copy</button>
-    <a class="tf-choice secondary" id="pay-open" href="#" target="_blank" rel="noopener noreferrer">Open Phantom</a>
+    <a class="tf-choice secondary" id="pay-open" target="_blank" rel="noopener noreferrer">Open Phantom</a>
   </div>
   <p class="fine" id="pay-wait" role="status" aria-live="polite"></p>
   <p class="fine" id="pay-send-err" hidden></p>
-  <a class="tf-quiet" id="pay-send-login" href="/login?return=/compute" hidden>Log in</a>
+  <a class="tf-quiet" id="pay-send-login" href="/login?return=/compute%23pay" hidden>Sign in</a>
 </section>
 
 <section class="tf-step" id="step-pay-done" data-tf="pay-done" hidden>
@@ -265,6 +271,7 @@ footer a:hover{color:var(--paper)}
     <button type="button" class="tf-choice primary" id="sponsor-network" data-sponsor-target="network">Network</button>
   </div>
   <div class="tf-choices" id="sponsor-macs" role="group" aria-label="Mac." hidden></div>
+  <p class="fine" id="sponsor-raised">$0 raised</p>
   <p class="fine" id="sponsor-fine">USDC or $dasha · name on board when logged in.</p>
 </section>
 
@@ -280,7 +287,7 @@ footer a:hover{color:var(--paper)}
   <div class="tf-choices" role="group" aria-label="Pay with.">
     <button type="button" class="tf-choice primary" id="sponsor-usdc" data-sponsor-method="usdc">USDC</button>
     <button type="button" class="tf-choice secondary" id="sponsor-dasha" data-sponsor-method="dasha">$dasha</button>
-    <a class="tf-choice secondary" id="sponsor-method-login" href="/login?return=/compute" hidden>Log in</a>
+    <a class="tf-choice secondary" id="sponsor-method-login" href="/login?return=/compute%23sponsor" hidden>Sign in</a>
   </div>
   <p class="fine" id="sponsor-method-err" hidden></p>
 </section>
@@ -291,7 +298,7 @@ footer a:hover{color:var(--paper)}
   <p class="fine" id="sponsor-send-line">·</p>
   <div class="tf-choices" role="group" aria-label="Send.">
     <button type="button" class="tf-choice primary" id="sponsor-copy">Copy</button>
-    <a class="tf-choice secondary" id="sponsor-open" href="#" target="_blank" rel="noopener noreferrer">Open Phantom</a>
+    <a class="tf-choice secondary" id="sponsor-open" target="_blank" rel="noopener noreferrer">Open Phantom</a>
   </div>
   <p class="fine" id="sponsor-wait" role="status" aria-live="polite"></p>
   <p class="fine" id="sponsor-send-err" hidden></p>
@@ -310,10 +317,11 @@ footer a:hover{color:var(--paper)}
   <button type="button" class="tf-back" data-back="gate">← Back</button>
   <h1 class="tf-q">Credits.</h1>
   <p class="fine" id="credits-balance" hidden></p>
+  <p class="fine" id="credits-fine">USDC or $dasha · no card yet.</p>
   <div class="tf-choices" role="group" aria-label="Credits.">
     <button type="button" class="tf-choice primary" id="credits-use">Use credits</button>
     <button type="button" class="tf-choice secondary" id="credits-topup">Top up</button>
-    <a class="tf-choice secondary" id="credits-login" href="/login?return=/compute" hidden>Log in</a>
+    <a class="tf-choice secondary" id="credits-login" href="/login?return=/compute%23credits" hidden>Sign in</a>
   </div>
 </section>
 
@@ -333,6 +341,7 @@ footer a:hover{color:var(--paper)}
 <section class="tf-step" id="step-earn" data-tf="earn" hidden>
   <button type="button" class="tf-back" data-back="you">← Back</button>
   <h1 class="tf-q">Earn.</h1>
+  <p class="fine" id="earn-rates">$0.05/job + $0.01/1k completion · min $1 · pending settle</p>
   <p class="fine" id="earn-balance" hidden></p>
   <p class="fine" id="earn-jobs" hidden></p>
   <div class="tf-choices" role="group" aria-label="Payout." id="earn-methods" hidden>
@@ -346,13 +355,14 @@ footer a:hover{color:var(--paper)}
   </div>
   <p class="fine" id="earn-status" role="status" aria-live="polite" hidden></p>
   <p class="fine" id="earn-pending" hidden></p>
-  <a class="tf-quiet" id="earn-login" href="/login?return=/compute%23earn" hidden>Log in</a>
+  <a class="tf-quiet" id="earn-login" href="/login?return=/compute%23earn" hidden>Sign in</a>
 </section>
 
 <section class="tf-step" id="step-answer" data-tf="answer" hidden>
   <h1 class="tf-q" id="answer-title">Answer.</h1>
   <button class="tf-quiet" id="cancel-job" type="button" hidden>Cancel</button>
   <pre class="answer" id="answer" aria-live="polite"></pre>
+  <p class="fine" id="answer-receipt" hidden></p>
   <div class="tf-choices" id="after-answer">
     <button type="button" class="tf-choice primary" id="ask-again">Ask again</button>
     <button type="button" class="tf-choice secondary" id="pick-provide-after">Provide</button>
@@ -370,7 +380,7 @@ footer a:hover{color:var(--paper)}
     <div class="tf-choices" id="night-choices">
       <button type="button" class="tf-choice primary" id="night-use-hosted">Hosted</button>
       <button type="button" class="tf-choice secondary" id="queue-night">Queue</button>
-      <a class="tf-choice secondary" id="queue-night-login" href="/login?return=/compute">Log in</a>
+      <a class="tf-choice secondary" id="queue-night-login" href="/login?return=/compute%23night">Sign in</a>
     </div>
   </div>
 </section>
@@ -391,8 +401,8 @@ footer a:hover{color:var(--paper)}
   <p class="fine" id="provide-next-line" hidden aria-hidden="true"></p>
   <div class="actions" id="provide">
     <button class="primary" id="register-provider" type="button" hidden disabled>Register</button>
-    <a class="primary" id="provider-login" href="/login?return=/compute%23provide">Log in to register</a>
-    <button class="secondary" id="copy-skill-provide-reg" type="button">Copy AI skill</button>
+    <a class="primary" id="provider-login" href="/login?return=/compute%23provide">Sign in to register</a>
+    <button class="tf-quiet" id="copy-skill-provide-reg" type="button">Copy AI skill</button>
   </div>
   <p class="fine" id="provider-status" role="status" aria-live="polite"></p>
 </section>
@@ -401,6 +411,7 @@ footer a:hover{color:var(--paper)}
   <h1 class="tf-q">Setup.</h1>
   <p class="fine" id="provide-tto">About 15–30 min to online.</p>
   <p class="fine" id="provide-prefer-mlx">Prefer MLX when you can · Ollama ≥0.33.1 · models on internal SSD.</p>
+  <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion · min $1 · pending settle</p>
   <pre class="setup" id="setup" aria-live="polite">curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
 tar -xzf dasha-compute-open-alpha.tar.gz
 cd dasha-compute-open-alpha
@@ -408,7 +419,7 @@ ollama pull qwen3:8b
 DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
   <p class="fine" id="provide-beat" role="status" aria-live="polite" hidden></p>
   <div class="actions row">
-    <button class="secondary" id="copy-skill-provide-done" type="button">Copy AI skill</button>
+    <button class="tf-quiet" id="copy-skill-provide-done" type="button">Copy AI skill</button>
     <a class="secondary" href="/dasha-compute-open-alpha.tar.gz" download>Download kit</a>
     <a class="tf-quiet" href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Get Ollama ↗</a>
   </div>
@@ -436,20 +447,21 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
   -d '{"model":"qwen3-8b","messages":[{"role":"user","content":"hello"}],"stream":true}'</pre>
     <div class="actions row">
       <button class="copy secondary" data-copy="code" type="button">Copy curl</button>
-      <a class="secondary" id="key-login" href="/login?return=/compute%23build">Log in</a>
+      <a class="secondary" id="key-login" href="/login?return=/compute%23build">Sign in</a>
       <button class="primary" id="create-api-key" type="button" hidden disabled>Create API key</button>
       <button class="secondary" id="check" type="button">Run check</button>
     </div>
     <p class="fine" id="api-key-cap-hint">Cap $5 / month</p>
     <label class="field" id="api-key-limit-wrap" hidden>Spend cap (USD / month)<input id="api-key-limit" type="number" min="1" max="1000" step="1" value="5" inputmode="decimal" placeholder="5"></label>
-    <pre id="api-key-output" aria-live="polite">Log in to create a developer key.</pre>
-    <div class="models" id="api-key-list"><p class="fine">Log in to create a developer key.</p></div>
+    <pre id="api-key-output" aria-live="polite">Sign in to create a developer key.</pre>
+    <div class="models" id="api-key-list"><p class="fine">Sign in to create a developer key.</p></div>
     <pre id="check-result">Lobby v1 URL is set. Run check.</pre>
   </details>
 </section>
 
 <footer>
   <span>$dasha compute · v0.3 open alpha</span>
+  <span id="settled-24h" title="Settled paid-inference tokens · last 24h">0 tok · 24h</span>
   <a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">53ux…pump</a>
   <a href="/privacy">Privacy</a>
   <span>local-first</span>
@@ -465,10 +477,10 @@ const MODELS=[
   ['gemma3-27b','gemma3:27b','Gemma 3 27B','17 GB',24,'large multimodal']
 ];
 const SUB24=new Set(['qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b']);
-const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\n\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\n\n## Goal\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\n\n## Facts (do not invent others)\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\n- Coordinator: https://lobby.getdasha.com/compute/api\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\n- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)\n- Token goes in `.dasha-provider-key` mode 0600 — never put the provider key on argv or shell history\n- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\n\n## Steps for the AI to run with the human\n1. Open https://www.getdasha.com/compute → Provide (quiet link) → name the Mac → Log in (X) if needed → Register.\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once — refresh loses it. Prefer that block over this template.\n3. On the Mac, run the Setup command — or this template with the pasted values:\n\n```bash\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\n# install Ollama from https://ollama.com/download if missing\nollama pull qwen3:8b\numask 077\ncat > .dasha-provider-key <<'TOKEN'\nPASTE_ONE_TIME_TOKEN_HERE\nTOKEN\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b \\\n./install.sh\n```\n\n4. Verify after install (`install.sh` already ran doctor and moved the key):\n\n```bash\ndasha-compute doctor\ndasha-compute status\n```\n\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\n\n## Prefer MLX (Apple Silicon, optional)\n- Prefer MLX when you can — often faster on Apple Silicon; Ollama still works.\n- Recommend Ollama ≥0.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\n- Keep models on internal SSD — slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\n- Official Ollama path (live docs): Ollama ≥0.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\n- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.\n\n## Keep-alive (sub-24GB)\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service — a shell export alone is not enough for the macOS app).\n- Do not pin 27B on a 16–24GB Air for interactive chat; use 8B/12B.\n\n## Success\n- dasha-compute doctor exits 0\n- Heartbeats succeed\n- A Community Run from another session can complete on this Mac\n\n## If stuck\n- Re-register for a fresh token\n- Check dasha-compute logs\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\n";
-const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\n\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute — Hosted demo or community Macs — without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha). Credits → balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b · 3 free / 10 min · then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. — Ask → Hosted Ask. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Ask · Top up → Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Community or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\n4. Log in if prompted\n5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue\n\n## Optional API\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n\n## If stuck\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n";
+const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\n\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\n\n## Goal\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\n\n## Facts (do not invent others)\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\n- Coordinator: https://lobby.getdasha.com/compute/api\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\n- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)\n- Token goes in `.dasha-provider-key` mode 0600 \u2014 never put the provider key on argv or shell history\n- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending settle (operator/treasury) · $dasha payout +10% · never invent balances\n\n## Steps for the AI to run with the human\n1. Open https://www.getdasha.com/compute \u2192 Provide (quiet link) \u2192 name the Mac \u2192 Sign in (X) if needed \u2192 Register.\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once \u2014 refresh loses it. Prefer that block over this template.\n3. On the Mac, run the Setup command \u2014 or this template with the pasted values:\n\n```bash\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\n# install Ollama from https://ollama.com/download if missing\nollama pull qwen3:8b\numask 077\ncat > .dasha-provider-key <<'TOKEN'\nPASTE_ONE_TIME_TOKEN_HERE\nTOKEN\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b \\\n./install.sh\n```\n\n4. Verify after install (`install.sh` already ran doctor and moved the key):\n\n```bash\ndasha-compute doctor\ndasha-compute status\n```\n\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\n\n## Prefer MLX (Apple Silicon, optional)\n- Prefer MLX when you can \u2014 often faster on Apple Silicon; Ollama still works.\n- Recommend Ollama \u22650.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\n- Keep models on internal SSD \u2014 slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\n- Official Ollama path (live docs): Ollama \u22650.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\n- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks \u2014 never invent.\n- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.\n\n## Keep-alive (sub-24GB)\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service \u2014 a shell export alone is not enough for the macOS app).\n- Do not pin 27B on a 16\u201324GB Air for interactive chat; use 8B/12B.\n\n## Success\n- dasha-compute doctor exits 0\n- Heartbeats succeed\n- A Community Run from another session can complete on this Mac\n\n## If stuck\n- Re-register for a fresh token\n- Check dasha-compute logs\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\n";
+const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\n\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute \u2014 Hosted demo or community Macs \u2014 without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot \u2192 Start. (Ask / Provide / Pay / Credits). Ask \u2192 Hosted Ask \u00b7 quiet Provide / Marketplace / Host \u00b7 Change engine for Community/Mixture \u00b7 model if community \u2192 Run. Pay \u2192 Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha). Credits \u2192 balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b \u00b7 3 free / 10 min \u00b7 then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) \u00b7 Ollama \u22650.33.1 \u00b7 models on internal SSD; Ollama still works.\n- Ask top-state shows measured tok/s only when network capacity has benchmarks \u2014 never invent speed.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. \u2014 Ask \u2192 Hosted Ask. Pay \u2192 Pay. (Top up \u2192 Buy (amount+method) \u2192 Send \u00b7 Sponsor \u2192 Amount \u2192 Send). Credits \u2192 Credits. (Use credits \u2192 Ask \u00b7 Top up \u2192 Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Community or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\n4. Sign in if prompted\n5. Type a prompt \u2192 Run (Enter). Keyboard: 1\u20134 choices \u00b7 Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue\n\n## Optional API\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n\n## If stuck\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n";
 const API='https://lobby.getdasha.com';
-let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacModels=new Set(),networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask';
+let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacModels=new Set(),ownMacTps=0,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask';
 
 function pendingMessages(){
   const content=$('prompt').value.trim()||'…',kept=[];
@@ -508,7 +520,7 @@ function paintAnswerApi(){
     el.setAttribute('href','#');
     el.setAttribute('role','button');
   }else{
-    el.textContent='Log in';
+    el.textContent='Sign in';
     el.setAttribute('href','/login?return=/compute%23build');
     el.removeAttribute('role');
   }
@@ -520,12 +532,14 @@ function paintAnswerMoney(){
   if(lastAskFailKind!=='rate'&&lastAskFailKind!=='credits'){
     el.hidden=true;
     el.textContent='';
+    paintAnswerReceipt();
     return;
   }
   el.hidden=false;
   el.textContent=lastAskFailKind==='credits'?'Top up':'Credits';
+  paintAnswerReceipt();
 }
-function clearAnswerMoney(){lastAskFailKind=null;paintAnswerMoney()}
+function clearAnswerMoney(){lastAskFailKind=null;lastPaidReceipt=null;paintAnswerMoney();paintAnswerReceipt()}
 function clearConversation(){conversation=[];renderConversation();paintRequest();hideNightOffer();clearAnswerMoney();paintAnswerApi()}
 $('prompt').addEventListener('input',()=>{paintRequest();updateRun();});
 $('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const run=$('run-demo');if(run&&!run.hidden){run.click();return}const login=$('login');if(login&&!login.hidden)login.click()}});
@@ -550,15 +564,25 @@ function paintSplit(){
   const eng=$('engine')?.value||'hosted';
   const communityIntent=eng==='community'||eng==='mixture'||eng==='self';
   let modelName='';
+  let measuredTps=0;
   if(n>=1){
     const want=communityIntent?$('model').value:'';
     const row=(networkCapacity||[]).find(item=>item.model===want)||(networkCapacity||[])[0];
     modelName=row?.model||want||[...networkModels][0]||'';
+    const mp=Number(row?.measured_providers||0);
+    const tps=Number(row?.tokens_per_second);
+    if(mp>=1&&Number.isFinite(tps)&&tps>0)measuredTps=tps;
   }
   if(top){
-    // Gate: no Community boast when fleet empty (or ever) — count only past gate / when n>=1.
-    if(tfStep==='gate'){top.textContent=n>=1?(modelName?`${n} · ${modelName}`:`${n}`):(!window.__dashaAuthReady?'·':'');}
-    else if(n>=1)top.textContent=modelName?`${n} · ${modelName}`:`${n}`;
+    // Gate: never Community boast on Start. — quiet chrome; count only past gate.
+    // Measured tok/s only when capacity.measured_providers≥1 — never invent.
+    if(tfStep==='gate'){top.textContent=!window.__dashaAuthReady?'·':'';}
+    else if(n>=1){
+      const tpsLabel=formatTokPerSec(measuredTps);
+      if(modelName&&tpsLabel)top.textContent=`${n} · ${modelName} · ${tpsLabel} tok/s`;
+      else if(modelName)top.textContent=`${n} · ${modelName}`;
+      else top.textContent=`${n}`;
+    }
     else if(!window.__dashaAuthReady)top.textContent='·';
     else top.textContent='';
   }
@@ -604,9 +628,18 @@ function paintModelChoices(){
     b.setAttribute('aria-pressed',$('model').value===id?'true':'false');
     const cap=shortModelHint(hint);
     b.textContent=cap?`${label} · ${size} · ${cap}`:`${label} · ${size}`;
-    b.title=hint||'';
-    if(networkModels.size&&!networkModels.has(id))b.style.opacity='0.55';
+    const offline=networkModels.size>0&&!networkModels.has(id);
+    // Offline: is-dim (no opacity crush) + disabled — avoid silent swap to another model on Ask.
+    if(offline){
+      b.classList.add('is-dim');
+      b.disabled=true;
+      b.setAttribute('aria-disabled','true');
+      b.title=(hint?hint+' · ':'')+'Offline · not on network';
+    }else{
+      b.title=hint||'';
+    }
     b.addEventListener('click',()=>{
+      if(offline||b.disabled)return;
       $('model').value=id;
       showTf('ask');
       updateRun();
@@ -660,6 +693,7 @@ function paintProgress(step){
   else if(step==='pay'||step==='pay-buy'||step==='pay-send'||step==='pay-done')path=['pay','pay-buy','pay-send','pay-done'];
   else if(step==='sponsor'||step==='sponsor-buy'||step==='sponsor-send'||step==='sponsor-done')path=['sponsor','sponsor-buy','sponsor-send','sponsor-done'];
   else if(step==='night')path=['how','night'];
+  else if(step==='how')path=['how','ask'];
   else if(step==='build')path=eng==='hosted'?['ask','answer','build']:['how','model','ask','answer','build'];
   else if(eng==='hosted')path=['ask','answer'];
   else if(fleetEmpty(eng))path=['how','night'];
@@ -742,7 +776,7 @@ function showTf(step){
   if(step==='pay'||step==='gate'||step==='ask'||step==='pay-buy'||step==='sponsor'||step==='sponsor-buy')clearPaySponsorFine();
   const login=$('login');
   if(login){
-    const ret=step.startsWith('provide')?'%23provide':step==='build'?'%23build':'';
+    const ret=step.startsWith('provide')?'%23provide':step==='build'?'%23build':step==='ask'?'%23ask':step==='night'?'%23night':step==='earn'?'%23earn':'';
     login.href='/login?return=/compute'+ret;
   }
   if(step==='ask'){
@@ -770,7 +804,7 @@ function showTf(step){
       if(!section||section.hidden)return;
       const active=document.activeElement;
       if(active&&section.contains(active))return;
-      // Guest Buy: Log in is the only money CTA — prefer it over pack chips.
+      // Guest Buy: Sign in is the only money CTA — prefer it over pack chips.
       if(step==='pay-buy'&&!loggedIn){
         const payLogin=$('pay-method-login');
         if(payLogin&&!payLogin.hidden&&payLogin.offsetParent!==null){payLogin.focus();return}
@@ -883,6 +917,10 @@ function paintAskMyMac(){
   if(chip)chip.hidden=!show;
   if(sep)sep.hidden=!show;
   if(engSelf)engSelf.hidden=!show;
+  const tpsLabel=formatTokPerSec(ownMacTps);
+  const title=tpsLabel?('My Mac · free · '+tpsLabel+' tok/s measured'):'Run on your Mac · free';
+  if(chip){chip.title=title;chip.setAttribute('aria-label',tpsLabel?('My Mac · free · '+tpsLabel+' tok/s'):'My Mac · free')}
+  if(engSelf){engSelf.title=tpsLabel?('My Mac · '+tpsLabel+' tok/s measured'):'My Mac · free'}
   if(!show&&$('engine')?.value==='self')setEngine('hosted',false);
 }
 
@@ -934,9 +972,9 @@ function updateRun(){
   const communityOption=[...$('engine').options].find(option=>option.value==='community');
   if(communityOption){communityOption.hidden=false;communityOption.text=providersOnline>=1?`Community · ${providersOnline}`:'Community'}
   $('run-demo').textContent='Run';
-  // Guest + Mac/hosted available: hide Run so Log in is the only primary (no dual CTA muddle).
-  // Guest + noMac: one primary Run (opens Night); hide Ask #login — Night already has Log in for Queue. Hosted still on Night.
-  // Logged-in: Run on, Log in off.
+  // Guest + Mac/hosted available: hide Run so Sign in is the only primary (no dual CTA muddle).
+  // Guest + noMac: one primary Run (opens Night); hide Ask #login — Night already has Sign in for Queue. Hosted still on Night.
+  // Logged-in: Run on, Sign in off.
   const run=$('run-demo'),loginBtn=$('login');
   if(loggedIn){
     run.hidden=false;run.removeAttribute('hidden');run.style.display='';
@@ -950,8 +988,8 @@ function updateRun(){
     run.hidden=true;run.setAttribute('hidden','');run.style.display='none';run.disabled=true;
     if(loginBtn){
       loginBtn.hidden=false;
-      // Guest with a filled prompt (starter chip or typed): name the next step — not bare Log in.
-      loginBtn.textContent=($('prompt')?.value||'').trim()?'Log in to run':'Log in';
+      // Guest with a filled prompt (starter chip or typed): name the next step — not bare Sign in.
+      loginBtn.textContent=($('prompt')?.value||'').trim()?'Sign in to run':'Sign in';
     }
   }
   const engHost=$('eng-hosted'),engCom=$('eng-community'),engMix=$('eng-mixture'),engSelf=$('eng-self');
@@ -1002,9 +1040,11 @@ async function auth(){
   updateProvideAuth();
   updateRun();
   if(loggedIn){loadProviders();loadApiKeys();loadCreditsBalance()}
-  else {creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];ownMacOnline=0;ownMacModels=new Set();paintCreditsBalance();paintEarn();paintAnswerApi();paintAskMyMac()}
+  else {creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;ownMacOnline=0;ownMacModels=new Set();ownMacTps=0;paintCreditsBalance();paintEarn();paintAnswerApi();paintAskMyMac()}
   paintPayMethod();
   paintGateAuth();
+  paintSettled24h();
+  loadSettled24h();
   loadOcmHosts();
 }
 async function loadOcmHosts(){
@@ -1035,7 +1075,7 @@ function paintNightAuth(reason){
   if(!offer)return;
   if(copy){copy.hidden=true;copy.textContent='';copy.setAttribute('aria-hidden','true')}
   if(queue){queue.hidden=!loggedIn;queue.disabled=!loggedIn;queue.textContent='Queue'}
-  if(login){login.hidden=loggedIn;login.textContent='Log in'}
+  if(login){login.hidden=loggedIn;login.textContent='Sign in'}
   const hosted=$('night-use-hosted');
   if(hosted)hosted.textContent='Hosted';
   offer.hidden=false;
@@ -1083,7 +1123,7 @@ async function queueForMac(){
     hideNightOffer();
     if(queue)queue.textContent='Queued';
   }catch(error){
-    $('answer').textContent=error.message==='login required'?'Log in.':error.message;
+    $('answer').textContent=error.message==='login required'?'Sign in.':error.message;
     showNightOffer();
   }finally{
     updateRun();
@@ -1098,6 +1138,7 @@ async function readSse(response){
   }
   const reader=response.body.getReader(),decoder=new TextDecoder();
   let buf='',out='',saw=false;const node=$('answer');
+  lastSseUsage=null;
   while(true){
     const {done,value}=await reader.read();
     if(done||jobCancelled)break;
@@ -1110,6 +1151,7 @@ async function readSse(response){
         if(raw==='[DONE]')return out;
         let payload;try{payload=JSON.parse(raw)}catch{continue}
         if(payload?.error)throw Error(payload.error.message||payload.error||'stream error');
+        if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;
         const delta=typeof payload?.choices?.[0]?.delta?.content==='string'?payload.choices[0].delta.content:typeof payload?.choices?.[0]?.delta==='string'?payload.choices[0].delta:typeof payload?.response==='string'?payload.response:typeof payload?.delta==='string'?payload.delta:'';
         if(delta){if(!saw){saw=true;onFirstToken()}out+=delta;node.textContent=out}
       }
@@ -1137,7 +1179,7 @@ $('run-demo').addEventListener('click',async()=>{
     return;
   }
   hideNightOffer();
-  if(!loggedIn){$('answer').textContent='Log in.';$('answer-title').textContent='Ask.';showTf('answer');return}
+  if(!loggedIn){$('answer').textContent='Sign in.';$('answer-title').textContent='Ask.';showTf('answer');return}
   button.disabled=true;$('clear-chat').disabled=true;
   button.textContent=community?'Waiting for Mac…':'Running…';
   $('answer').textContent=community?'Waiting for a Mac…':'Thinking…';
@@ -1151,6 +1193,7 @@ $('run-demo').addEventListener('click',async()=>{
   try{
     let answer='';
     if(community){
+      lastPaidReceipt=null;
       const body={messages,model:$('model').value,stream:true};
       if(mixture)body.route='mixture';
       else if(selfRoute)body.route='self';
@@ -1187,20 +1230,28 @@ $('run-demo').addEventListener('click',async()=>{
     }else{
       const res=await fetch(API+'/compute/api/chat',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,stream:true}),signal:runAbort.signal});
       const balHdr=res.headers.get('X-Dasha-Balance-Cents');
-      if(balHdr!=null&&Number.isFinite(Number(balHdr))){creditBalanceCents=Math.max(0,Math.floor(Number(balHdr)));paintAskCredits()}
+      const hostedPaid=balHdr!=null&&Number.isFinite(Number(balHdr));
+      if(hostedPaid){creditBalanceCents=Math.max(0,Math.floor(Number(balHdr)));paintAskCredits()}
       const ct=res.headers.get('content-type')||'';
-      if(ct.includes('event-stream'))answer=await readSse(res);
+      let hostedUsage=null;
+      if(ct.includes('event-stream')){answer=await readSse(res);hostedUsage=lastSseUsage}
       else{
         if(!res.ok){const err=await res.json().catch(()=>({}));throw Error(err?.error||'Request failed')}
         const data=await res.json();answer=String(data.answer||'');onFirstToken();$('answer').textContent=answer;
         if(Number.isFinite(Number(data?.balance_cents))){creditBalanceCents=Math.max(0,Math.floor(Number(data.balance_cents)));paintAskCredits()}
+        if(data?.usage&&typeof data.usage==='object')hostedUsage=data.usage;
       }
+      if(hostedPaid){
+        const tot=Number(hostedUsage?.total_tokens);
+        const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(hostedUsage?.prompt_tokens)||0)+(Number(hostedUsage?.completion_tokens)||0))));
+        lastPaidReceipt={tokens:tok,cents:5,engine:'hosted'};
+      }else{lastPaidReceipt=null}
     }
     conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
-    renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();clearAnswerMoney();
+    renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
   }catch(error){
     if(jobCancelled||error?.name==='AbortError'){clearAnswerMoney();$('answer').textContent='Request cancelled. Prompt deleted.';$('answer-title').textContent='Answer.';}
-    else if(error.message==='login required'){clearAnswerMoney();$('answer').textContent='Log in.';}
+    else if(error.message==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}
     else if(/top up|credits|insufficient/i.test(String(error.message||''))){
       // Past free floor / 402 — stay on Answer; one quiet Top up nudge (no yank mid-read).
       lastAskFailKind='credits';
@@ -1250,7 +1301,7 @@ function paintProviderMacsSum(n){
   if(Number.isInteger(n))sum.textContent='Your Macs · '+n;
 }
 async function loadProviders(){
-  if(!loggedIn){ownMacOnline=0;ownMacModels=new Set();paintAskMyMac();return}
+  if(!loggedIn){ownMacOnline=0;ownMacModels=new Set();ownMacTps=0;paintAskMyMac();return}
   try{
     const data=await api('/compute/api/providers'),list=$('provider-list');
     list.replaceChildren();
@@ -1260,14 +1311,19 @@ async function loadProviders(){
     const onlineMine=providers.filter(p=>p&&p.online);
     ownMacOnline=onlineMine.length;
     ownMacModels=new Set(onlineMine.flatMap(p=>Array.isArray(p.models)?p.models:[]));
+    const measuredMine=onlineMine.flatMap(p=>Array.isArray(p.hardware?.benchmarks)?p.hardware.benchmarks:[]).map(b=>Number(b?.tokens_per_second)).filter(v=>Number.isFinite(v)&&v>0);
+    ownMacTps=measuredMine.length?measuredMine.reduce((a,b)=>a+b,0)/measuredMine.length:0;
     paintProviderMacsSum(providers.length);
     paintAskMyMac();
     if(!providers.length)return;
     data.providers.forEach(provider=>{
       const row=document.createElement('div'),label=document.createElement('span'),name=document.createElement('strong'),detail=document.createElement('small'),remove=document.createElement('button');
       const state=provider.online?'online':provider.last_seen_at?'offline · last seen '+new Date(provider.last_seen_at).toLocaleString():'waiting for first heartbeat';
+      const benches=Array.isArray(provider.hardware?.benchmarks)?provider.hardware.benchmarks:[];
+      const tpsVals=benches.map(b=>Number(b?.tokens_per_second)).filter(v=>Number.isFinite(v)&&v>0);
+      const tpsLabel=tpsVals.length?formatTokPerSec(tpsVals.reduce((a,b)=>a+b,0)/tpsVals.length):'';
       row.className='model';name.textContent=provider.name;
-      detail.textContent=[state,provider.models.length+' model'+(provider.models.length===1?'':'s')].filter(Boolean).join(' · ');
+      detail.textContent=[state,provider.models.length+' model'+(provider.models.length===1?'':'s'),tpsLabel?tpsLabel+' tok/s':''].filter(Boolean).join(' · ');
       label.append(name,detail);remove.className='secondary';remove.type='button';remove.dataset.revoke=provider.id;remove.textContent='Revoke';
       row.append(label,remove);list.append(row);
     });
@@ -1402,8 +1458,8 @@ function formatCredits(cents){
 }
 function paintPayMethodAuth(){
   const login=$('pay-method-login'), usdc=$('pay-usdc'), dasha=$('pay-dasha');
-  if(login){login.hidden=loggedIn;login.textContent='Log in'}
-  // Guest: only Log in — no payable method buttons to click through.
+  if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23pay'}
+  // Guest: only Sign in — no payable method buttons to click through.
   if(usdc)usdc.hidden=!loggedIn;
   if(dasha)dasha.hidden=!loggedIn;
 }
@@ -1450,15 +1506,79 @@ function formatUsdCents(cents){
   const n=Math.max(0,Math.floor(Number(cents)||0));
   return '$'+(n/100).toFixed(2);
 }
+
+function formatTokPerSec(n){const v=Number(n);if(!Number.isFinite(v)||v<=0)return '';if(v>=100)return String(Math.round(v));if(v>=10)return String(Math.round(v*10)/10);return String(Math.round(v*100)/100)}
+function formatSettledTok(n){
+  const v=Math.max(0,Math.floor(Number(n)||0));
+  if(v>=1_000_000)return (Math.round(v/100_000)/10)+'M';
+  if(v>=10_000)return Math.round(v/1000)+'k';
+  if(v>=1000)return (Math.round(v/100)/10)+'k';
+  return String(v);
+}
+function paintSettled24h(){
+  const el=$('settled-24h');
+  if(!el)return;
+  const tok=Math.max(0,Math.floor(Number(settled24h?.tokens)||0));
+  const jobs=Math.max(0,Math.floor(Number(settled24h?.jobs)||0));
+  // Quiet footer — honest zero, never invent volume.
+  el.textContent=tok===0&&jobs===0?'0 tok · 24h':(formatSettledTok(tok)+' tok · 24h');
+}
+function paintAnswerReceipt(){
+  const el=$('answer-receipt');
+  if(!el)return;
+  const r=lastPaidReceipt;
+  if(!r||!(Number(r.tokens)>0||Number(r.cents)>0)){el.hidden=true;el.textContent='';return}
+  const tok=Math.max(0,Math.floor(Number(r.tokens)||0));
+  const cents=Math.max(0,Math.floor(Number(r.cents)||0));
+  el.hidden=false;
+  el.textContent=cents>0
+    ?('Settled · '+formatSettledTok(tok)+' tok · '+formatUsdCents(cents))
+    :('Settled · '+formatSettledTok(tok)+' tok');
+}
+async function loadSettled24h(){
+  try{
+    const data=await api('/compute/api/factory');
+    const s=data?.settled_24h&&typeof data.settled_24h==='object'?data.settled_24h:null;
+    settled24h={
+      tokens:Math.max(0,Math.floor(Number(s?.tokens)||0)),
+      jobs:Math.max(0,Math.floor(Number(s?.jobs)||0)),
+      cents:Math.max(0,Math.floor(Number(s?.cents)||0)),
+    };
+  }catch{
+    // Keep prior / zero — never invent.
+    if(!settled24h)settled24h={tokens:0,jobs:0,cents:0};
+  }
+  paintSettled24h();
+}
+function formatEarnRatesLine(rates){
+  const job=Math.max(0,Math.floor(Number(rates?.job_cents)));
+  const tok=Math.max(0,Math.floor(Number(rates?.token_cents_per_1k)));
+  const min=Math.max(0,Math.floor(Number(rates?.min_payout_cents)));
+  // Fall back to published schedule constants when rates missing — never invent balances.
+  const j=Number.isFinite(job)&&job>0?job:5;
+  const t=Number.isFinite(tok)&&tok>=0?tok:1;
+  const m=Number.isFinite(min)&&min>0?min:100;
+  const jobUsd='$'+(j/100).toFixed(2).replace(/\.00$/,'');
+  const tokUsd='$'+(t/100).toFixed(2).replace(/\.00$/,'');
+  const minUsd='$'+(m/100).toFixed(2).replace(/\.00$/,'');
+  return jobUsd+'/job + '+tokUsd+'/1k completion · min '+minUsd+' · pending settle';
+}
+function paintEarnRates(rates){
+  const el=$('earn-rates');
+  if(el)el.textContent=formatEarnRatesLine(rates||null);
+  const pe=$('provide-earn-fine');
+  if(pe)pe.textContent=formatEarnRatesLine(rates||null);
+}
 function paintEarn(){
   const bal=$('earn-balance'),jobs=$('earn-jobs'),methods=$('earn-methods'),wrap=$('earn-wallet-wrap');
   const actions=$('earn-actions'),btn=$('earn-payout'),status=$('earn-status'),login=$('earn-login');
   const compare=$('earn-compare'),pending=$('earn-pending');
   const usdc=$('earn-usdc'),dasha=$('earn-dasha');
-  if(login){login.hidden=loggedIn;login.textContent='Log in'}
-  // Guest: Log in only — never invent $0.
+  if(login){login.hidden=loggedIn;login.textContent='Sign in'}
+  paintEarnRates(earnRates);
+  // Guest: Sign in only — never invent $0.
   if(!loggedIn){
-    earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];
+    earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;
     if(bal){bal.hidden=true;bal.textContent=''}
     if(jobs){jobs.hidden=true;jobs.textContent=''}
     if(methods)methods.hidden=true;
@@ -1484,7 +1604,7 @@ function paintEarn(){
   const face=Math.max(0,Math.floor(Number(earnTotalUsdc)||0));
   const dashaCents=Math.floor(face*1.1);
   if(bal){bal.hidden=false;bal.textContent=formatUsdCents(face)+' owed · USDC face'}
-  if(jobs){jobs.hidden=false;jobs.textContent=(earnTotalJobs===1?'1 job':earnTotalJobs+' jobs')+' completed'}
+  if(jobs){jobs.hidden=false;const tpsLabel=formatTokPerSec(ownMacTps);jobs.textContent=(earnTotalJobs===1?'1 job':earnTotalJobs+' jobs')+' completed'+(tpsLabel?' · '+tpsLabel+' tok/s':'')}
   if(methods)methods.hidden=false;
   if(wrap)wrap.hidden=false;
   if(actions)actions.hidden=false;
@@ -1530,19 +1650,20 @@ function paintEarn(){
   }
 }
 async function loadEarn(){
-  if(!loggedIn){earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];paintEarn();return}
+  if(!loggedIn){earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;paintEarn();return}
   try{
     const data=await api('/compute/api/provider/earnings');
     earnTotalUsdc=Number.isFinite(Number(data?.total_usdc_cents))?Math.max(0,Math.floor(Number(data.total_usdc_cents))):0;
     earnTotalJobs=Number.isFinite(Number(data?.total_jobs))?Math.max(0,Math.floor(Number(data.total_jobs))):0;
     earnPending=Array.isArray(data?.pending)?data.pending:[];
     earnPref=data?.pref||null;
+    if(data?.rates&&typeof data.rates==='object')earnRates=data.rates;
     if(earnPref?.method==='dasha'||earnPref?.method==='usdc')earnMethod=earnPref.method;
     const wallet=$('earn-wallet');
     if(wallet&&earnPref?.wallet&&!wallet.value)wallet.value=earnPref.wallet;
     earnLoaded=true;
   }catch{
-    earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];
+    earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;
   }
   paintEarn();
 }
@@ -1569,8 +1690,8 @@ function paintCreditsBalance(){
   const el=$('credits-balance');
   const login=$('credits-login');
   const use=$('credits-use'), topup=$('credits-topup');
-  if(login){login.hidden=loggedIn;login.textContent='Log in'}
-  // Guest: Log in only — no $0 balance, no Use/Top up pretending a session.
+  if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23credits'}
+  // Guest: Sign in only — no $0 balance, no Use/Top up pretending a session.
   if(use)use.hidden=!loggedIn;
   if(topup)topup.hidden=!loggedIn;
   if(!el){paintAskCredits();return}
@@ -1592,11 +1713,11 @@ function clearCreditPoll(){if(creditPollTimer){clearInterval(creditPollTimer);cr
 function paintPaySend(){
   const line=$('pay-send-line'),wait=$('pay-wait'),err=$('pay-send-err'),open=$('pay-open'),login=$('pay-send-login');
   if(err){err.hidden=true;err.textContent=''}
-  if(login)login.hidden=true;
+  if(login){login.hidden=true;login.href='/login?return=/compute%23pay'}
   if(!loggedIn||!creditOrder){
     if(line)line.textContent='·';
     if(wait)wait.textContent='';
-    if(open){open.removeAttribute('href');open.href='#'}
+    if(open){open.removeAttribute('href')}
     return;
   }
   const meth=creditOrder.method==='dasha'?'$dasha':'USDC';
@@ -1671,6 +1792,19 @@ function sponsorFaceCents(){
   if(pack==='50')return 5000;
   return 500;
 }
+function formatSponsorRaised(cents){
+  const n=Math.max(0,Math.floor(Number(cents)||0));
+  const dollars=n%100? (n/100).toFixed(2) : String(n/100);
+  return '$'+dollars+' raised';
+}
+function paintSponsorRaised(data){
+  const el=$('sponsor-raised');
+  if(!el)return;
+  // Honesty: tip pledge cents only — never catalog machine.usd / goal.
+  const cents=data&&data.raised_cents!=null?data.raised_cents:(data&&data.raised_usd!=null?Math.round(Number(data.raised_usd)*100):0);
+  el.textContent=formatSponsorRaised(cents);
+  el.hidden=false;
+}
 function paintSponsorTargets(){
   const wrap=$('sponsor-macs');
   if(!wrap)return;
@@ -1678,6 +1812,7 @@ function paintSponsorTargets(){
   // Quiet Mac chips from board (open/named); Network stays primary above.
   api('/compute/api/sponsors').then(data=>{
     if(tfStep!=='sponsor')return;
+    paintSponsorRaised(data);
     const machines=Array.isArray(data?.machines)?data.machines:[];
     wrap.replaceChildren();
     let n=0;
@@ -1706,7 +1841,7 @@ function paintSponsorBuy(){
     btn.classList.toggle('secondary',!on);
   });
   const login=$('sponsor-method-login'), usdc=$('sponsor-usdc'), dasha=$('sponsor-dasha');
-  if(login){login.hidden=loggedIn;login.textContent='Log in'}
+  if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23sponsor'}
   if(usdc)usdc.hidden=!loggedIn;
   if(dasha)dasha.hidden=!loggedIn;
   const err=$('sponsor-method-err');
@@ -1720,7 +1855,7 @@ function paintSponsorSend(){
   if(!loggedIn||!sponsorOrder){
     if(line)line.textContent='·';
     if(wait)wait.textContent='';
-    if(open){open.removeAttribute('href');open.href='#'}
+    if(open){open.removeAttribute('href')}
     return;
   }
   const meth=sponsorOrder.method==='dasha'?'$dasha':'USDC';
@@ -1832,7 +1967,7 @@ $('earn-wallet')?.addEventListener('change',()=>{/* pref saved on payout */});
 $('you-api')?.addEventListener('click',()=>showTf('build'));
 $('you-logout')?.addEventListener('click',async()=>{
   try{await api('/auth/logout',{method:'POST',body:'{}'})}catch{}
-  loggedIn=false;sessionLabel='';creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];sponsorOrder=null;clearSponsorPoll();
+  loggedIn=false;sessionLabel='';creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;sponsorOrder=null;clearSponsorPoll();
   paintGateAuth();paintCreditsBalance();paintEarn();paintAnswerApi();paintPayMethod();updateProvideAuth();updateRun();
   try{await auth()}catch{}
   showTf('gate');
@@ -1941,6 +2076,10 @@ function bootHash(){
   else if(id==='host')showTf('host');
   else if(id==='you'||id==='account')showTf('you');
   else if(id==='earn'||id==='earnings')showTf('earn');
+  else if(id==='credits')showTf('credits');
+  else if(id==='pay')showTf('pay');
+  else if(id==='sponsor'){clearPaySponsorFine();showTf('sponsor');}
+  else if(id==='night'){cameFromHow=true;showNightEmpty();}
   else if(id==='ask'){cameFromHow=false;cameFromGate=true;setComputeIntent('ask');setEngine('hosted',true)}
   else showTf('gate');
 }

@@ -141,7 +141,7 @@ function assertMarkup(html, label) {
   assert.match(html, /path=\['pay','pay-buy','pay-send','pay-done'\]/, `${label} pay progress`);
   assert.match(html, /id=["']run-demo["'][^>]*\bhidden\b/, `${label} run-demo hidden first paint`);
   assert.match(html, /run\.hidden=true;run\.setAttribute\(['"]hidden['"],['"]['"]\);run\.style\.display=['"]none['"]/, `${label} guest Ask hides Run bulletproof`);
-  assert.match(html, /Log in to run/, `${label} guest Ask Log in to run CTA`);
+  assert.match(html, /Sign in to run/, `${label} guest Ask Sign in to run CTA`);
   assert.match(html, /ASK_DRAFT_KEY/, `${label} ask draft key`);
   assert.match(html, /saveAskDraftForLogin/, `${label} save ask draft before login`);
   assert.match(html, /resumeAskAfterLogin|takeAskResumeDraft/, `${label} resume ask after login`);
@@ -227,7 +227,7 @@ function assertMarkup(html, label) {
   assert.match(html, /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{cameFromHow=false;cameFromGate=false;setEngine\(['"]hosted['"],true\)/, `${label} Provide Done → Ask`);
   assert.doesNotMatch(html, /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>showTf\(['"]gate['"]\)/, `${label} Provide Done not gate`);
   assert.match(html, /id=["']provide-name-back["'][^>]*data-back=["']ask["']/, `${label} Provide name Back default ask`);
-  assert.match(html, /id=["']gate-signin["'][^>]*class=["']tf-quiet["'][^>]*href=["']\/login\?return=\/compute["'][^>]*>Log in</, `${label} gate-signin quiet Log in`);
+  assert.match(html, /id=["']gate-signin["'][^>]*class=["']tf-quiet["'][^>]*href=["']\/login\?return=\/compute["'][^>]*>Sign in</, `${label} gate-signin quiet Sign in`);
   assert.match(html, /id=["']gate-you["'][^>]*class=["']tf-quiet["'][^>]*hidden[^>]*>You</, `${label} gate-you quiet hidden`);
   assert.match(html, /id=["']step-you["'][^>]*data-tf=["']you["'][^>]*hidden/, `${label} step-you hidden first paint`);
   assert.match(html, /<h1 class=["']tf-q["']>You\.<\/h1>/, `${label} You H1`);
@@ -413,7 +413,7 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(afterAsk.runDisplayNone, true, "guest Ask run display none");
   assert.equal(afterAsk.login, true, "guest Ask shows Log in");
   const emptyLogin = await page.evaluate(() => (document.getElementById("login")?.textContent || "").trim());
-  assert.equal(emptyLogin, "Log in", "guest empty prompt Log in");
+  assert.equal(emptyLogin, "Sign in", "guest empty prompt Sign in");
   await page.click("#ask-starter");
   const afterStarter = await page.evaluate(() => {
     const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
@@ -426,7 +426,7 @@ if (puppeteer && existsSync(chrome)) {
     };
   });
   assert.match(afterStarter.prompt, /welcome for a new teammate/i, "starter fills prompt");
-  assert.equal(afterStarter.loginText, "Log in to run", "starter → Log in to run");
+  assert.equal(afterStarter.loginText, "Sign in to run", "starter → Sign in to run");
   assert.equal(afterStarter.loginVis, true, "starter keeps Log in primary");
   assert.equal(afterStarter.runVis, false, "starter still hides Run");
   assert.match(afterStarter.draft, /welcome for a new teammate/i, "starter stashes draft");
@@ -447,7 +447,7 @@ if (puppeteer && existsSync(chrome)) {
   }));
   assert.equal(resumed.step, "ask", "resume opens Ask");
   assert.match(resumed.prompt, /welcome for a new teammate/i, "resume restores draft");
-  assert.equal(resumed.loginText, "Log in to run", "resume keeps Log in to run");
+  assert.equal(resumed.loginText, "Sign in to run", "resume keeps Sign in to run");
   assert.equal(afterAsk.askProvide, true);
   assert.equal(afterAsk.askOcm, true);
   assert.equal(afterAsk.askHost, true);
@@ -960,7 +960,7 @@ if (puppeteer && existsSync(chrome)) {
     "clearAnswerMoney hides nudge"
   );
 
-  assert.equal(guestApi.text, "Log in");
+  assert.equal(guestApi.text, "Sign in");
   assert.match(guestApi.href, /login\?return=\/compute%23build/);
   await page.goto(new URL("./dasha-compute.html", import.meta.url).href, { waitUntil: "domcontentloaded" });
   await page.click("#pick-credits");
@@ -980,7 +980,7 @@ if (puppeteer && existsSync(chrome)) {
   });
   assert.equal(guestGate.signin, true, "guest gate-signin visible");
   assert.equal(guestGate.you, false, "guest gate-you hidden");
-  assert.equal(guestGate.signinText, "Log in");
+  assert.equal(guestGate.signinText, "Sign in");
   await page.evaluate(() => { loggedIn = true; sessionLabel = "@potter"; paintGateAuth(); showTf("gate"); });
   const inGate = await page.evaluate(() => {
     const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);

@@ -23,6 +23,16 @@ assert.match(html, /id=["']step-provide-done["'][\s\S]*?id=["']provide-tto["'][\
 assert.match(html, /mlx=\$\(['"]provide-prefer-mlx['"]\)/);
 assert.match(html, /if\(mlx\)mlx\.hidden=true/);
 assert.match(html, /href=["']\/privacy["']/, 'compute footer quiet Privacy link');
+assert.match(html, /tokens_per_second/);
+assert.match(html, /measured_providers/);
+assert.match(html, /function formatTokPerSec/);
+assert.match(html, /ownMacTps/);
+assert.match(html, /doctor soft-hints if missing/);
+assert.match(COMPUTE_PAGE_HTML, /tokens_per_second/);
+assert.match(COMPUTE_PAGE_HTML, /measured_providers/);
+assert.match(COMPUTE_PAGE_HTML, /function formatTokPerSec/);
+assert.match(COMPUTE_PAGE_HTML, /ownMacTps/);
+assert.match(COMPUTE_PAGE_HTML, /doctor soft-hints if missing/);
 assert.doesNotMatch(html, /OLLAMA_USE_MLX|OLLAMA_FLASH_ATTENTION/);
 
 const provideDisk = await readFile(join(root, 'dasha-compute-skills/PROVIDE.md'), 'utf8');
@@ -64,6 +74,7 @@ assert.match(agentSrc, /structured-output capable/);
 assert.match(agentSrc, /api\/version/);
 assert.doesNotMatch(agentSrc, /OLLAMA_USE_MLX|OLLAMA_FLASH_ATTENTION/);
 assert.match(agentSrc, /tokens_per_second/);
+assert.match(agentSrc, /benchmark soft · run dasha-compute benchmark for measured tok\/s/);
 
 function listen(handler) {
   return new Promise((resolve) => {

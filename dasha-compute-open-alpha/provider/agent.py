@@ -331,6 +331,19 @@ def doctor():
         failures += 1
         print(f"ollama    failed · {error}", file=sys.stderr)
     prefer_mlx_report()
+    benchmark_path = os.getenv("DASHA_BENCHMARK_PATH")
+    measured = False
+    if benchmark_path:
+        try:
+            with open(benchmark_path, encoding="utf-8") as source:
+                saved = json.load(source)
+            measured = bool(saved.get("results"))
+        except (OSError, ValueError, KeyError, TypeError):
+            measured = False
+    if measured:
+        print("benchmark ok · measured tok/s present — never invent")
+    else:
+        print("benchmark soft · run dasha-compute benchmark for measured tok/s — never invent")
     return failures
 
 

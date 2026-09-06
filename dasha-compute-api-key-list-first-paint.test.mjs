@@ -11,8 +11,8 @@ const computeDisk = readFileSync(join(root, "dasha-compute.html"), "utf8");
 assert.equal(computeDisk, COMPUTE_PAGE_HTML);
 
 function assertFill(html, label) {
-  assert.match(html, /id=["']api-key-list["'][\s\S]{0,80}Log in to create a developer key/, `${label} list`);
-  assert.match(html, /id=["']api-key-output["'][\s\S]{0,40}Log in to create a developer key/, `${label} output`);
+  assert.match(html, /id=["']api-key-list["'][\s\S]{0,80}Sign in to create a developer key/, `${label} list`);
+  assert.match(html, /id=["']api-key-output["'][\s\S]{0,40}Sign in to create a developer key/, `${label} output`);
   assert.match(html, /async function loadApiKeys\(\)/, `${label} loadApiKeys`);
   assert.match(html, /list\.replaceChildren\(\)/, `${label} replaceChildren`);
   assert.match(html, /if\(!loggedIn\)return/, `${label} gated`);

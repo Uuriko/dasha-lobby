@@ -27,7 +27,7 @@ function assertAnswerApi(html, label) {
   assert.match(html, /function hasSuccessfulAnswer\(/, `${label} hasSuccessfulAnswer`);
   assert.match(html, /sent>=1\|\|conversation\.some/, `${label} sent/assistant gate`);
   assert.match(html, /loggedIn&&apiKeyCount>0/, `${label} quiet when keys exist`);
-  assert.match(html, /el\.textContent='Log in'/, `${label} guest Log in`);
+  assert.match(html, /el\.textContent='Sign in'/, `${label} guest Sign in`);
   assert.match(html, /el\.textContent='API key'/, `${label} logged-in API key`);
   assert.match(html, /showTf\(['"]build['"]\)/, `${label} jumps to Build`);
   assert.match(html, /create-api-key[\s\S]{0,80}btn\.focus|btn\.focus\(\)/, `${label} focus create key`);
