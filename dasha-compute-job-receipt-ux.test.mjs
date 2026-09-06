@@ -28,8 +28,8 @@ function assertReceiptUx(html, label) {
   assert.match(html, /if\(eng==='community'\|\|eng==='mixture'\|\|eng==='self'\)/, `${label} community/mixture/self branch`);
   assert.match(html, /Hosted paid settle only \(user charged\)/, `${label} hosted paid settle comment`);
   assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok \u00b7 '\+formatUsdCents\(cents\)/, `${label} hosted Settled · tok · $`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(\['"]model['"]\)\.value\|\|''\)\}/, `${label} SSE community receipt cents:0`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(data\?\.model\|\|\$\(\['"]model['"]\)\.value\|\|''\)\}/, `${label} poll community receipt cents:0`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\)\}/, `${label} SSE community receipt cents:0`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(data\?\.model\|\|\$\(['"]model['"]\)\.value\|\|''\)\}/, `${label} poll community receipt cents:0`);
   assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted'\}/, `${label} hosted paid cents:5`);
   assert.match(html, /const u=data\?\.usage&&typeof data\.usage==='object'\?data\.usage:null/, `${label} poll reads job usage`);
   assert.match(html, /const u=lastSseUsage/, `${label} SSE reads lastSseUsage`);
