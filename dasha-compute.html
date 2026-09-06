@@ -768,6 +768,7 @@ async function refreshProvideDone(){
     networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];
     $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
     paintSplit();
+    paintCode();
   }catch{}
   paintProvideBeat();
   if(loggedIn){
@@ -1140,6 +1141,7 @@ async function auth(){
   paintPayMethod();
   paintGateAuth();
   paintSettled24h();
+  paintCode();
   loadSettled24h();
   loadOcmHosts();
 }
@@ -1520,7 +1522,13 @@ $('api-key-list').addEventListener('click',async event=>{
 });
 function paintCode(){
   const base=$('gateway').value.replace(/\/$/,'');
-  $('code').textContent=`curl ${base}/chat/completions \\\n  -H "Authorization: Bearer $DASHA_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify({model:'qwen3-8b',messages:[{role:'user',content:'hello'}],stream:true})}'`;
+  // Soft-prefer live online catalog model when fleet known and qwen3-8b offline (example id still OK).
+  let model='qwen3-8b';
+  if(networkModels.size&&!networkModels.has(model)){
+    const hit=MODELS.find(item=>networkModels.has(item[0]));
+    if(hit)model=hit[0];
+  }
+  $('code').textContent=`curl ${base}/chat/completions \\\n  -H "Authorization: Bearer $DASHA_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify({model,messages:[{role:'user',content:'hello'}],stream:true})}'`;
 }
 $('gateway').addEventListener('input',paintCode);
 function paintApiKeyCapHint(){
