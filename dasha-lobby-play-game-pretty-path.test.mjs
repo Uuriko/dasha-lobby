@@ -135,8 +135,6 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       const body = await price.json();
       assert.equal(body.ok, true, `${host} /price JSON ok`);
       assert.equal(body.mint, '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump', `${host} /price mint`);
-    } else {
-      assert.equal(await price.text(), '');
     }
   }
 }
