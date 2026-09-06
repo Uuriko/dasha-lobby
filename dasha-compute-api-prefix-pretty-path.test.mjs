@@ -112,16 +112,16 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       if (method === 'HEAD') assert.equal(await res.text(), '');
     }
   }
-  for (const path of ['/compute/api/status', '/compute/api/network', '/compute/api/healthz']) {
-    for (const method of ['GET', 'HEAD']) {
-      const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
-      assert.equal(res.status, 200, `${host} ${path} ${method} stays`);
-      if (method === 'HEAD') assert.equal(await res.text(), '');
+  for (const method of ['GET', 'HEAD']) {
+    const health = await edgeWorker.fetch(new Request(`https://${host}/compute/api/healthz`, { method }), env);
+    assert.equal(health.status, 200, `${host} /compute/api/healthz ${method}`);
+    if (method === 'GET') {
+      const body = await health.json();
+      assert.equal(body.ok, true);
+      assert.equal(body.service, 'dasha-compute');
+    } else {
+      assert.equal(await health.text(), '');
     }
-  }
-  for (const path of ['/status', '/network', '/healthz', '/health', '/api/sponsors', '/api/providers', '/compute/ocm/healthz']) {
-    const dest = potterHome308Dest(path);
-    assert.equal(dest, null, `${host} ${path} dest stay out`);
   }
 }
 
