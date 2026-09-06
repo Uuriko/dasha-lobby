@@ -2856,7 +2856,7 @@ const POTTER_LOGIN_308_PATHS = new Set([
   '/grok', '/grok/',
   '/siwg', '/siwg/',
 ]);
-/** /signup /register /signin /sign-in /sign_in /sign-up /sign_up → plain /login (not login#grok). */
+/** /signup /register /signin /sign-in /sign_in /sign-up /sign_up /log-in /log_in → plain /login (not login#grok). */
 const POTTER_PLAIN_LOGIN_308_PATHS = new Set([
   '/signup', '/signup/',
   '/register', '/register/',
@@ -2866,6 +2866,9 @@ const POTTER_PLAIN_LOGIN_308_PATHS = new Set([
   '/sign_in', '/sign_in/',
   '/sign-up', '/sign-up/',
   '/sign_up', '/sign_up/',
+  // Hole: /Login already 308→/login; hyphen/underscore /log-in /log_in were html-404.
+  '/log-in', '/log-in/',
+  '/log_in', '/log_in/',
 ]);
 const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/use', '/compute/use/',
