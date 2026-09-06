@@ -2962,6 +2962,15 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/wallet', '/compute/wallet/',
   '/compute/phantom', '/compute/phantom/',
   '/compute/solana', '/compute/solana/',
+  // How? engine synonyms: live /hosted /community /mixture (+ /compute/* tabs,
+  // Title-case) html-404 while Start. How? already names Hosted · Community · Mixture
+  // and /night /provide /ask already 308→/compute. Fold to plain /compute (no hash).
+  '/hosted', '/hosted/',
+  '/community', '/community/',
+  '/mixture', '/mixture/',
+  '/compute/hosted', '/compute/hosted/',
+  '/compute/community', '/compute/community/',
+  '/compute/mixture', '/compute/mixture/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -3090,7 +3099,7 @@ export function potterHome308Dest(path) {
   // Title-case product pages (/Faucet /Compute /Lobby /Chess /Bag …) were html-404 while
   // lowercase siblings already 200 — 308 to the same dest (canonical lowercase).
   // Machine files (/Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Llms-Full.txt) same pattern.
-  // Quiet /fill /jar /fill-the-jar /tip /tip-me /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana → /compute. Apex /gateway|/compute/gateway → /compute/api. Exact lowercase product stays null for 200 handlers.
+  // Quiet /fill /jar /fill-the-jar /tip /tip-me /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana /hosted|/community|/mixture|/compute/hosted|/compute/community|/compute/mixture → /compute. Apex /gateway|/compute/gateway → /compute/api. Exact lowercase product stays null for 200 handlers.
   // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
   // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy → /how-to-buy.
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
