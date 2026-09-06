@@ -13,7 +13,7 @@ Register this Mac on the live Dasha community network, install Ollama + the Dash
 - Token goes in `.dasha-provider-key` mode 0600 — never put the provider key on argv or shell history
 - Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh
 - Do not send secrets in prompts. Operators can read jobs assigned to this Mac.
-- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending settle (operator/treasury) · $dasha payout +10% · never invent balances
+- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending operator settle · not auto · $dasha payout +10% · never invent balances
 
 ## Steps for the AI to run with the human
 1. Open https://www.getdasha.com/compute → Provide (quiet link) → name the Mac → Sign in (X) if needed → Register.

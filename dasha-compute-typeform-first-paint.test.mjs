@@ -75,7 +75,9 @@ function assertMarkup(html, label) {
   assert.match(html, /sub-24GB specialists/, `${label} mixture chip capability`);
   assert.match(html, /id=["']eng-mixture["']/, `${label} mixture engine chip`);
   assert.match(html, /Promise\.allSettled/, `${label} resilient auth`);
-  assert.doesNotMatch(html, /setEngine\(['\"]community['\"]\)/, `${label} no auto Community yank`);
+  assert.match(html, /else if\(id==='ask'\)\{cameFromHow=false;cameFromGate=true;setComputeIntent\('ask'\);setEngine\('hosted',true\)\}/, `${label} #ask hash stays Hosted`);
+  assert.match(html, /ask-community['"]\)\?\.addEventListener\(['"]click['"],\(\)=>\{if\(providersOnline<1\)return;cameFromHow=true;cameFromGate=false;setEngine\('community',true\)/, `${label} Community door is click-only`);
+  assert.doesNotMatch(html, /id==='ask'[\s\S]{0,160}setEngine\(['"]community/, `${label} no auto Community yank on #ask`);
   assert.match(html, /id=["']answer-api["'][^>]*hidden/, `${label} answer-api hidden first paint`);
   assert.match(html, /id=["']answer-api["'][^>]*>API key</, `${label} answer-api label`);
   assert.match(html, /function paintAnswerApi\(/, `${label} paintAnswerApi`);
