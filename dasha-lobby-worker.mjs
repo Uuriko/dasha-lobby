@@ -2930,6 +2930,12 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // html-404 while /compute is 200 — fold to /compute. Inverse
   // /compute/faucet lives on POTTER_FAUCET_DOOR_308_PATHS → /faucet.
   '/faucet/compute', '/faucet/compute/',
+  // Leftover: /run|/ollama|/compute/run|/compute/ollama (+slash / Title-case)
+  // still html-404 while /compute is 200 — fold to /compute.
+  '/run', '/run/',
+  '/ollama', '/ollama/',
+  '/compute/run', '/compute/run/',
+  '/compute/ollama', '/compute/ollama/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -3054,7 +3060,7 @@ export function potterHome308Dest(path) {
   // Title-case product pages (/Faucet /Compute /Lobby /Chess /Bag …) were html-404 while
   // lowercase siblings already 200 — 308 to the same dest (canonical lowercase).
   // Machine files (/Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Llms-Full.txt) same pattern.
-  // Quiet /fill /jar /fill-the-jar /tip /tip-me /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute → /compute. Exact lowercase product stays null for 200 handlers.
+  // Quiet /fill /jar /fill-the-jar /tip /tip-me /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama → /compute. Exact lowercase product stays null for 200 handlers.
   // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
   // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy → /how-to-buy.
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
