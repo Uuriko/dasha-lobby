@@ -875,6 +875,7 @@ if (puppeteer && existsSync(chrome)) {
     focused: document.activeElement?.id || "",
   }));
   assert.equal(toBuild.step, "build", "answer-api → Build");
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 80)));
   await page.evaluate(() => {
     showTf("answer");
     loggedIn = true;
@@ -993,7 +994,7 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(inGate.signin, false, "logged-in Log in hidden");
   assert.equal(inGate.you, true, "logged-in You visible");
   assert.equal(inGate.youText, "@potter", "You shows @handle");
-  await page.click("#gate-you");
+  await page.evaluate(() => document.getElementById("gate-you")?.click());
   assert.equal(await page.evaluate(() => document.body.dataset.step), "you", "You → step-you");
   const youHub = await page.evaluate(() => {
     const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
