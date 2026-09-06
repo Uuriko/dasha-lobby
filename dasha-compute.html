@@ -82,6 +82,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 #step-night .tf-q{margin-bottom:28px}
 .panel{margin-top:12px}
 .panel[hidden],[hidden]{display:none!important}
+#answer-receipt:not([hidden]){display:block!important}
 .field{display:grid;gap:7px;margin-top:16px;font-size:12px;font-weight:900;text-transform:uppercase}
 .field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);background:#09080b;color:var(--paper)}
 pre.setup,pre#code,pre#api-key-output,pre#check-result{overflow-x:auto;overflow-y:auto;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0 0;padding:14px;border:1px solid var(--line);background:#09080b;color:#d8cfe0;font:13px/1.55 ui-monospace,monospace;-webkit-overflow-scrolling:touch}
@@ -368,7 +369,7 @@ footer a:hover{color:var(--paper)}
   <h1 class="tf-q" id="answer-title">Answer.</h1>
   <button class="tf-quiet" id="cancel-job" type="button" hidden>Cancel</button>
   <pre class="answer" id="answer" aria-live="polite"></pre>
-  <p class="fine" id="answer-receipt" hidden></p>
+  <p class="fine" id="answer-receipt" hidden aria-live="polite"></p>
   <div class="tf-choices" id="after-answer">
     <button type="button" class="tf-choice primary" id="ask-again">Ask again</button>
     <button type="button" class="tf-choice secondary" id="pick-provide-after">Provide</button>
@@ -1423,7 +1424,7 @@ $('run-demo').addEventListener('click',async()=>{
     }
     else {clearAnswerMoney();$('answer').textContent=error.message;}
   }
-  finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();updateRun();$('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
+  finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();$('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
 });
 document.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>setEngine(b.dataset.engine,true)));
 $('model').addEventListener('change',updateRun);
@@ -1773,32 +1774,42 @@ function paintSettled24h(){
 function paintAnswerReceipt(){
   const el=$('answer-receipt');
   if(!el)return;
+  const hide=()=>{el.hidden=true;el.setAttribute('hidden','');el.textContent='';};
+  const show=(text)=>{
+    // Keep Answer step open so receipt is actually visible (not only textContent under a hidden step).
+    if(tfStep!=='answer')showTf('answer');
+    else{
+      const step=$('step-answer');
+      if(step){step.hidden=false;step.removeAttribute('hidden')}
+    }
+    el.hidden=false;el.removeAttribute('hidden');
+    el.textContent=text;
+  };
   const r=lastPaidReceipt;
-  if(!r){el.hidden=true;el.textContent='';return}
+  if(!r){hide();return}
   const tok=Math.max(0,Math.floor(Number(r.tokens)||0));
   const cents=Math.max(0,Math.floor(Number(r.cents)||0));
   const eng=String(r.engine||'');
-  const model=String(r.model||'').trim();
+  // selected/routed model id from client/job only (never trust answer self-description); receipt or live select.
+  const model=String(r.model||$('model')?.value||'').trim();
   const job=String(r.job_id||'').trim();
   const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
-  // Community / Mixture / self — job receipt; selected/routed model id from client/job only (never trust answer self-description); never show provider-earn cents as user $.
+  // Community / Mixture / self — job receipt; never show provider-earn cents as user $.
   if(eng==='community'||eng==='mixture'||eng==='self'){
     const label=eng==='mixture'?'Mixture':eng==='self'?'Your Mac':'Community';
     const parts=[label];
     if(model)parts.push(model);
     if(tok>0)parts.push(formatSettledTok(tok)+' tok');
     if(shortJob)parts.push(shortJob);
-    if(parts.length<2){el.hidden=true;el.textContent='';return}
-    el.hidden=false;
-    el.textContent=parts.join(' · ');
+    if(parts.length<2){hide();return}
+    show(parts.join(' · '));
     return;
   }
   // Hosted paid settle only (user charged). Free floor stays quiet.
-  if(!(tok>0||cents>0)){el.hidden=true;el.textContent='';return}
-  el.hidden=false;
-  el.textContent=cents>0
+  if(!(tok>0||cents>0)){hide();return}
+  show(cents>0
     ?('Settled · '+formatSettledTok(tok)+' tok · '+formatUsdCents(cents))
-    :('Settled · '+formatSettledTok(tok)+' tok');
+    :('Settled · '+formatSettledTok(tok)+' tok'));
 }
 async function loadSettled24h(){
   try{
