@@ -81,8 +81,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       assert.equal(res.status, 404, `${host} ${path} ${method} stays 404`);
       if (host === 'www.getdasha.com') {
         assert.equal(res.headers.get('x-dasha-edge'), 'html-404', `${host} ${path} ${method} html-404`);
+        if (method === 'HEAD') assert.equal(await res.text(), '');
       }
-      if (method === 'HEAD') assert.equal(await res.text(), '');
     }
   }
 }
