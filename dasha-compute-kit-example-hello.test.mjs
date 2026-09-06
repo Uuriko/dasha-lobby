@@ -39,7 +39,7 @@ assert.doesNotMatch(readme, /Make the timeline stranger/, "kit README no novelty
 const askFirst = readFileSync(join(root, "ASK-FIRST.md"), "utf8");
 assert.match(askFirst, /examples\/chat\.py/, "ASK-FIRST names kit chat.py");
 assert.match(askFirst, /hello/, "ASK-FIRST hello");
-assert.doesNotMatch(askFirst, /say something strange/, "ASK-FIRST no strange");
+assert.match(askFirst, /never .*say something strange/, "ASK-FIRST bans strange");
 
 const html = readFileSync(join(root, "dasha-compute.html"), "utf8");
 assert.equal(html, COMPUTE_PAGE_HTML, "embed matches dasha-compute.html");
