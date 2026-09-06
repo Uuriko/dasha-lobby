@@ -269,6 +269,12 @@ assert.match(useDisk, /Credits → Use credits|Credits → Credits\./, "USE.md C
 assert.doesNotMatch(useDisk, /pick Ask \(or Pay \/ Credits\)\. Then Ask/, "USE.md Pay/Credits not straight Ask");
 assert.doesNotMatch(useDisk, /say something strange/, "USE.md no strange");
 assert.doesNotMatch(useDisk, /help you Use /, "USE.md no leftover Use verb");
+assert.match(useDisk, /content":"hello"/, "USE.md curl hello");
+{
+  const chatPy = readFileSync(join(root, "dasha-compute-open-alpha/examples/chat.py"), "utf8");
+  assert.match(chatPy, /"content": "hello"/, "kit chat.py hello");
+  assert.doesNotMatch(chatPy, /Make the timeline stranger/, "kit chat.py no novelty");
+}
 {
   const m = disk.match(/const USE_SKILL="((?:\\.|[^"\\])*)"/);
   assert.ok(m, "USE_SKILL embed present");

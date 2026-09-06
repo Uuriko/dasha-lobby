@@ -7,7 +7,7 @@ base_url = os.getenv("DASHA_COORDINATOR_URL", "http://127.0.0.1:8787")
 api_key = os.getenv("DASHA_API_KEY", "dasha-local-consumer")
 payload = json.dumps({
     "model": "qwen3-8b",
-    "messages": [{"role": "user", "content": "Make the timeline stranger in one sentence."}],
+    "messages": [{"role": "user", "content": "hello"}],
 }).encode()
 request = urllib.request.Request(
     f"{base_url}/v1/chat/completions",

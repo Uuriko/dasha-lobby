@@ -24,9 +24,16 @@ assert.match(html, /\.\/install\.sh/, 'registered Mac setup must install the per
 assert.doesNotMatch(html, /dasha-local-consumer/);
 assert.doesNotMatch(html, /compute\.getdasha\.com|public routing turns on/i);
 assert.doesNotMatch(html, /ollama pull raptor/i);
+const chatPy = await readFile(new URL('./dasha-compute-open-alpha/examples/chat.py', import.meta.url), 'utf8');
+assert.match(chatPy, /"content": "hello"/, 'kit examples/chat.py ASK-FIRST hello');
+assert.doesNotMatch(chatPy, /Make the timeline stranger/, 'kit examples/chat.py no novelty prompt');
 const kit = fileURLToPath(new URL('./dasha-worker-assets/dasha-compute-open-alpha.tar.gz', import.meta.url));
 const kitFile = path => execFileSync('tar', ['-xOf', kit, `dasha-compute-open-alpha/${path}`], { encoding: 'utf8' });
 assert.equal(kitFile('provider/agent.py'), await readFile(new URL('./dasha-compute-open-alpha/provider/agent.py', import.meta.url), 'utf8'), 'published provider must match maintained source');
+if (existsSync(kit)) {
+  assert.equal(kitFile('examples/chat.py'), chatPy, 'published kit chat.py must match source');
+  assert.match(kitFile('examples/chat.py'), /"content": "hello"/, 'published kit chat.py hello');
+}
 assert.match(kitFile('README.md'), /curl -fLO https:\/\/www\.getdasha\.com\/dasha-compute-open-alpha\.tar\.gz/);
 assert.match(kitFile('README.md'), /doctor exits nonzero when the coordinator, Ollama, or any configured model is unavailable/);
 assert.match(kitFile('provider/agent.py'), /dasha-compute-provider\/0\.3/);
