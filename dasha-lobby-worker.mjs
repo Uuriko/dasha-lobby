@@ -2916,6 +2916,12 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // /skill.md peers already 308 — fold the plural .md doors too.
   '/skills.md', '/skills.md/',
   '/compute/skills.md', '/compute/skills.md/',
+  // Leftover: /products|/compute/products (+slash / Title-case) still html-404
+  // while prior peers /product /providers already 308→/compute.
+  '/product', '/product/',
+  '/providers', '/providers/',
+  '/products', '/products/',
+  '/compute/products', '/compute/products/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -3027,7 +3033,7 @@ export function potterHome308Dest(path) {
   // Title-case product pages (/Faucet /Compute /Lobby /Chess /Bag …) were html-404 while
   // lowercase siblings already 200 — 308 to the same dest (canonical lowercase).
   // Machine files (/Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Llms-Full.txt) same pattern.
-  // Quiet /fill /jar /fill-the-jar /tip /tip-me → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm → /compute. Exact lowercase product stays null for 200 handlers.
+  // Quiet /fill /jar /fill-the-jar /tip /tip-me → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products → /compute. Exact lowercase product stays null for 200 handlers.
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
   const raw = String(path || '');
   const p = raw.toLowerCase();
