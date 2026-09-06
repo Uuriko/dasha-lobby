@@ -241,7 +241,7 @@ footer a:hover{color:var(--paper)}
     <a class="tf-choice secondary" id="pay-method-login" href="/login?return=/compute%23pay" hidden>Sign in</a>
   </div>
   <p class="fine" id="pay-method-err" hidden></p>
-  <p class="fine" id="pay-buy-fine">USDC or $dasha · no card yet.</p>
+  <p class="fine" id="pay-buy-fine">$5 credits · crypto discount · no card yet.</p>
 </section>
 
 <section class="tf-step" id="step-pay-send" data-tf="pay-send" hidden>
@@ -319,7 +319,7 @@ footer a:hover{color:var(--paper)}
   <button type="button" class="tf-back" data-back="gate">← Back</button>
   <h1 class="tf-q">Credits.</h1>
   <p class="fine" id="credits-balance" hidden></p>
-  <p class="fine" id="credits-fine">USDC or $dasha · no card yet.</p>
+  <p class="fine" id="credits-fine">Pack credits · crypto discount · no card yet.</p>
   <div class="tf-choices" role="group" aria-label="Credits.">
     <button type="button" class="tf-choice primary" id="credits-use">Use credits</button>
     <button type="button" class="tf-choice secondary" id="credits-topup">Top up</button>
@@ -1554,12 +1554,21 @@ function paintPayMethodAuth(){
   if(usdc)usdc.hidden=!loggedIn;
   if(dasha)dasha.hidden=!loggedIn;
 }
+function paintPayBuyFine(){
+  const el=$('pay-buy-fine');
+  if(!el)return;
+  const pack=creditPack||'5';
+  const face=CREDIT_PACK_CENTS[String(pack)];
+  if(!(face>0)){el.textContent='Pack credits · crypto discount · no card yet.';return}
+  el.textContent=formatCredits(face)+' credits · crypto discount · no card yet.';
+}
 function paintPayMethodPrices(){
   const pack=creditPack||'5';
   const usdc=$('pay-usdc'),dasha=$('pay-dasha');
   const u=priceFor('usdc',pack),d=priceFor('dasha',pack);
   if(usdc&&u!=null)usdc.textContent='USDC · '+formatChargeDollars(u);
   if(dasha&&d!=null)dasha.textContent='$dasha · '+formatChargeDollars(d);
+  paintPayBuyFine();
 }
 function paintPayPacks(){
   const pack=creditPack||'5';
@@ -1812,7 +1821,8 @@ function paintPaySend(){
     return;
   }
   const meth=creditOrder.method==='dasha'?'$dasha':'USDC';
-  if(line)line.textContent=creditOrder.amount+' '+meth+' → '+shortDest(creditOrder.dest);
+  const credits=formatCredits(creditOrder.credits_cents||creditOrder.face_cents||CREDIT_PACK_CENTS[String(creditPack||'5')]||0);
+  if(line)line.textContent=creditOrder.amount+' '+meth+' · +'+credits+' credits → '+shortDest(creditOrder.dest);
   if(open&&creditOrder.pay_url){
     open.href=creditOrder.pay_url;
     open.setAttribute('href',creditOrder.pay_url);
