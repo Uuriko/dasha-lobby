@@ -2856,13 +2856,16 @@ const POTTER_LOGIN_308_PATHS = new Set([
   '/grok', '/grok/',
   '/siwg', '/siwg/',
 ]);
-/** Quiet signup/register already 308→/login (not login#grok). Live /signin /sign-in were html-404. */
+/** /signup /register /signin /sign-in /sign_in /sign-up /sign_up → plain /login (not login#grok). */
 const POTTER_PLAIN_LOGIN_308_PATHS = new Set([
   '/signup', '/signup/',
   '/register', '/register/',
-  // Live /signin /sign-in html-404 while /login 200; peers of signup/register.
+  // Live /signin /sign-in /sign_in /sign-up /sign_up leftover while /login 200; peers of signup/register.
   '/signin', '/signin/',
   '/sign-in', '/sign-in/',
+  '/sign_in', '/sign_in/',
+  '/sign-up', '/sign-up/',
+  '/sign_up', '/sign_up/',
 ]);
 const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/use', '/compute/use/',
