@@ -267,7 +267,12 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']provide-name-fine["']/, `${label} provide-name-fine`);
   assert.match(html, /clearPaySponsorFine/, `${label} clearPaySponsorFine`);
   assert.match(html, /--paper-muted:#d4cce0/, `${label} paper-muted contrast`);
-  assert.match(html, /Leaves Dasha\./, `${label} Host/Market leave fine`);
+  assert.doesNotMatch(html, /Leaves Dasha\./, `${label} no Host/Market leave fine`);
+  assert.doesNotMatch(html, /id=["']market-leave-fine["']/, `${label} no market-leave-fine`);
+  assert.doesNotMatch(html, /id=["']host-leave-fine["']/, `${label} no host-leave-fine`);
+  assert.match(html, /id=["']market-open["'][^>]*href=["']\/compute\/ocm["']/, `${label} Console same-site /compute/ocm`);
+  assert.match(html, /id=["']market-host["'][^>]*href=["']\/compute\/ocm\/provider["']/, `${label} Market Host same-site /compute/ocm/provider`);
+  assert.match(html, /id=["']host-run["'][^>]*href=["']\/compute\/ocm\/provider["']/, `${label} Host Open same-site /compute/ocm/provider`);
   assert.match(html, /step===['"]gate['"]\|\|step===['"]credits['"]\|\|step===['"]you['"]\|\|step===['"]earn['"]/, `${label} hide progress gate|credits|you|earn`);
   assert.match(html, /title=["']OCM console["']/, `${label} Marketplace OCM console title`);
   assert.doesNotMatch(html, /OCM catalog/, `${label} no OCM catalog`);
@@ -515,6 +520,8 @@ if (puppeteer && existsSync(chrome)) {
       askGone: !vis(document.getElementById("step-ask")),
       openHref: document.getElementById("market-open")?.getAttribute("href") || "",
       hostHref: document.getElementById("market-host")?.getAttribute("href") || "",
+      leaveFine: document.getElementById("market-leave-fine"),
+      leaveCopy: document.body.innerText.includes("Leaves Dasha."),
     };
   });
   assert.equal(market.step, "market", "Marketplace peek step");
@@ -524,6 +531,8 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(market.askGone, true);
   assert.equal(market.openHref, "/compute/ocm");
   assert.equal(market.hostHref, "/compute/ocm/provider");
+  assert.equal(market.leaveFine, null, "no market-leave-fine");
+  assert.equal(market.leaveCopy, false, "Marketplace peek does not say Leaves Dasha.");
   await page.click("#step-market .tf-back");
   const backAsk = await page.evaluate(() => document.body.dataset.step);
   assert.equal(backAsk, "ask", "market Back → Ask");
@@ -538,6 +547,8 @@ if (puppeteer && existsSync(chrome)) {
       askGone: !vis(document.getElementById("step-ask")),
       openHref: document.getElementById("host-run")?.getAttribute("href") || "",
       openLabel: (document.getElementById("host-run")?.textContent || "").trim(),
+      leaveFine: document.getElementById("host-leave-fine"),
+      leaveCopy: document.body.innerText.includes("Leaves Dasha."),
     };
   });
   assert.equal(hostPeek.step, "host", "Host peek step");
@@ -546,6 +557,8 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(hostPeek.askGone, true);
   assert.equal(hostPeek.openHref, "/compute/ocm/provider");
   assert.match(hostPeek.openLabel, /^Open( · \d+)?$/, "Host Open label honesty");
+  assert.equal(hostPeek.leaveFine, null, "no host-leave-fine");
+  assert.equal(hostPeek.leaveCopy, false, "Host peek does not say Leaves Dasha.");
   await page.click("#step-host .tf-back");
   const backAskHost = await page.evaluate(() => document.body.dataset.step);
   assert.equal(backAskHost, "ask", "host Back → Ask");
