@@ -74,7 +74,17 @@ assert.match(agentSrc, /structured-output capable/);
 assert.match(agentSrc, /api\/version/);
 assert.doesNotMatch(agentSrc, /OLLAMA_USE_MLX|OLLAMA_FLASH_ATTENTION/);
 assert.match(agentSrc, /tokens_per_second/);
-assert.match(agentSrc, /benchmark soft · run dasha-compute benchmark for measured tok\/s/);
+assert.match(agentSrc, /benchmark soft · run dasha-compute benchmark so measured tok\/s can show on Ask/);
+assert.match(agentSrc, /def model_billions/);
+assert.match(agentSrc, /def size_soft_report/);
+assert.match(agentSrc, /def keepalive_soft_report/);
+assert.match(agentSrc, /api\/ps/);
+assert.match(agentSrc, /never fails doctor/);
+assert.match(PROVIDE_SKILL_MD, /soft-hints when a mapped model looks ≥27B/);
+assert.match(PROVIDE_SKILL_MD, /Ollama `\/api\/ps`/);
+assert.match(PROVIDE_SKILL_MD, /Never fails solely for size or keep-alive/);
+assert.match(readme, /mapped ≥27B tags and cold `\/api\/ps` keep-alive/);
+assert.match(readme, /never fails solely for those/);
 
 function listen(handler) {
   return new Promise((resolve) => {
@@ -95,7 +105,7 @@ function doctor({ cwd, env, extraEnv }) {
   return new Promise((resolve) => child.once('close', (code) => resolve({ code, stdout, stderr, text: stdout + stderr })));
 }
 
-async function withDoctor({ version, models }, run) {
+async function withDoctor({ version, models, ps, modelMap }, run) {
   const ollama = await listen((req, res) => {
     res.setHeader('Content-Type', 'application/json');
     if (req.url === '/api/tags') {
@@ -104,6 +114,15 @@ async function withDoctor({ version, models }, run) {
     }
     if (req.url === '/api/version') {
       res.end(JSON.stringify({ version }));
+      return;
+    }
+    if (req.url === '/api/ps') {
+      if (ps === 'fail') {
+        res.statusCode = 500;
+        res.end('{"error":"ps down"}');
+        return;
+      }
+      res.end(JSON.stringify(ps ?? {}));
       return;
     }
     res.end('{}');
@@ -124,7 +143,7 @@ async function withDoctor({ version, models }, run) {
   try {
     return await run({
       cwd,
-      env: { ...process.env, OLLAMA_URL: `http://127.0.0.1:${port}`, DASHA_MODEL_MAP: 'qwen3-8b=qwen3:8b' },
+      env: { ...process.env, OLLAMA_URL: `http://127.0.0.1:${port}`, DASHA_MODEL_MAP: modelMap || 'qwen3-8b=qwen3:8b' },
       extraEnv: {
         DASHA_COORDINATOR_URL: `http://127.0.0.1:${cport}/compute/api`,
         DASHA_PROVIDER_ID: 'prefer-mlx-mac',
@@ -158,4 +177,35 @@ assert.match(older.stdout, /older than 0\.33\.1|soft · 0\.32\.0/);
 assert.match(older.stdout, /internal SSD/);
 assert.doesNotMatch(older.text, /OLLAMA_USE_MLX|OLLAMA_FLASH_ATTENTION/);
 
-console.log('dasha-compute-prefer-mlx: PASS (0.33.1 detect + SSD warn + engine badge; soft older; no invented env flags)');
+const large = await withDoctor(
+  { version: '0.33.1', models: [{ name: 'gemma3:27b' }], modelMap: 'gemma3-27b=gemma3:27b', ps: { models: [{ name: 'gemma3:27b' }] } },
+  (opts) => doctor(opts),
+);
+assert.equal(large.code, 0, `doctor never fails solely for ≥27B size: ${large.text}`);
+assert.match(large.stdout, /size\s+soft · gemma3-27b→gemma3:27b \(~27B\)/);
+assert.match(large.stdout, /never fails doctor/);
+assert.doesNotMatch(large.stderr, /models\s+failed/);
+
+const cold = await withDoctor(
+  { version: '0.33.1', models: [{ name: 'qwen3:8b' }], ps: { models: [] } },
+  (opts) => doctor(opts),
+);
+assert.equal(cold.code, 0, `doctor never fails solely for cold keep-alive: ${cold.text}`);
+assert.match(cold.stdout, /keepalive soft · mapped model not loaded \(qwen3:8b\)/);
+assert.match(cold.stdout, /OLLAMA_KEEP_ALIVE=-1/);
+
+const hot = await withDoctor(
+  { version: '0.33.1', models: [{ name: 'qwen3:8b' }], ps: { models: [{ name: 'qwen3:8b' }] } },
+  (opts) => doctor(opts),
+);
+assert.equal(hot.code, 0, `doctor keep-alive ok when \/api\/ps shows mapped model: ${hot.text}`);
+assert.match(hot.stdout, /keepalive ok · mapped model\(s\) loaded in Ollama/);
+
+const psDown = await withDoctor(
+  { version: '0.33.1', models: [{ name: 'qwen3:8b' }], ps: 'fail' },
+  (opts) => doctor(opts),
+);
+assert.equal(psDown.code, 0, `doctor never fails solely when \/api\/ps is unread: ${psDown.text}`);
+assert.match(psDown.stdout, /keepalive soft · could not read Ollama \/api\/ps/);
+
+console.log('dasha-compute-prefer-mlx: PASS (0.33.1 detect + SSD warn + engine badge; soft older; size ≥27B + keepalive \/api\/ps never fail solely; no invented env flags)');

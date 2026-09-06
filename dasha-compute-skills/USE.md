@@ -11,6 +11,7 @@ Get a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Commu
 - Login with X is required to Run or queue
 - Hosted model: gpt-oss-20b · 3 free / 10 min · then credits
 - API base (power users): https://lobby.getdasha.com/compute/api/v1
+- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.
 - Marketplace: https://www.getdasha.com/compute/ocm
 - Do not paste secrets into prompts. Community Mac operators can read assigned prompts.
 - Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.
@@ -37,6 +38,7 @@ curl https://lobby.getdasha.com/compute/api/v1/chat/completions \
 
 ## Success
 - Streamed or complete answer appears, or the job is queued until a Mac heartbeats
+- On stream, read `usage` from the final stop chunk (not earlier deltas)
 
 ## If stuck
 - Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs

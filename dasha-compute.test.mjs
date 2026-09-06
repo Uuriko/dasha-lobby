@@ -31,6 +31,10 @@ assert.match(kitFile('README.md'), /curl -fLO https:\/\/www\.getdasha\.com\/dash
 assert.match(kitFile('README.md'), /doctor exits nonzero when the coordinator, Ollama, or any configured model is unavailable/);
 assert.match(kitFile('provider/agent.py'), /dasha-compute-provider\/0\.3/);
 assert.match(kitFile('provider/agent.py'), /models\s+failed · missing:/);
+assert.match(kitFile('provider/agent.py'), /def size_soft_report/);
+assert.match(kitFile('provider/agent.py'), /def keepalive_soft_report/);
+assert.match(kitFile('provider/agent.py'), /api\/ps/);
+assert.match(kitFile('README.md'), /mapped ≥27B tags and cold `\/api\/ps` keep-alive/);
 assert.match(kitFile('tests/e2e.test.mjs'), /provider doctor fails when a configured Ollama model is missing/);
 assert.match(kitFile('provider/agent.py'), /models": list\(available\)/);
 assert.match(kitFile('tests/e2e.test.mjs'), /provider advertises only installed Ollama models/);
