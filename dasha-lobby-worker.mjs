@@ -664,10 +664,10 @@ const LISTINGS_HTML = `<!doctype html>
     <article class="card" aria-labelledby="feat-name">
       <h2 id="feat-name">$dasha / dash_eats</h2>
       <p>Chain: Solana</p>
-      <div class="row"><span>Mint</span><code id="mint">53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code><button type="button" class="copy" data-copy="mint">Copy</button></div>
-      <div class="row"><span>Pair</span><code id="pair">9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code><button type="button" class="copy" data-copy="pair">Copy</button></div>
+      <div class="row"><span title="token address">Mint</span><code id="mint">53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code><button type="button" class="copy" data-copy="mint">Copy</button></div>
+      <div class="row"><span title="Raydium pool">Pair</span><code id="pair">9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code><button type="button" class="copy" data-copy="pair">Copy</button></div>
       <p>Status: <span class="status">Listed</span> <span class="quiet">(on getdasha)</span></p>
-      <p class="cta"><a class="primary" href="/">Buy →</a><a href="/which">Which</a><a href="/bag">Bag</a><a href="/lobby">Lobby</a></p>
+      <p class="cta"><a class="primary" href="/how-to-buy">Buy $dasha →</a><a href="/which">Which</a><a href="/bag">Bag</a><a href="/lobby">Lobby</a></p>
     </article>
     <h2>Listed on</h2>
     <div class="venues">
@@ -681,7 +681,7 @@ const LISTINGS_HTML = `<!doctype html>
       <a href="https://trade.phantom.com/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Phantom</a>
     </div>
     <p class="quiet">More listings soon.</p>
-    <p class="quiet"><a href="/listings.json">listings.json</a> · <a href="/which">Which</a></p>
+    <p class="quiet"><a href="/which">Which</a></p>
   </main>
   <script>
   (function () {
@@ -720,37 +720,6 @@ const LISTINGS_HTML = `<!doctype html>
 </html>
 `;
 
-/** First-party coin list. Featured only $dasha / dash_eats. Venues from buy-sheet. jup.ag only. */
-export function listingsJsonBody() {
-  const jup = `https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=${MINT}`;
-  return {
-    schema: 'dasha.listings.v0',
-    updated_at: '2026-09-06T23:05:00.000Z',
-    listings: [
-      {
-        id: 'dasha',
-        symbol: '$dasha',
-        name: 'dash_eats',
-        chain: 'solana',
-        mint: MINT,
-        pair: PAIR,
-        status: 'listed',
-        url: 'https://www.getdasha.com/listings',
-        buy: 'https://www.getdasha.com/',
-        venues: [
-          { id: 'getdasha', name: 'getdasha', href: 'https://www.getdasha.com/listings' },
-          { id: 'jupiter', name: 'Jupiter', href: jup },
-          { id: 'raydium', name: 'Raydium', href: `https://raydium.io/swap/?inputMint=sol&outputMint=${MINT}` },
-          { id: 'dexscreener', name: 'DexScreener', href: `https://dexscreener.com/solana/${PAIR}` },
-          { id: 'birdeye', name: 'Birdeye', href: `https://birdeye.so/token/${MINT}?chain=solana` },
-          { id: 'pump', name: 'Pump', href: `https://pump.fun/coin/${MINT}` },
-          { id: 'geckoterminal', name: 'GeckoTerminal', href: `https://www.geckoterminal.com/solana/pools/${PAIR}` },
-          { id: 'phantom', name: 'Phantom', href: `https://trade.phantom.com/token/${MINT}` },
-        ],
-      },
-    ],
-  };
-}
 
 const SECURITY = {
   'Cache-Control': 'no-store',
@@ -10336,18 +10305,6 @@ export default {
           'X-Dasha-Edge': 'listings',
           Link: LLMS_DESCRIBEDBY,
         }),
-      });
-    }
-    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings.json') {
-      return new Response(request.method === 'HEAD' ? null : JSON.stringify(listingsJsonBody()), {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
-          'Strict-Transport-Security': 'max-age=31536000',
-          'X-Content-Type-Options': 'nosniff',
-          'X-Dasha-Edge': 'listings-json',
-          Link: LLMS_DESCRIBEDBY,
-        },
       });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/bag' || url.pathname === '/bag/')) {

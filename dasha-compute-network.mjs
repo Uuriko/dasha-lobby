@@ -969,15 +969,22 @@ export class ComputeNetwork {
       provider.lastSeenAt = now;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       const chunks = delta ? [...(job.chunks || []), delta] : job.chunks || [];
-      const usage = input.done ? tokenUsage(input) : job.usage;
-      let settlePatch = {};
-      if (!error && input.done && job.route !== 'self') {
-        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-        if (accrued?.ok) {
-          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
-          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
-          await this.recordPaidInferenceSettle({
-            owner: job.owner || null,
+      // Parity with non-stream /result: empty stream completion is a failure, not silent success.
+      let streamError = error;
+      if (!streamError && input.done && !String(chunks.join('') || '').trim()) {
+        streamError = 'empty completion';
+      }
+      const failed = Boolean(streamError);
+      const finished = failed || Boolean(input.done);
+      const usage = input.done || failed ? tokenUsage(input) : job.usage;
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, answer: failed ? null : job.answer, status: failed ? 'failed' : finished ? 'complete' : 'leased', error: streamError || null, usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000 });
+      if (finished) {
+        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
+        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
+        if (!streamError && input.done && job.route !== 'self') {
+          const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+          if (earned?.ok) await this.recordPaidInferenceSettle({
+            owner: job.owner,
             engine: job.route === 'mixture' ? 'mixture' : 'community',
             usage,
             cents: settleCents,
