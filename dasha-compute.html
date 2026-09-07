@@ -82,7 +82,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 #step-night .tf-q{margin-bottom:28px}
 .panel{margin-top:12px}
 .panel[hidden],[hidden]{display:none!important}
-#answer-receipt:not([hidden]){display:block!important}
+#answer-receipt:not([hidden]){display:block!important}#answer-receipt-note:not([hidden]){display:block!important}
 .field{display:grid;gap:7px;margin-top:16px;font-size:12px;font-weight:900;text-transform:uppercase}
 .field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);background:#09080b;color:var(--paper)}
 pre.setup,pre#code,pre#api-key-output,pre#check-result{overflow-x:auto;overflow-y:auto;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0 0;padding:14px;border:1px solid var(--line);background:#09080b;color:#d8cfe0;font:13px/1.55 ui-monospace,monospace;-webkit-overflow-scrolling:touch}
@@ -108,6 +108,10 @@ footer a:hover{color:var(--paper)}
 .honesty-panel[hidden]{display:none!important}
 .honesty-panel .honesty-ok{color:var(--acid)}
 .honesty-panel .honesty-sep{color:var(--line);user-select:none}
+.honesty-panel #presence-strip,.honesty-panel #act-tape{display:inline}
+.presence-act-boot{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+.presence-act-boot[hidden]{display:none!important}
+.presence-act-boot .honesty-sep{color:var(--line);user-select:none}
 </style>
 <link rel="describedby" href="/llms.txt" type="text/plain"><link rel="describedby" href="/llms-full.txt" type="text/plain"></head>
 <body data-step="gate">
@@ -192,7 +196,7 @@ footer a:hover{color:var(--paper)}
       <span class="ask-door-sep" aria-hidden="true">·</span>
       <button type="button" class="tf-quiet" id="ask-ocm" title="OCM console" aria-label="Marketplace · OCM console">Marketplace</button>
       <span class="ask-door-sep" aria-hidden="true">·</span>
-      <button type="button" class="tf-quiet" id="ask-host" title="OCM host" aria-label="Host · OCM host">Host</button>
+      <button type="button" class="tf-quiet" id="ask-host" title="OCM host · enroll" aria-label="Host · OCM enroll">Host</button>
       <span class="ask-door-sep" id="ask-credits-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="ask-credits" title="Credits" aria-label="Credits" hidden></button>
     </div>
@@ -203,17 +207,21 @@ footer a:hover{color:var(--paper)}
 <section class="tf-step" id="step-market" data-tf="market" hidden>
   <button type="button" class="tf-back" data-back="ask">← Back</button>
   <h1 class="tf-q" title="OCM console">Marketplace.</h1>
+  <p class="fine" id="market-enroll-fine">Enroll a Mac · status on console.</p>
   <div class="tf-choices" role="group" aria-label="Marketplace">
     <a class="tf-choice primary" id="market-open" href="/compute/ocm">Console</a>
     <a class="tf-choice secondary" id="market-host" href="/compute/ocm/provider">Host</a>
+    <a class="tf-quiet" id="market-status" href="/compute/ocm/status" title="Cold loads on first request · Ready/Serving ~1s">Status</a>
   </div>
 </section>
 
 <section class="tf-step" id="step-host" data-tf="host" hidden>
   <button type="button" class="tf-back" data-back="ask">← Back</button>
-  <h1 class="tf-q" title="OCM host">Host.</h1>
+  <h1 class="tf-q" title="OCM host · enroll">Host.</h1>
+  <p class="fine" id="host-enroll-fine">Enroll code · never paste a provider token.</p>
   <div class="tf-choices" role="group" aria-label="Host">
     <a class="tf-choice primary" id="host-run" href="/compute/ocm/provider">Open</a>
+    <a class="tf-choice secondary" id="host-status" href="/compute/ocm/status" title="Cold loads on first request · Ready/Serving ~1s">Status</a>
   </div>
 </section>
 
@@ -370,6 +378,7 @@ footer a:hover{color:var(--paper)}
   <button class="tf-quiet" id="cancel-job" type="button" hidden>Cancel</button>
   <pre class="answer" id="answer" aria-live="polite"></pre>
   <p class="fine" id="answer-receipt" hidden aria-live="polite"></p>
+  <p class="fine" id="answer-receipt-note" hidden aria-live="polite"></p>
   <div class="tf-choices" id="after-answer">
     <button type="button" class="tf-choice primary" id="ask-again">Ask again</button>
     <button type="button" class="tf-choice secondary" id="pick-provide-after">Provide</button>
@@ -407,6 +416,11 @@ footer a:hover{color:var(--paper)}
   <button type="button" class="tf-back" data-back="provide-name">← Back</button>
   <h1 class="tf-q">Register.</h1>
   <p class="fine" id="provide-next-line" hidden aria-hidden="true"></p>
+  <p class="fine" id="provide-ocm-fine">Community kit here · OCM host uses enroll code · never paste <code>ocm_host_</code>.</p>
+  <div class="tf-choices" role="group" aria-label="OCM enroll" style="margin:0 0 18px">
+    <a class="tf-quiet" id="provide-ocm-host" href="/compute/ocm/provider">Host</a>
+    <a class="tf-quiet" id="provide-ocm-status" href="/compute/ocm/status" title="Cold loads on first request · Ready/Serving ~1s">Status</a>
+  </div>
   <div class="actions" id="provide">
     <button class="primary" id="register-provider" type="button" hidden disabled>Register</button>
     <a class="primary" id="provider-login" href="/login?return=/compute%23provide">Sign in to register</a>
@@ -467,13 +481,29 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
   </details>
 </section>
 
+<aside id="presence-act-boot" class="fine presence-act-boot" aria-live="polite" data-presence-act="boot">
+  <span id="presence-strip-boot" data-presence="live" title="Community advertising ≠ OCM enrolled">
+    <span id="presence-community">No Mac advertising</span>
+    <span class="honesty-sep" id="presence-enrolled-boot-sep" aria-hidden="true" hidden>·</span>
+    <span id="presence-enrolled-boot" hidden></span>
+  </span>
+  <span class="honesty-sep" aria-hidden="true">·</span>
+  <span id="act-tape-boot" data-act="settled" title="Visible acts · settled paid-inference · 24h">0 tok · 24h</span>
+</aside>
+
 <aside id="honesty-panel" class="fine honesty-panel" hidden
   aria-live="polite" data-honesty="live">
   <span id="honesty-hosted" class="honesty-ok">Hosted · live</span>
   <span class="honesty-sep" aria-hidden="true">·</span>
-  <span id="honesty-macs">No Mac online</span>
+  <span id="presence-strip" data-presence="live" title="Community advertising ≠ OCM enrolled">
+    <span id="honesty-macs">No Mac online</span>
+    <span class="honesty-sep" id="honesty-enrolled-sep" aria-hidden="true" hidden>·</span>
+    <span id="honesty-enrolled" hidden></span>
+  </span>
   <span class="honesty-sep" aria-hidden="true">·</span>
-  <span id="honesty-settled" title="Settled paid-inference · last 24h">0 tok · 24h</span>
+  <span id="act-tape" data-act="settled" title="Visible acts · settled paid-inference · 24h">
+    <span id="honesty-settled" title="Settled paid-inference · last 24h">0 tok · 24h</span>
+  </span>
 </aside>
 
 <footer>
@@ -497,7 +527,7 @@ const SUB24=new Set(['qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b']);
 const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\n\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\n\n## Goal\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\n\n## Facts (do not invent others)\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\n- Coordinator: https://lobby.getdasha.com/compute/api\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\n- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)\n- Token goes in `.dasha-provider-key` mode 0600 \u2014 never put the provider key on argv or shell history\n- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending operator settle · not auto · $dasha payout +10% · never invent balances\n\n## Steps for the AI to run with the human\n1. Open https://www.getdasha.com/compute \u2192 Provide (quiet link) \u2192 name the Mac \u2192 Sign in (X) if needed \u2192 Register.\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once \u2014 refresh loses it. Prefer that block over this template.\n3. On the Mac, run the Setup command \u2014 or this template with the pasted values:\n\n```bash\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\n# install Ollama from https://ollama.com/download if missing\nollama pull qwen3:8b\numask 077\ncat > .dasha-provider-key <<'TOKEN'\nPASTE_ONE_TIME_TOKEN_HERE\nTOKEN\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b \\\n./install.sh\n```\n\n4. Verify after install (`install.sh` already ran doctor and moved the key):\n\n```bash\ndasha-compute doctor\ndasha-compute status\n```\n\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\n\n## Prefer MLX (Apple Silicon, optional)\n- Prefer MLX when you can \u2014 often faster on Apple Silicon; Ollama still works.\n- Recommend Ollama \u22650.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\n- Keep models on internal SSD \u2014 slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\n- Official Ollama path (live docs): Ollama \u22650.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\n- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks \u2014 never invent.\n- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.\n\n## Keep-alive (sub-24GB)\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service \u2014 a shell export alone is not enough for the macOS app).\n- Do not pin 27B on a 16\u201324GB Air for interactive chat; use 8B/12B.\n- `dasha-compute doctor` soft-hints when a mapped model looks \u226527B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.\n\n## Success\n- dasha-compute doctor exits 0\n- Heartbeats succeed\n- A Community Run from another session can complete on this Mac\n\n## If stuck\n- Re-register for a fresh token\n- Check dasha-compute logs\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\n";
 const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\n\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute — Hosted demo or community Macs — without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login). Credits → balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b · 3 free / 10 min · then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- API billing: non-self `v1/chat/completions` spends prepaid credits ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits.\n- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.\n- Ask top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.\n- When Macs are online, Ask shows a quiet Community · N door (measured tok/s in the title) — Hosted stays the default; Change engine still opens How.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. — Ask → Hosted Ask. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Ask · Top up → Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Community or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\n4. Sign in if prompted\n5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available\n\n## Optional API\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n- On stream, read `usage` from the final stop chunk (not earlier deltas)\n\n## If stuck\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n";
 const API='https://lobby.getdasha.com';
-let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacModels=new Set(),ownMacTps=0,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask';
+let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacModels=new Set(),ownMacTps=0,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask';
 
 function pendingMessages(){
   const content=$('prompt').value.trim()||'…',kept=[];
@@ -816,7 +846,7 @@ function showTf(step){
     node.hidden=node.dataset.tf!==step;
   });
   paintProgress(step);
-  if(step==='gate'){clearHonestyPoll();paintHonestyPanel()} else{paintHonestyPanel();startHonestyPoll()}
+  paintHonestyPanel();startHonestyPoll()
   if(step==='pay'||step==='gate'||step==='ask'||step==='pay-buy'||step==='sponsor'||step==='sponsor-buy')clearPaySponsorFine();
   const login=$('login');
   if(login){
@@ -1276,7 +1306,7 @@ async function readSse(response){
   }
   const reader=response.body.getReader(),decoder=new TextDecoder();
   let buf='',out='',saw=false;const node=$('answer');
-  lastSseUsage=null;
+  lastSseUsage=null;lastSseSettle=null;lastSseReceipt=null;
   while(true){
     const {done,value}=await reader.read();
     if(done||jobCancelled)break;
@@ -1289,7 +1319,7 @@ async function readSse(response){
         if(raw==='[DONE]')return out;
         let payload;try{payload=JSON.parse(raw)}catch{continue}
         if(payload?.error)throw Error(payload.error.message||payload.error||'stream error');
-        if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;
+        if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;if(payload?.settle&&typeof payload.settle==='object')lastSseSettle=payload.settle;if(payload?.receipt&&typeof payload.receipt==='object')lastSseReceipt=payload.receipt;
         const delta=typeof payload?.choices?.[0]?.delta?.content==='string'?payload.choices[0].delta.content:typeof payload?.choices?.[0]?.delta==='string'?payload.choices[0].delta:typeof payload?.response==='string'?payload.response:typeof payload?.delta==='string'?payload.delta:'';
         if(delta){if(!saw){saw=true;onFirstToken()}out+=delta;node.textContent=out}
       }
@@ -1348,7 +1378,16 @@ $('run-demo').addEventListener('click',async()=>{
           const tot=Number(u?.total_tokens);
           const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
           const eng=mixture?'mixture':selfRoute?'self':'community';
-          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||''),model:String($('model').value||'')};
+          // settle only from final SSE settle object or follow-up job JSON — never invent cents.
+          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||''),model:String($('model').value||''),...settleFieldsFrom(lastSseSettle),...honestyFieldsFrom(lastSseReceipt)};
+          if(activeJob&&(!(lastPaidReceipt.settle_cents>0)||!lastPaidReceipt.route)){
+            try{
+              const j=await api('/compute/api/jobs/'+activeJob);
+              if(j?.settle)lastPaidReceipt={...lastPaidReceipt,...settleFieldsFrom(j.settle)};
+              if(j?.route==='self'||j?.route==='community'||j?.route==='mixture')lastPaidReceipt={...lastPaidReceipt,route:j.route};
+              if(j?.receipt&&typeof j.receipt==='object')lastPaidReceipt={...lastPaidReceipt,...honestyFieldsFrom(j.receipt)};
+            }catch{}
+          }
         }
       }
       else{
@@ -1382,7 +1421,7 @@ $('run-demo').addEventListener('click',async()=>{
           const tot=Number(u?.total_tokens);
           const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
           const eng=mixture?'mixture':selfRoute?'self':'community';
-          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String($('model').value||'')};
+          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String($('model').value||''),...settleFieldsFrom(data?.settle),...((data?.route==='self'||data?.route==='community'||data?.route==='mixture')?{route:data.route}:{}),...honestyFieldsFrom(data?.receipt)};
         }
       }
     }else{
@@ -1402,7 +1441,7 @@ $('run-demo').addEventListener('click',async()=>{
       if(hostedPaid){
         const tot=Number(hostedUsage?.total_tokens);
         const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(hostedUsage?.prompt_tokens)||0)+(Number(hostedUsage?.completion_tokens)||0))));
-        lastPaidReceipt={tokens:tok,cents:5,engine:'hosted'};
+        lastPaidReceipt={tokens:tok,cents:5,engine:'hosted',provider_class:'hosted',settle_cents:5,settle_state:'settled',attestation:null};
       }else{lastPaidReceipt=null}
     }
     conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
@@ -1680,7 +1719,59 @@ function formatUsdCents(cents){
   return '$'+(n/100).toFixed(2);
 }
 
+function paintPresenceActBoot(){
+  const boot=$('presence-act-boot');
+  if(!boot)return;
+  const onGate=tfStep==='gate';
+  // Quiet gate dogfood: presence + Act tape only on Start.; post-Start uses #honesty-panel.
+  boot.hidden=!onGate;
+  if(!onGate)return;
+  const community=$('presence-community');
+  if(community){
+    const n=Number.isInteger(providersOnline)?providersOnline:0;
+    let model='';
+    let tpsLabel='';
+    if(n>=1){
+      const row=(networkCapacity||[])[0];
+      const tps=Number(row?.tokens_per_second);
+      const mp=Number(row?.measured_providers||0);
+      model=row?.model?String(row.model):'';
+      // Advertising only (providers_online) — never pad enrolled OCM hosts.
+      if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
+      if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
+    }
+    if(n===0)community.textContent='No Mac advertising';
+    else{
+      const bits=[n+' advertising'];
+      if(model)bits.push(model);
+      if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
+      community.textContent=bits.join(' · ');
+    }
+    community.title=n>=1?'Community advertising (providers_online) · not OCM enrolled':'Community advertising · none online';
+  }
+  const enrolled=$('presence-enrolled-boot');
+  const enrolledSep=$('presence-enrolled-boot-sep');
+  if(enrolled){
+    if(Number.isInteger(ocmHosts)&&ocmHosts>=1){
+      enrolled.hidden=false;
+      enrolled.textContent=ocmHosts+' enrolled';
+      enrolled.title='OCM enrolled · not the same as advertising';
+      if(enrolledSep)enrolledSep.hidden=false;
+    }else{
+      enrolled.hidden=true;
+      enrolled.textContent='';
+      enrolled.removeAttribute('title');
+      if(enrolledSep)enrolledSep.hidden=true;
+    }
+  }
+  const act=$('act-tape-boot');
+  if(act){
+    // Visible acts: factory settled_24h only — never invent.
+    act.textContent=formatSettledLine();
+  }
+}
 function paintHonestyPanel(){
+  paintPresenceActBoot();
   const panel=$('honesty-panel');
   if(!panel)return;
   const onGate=tfStep==='gate';
@@ -1731,31 +1822,60 @@ function paintHonestyPanel(){
     }
     if(title){macs.title=title;macs.setAttribute('aria-label',title)}
     else{macs.removeAttribute('title');macs.removeAttribute('aria-label')}
+    const strip=$('presence-strip');
+    if(strip){
+      strip.title='Community advertising ≠ OCM enrolled';
+      strip.dataset.advertising=String(n);
+      strip.dataset.enrolled=Number.isInteger(ocmHosts)?String(ocmHosts):'';
+    }
+  }
+  const enrolled=$('honesty-enrolled');
+  const enrolledSep=$('honesty-enrolled-sep');
+  if(enrolled){
+    // Fail closed: integer hosts from /compute/ocm/healthz only — never invent; never pad advertising.
+    if(Number.isInteger(ocmHosts)&&ocmHosts>=1){
+      enrolled.hidden=false;
+      enrolled.textContent=ocmHosts+' enrolled';
+      enrolled.title='OCM enrolled · not the same as online';
+      enrolled.setAttribute('aria-label',enrolled.title);
+      if(enrolledSep)enrolledSep.hidden=false;
+    }else{
+      enrolled.hidden=true;
+      enrolled.textContent='';
+      enrolled.removeAttribute('title');
+      enrolled.removeAttribute('aria-label');
+      if(enrolledSep)enrolledSep.hidden=true;
+    }
   }
   const settled=$('honesty-settled');
   if(settled){
     // Visible acts: factory settled_24h tokens/jobs/cents only — never invent.
     settled.textContent=formatSettledLine();
   }
+  const actTape=$('act-tape');
+  if(actTape){
+    actTape.title='Visible acts · settled paid-inference · 24h';
+    actTape.dataset.tokens=String(Math.max(0,Math.floor(Number(settled24h?.tokens)||0)));
+    actTape.dataset.jobs=String(Math.max(0,Math.floor(Number(settled24h?.jobs)||0)));
+    actTape.dataset.cents=String(Math.max(0,Math.floor(Number(settled24h?.cents)||0)));
+  }
 }
 function clearHonestyPoll(){if(honestyPollTimer){clearInterval(honestyPollTimer);honestyPollTimer=null}}
 function startHonestyPoll(){
   clearHonestyPoll();
   honestyPollTimer=setInterval(()=>{
-    if(tfStep==='gate'){clearHonestyPoll();return}
     refreshHonesty();
   },15000);
 }
 async function refreshHonesty(){
-  if(tfStep==='gate')return;
+  const onGate=tfStep==='gate';
   try{
     const network=await api('/compute/api/network');
     networkModels=new Set(network?.models_available||[]);
     providersOnline=Number.isInteger(network?.providers_online)?network.providers_online:0;
     networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];
     $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
-    paintSplit();
-    paintAskCommunity();
+    if(!onGate){paintSplit();paintAskCommunity()}
   }catch{}
   try{
     const status=await api('/compute/api/status');
@@ -1763,6 +1883,12 @@ async function refreshHonesty(){
     $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
   }catch{}
   await loadSettled24h();
+  try{
+    const res=await fetch('/compute/ocm/healthz',{cache:'no-store'});
+    if(!res.ok)throw Error('ocm');
+    const data=await res.json();
+    ocmHosts=Number.isInteger(data.hosts)?data.hosts:null;
+  }catch{ocmHosts=null}
   paintHonestyPanel();
 }
 function formatTokPerSec(n){const v=Number(n);if(!Number.isFinite(v)||v<=0)return '';if(v>=100)return String(Math.round(v));if(v>=10)return String(Math.round(v*10)/10);return String(Math.round(v*100)/100)}
@@ -1792,11 +1918,58 @@ function paintSettled24h(){
   el.textContent=formatSettledLine();
   paintHonestyPanel();
 }
+function settleFieldsFrom(src){
+  const cents=Math.max(0,Math.floor(Number(src?.cents ?? src?.settle_cents)||0));
+  const state=String(src?.state ?? src?.settle_state ?? '').trim();
+  if(!(cents>0)||!state)return {};
+  return {settle_cents:cents,settle_state:state};
+}
+/** Phase 0 honesty fields from job/SSE receipt — never invent tok/s, cents, or attestation. */
+function honestyFieldsFrom(src){
+  const out={};
+  if(!src||typeof src!=='object')return out;
+  const jobId=String(src.job_id||src.id||'').trim();
+  if(jobId)out.job_id=jobId;
+  const modelId=String(src.model_id||src.model||'').trim();
+  if(modelId)out.model=modelId;
+  const pc=String(src.provider_class||'').trim();
+  if(pc==='hosted'||pc==='community'||pc==='mixture'||pc==='self')out.provider_class=pc;
+  const tps=Number(src.tokens_per_second);
+  if(Number.isFinite(tps)&&tps>0&&tps<=10000)out.tokens_per_second=Math.round(tps*100)/100;
+  const completed=String(src.completed_at||'').trim();
+  if(completed)out.completed_at=completed;
+  // Phase 0: attestation always null/omitted — never invent a verify badge.
+  if('attestation' in src)out.attestation=src.attestation==null?null:null;
+  if(src.settled&&typeof src.settled==='object')Object.assign(out,settleFieldsFrom(src.settled));
+  else Object.assign(out,settleFieldsFrom(src));
+  return out;
+}
+function measuredTpsForModel(model){
+  const want=String(model||'').trim();
+  if(!want)return null;
+  const row=(networkCapacity||[]).find(item=>item&&item.model===want);
+  if(!row)return null;
+  const mp=Number(row.measured_providers||0);
+  const tps=Number(row.tokens_per_second);
+  if(!(mp>=1)||!Number.isFinite(tps)||!(tps>0)||tps>10000)return null;
+  return Math.round(tps*100)/100;
+}
+function paintAnswerReceiptNote(routeFace){
+  const note=$('answer-receipt-note');
+  if(!note)return;
+  // Quiet Dasha tone — community peer Mac is not an enclave. No disclaimer lecture.
+  if(routeFace==='community'){
+    note.hidden=false;note.removeAttribute('hidden');
+    note.textContent='no enclave · attestation N/A';
+  }else{
+    note.hidden=true;note.setAttribute('hidden','');note.textContent='';
+  }
+}
 function paintAnswerReceipt(){
   const el=$('answer-receipt');
   if(!el)return;
-  const hide=()=>{el.hidden=true;el.setAttribute('hidden','');el.textContent='';};
-  const show=(text)=>{
+  const hide=()=>{el.hidden=true;el.setAttribute('hidden','');el.textContent='';paintAnswerReceiptNote('');};
+  const show=(text,routeFace)=>{
     // Keep Answer step open so receipt is actually visible (not only textContent under a hidden step).
     if(tfStep!=='answer')showTf('answer');
     else{
@@ -1805,32 +1978,60 @@ function paintAnswerReceipt(){
     }
     el.hidden=false;el.removeAttribute('hidden');
     el.textContent=text;
+    paintAnswerReceiptNote(routeFace);
   };
   const r=lastPaidReceipt;
   if(!r){hide();return}
   const tok=Math.max(0,Math.floor(Number(r.tokens)||0));
   const cents=Math.max(0,Math.floor(Number(r.cents)||0));
   const eng=String(r.engine||'');
+  // Prefer job GET route / provider_class when known (honesty if engine UI drifted); else client engine face.
+  const apiRoute=String(r.route||'').trim();
+  const pc=String(r.provider_class||'').trim();
+  const routeFace=(apiRoute==='self'||apiRoute==='community'||apiRoute==='mixture')?apiRoute
+    :(pc==='self'||pc==='community'||pc==='mixture'||pc==='hosted')?pc:eng;
   // selected/routed model id from client/job only (never trust answer self-description); receipt or live select.
   const model=String(r.model||$('model')?.value||'').trim();
   const job=String(r.job_id||'').trim();
   const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
+  // tok/s only when measured on capacity[] (receipt or live network) — never invent.
+  let tps=Number(r.tokens_per_second);
+  if(!(Number.isFinite(tps)&&tps>0)){
+    const live=measuredTpsForModel(model);
+    tps=live==null?NaN:live;
+  }
+  const tpsLabel=(Number.isFinite(tps)&&tps>0)?('~'+formatTokPerSec(tps)+' tok/s'):'';
   // Community / Mixture / self — job receipt; never show provider-earn cents as user $.
-  if(eng==='community'||eng==='mixture'||eng==='self'){
-    const label=eng==='mixture'?'Mixture':eng==='self'?'Your Mac':'Community';
+  // Quiet settle face only when job/usage JSON provided settle_cents + settle_state (fail closed).
+  // Self: assert charge:0; omit settle ¢ (no-earn/no-settle on self).
+  if(routeFace==='community'||routeFace==='mixture'||routeFace==='self'){
+    const label=routeFace==='mixture'?'Mixture':routeFace==='self'?'Your Mac':'Community';
     const parts=[label];
     if(model)parts.push(model);
     if(tok>0)parts.push(formatSettledTok(tok)+' tok');
+    if(tpsLabel)parts.push(tpsLabel);
     if(shortJob)parts.push(shortJob);
+    if(routeFace==='self'){
+      // Fail closed: only paint free when route confirmed self — never invent for Community/Hosted.
+      parts.push('charge:0');
+    }else{
+      const settleCents=Math.max(0,Math.floor(Number(r.settle_cents)||0));
+      const settleState=String(r.settle_state||'').trim();
+      if(settleCents>0&&settleState){
+        parts.push(settleCents+'¢');
+        parts.push(settleState==='settled'||settleState==='paid'?'settled':'pending operator settle');
+      }
+    }
     if(parts.length<2){hide();return}
-    show(parts.join(' · '));
+    show(parts.join(' · '),routeFace);
     return;
   }
-  // Hosted paid settle only (user charged). Free floor stays quiet.
+  // Hosted paid settle only (user charged). Free floor stays quiet. Attestation omitted in Phase 0.
   if(!(tok>0||cents>0)){hide();return}
-  show(cents>0
-    ?('Settled · '+formatSettledTok(tok)+' tok · '+formatUsdCents(cents))
-    :('Settled · '+formatSettledTok(tok)+' tok'));
+  const hostedCore=cents>0
+    ?('Settled · '+formatSettledTok(tok)+' tok'+(tpsLabel?(' · '+tpsLabel):'')+' · '+formatUsdCents(cents))
+    :('Settled · '+formatSettledTok(tok)+' tok'+(tpsLabel?(' · '+tpsLabel):''));
+  show(hostedCore,'hosted');
 }
 async function loadSettled24h(){
   try{

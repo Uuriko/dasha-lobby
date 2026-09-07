@@ -33,15 +33,15 @@ function assertReceiptUx(html, label) {
   assert.match(html, /never show provider-earn cents as user \$/, `${label} never provider-earn cents as user $`);
   assert.match(html, /selected\/routed model id from client\/job only \(never trust answer self-description\)/, `${label} never trust answer self-description`);
   assert.match(html, /const model=String\(r\.model\|\|\$\(['"]model['"]\)\?\.value\|\|''\)\.trim\(\)/, `${label} model from receipt or select`);
-  assert.match(html, /const label=eng==='mixture'\?'Mixture':eng==='self'\?'Your Mac':'Community'/, `${label} Community|Mixture|Your Mac`);
+  assert.match(html, /const label=routeFace==='mixture'\?'Mixture':routeFace==='self'\?'Your Mac':'Community'/, `${label} Community|Mixture|Your Mac`);
   assert.match(html, /parts\.join\(' · '\)/, `${label} · joined receipt`);
-  assert.match(html, /if\(eng==='community'\|\|eng==='mixture'\|\|eng==='self'\)/, `${label} community/mixture/self branch`);
+  assert.match(html, /if\(routeFace==='community'\|\|routeFace==='mixture'\|\|routeFace==='self'\)/, `${label} community/mixture/self branch`);
   assert.match(html, /Hosted paid settle only \(user charged\)/, `${label} hosted paid settle comment`);
-  assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok \u00b7 '\+formatUsdCents\(cents\)/, `${label} hosted Settled · tok · $`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\)\}/, `${label} SSE community receipt cents:0`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\)\}/, `${label} poll community receipt cents:0`);
+  assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok/, `${label} hosted Settled · tok`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\),\.\.\.honestyFieldsFrom\(lastSseReceipt\)\}/, `${label} SSE community receipt cents:0 + honesty`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\)/, `${label} poll community receipt cents:0 + settle`);
   assert.doesNotMatch(html, /data\?\.model\|\|\$\(['"]model['"]\)\.value/, `${label} never trust data?.model`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted'\}/, `${label} hosted paid cents:5`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted',provider_class:'hosted',settle_cents:5,settle_state:'settled',attestation:null\}/, `${label} hosted paid cents:5 Phase0`);
   assert.match(html, /const u=data\?\.usage&&typeof data\.usage==='object'\?data\.usage:null/, `${label} poll reads job usage`);
   assert.match(html, /const u=lastSseUsage/, `${label} SSE reads lastSseUsage`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
@@ -199,7 +199,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.doesNotMatch(painted.mixture.text, /\$/);
 
     assert.equal(painted.self.hidden, false);
-    assert.equal(painted.self.text, "Your Mac · qwen3-8b · 9 tok · job_self_1");
+    assert.equal(painted.self.text, "Your Mac · qwen3-8b · 9 tok · job_self_1 · charge:0");
     assert.doesNotMatch(painted.self.text, /\$/);
 
     assert.equal(painted.communityBare.hidden, true, "Community with only label hides");

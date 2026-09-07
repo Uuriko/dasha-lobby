@@ -59,8 +59,10 @@ assert.match(html, /el\.textContent=formatSettledLine\(\)/);
 assert.match(html, /title=["']Settled paid-inference · last 24h["']/);
 assert.doesNotMatch(html, /\/room|Project Room/);
 
-assert.match(html, /if\(step===['"]gate['"]\)\{clearHonestyPoll\(\);paintHonestyPanel\(\)\}/);
-assert.match(html, /else\{paintHonestyPanel\(\);startHonestyPoll\(\)\}/);
+assert.match(html, /paintHonestyPanel\(\);startHonestyPoll\(\)/);
+assert.match(html, /function paintPresenceActBoot\(/);
+assert.match(html, /id=["']presence-strip["']/);
+assert.match(html, /id=["']act-tape["']/);
 
 const panelStart = html.indexOf('id="honesty-panel"');
 const panel = html.slice(panelStart, html.indexOf('</aside>', panelStart) + 8);
