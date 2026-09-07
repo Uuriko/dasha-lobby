@@ -459,6 +459,7 @@ footer a:hover{color:var(--paper)}
   <p class="fine" id="provide-tto">About 15–30 min to online.</p>
   <p class="fine" id="provide-prefer-mlx">Prefer MLX when you can · Ollama ≥0.33.1 · models on internal SSD.</p>
   <p class="fine" id="provide-keepalive">Keep Ollama warm · OLLAMA_KEEP_ALIVE=-1 on launch agent · advertise ≠ mid-Ask inference.</p>
+  <p class="fine" id="provide-softdoctor">Doctor soft-warns · battery / Low Power / thermal / SIP · never fails solely · not attestation.</p>
   <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion · min $1 · pending operator settle</p>
   <pre class="setup" id="setup" aria-live="polite">curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
 tar -xzf dasha-compute-open-alpha.tar.gz
@@ -805,7 +806,7 @@ function paintProgress(step){
   bar.setAttribute('aria-valuetext',(idx+1)+' / '+path.length);
 }
 function paintProvideBeat(){
-  const beat=$('provide-beat'),tto=$('provide-tto'),mlx=$('provide-prefer-mlx'),ka=$('provide-keepalive');
+  const beat=$('provide-beat'),tto=$('provide-tto'),mlx=$('provide-prefer-mlx'),ka=$('provide-keepalive'),sd=$('provide-softdoctor');
   if(!beat)return;
   if(tfStep!=='provide-done'){beat.hidden=true;return}
   beat.hidden=false;
@@ -819,6 +820,7 @@ function paintProvideBeat(){
     if(tto)tto.hidden=true;
     if(mlx)mlx.hidden=true;
     if(ka)ka.hidden=true;
+    if(sd)sd.hidden=true;
   }else{
     beat.textContent='';
     beat.classList.remove('acid');
@@ -827,6 +829,7 @@ function paintProvideBeat(){
     if(tto)tto.hidden=false;
     if(mlx)mlx.hidden=false;
     if(ka)ka.hidden=false;
+    if(sd)sd.hidden=false;
   }
 }
 function clearProvideBeatPoll(){if(provideBeatTimer){clearInterval(provideBeatTimer);provideBeatTimer=null}}

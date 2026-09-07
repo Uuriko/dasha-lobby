@@ -628,7 +628,7 @@ const BAG_HTML = `<!doctype html>
 
 const DASHA_LIST_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 const DASHA_LIST_PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
-const LISTINGS_UPDATED_AT = '2026-09-06T23:05:00.000Z';
+const LISTINGS_UPDATED_AT = '2026-09-07T22:30:00.000Z';
 const LISTINGS_VENUES = [
   { id: 'getdasha', name: 'getdasha', href: 'https://www.getdasha.com/listings' },
   { id: 'jupiter', name: 'Jupiter', href: 'https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' },
@@ -705,9 +705,9 @@ const LISTINGS_HTML = `<!doctype html>
       <p>Status: <span class="status">Listed</span> <span class="quiet">(on getdasha)</span></p>
       <p class="cta"><a class="primary" href="/how-to-buy">Buy $dasha →</a><a href="/which">Which</a><a href="/bag">Bag</a><a href="/lobby">Lobby</a></p>
     </article>
-    <h2>Listed on</h2>
+    <h2>Buy &amp; charts</h2>
     <div class="venues">
-      <a href="https://www.getdasha.com/listings">getdasha</a>
+      <a href="https://www.getdasha.com/how-to-buy">getdasha</a>
       <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&amp;buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Jupiter</a>
       <a href="https://raydium.io/swap/?inputMint=sol&amp;outputMint=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Raydium</a>
       <a href="https://dexscreener.com/solana/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7" rel="noopener noreferrer">DexScreener</a>
@@ -716,7 +716,7 @@ const LISTINGS_HTML = `<!doctype html>
       <a href="https://www.geckoterminal.com/solana/pools/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7" rel="noopener noreferrer">GeckoTerminal</a>
       <a href="https://trade.phantom.com/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Phantom</a>
     </div>
-    <p class="quiet">More listings soon.</p>
+    <p class="quiet">One listing for now · $dasha.</p>
     <p class="quiet"><a href="/listings.json">listings.json</a> · <a href="/which">Which</a></p>
   </main>
   <script>
