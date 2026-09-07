@@ -69,7 +69,8 @@ assert.equal(potterHome308Dest('/faucet/fill'), null, 'lowercase fill stays');
 assert.equal(potterHome308Dest('/faucet/fill/AbCdEf123'), null, 'lowercase fill+sig stays');
 assert.equal(potterHome308Dest('/faucet/jar'), null, 'do not invent /faucet/jar');
 assert.equal(potterHome308Dest('/Faucet/jar'), null, 'Title-case /Faucet/jar stays gap');
-assert.equal(potterHome308Dest('/compute/skill'), null, 'lowercase skill index stays gap');
+assert.equal(potterHome308Dest('/compute/skill'), 'https://www.getdasha.com/compute', 'lowercase skill index folds to /compute (live)');
+assert.equal(potterHome308Dest('/compute/skill/'), 'https://www.getdasha.com/compute', 'skill index slash folds to /compute (live)');
 
 const env = {};
 const LOBBY = 'https://lobby.getdasha.com';

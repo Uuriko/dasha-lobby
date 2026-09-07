@@ -29,10 +29,9 @@ assert.match(workerSrc, /POTTER_LISTINGS_308_PATHS/);
 assert.match(workerSrc, /export function listingsJsonBody/);
 assert.match(
   workerSrc,
-  /Leftover \/listing \/listings\/ \/coins \/coin \/listed \/list \/dex \/dexscreener \/cmc \/coingecko/,
-  'listings leftover comment',
+  /\/marketplace \/market \/you \/night \/build \/ocm already 308/,
+  'market folds to /compute with the tab peers',
 );
-assert.match(workerSrc, /Do not fold \/market/);
 assert.match(workerSrc, /id=["']list-door["']/, 'quiet home list-door');
 
 function extractConst(name) {
