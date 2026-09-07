@@ -65,6 +65,7 @@ dasha-compute status
 - Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service — a shell export alone is not enough for the macOS app).
 - Do not pin 27B on a 16–24GB Air for interactive chat; use 8B/12B.
 - `dasha-compute doctor` soft-hints when a mapped model looks ≥27B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.
+- Advertising/heartbeat OK while mid-Ask fails with `provider inference failed: URLError` → localhost Ollama on `127.0.0.1:11434` was refused/reset. Soft doctor does not block advertise alone — fix Ollama keep-alive / restart service.
 
 ## Success
 - dasha-compute doctor exits 0
@@ -75,3 +76,4 @@ dasha-compute status
 - Re-register for a fresh token
 - Check dasha-compute logs
 - Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)
+- Mid-Ask `URLError` / partial stream while still online → `curl -sS http://127.0.0.1:11434/api/ps` (and `/api/tags`); set OLLAMA_KEEP_ALIVE=-1 on the Ollama launch agent; restart Ollama; re-run `dasha-compute doctor` (keepalive soft is OK — exit should still be 0)
