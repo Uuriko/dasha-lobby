@@ -63,6 +63,12 @@ button,input,select,textarea{font:inherit}
 #step-gate>.tf-quiet,#step-pay>.fine,#step-pay-buy>.fine,#step-sponsor>.fine,#step-sponsor-buy>.fine,#step-sponsor-buy>.field,#step-credits>.fine,#step-you>.fine,#step-earn>.fine,#step-pay-send>.tf-quiet,#step-sponsor-send>.fine{margin-top:14px}
 .tf-choices+.tf-choices{margin-top:12px}
 .ask-links{display:flex;flex-wrap:wrap;gap:0 14px;margin-top:4px}#step-gate>.ask-links{margin-top:14px}
+.tf-door{display:grid;gap:8px}
+.tf-door>.tf-choice{width:100%}
+.tf-door-hint{margin:0;padding:0 2px;color:var(--muted);font:400 13px/1.35 Arial,Helvetica,sans-serif}
+.tf-money{display:grid;gap:2px;justify-items:start}
+.tf-micro{color:var(--muted);font:400 12px/1.3 Arial,Helvetica,sans-serif}
+#step-gate>.ask-links .tf-quiet{font-size:14px;color:var(--paper-muted)}
 .ask-links .tf-quiet{padding:6px 0}
 .ask-doors{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:2px;margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
 .ask-doors .tf-quiet{padding:4px 0;font-size:12px}
@@ -123,12 +129,24 @@ footer a:hover{color:var(--paper)}
 <section class="tf-step" id="step-gate" data-tf="gate">
   <h1 class="tf-q">Start.</h1>
   <div class="tf-choices" role="group" aria-label="Start.">
-    <button type="button" class="tf-choice primary" id="pick-ask" title="Run a prompt">Ask</button>
-    <button type="button" class="tf-choice secondary" id="pick-provide" title="Join with a Mac">Provide</button>
+    <div class="tf-door">
+      <button type="button" class="tf-choice primary" id="pick-ask" title="Run a prompt">Ask</button>
+      <p class="tf-door-hint">Run a prompt.</p>
+    </div>
+    <div class="tf-door">
+      <button type="button" class="tf-choice secondary" id="pick-provide" title="Join with a Mac">Provide</button>
+      <p class="tf-door-hint">Join a Mac.</p>
+    </div>
   </div>
   <div class="ask-links" role="group" aria-label="Money.">
-    <button type="button" class="tf-quiet" id="pick-pay" title="Top up or sponsor">Pay</button>
-    <button type="button" class="tf-quiet" id="pick-credits" title="Use prepaid">Credits</button>
+    <div class="tf-money">
+      <button type="button" class="tf-quiet" id="pick-pay" title="Top up or sponsor">Pay</button>
+      <span class="tf-micro">Top up</span>
+    </div>
+    <div class="tf-money">
+      <button type="button" class="tf-quiet" id="pick-credits" title="Use prepaid">Credits</button>
+      <span class="tf-micro">Balance</span>
+    </div>
   </div>
   <a id="gate-signin" class="tf-quiet" href="/login?return=/compute">Sign in</a>
   <button type="button" id="gate-you" class="tf-quiet" hidden>You</button>
@@ -376,6 +394,7 @@ footer a:hover{color:var(--paper)}
     <button type="button" class="tf-choice secondary" id="tf-done">Done</button>
     <a class="tf-quiet" id="answer-api" href="/login?return=/compute%23build" hidden>API key</a>
     <button type="button" class="tf-quiet" id="answer-credits" hidden>Credits</button>
+    <button type="button" class="tf-quiet" id="answer-retry" hidden>Retry</button>
   </div>
 </section>
 
@@ -1325,6 +1344,7 @@ $('run-demo').addEventListener('click',async()=>{
   $('answer').textContent=community?'Waiting for a Mac…':'Thinking…';
   showTf('answer');
   $('after-answer').hidden=true;
+  {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
   jobCancelled=false;
   if(runAbort){try{runAbort.abort()}catch{}}
   runAbort=new AbortController();
@@ -1405,24 +1425,66 @@ $('run-demo').addEventListener('click',async()=>{
         lastPaidReceipt={tokens:tok,cents:5,engine:'hosted'};
       }else{lastPaidReceipt=null}
     }
-    conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
-    renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+    if(!String(answer||'').trim()){
+      // Empty completion — explicit error face, not blank success Assistant.
+      const job=String(activeJob||lastPaidReceipt?.job_id||'').trim();
+      const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
+      $('answer-title').textContent='Answer.';
+      $('answer').textContent=shortJob?('No reply.\n'+shortJob):'No reply.';
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      // Keep prompt for quiet Retry. Do not push empty assistant / do not count sent.
+      lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+      // One automatic retry on empty community/hosted completion (intermittent Mac/stream).
+      if(!window.__dashaEmptyRetryOnce){
+        window.__dashaEmptyRetryOnce=true;
+        queueMicrotask(()=>{const run=$('run-demo'); if(run&&!run.disabled)run.click();});
+      }else{window.__dashaEmptyRetryOnce=false}
+    }else{
+      window.__dashaEmptyRetryOnce=false;
+      const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}
+      conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
+      renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+    }
   }catch(error){
-    if(jobCancelled||error?.name==='AbortError'){clearAnswerMoney();$('answer').textContent='Request cancelled. Prompt deleted.';$('answer-title').textContent='Answer.';}
-    else if(error.message==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}
-    else if(/top up|credits|insufficient/i.test(String(error.message||''))){
-      // Past free floor / 402 — stay on Answer; one quiet Top up nudge (no yank mid-read).
-      lastAskFailKind='credits';
-      $('answer').textContent='Top up credits.';
+    const msg=String(error?.message||error||'');
+    const emptyFail=/empty completion/i.test(msg);
+    if(jobCancelled||error?.name==='AbortError'){
+      // Keep partial tokens already painted; only replace waiting placeholders.
+      const cur=String($('answer')?.textContent||'');
+      const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|Queued)/.test(cur);
+      if(waiting||!cur.trim()){$('answer').textContent='Request cancelled. Prompt deleted.';}
       $('answer-title').textContent='Answer.';
-      loadCreditsBalance();
-    }
-    else if(/rate.?limit|limit reached|try again shortly/i.test(String(error.message||''))){
-      lastAskFailKind='rate';
-      $('answer').textContent=error.message;
+      clearAnswerMoney();
+      {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
+    }else if(emptyFail){
+      // Worker/provider empty stream fail — same No reply. + Retry face (prompt kept).
+      const job=String(activeJob||lastPaidReceipt?.job_id||'').trim();
+      const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
       $('answer-title').textContent='Answer.';
+      $('answer').textContent=shortJob?('No reply.\n'+shortJob):'No reply.';
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+      if(!window.__dashaEmptyRetryOnce){
+        window.__dashaEmptyRetryOnce=true;
+        queueMicrotask(()=>{const run=$('run-demo'); if(run&&!run.disabled)run.click();});
+      }else{window.__dashaEmptyRetryOnce=false}
+    }else{
+      {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
+      if(msg==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}
+      else if(/top up|credits|insufficient/i.test(msg)){
+        // Past free floor / 402 — stay on Answer; one quiet Top up nudge (no yank mid-read).
+        lastAskFailKind='credits';
+        $('answer').textContent='Top up credits.';
+        $('answer-title').textContent='Answer.';
+        loadCreditsBalance();
+      }
+      else if(/rate.?limit|limit reached|try again shortly/i.test(msg)){
+        lastAskFailKind='rate';
+        $('answer').textContent=msg;
+        $('answer-title').textContent='Answer.';
+      }
+      else {clearAnswerMoney();$('answer').textContent=msg||'Request failed';}
     }
-    else {clearAnswerMoney();$('answer').textContent=error.message;}
   }
   finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();$('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
 });
@@ -1500,7 +1562,11 @@ $('cancel-job').addEventListener('click',async()=>{
   try{
     if(activeJob)await api('/compute/api/jobs/'+activeJob,{method:'DELETE'});
     if(runAbort){try{runAbort.abort()}catch{}}
-    clearRunTick();$('answer-title').textContent='Answer.';$('answer').textContent='Request cancelled. Prompt deleted.';
+    clearRunTick();$('answer-title').textContent='Answer.';
+    const cur=String($('answer')?.textContent||'');
+    const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|Queued)/.test(cur);
+    if(waiting||!cur.trim()){$('answer').textContent='Request cancelled. Prompt deleted.';}
+    {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
   }catch(error){$('answer').textContent=error.message}
   finally{$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney()}
 });
@@ -2355,8 +2421,9 @@ $('answer-credits')?.addEventListener('click',()=>{
     setComputeIntent('credits');showTf('credits');
   }
 });
-$('ask-again').addEventListener('click',()=>{clearAnswerMoney();showTf('ask');$('prompt').focus()});
-$('tf-done').addEventListener('click',()=>{clearAnswerMoney();cameFromHow=false;cameFromGate=false;showTf('ask');});
+$('ask-again').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};showTf('ask');$('prompt').focus()});
+$('answer-retry')?.addEventListener('click',()=>{const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};clearAnswerMoney();const run=$('run-demo'); if(run&&!run.disabled)run.click(); else showTf('ask');});
+$('tf-done').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};cameFromHow=false;cameFromGate=false;showTf('ask');});
 $('provide-done-gate').addEventListener('click',()=>{cameFromHow=false;cameFromGate=false;setEngine('hosted',true);});
 document.querySelectorAll('[data-back]').forEach(btn=>{
   btn.addEventListener('click',()=>{

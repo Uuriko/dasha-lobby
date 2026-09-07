@@ -149,7 +149,11 @@ def run_ollama(job):
         payload={"model": MODELS[job["model"]], "messages": job["messages"], "stream": False, "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)}},
         timeout=600,
     )
-    return {"content": str((result.get("message") or {}).get("content") or ""), "finish_reason": "stop", "usage": usage_from(result)}
+    message = result.get("message") or {}
+    content = str(message.get("content") or "") or str(message.get("thinking") or message.get("reasoning") or "")
+    if not content.strip():
+        raise RuntimeError("empty completion")
+    return {"content": content, "finish_reason": "stop", "usage": usage_from(result)}
 
 
 def report(job_id, result):
@@ -184,6 +188,7 @@ def stream_ollama(job, cancelled):
         payload={"model": MODELS[job["model"]], "messages": job["messages"], "stream": True, "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)}},
     )
     final = {}
+    sent = False
     with urllib.request.urlopen(request, timeout=600) as response:
         for raw_line in response:
             if cancelled.is_set():
@@ -194,13 +199,21 @@ def stream_ollama(job, cancelled):
             if event.get("error"):
                 raise RuntimeError(str(event["error"]))
             final = event
-            content = str((event.get("message") or {}).get("content") or "")
+            message = event.get("message") or {}
+            # Prefer assistant content; if a thinking/reasoning-only chunk arrives, forward it so Ask is not blank.
+            content = str(message.get("content") or "")
+            if not content:
+                content = str(message.get("thinking") or message.get("reasoning") or "")
             if content:
                 report_chunk(job["id"], delta=content)
+                sent = True
     if cancelled.is_set():
         return False
     if final.get("done") is not True:
         raise RuntimeError("Ollama stream ended before completion")
+    if not sent:
+        # Fail closed — coordinator rejects empty stream done; do not mark success with blank answer.
+        raise RuntimeError("empty completion")
     report_chunk(job["id"], done=True, finish_reason="stop", usage=usage_from(final))
     return True
 

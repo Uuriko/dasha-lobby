@@ -605,6 +605,103 @@ const BAG_HTML = `<!doctype html>
 </html>
 `;
 
+const LISTINGS_HTML = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dasha List · $dasha</title>
+  <meta name="description" content="We list $dasha here. dash_eats on Solana. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump.">
+  <link rel="canonical" href="https://www.getdasha.com/listings">
+  <link rel="describedby" href="/llms.txt" type="text/plain">
+  <link rel="describedby" href="/llms-full.txt" type="text/plain">
+  <meta property="og:type" content="website"><meta property="og:url" content="https://www.getdasha.com/listings"><meta property="og:title" content="Dasha List · $dasha"><meta property="og:description" content="We list $dasha here."><meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Dasha List · $dasha"><meta name="twitter:description" content="We list $dasha here."><meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Dasha List","url":"https://www.getdasha.com/listings","description":"First-party listing for dash_eats / $dasha on Solana. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7."}</script>
+  <style>
+    :root { color-scheme: dark; font: 18px/1.5 Arial, Helvetica, sans-serif; background: #070608; color: #f4eddb; }
+    body { max-width: 44rem; margin: auto; padding: 2rem 1rem; }
+    h1 { line-height: 1; }
+    h2 { margin: 2.2rem 0 0.8rem; font-size: 1.15rem; }
+    code { display: block; padding: 1rem; border: 1px solid #666; overflow-wrap: anywhere; }
+    a { color: #dfff00; }
+    a:focus-visible { outline: 3px solid #dfff00; outline-offset: 3px; }
+    .card { border: 1px solid #666; padding: 1.1rem 1rem; margin: 1.4rem 0; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.55rem 0; }
+    .row code { display: inline; padding: 0.35rem 0.5rem; flex: 1 1 12rem; }
+    button.copy { font: inherit; color: #dfff00; background: transparent; border: 1px solid #666; padding: 0.35rem 0.7rem; cursor: pointer; }
+    button.copy:focus-visible { outline: 3px solid #dfff00; outline-offset: 3px; }
+    .status { color: #dfff00; font-weight: 800; letter-spacing: 0.02em; }
+    .cta { display: flex; flex-wrap: wrap; gap: 0.75rem 1.1rem; margin: 1rem 0 0.2rem; }
+    .cta a.primary { font-weight: 800; }
+    .venues { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.55rem; margin: 0.6rem 0 0; }
+    .venues a { display: block; border: 1px solid #666; padding: 0.55rem 0.7rem; text-decoration: none; }
+    .venues a:hover { border-color: #dfff00; }
+    .quiet { opacity: 0.72; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Dasha List</h1>
+    <p>We list <code style="display:inline;padding:0.1rem 0.35rem">$dasha</code> here.</p>
+    <article class="card" aria-labelledby="feat-name">
+      <h2 id="feat-name">$dasha / dash_eats</h2>
+      <p>Chain: Solana</p>
+      <div class="row"><span title="token address">Mint</span><code id="mint">53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code><button type="button" class="copy" data-copy="mint">Copy</button></div>
+      <div class="row"><span title="Raydium pool">Pair</span><code id="pair">9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code><button type="button" class="copy" data-copy="pair">Copy</button></div>
+      <p>Status: <span class="status">Listed</span> <span class="quiet">(on getdasha)</span></p>
+      <p class="cta"><a class="primary" href="/how-to-buy">Buy $dasha →</a><a href="/which">Which</a><a href="/bag">Bag</a><a href="/lobby">Lobby</a></p>
+    </article>
+    <h2>Listed on</h2>
+    <div class="venues">
+      <a href="https://www.getdasha.com/listings">getdasha</a>
+      <a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&amp;buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Jupiter</a>
+      <a href="https://raydium.io/swap/?inputMint=sol&amp;outputMint=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Raydium</a>
+      <a href="https://dexscreener.com/solana/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7" rel="noopener noreferrer">DexScreener</a>
+      <a href="https://birdeye.so/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump?chain=solana" rel="noopener noreferrer">Birdeye</a>
+      <a href="https://pump.fun/coin/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Pump</a>
+      <a href="https://www.geckoterminal.com/solana/pools/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7" rel="noopener noreferrer">GeckoTerminal</a>
+      <a href="https://trade.phantom.com/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Phantom</a>
+    </div>
+    <p class="quiet">More listings soon.</p>
+    <p class="quiet"><a href="/which">Which</a></p>
+  </main>
+  <script>
+  (function () {
+    function copyText(text, btn) {
+      function done() { if (btn) { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1200); } }
+      function legacy() {
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+          document.body.appendChild(ta);
+          ta.select();
+          var ok = false;
+          try { ok = document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta);
+          return ok;
+        } catch (e) { return false; }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () { if (legacy()) done(); });
+      } else if (legacy()) done();
+    }
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('button.copy');
+      if (!btn) return;
+      var id = btn.getAttribute('data-copy');
+      var node = id && document.getElementById(id);
+      var text = node ? (node.textContent || '').trim() : '';
+      if (!text) return;
+      copyText(text, btn);
+    });
+  })();
+  </script>
+</body>
+</html>
+`;
+
 
 const SECURITY = {
   'Cache-Control': 'no-store',
@@ -10068,6 +10165,16 @@ export default {
           'Content-Type': 'text/html; charset=utf-8',
           'Cache-Control': 'public, max-age=300',
           'X-Dasha-Edge': 'which',
+          Link: LLMS_DESCRIBEDBY,
+        }),
+      });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings') {
+      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LISTINGS_HTML), {
+        headers: htmlHeaders({
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+          'X-Dasha-Edge': 'listings',
           Link: LLMS_DESCRIBEDBY,
         }),
       });
