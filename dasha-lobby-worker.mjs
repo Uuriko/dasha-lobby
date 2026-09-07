@@ -3089,19 +3089,6 @@ const POTTER_LOGIN_308_PATHS = new Set([
   '/siwg', '/siwg/',
 ]);
 /** /signup /register /signin /sign-in /sign_in /sign-up /sign_up /log-in /log_in → plain /login (not login#grok). */
-const POTTER_PLAIN_LOGIN_308_PATHS = new Set([
-  '/signup', '/signup/',
-  '/register', '/register/',
-  // Live /signin /sign-in /sign_in /sign-up /sign_up leftover while /login 200; peers of signup/register.
-  '/signin', '/signin/',
-  '/sign-in', '/sign-in/',
-  '/sign_in', '/sign_in/',
-  '/sign-up', '/sign-up/',
-  '/sign_up', '/sign_up/',
-  // Hole: /Login already 308→/login; hyphen/underscore /log-in /log_in were html-404.
-  '/log-in', '/log-in/',
-  '/log_in', '/log_in/',
-]);
 const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/use",
   "/compute/use/",
@@ -4123,49 +4110,33 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/welcome/"
   // /status|/health|/healthz|/v1|/openai|/x402 — those stay intentional skips).
 ]);
+const POTTER_PLAIN_LOGIN_308_PATHS = new Set([
+  "/signup",
+  "/signup/",
+  "/register",
+  "/register/",
+  // Live /signin /sign-in html-404 while /login 200; peers of signup/register.
+  "/signin",
+  "/signin/",
+  "/sign-in",
+  "/sign-in/",
+  // Underscore sibling of /sign-in.
+  "/sign_in",
+  "/sign_in/",
+  // Hyphen + underscore siblings of /signup (sign-in family already folded).
+  "/sign-up",
+  "/sign-up/",
+  "/sign_up",
+  "/sign_up/",
+  // Hyphen + underscore siblings of /login itself (Title-case /Login already casefolds).
+  "/log-in",
+  "/log-in/",
+  "/log_in",
+  "/log_in/"
+]);
 const POTTER_WHICH_308_PATHS = new Set([
-  "/fill",
-  "/fill/",
-  "/jar",
-  "/jar/",
-  "/fill-the-jar",
-  "/fill-the-jar/",
-  // Underscore sibling of /fill-the-jar.
-  "/fill_the_jar",
-  "/fill_the_jar/",
-  // Claim path ends tip me; apex /tip /tip-me were html-404.
-  "/tip",
-  "/tip/",
-  "/tip-me",
-  "/tip-me/",
-  // Underscore sibling of /tip-me.
-  "/tip_me",
-  "/tip_me/",
-  // Cross-product bridge: live /compute/faucet html-404 while /faucet 200 and
-  // /compute/product(s) already 308→/compute. Fold to the Faucet product (not a Compute tab).
-  "/compute/faucet",
-  "/compute/faucet/",
-  // Nested Fill-the-jar: live /faucet/fill-the-jar html-404 while bare /fill-the-jar
-  // already 308→/faucet and /faucet/fill already 308→/faucet. Underscore sibling too.
-  // Do NOT invent /faucet/jar (intentional gap). Not a fillShareApi sig path.
-  "/faucet/fill-the-jar",
-  "/faucet/fill-the-jar/",
-  "/faucet/fill_the_jar",
-  "/faucet/fill_the_jar/",
-  // Plural /tips peer of /tip. Live html-404 while /tip already 308→/faucet.
-  // /compute/tips cross-product bridge like /compute/faucet.
-  "/tips",
-  "/tips/",
-  "/compute/tips",
-  "/compute/tips/",
-  // Donate peer of /tip: live /donate html-404 while /tip already 308→/faucet.
-  "/donate",
-  "/donate/",
-  // Once-a-day peer of faucet H1: live /once-a-day html-404 while /faucet 200.
-  "/once-a-day",
-  "/once-a-day/",
-  "/once_a_day",
-  "/once_a_day/"
+  "/verify",
+  "/verify/"
 ]);
 /** Leftover /ca /contract /holder /holders (Worker 8266782e). Live already 308→/bag.
  * /ca used to fold /which; bag is the contract/holder facts page. Exact /bag stays 200.
@@ -4271,33 +4242,48 @@ const POTTER_BOUNTIES_308_PATHS = new Set([
 ]);
 /** Quiet Fill-the-jar + tip-me doors. Live /fill /jar /fill-the-jar /tip /tip-me html-404; /faucet/fill already 308→/faucet. */
 const POTTER_FAUCET_DOOR_308_PATHS = new Set([
-  '/fill', '/fill/',
-  '/jar', '/jar/',
-  '/fill-the-jar', '/fill-the-jar/',
+  "/fill",
+  "/fill/",
+  "/jar",
+  "/jar/",
+  "/fill-the-jar",
+  "/fill-the-jar/",
+  // Underscore sibling of /fill-the-jar.
+  "/fill_the_jar",
+  "/fill_the_jar/",
   // Claim path ends tip me; apex /tip /tip-me were html-404.
-  '/tip', '/tip/',
-  '/tip-me', '/tip-me/',
-  // Leftover plural /tips /compute/tips (+slash / Title-case) still html-404
-  // while apex /tip already 308→/faucet. Peer of existing /tip.
-  '/tips', '/tips/',
-  '/compute/tips', '/compute/tips/',
-  // Leftover /donate /donate/ (+ Title-case) still html-404 while /tip /tips
-  // already 308→/faucet. Apex only — do not invent /compute/donate.
-  '/donate', '/donate/',
-  // Leftover /once-a-day /once_a_day (+slash / Title-case) still html-404
-  // while /donate /tip already 308→/faucet. Apex only — do not invent
-  // /compute/once-a-day.
-  '/once-a-day', '/once-a-day/',
-  '/once_a_day', '/once_a_day/',
-  // Leftover product bridge: /compute/faucet (+slash / Title-case) still
-  // html-404 while /faucet is 200 — fold to /faucet. Inverse
-  // /faucet/compute lives on POTTER_COMPUTE_TAB_308_PATHS → /compute.
-  // Leftover: /faucet/fill-the-jar /faucet/fill_the_jar (+slash / Title-case)
-  // still html-404 while apex /fill-the-jar already 308→/faucet.
-  // Do not invent /faucet/jar (intentional 404 gap). Bare /faucet/fill stays fillShareApi.
-  '/compute/faucet', '/compute/faucet/',
-  '/faucet/fill-the-jar', '/faucet/fill-the-jar/',
-  '/faucet/fill_the_jar', '/faucet/fill_the_jar/',
+  "/tip",
+  "/tip/",
+  "/tip-me",
+  "/tip-me/",
+  // Underscore sibling of /tip-me.
+  "/tip_me",
+  "/tip_me/",
+  // Cross-product bridge: live /compute/faucet html-404 while /faucet 200 and
+  // /compute/product(s) already 308→/compute. Fold to the Faucet product (not a Compute tab).
+  "/compute/faucet",
+  "/compute/faucet/",
+  // Nested Fill-the-jar: live /faucet/fill-the-jar html-404 while bare /fill-the-jar
+  // already 308→/faucet and /faucet/fill already 308→/faucet. Underscore sibling too.
+  // Do NOT invent /faucet/jar (intentional gap). Not a fillShareApi sig path.
+  "/faucet/fill-the-jar",
+  "/faucet/fill-the-jar/",
+  "/faucet/fill_the_jar",
+  "/faucet/fill_the_jar/",
+  // Plural /tips peer of /tip. Live html-404 while /tip already 308→/faucet.
+  // /compute/tips cross-product bridge like /compute/faucet.
+  "/tips",
+  "/tips/",
+  "/compute/tips",
+  "/compute/tips/",
+  // Donate peer of /tip: live /donate html-404 while /tip already 308→/faucet.
+  "/donate",
+  "/donate/",
+  // Once-a-day peer of faucet H1: live /once-a-day html-404 while /faucet 200.
+  "/once-a-day",
+  "/once-a-day/",
+  "/once_a_day",
+  "/once_a_day/"
 ]);
 /** Pretty health probes: live /compute/health(z) (+slash) 308 → /compute/api/healthz. */
 const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
