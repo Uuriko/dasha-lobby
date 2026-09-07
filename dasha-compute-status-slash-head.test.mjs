@@ -36,6 +36,11 @@ for (const path of ['/compute/api/status', '/compute/api/status/']) {
   assert.equal(get.body.live, true);
   assert.equal(get.body.model, 'gpt-oss-20b');
   assert.equal(get.body.login_required, true);
+  assert.equal(get.body.limit, '3 free / 10 min · then credits');
+  assert.match(get.body.billing?.chat_completions || '', /Prepaid credits.*key spend cap is runaway protection/);
+  assert.match(get.body.billing?.keys || '', /Create-time spend cap default \$5\/month/);
+  assert.match(get.body.billing?.keys || '', /402 on exceed/);
+  assert.match(get.body.billing?.keys || '', /\/caps/);
   const head = await network.fetch(new Request(`https://lobby.getdasha.com${path}`, { method: 'HEAD' }));
   assert.equal(head.status, 200, `${path} HEAD`);
   assert.match(head.headers.get('content-type') || '', /application\/json/);
@@ -78,6 +83,14 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const foo = await worker.fetch(new Request(`https://${host}/compute/api/foo`), workerEnv);
   assert.equal(foo.status, 404);
   assert.deepEqual(await foo.json(), { error: 'not found' });
+}
+
+for (const path of ['/compute/api', '/compute/api/']) {
+  const root = await network.fetch(new Request(`https://lobby.getdasha.com${path}`));
+  assert.equal(root.status, 200, `${path} GET`);
+  const body = await root.json();
+  assert.match(body.billing?.keys || '', /Create-time spend cap default \$5\/month/);
+  assert.match(body.billing?.chat_completions || '', /runaway protection/);
 }
 
 assert.equal([...rows.keys()].some(key => key.startsWith('compute:provider:')), false, 'must not invent Macs');
