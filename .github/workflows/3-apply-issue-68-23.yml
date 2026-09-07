@@ -1,0 +1,29 @@
+name: apply-issue-68-23-patches
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  apply:
+    if: github.head_ref == 'uuriko/issue-68-23-cache-poll'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Apply issue 68 + 23 patches
+        run: |
+          set -euo pipefail
+          if grep -Fq "max-age=3600, stale-while-revalidate=86400" dasha-lobby-worker.mjs && [ -f dasha-poll-backoff.test.mjs ]; then
+            echo "patches already applied"
+            exit 0
+          fi
+          git apply patches/1-issue-68-cache-boost.patch
+          git apply patches/2-issue-23-poll-backoff.patch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dasha-lobby-worker.mjs dasha-chess-page.html dasha-lobby-static-gen.mjs dasha-poll-backoff.test.mjs
+          git commit -m "Apply issue #68 cache boost + issue #23 poll backoff"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
