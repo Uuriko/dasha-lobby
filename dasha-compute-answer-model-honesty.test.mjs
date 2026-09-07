@@ -29,8 +29,8 @@ function assertHonesty(html, label) {
   assert.match(html, /You are model '\+id\+' on Dasha Compute\. If asked your name\/model, answer with exactly that id\./, `${label} client identity tip`);
   assert.match(html, /if\(community\)messages=modelIdentityFraming\(messages,\$\(['"]model['"]\)\.value\)/, `${label} community wire`);
   assert.match(html, /selected\/routed model id from client\/job only \(never trust answer self-description\)/, `${label} receipt comment`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\)\}/, `${label} SSE receipt selected model`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\)\}/, `${label} poll receipt selected model`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\)\}/, `${label} SSE receipt selected model`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\)\}/, `${label} poll receipt selected model`);
   assert.doesNotMatch(html, /data\?\.model\|\|\$\(['"]model['"]\)\.value/, `${label} never trust data?.model`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 }

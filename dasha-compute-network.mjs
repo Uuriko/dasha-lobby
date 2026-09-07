@@ -47,6 +47,21 @@ import {
 
 export { HOSTED_ASK_PRICE_CENTS };
 
+/** Honesty only — COMPUTE_X402_POC default off; no facilitator / settle this hop. */
+export const X402_BILLING_DOCS = 'flag_off';
+const BILLING_CHAT_COMPLETIONS = 'Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card';
+
+export function isComputeX402PocEnabled(env) {
+  const raw = String(env?.COMPUTE_X402_POC ?? '').trim().toLowerCase();
+  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+}
+
+/** Honesty field for billing docs — never means live settle. */
+export function x402BillingDocsLine(env) {
+  if (isComputeX402PocEnabled(env)) return 'flag_on_stub';
+  return X402_BILLING_DOCS;
+}
+
 const MODELS = new Set(['qwen3-8b', 'gemma3-12b', 'gpt-oss-20b', 'qwen3-30b-a3b', 'gemma3-27b', 'gpt-oss-120b']);
 const FRESH_MS = 45_000;
 const JOB_TTL_MS = 5 * 60_000;
@@ -203,6 +218,22 @@ function normalizeFactoryCounters(raw) {
 }
 
 
+function computeApiRootBody(env) {
+  return {
+    live: Boolean(env?.AI),
+    model: 'gpt-oss-20b',
+    login_required: true,
+    limit: '3 free / 10 min · then credits',
+    usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)',
+    billing: {
+      chat_completions: BILLING_CHAT_COMPLETIONS,
+      keys: `Create-time spend cap default $${API_KEY_LIMIT_DEFAULT_CENTS / 100}/month · 402 on exceed · see /caps`,
+      // Honesty only — COMPUTE_X402_POC default off; no facilitator / settle this hop.
+      x402: x402BillingDocsLine(env),
+    },
+  };
+}
+
 function computeV1Gateway(request, allowedOrigin, credentials) {
   const res = json({
     object: 'gateway',
@@ -220,7 +251,9 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
       jobs: 'GET /compute/api/jobs/:id returns stored usage (+ route) when present — never invent',
     },
     billing: {
-      chat_completions: 'Prepaid credits ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection',
+      chat_completions: BILLING_CHAT_COMPLETIONS,
+      // Honesty only — flag off / planned; not an enable switch.
+      x402: X402_BILLING_DOCS,
     },
   }, 200, allowedOrigin || '*', credentials);
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
@@ -363,6 +396,14 @@ function providerHardware(input, allowedModels) {
 function tokenUsage(input) {
   const source = input?.usage && typeof input.usage === 'object' ? input.usage : {};
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
+}
+
+/** Fail-closed public settle face. Omit when cents/state unknown. Never invent. */
+export function publicJobSettle(job) {
+  const cents = Math.max(0, Math.floor(Number(job?.settle_cents) || 0));
+  const state = String(job?.settle_state || '').trim();
+  if (!(cents > 0) || !state) return null;
+  return { cents, state };
 }
 
 async function cancelJob(storage, key, job, now = Date.now()) {
@@ -560,7 +601,8 @@ export class ComputeNetwork {
         for (const delta of (current.chunks || []).slice(sent)) emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: { content: delta }, finish_reason: null }] });
         sent = (current.chunks || []).length;
         if (current.status === 'complete') {
-          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}) });
+          const settle = publicJobSettle(current);
+          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}) });
           emit('[DONE]');
           controller.close();
           return;
@@ -583,7 +625,7 @@ export class ComputeNetwork {
     const path = new URL(request.url).pathname, now = Date.now(), credentials = Boolean(allowedOrigin);
     const openaiError = (message, status = 400, type = 'invalid_request_error') => json({ error: { message, type, code: null } }, status, allowedOrigin || '*', credentials);
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const res = json({ live: Boolean(this.env.AI), model: 'gpt-oss-20b', login_required: true, limit: '3 free / 10 min · then credits', usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)' }, 200, allowedOrigin || '*', credentials);
+      const res = json(computeApiRootBody(this.env), 200, allowedOrigin || '*', credentials);
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
     }
     if ((path === '/compute/api/healthz' || path === '/compute/api/healthz/') && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -927,21 +969,26 @@ export class ComputeNetwork {
       if (!error && (!answer || answer.length > 20_000)) return json({ error: 'result must be 1–20000 characters' }, 400);
       provider.lastSeenAt = now; await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       const usage = tokenUsage(input);
-      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, messages: null, completedAt: now, expiresAt: now + 10 * 60_000 });
+      let settlePatch = {};
+      if (!error && job.route !== 'self') {
+        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+        if (accrued?.ok) {
+          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
+          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
+          await this.recordPaidInferenceSettle({
+            owner: job.owner || null,
+            engine: job.route === 'mixture' ? 'mixture' : 'community',
+            usage,
+            cents: settleCents,
+            jobId: job.id,
+            replayKey: `job:${job.id}`,
+            now,
+          });
+        }
+      }
+      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
       await this.finishNight(job, error ? 'failed' : 'complete', error ? null : answer, error || null, now);
       await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
-      if (!error && job.route !== 'self') {
-        const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-        if (earned?.ok) await this.recordPaidInferenceSettle({
-          owner: job.owner,
-          engine: job.route === 'mixture' ? 'mixture' : 'community',
-          usage,
-          cents: earned.usdc_cents,
-          jobId: job.id,
-          replayKey: `job:${job.id}`,
-          now,
-        });
-      }
       return json({ accepted: true }, 202);
     }
 
@@ -950,28 +997,40 @@ export class ComputeNetwork {
       const input = await body(request, 8192), provider = await this.provider(request, input), key = `compute:job:${chunkMatch[1]}`, job = await this.state.storage.get(key);
       if (!provider) return json({ error: 'invalid provider token' }, 401);
       if (!job || job.status !== 'leased' || !job.stream || job.providerId !== provider.id || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
-      const error = String(input.error || '').trim().slice(0, 300), delta = String(input.delta || '');
+      const delta = String(input.delta || '');
       if (delta && ((job.chunks || []).join('').length + delta.length > 20_000)) return json({ error: 'stream result exceeds 20000 characters' }, 400);
       provider.lastSeenAt = now;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
-      const chunks = delta ? [...(job.chunks || []), delta] : job.chunks || [];
+      const rawError = String(input.error || '').trim().slice(0, 300);
+      const chunks = !rawError && delta ? [...(job.chunks || []), delta] : job.chunks || [];
+      let streamError = rawError;
+      if (!streamError && input.done && !String(chunks.join('') || '').trim()) {
+        streamError = 'empty completion';
+      }
       const usage = input.done ? tokenUsage(input) : job.usage;
-      await this.state.storage.put(key, { ...job, chunks, status: error ? 'failed' : input.done ? 'complete' : 'leased', error: error || null, usage, messages: error || input.done ? null : job.messages, completedAt: error || input.done ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: error || input.done ? now + 10 * 60_000 : now + LEASE_MS + 60_000 });
-      if (error || input.done) {
-        await this.finishNight(job, error ? 'failed' : 'complete', error ? null : chunks.join(''), error || null, now);
-        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
-        if (!error && input.done && job.route !== 'self') {
-          const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-          if (earned?.ok) await this.recordPaidInferenceSettle({
-            owner: job.owner,
+      let settlePatch = {};
+      if (!streamError && input.done && job.route !== 'self') {
+        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+        if (accrued?.ok) {
+          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
+          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
+          await this.recordPaidInferenceSettle({
+            owner: job.owner || null,
             engine: job.route === 'mixture' ? 'mixture' : 'community',
             usage,
-            cents: earned.usdc_cents,
+            cents: settleCents,
             jobId: job.id,
             replayKey: `job:${job.id}`,
             now,
           });
         }
+      }
+      const failed = Boolean(streamError);
+      const finished = failed || Boolean(input.done);
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
+      if (finished) {
+        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
+        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
       }
       return json({ accepted: true }, 202);
     }
@@ -1023,17 +1082,20 @@ export class ComputeNetwork {
         total_tokens: Math.max(0, Math.floor(Number(job.usage.total_tokens) || 0)),
       } : null;
       const route = ['community', 'mixture', 'self'].includes(String(job.route || '')) ? String(job.route) : null;
+      // jobs/:id settle only on complete — never invent pending/failed money.
+      const settle = job.status === 'complete' ? publicJobSettle(job) : null;
       return maybeHead(request, json({
         id: job.id,
         status: job.status,
         model: job.model,
-        answer: (job.chunks || []).join('') || job.answer || null,
+        answer: job.status === 'failed' ? null : (job.chunks || []).join('') || job.answer || null,
         error: job.error || null,
         provider: job.providerId || null,
         queue_position: queuePosition || null,
         expires_at: job.expiresAt,
         ...(usage && (usage.total_tokens > 0 || usage.prompt_tokens > 0 || usage.completion_tokens > 0) ? { usage } : {}),
         ...(route ? { route } : {}),
+        ...(settle ? { settle } : {}),
       }, 200, allowedOrigin, credentials));
     }
 
@@ -1799,7 +1861,7 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 export async function computeApi(request, env, allowedOrigin) {
   const path = new URL(request.url).pathname, credentials = Boolean(allowedOrigin);
   if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
-    const res = json({ live: Boolean(env.AI), model: 'gpt-oss-20b', login_required: true, limit: '3 free / 10 min · then credits', usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)' }, 200, allowedOrigin || '*', credentials);
+    const res = json(computeApiRootBody(env), 200, allowedOrigin || '*', credentials);
     return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
   }
   if ((path === '/compute/api/healthz' || path === '/compute/api/healthz/') && (request.method === 'GET' || request.method === 'HEAD')) {

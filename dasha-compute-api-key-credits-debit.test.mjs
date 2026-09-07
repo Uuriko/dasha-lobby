@@ -13,7 +13,7 @@ assert.equal(HOSTED_ASK_PRICE_CENTS, 5);
 
 const src = readFileSync(new URL('./dasha-compute-network.mjs', import.meta.url), 'utf8');
 assert.match(src, /billing:\s*\{[\s\S]*chat_completions:/);
-assert.match(src, /Prepaid credits \(\$0\.05\/job\) for community\/mixture; self-route free; key spend cap is runaway protection/);
+assert.match(src, /Prepaid credits via USDC\/\$dasha \(\$0\.05\/job\) for community\/mixture; self-route free; key spend cap is runaway protection; no card/);
 assert.match(src, /reason: 'api-chat'/);
 assert.match(src, /key spend cap is runaway-only|limit_cents is runaway-only/);
 assert.match(src, /Non-self chat spends prepaid credits; cap limits runaway/);
@@ -58,7 +58,9 @@ const now = Date.now();
 const gw = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/v1'));
 assert.equal(gw.status, 200);
 const gateway = await gw.json();
-assert.match(String(gateway.billing?.chat_completions || ''), /Prepaid credits \(\$0\.05\/job\)/);
+assert.match(String(gateway.billing?.chat_completions || ''), /Prepaid credits via USDC\/\$dasha \(\$0\.05\/job\)/);
+assert.match(String(gateway.billing?.chat_completions || ''), /no card/);
+assert.equal(gateway.billing?.x402, 'flag_off');
 assert.match(String(gateway.billing?.chat_completions || ''), /self-route free/);
 assert.match(String(gateway.billing?.chat_completions || ''), /runaway protection/);
 
