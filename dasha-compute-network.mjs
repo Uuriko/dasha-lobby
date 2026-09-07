@@ -48,20 +48,7 @@ import { X402_BILLING_DOCS, x402BillingDocsLine } from './dasha-compute-x402.mjs
 
 export { HOSTED_ASK_PRICE_CENTS };
 
-/** Honesty only — COMPUTE_X402_POC default off; no facilitator / settle this hop. */
-export const X402_BILLING_DOCS = 'flag_off';
 const BILLING_CHAT_COMPLETIONS = 'Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card';
-
-export function isComputeX402PocEnabled(env) {
-  const raw = String(env?.COMPUTE_X402_POC ?? '').trim().toLowerCase();
-  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
-}
-
-/** Honesty field for billing docs — never means live settle. */
-export function x402BillingDocsLine(env) {
-  if (isComputeX402PocEnabled(env)) return 'flag_on_stub';
-  return X402_BILLING_DOCS;
-}
 
 const MODELS = new Set(['qwen3-8b', 'gemma3-12b', 'gpt-oss-20b', 'qwen3-30b-a3b', 'gemma3-27b', 'gpt-oss-120b']);
 const FRESH_MS = 45_000;
