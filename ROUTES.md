@@ -58,9 +58,7 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 | `/job` `/compute/job` `/api/job` | 308 | `https://www.getdasha.com/compute/api/jobs` |
 | `/receipt` `/receipts` `/compute/receipt` `/compute/receipts` `/api/receipt` `/api/receipts` | 308 | `https://www.getdasha.com/compute/api/receipts` |
 | `/api/keys` | 308 | `https://www.getdasha.com/compute/api/keys` |
-| `/gateway` `/compute/gateway` `/endpoint` `/endpoints` `/sdk` `/cli` + `/compute/*` peers | 308 | `https://www.getdasha.com/compute/api` |
-| `/compute/v1` | 308 | `https://www.getdasha.com/compute/api/v1` |
-| `/compute/v1/models` | 308 | `https://www.getdasha.com/compute/api/v1/models` |
+| `/gateway` `/compute/gateway` `/endpoint` `/endpoints` `/sdk` `/cli` `/dev` `/developer` `/developers` `/sdks` + `/compute/*` peers | 308 | `https://www.getdasha.com/compute/api` |
 
 Do not restore Studio. Do not list retired rooms or leftover 308s (`/siwg`, compute tab paths) in sitemap, README, or chrome as 200s. `/compute` stays the 200 product page; tab leftovers 308 there with no hash. Pretty `/compute/v1` 308 `/compute/api/v1`; `/compute/v1/models` 308 `/compute/api/v1/models`. Bare `/v1` stays 404. Exact `/compute/api/v1*` stays JSON.
 
