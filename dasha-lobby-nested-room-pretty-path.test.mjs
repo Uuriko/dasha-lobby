@@ -45,7 +45,7 @@ assert.match(
 );
 assert.match(
   workerSrc,
-  /p === ["']\/lobby\/forum' \|\| p === ["']\/lobby\/forum\/' \|\| p === ["']\/lobby\/chat' \|\| p === ["']\/lobby\/chat\/["']/,
+  /p === ["']\/lobby\/forum["'] \|\| p === ["']\/lobby\/forum\/["'] \|\| p === ["']\/lobby\/chat["'] \|\| p === ["']\/lobby\/chat\/["']/,
   'isForumChatAliasPath matches nested /lobby/forum|/chat (+slash)',
 );
 

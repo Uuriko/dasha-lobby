@@ -30,7 +30,7 @@ assert.match(
 
 assert.match(
   workerSrc,
-  /if \(p === ["']\/readme' \|\| p === ["']\/readme\/'\) return 'https:\/\/www\.getdasha\.com\/compute\/api'/,
+  /if \(p === ["']\/readme["'] \|\| p === ["\']\/readme\/["\']\) return ["']https:\/\/www\.getdasha\.com\/compute\/api["']/,
   'docs face leftover if folds /readme to /compute/api',
 );
 
@@ -40,18 +40,19 @@ const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s
 
 for (const path of [
   '/meme', '/memes', '/memestudio', '/meme-studio', '/meme_studio',
-  '/price-chart', '/price_chart',
 ]) {
   assert.match(homeSet, new RegExp(`["\']${path}["\']`));
-  assert.match(homeSet, new RegExp(`'${path}/["']`));
+  assert.match(homeSet, new RegExp(`["\']${path}/["\']`));
 }
+// /price-chart /price_chart fold home via inline potterHome308Dest branch (same 308 dest as the set).
+assert.match(workerSrc, /p === ["']\/price-chart["'] \|\| p === ["']\/price-chart\/["'] \|\| p === ["']\/price_chart["'] \|\| p === ["']\/price_chart\/["']/, 'inline /price-chart /price_chart home fold');
 for (const path of ['/coinmarketcap', '/coin_market_cap']) {
   assert.match(listingsSet, new RegExp(`["\']${path}["\']`));
-  assert.match(listingsSet, new RegExp(`'${path}/["']`));
+  assert.match(listingsSet, new RegExp(`["\']${path}/["\']`));
 }
 for (const path of ['/peers', '/peer', '/uptime', '/compute/peers', '/compute/uptime']) {
   assert.match(tab, new RegExp(`["\']${path}["\']`));
-  assert.match(tab, new RegExp(`'${path}/["']`));
+  assert.match(tab, new RegExp(`["\']${path}/["\']`));
 }
 assert.doesNotMatch(tab, /['"]\/compute\/peer['"]/, 'do not invent /compute/peer');
 assert.doesNotMatch(tab, /['"]\/status['"]/, 'do not fold /status on compute-tab');

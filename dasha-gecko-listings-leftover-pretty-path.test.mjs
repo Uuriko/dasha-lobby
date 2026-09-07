@@ -32,7 +32,7 @@ const listingsSet = workerSrc.match(/const POTTER_LISTINGS_308_PATHS = new Set\(
 const howtoSet = workerSrc.match(/const POTTER_HOWTO_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const path of ['/gecko', '/geckoterminal', '/gecko-terminal', '/gecko_terminal', '/dextools', '/solscan']) {
   assert.match(listingsSet, new RegExp(`["\']${path}["\']`));
-  assert.match(listingsSet, new RegExp(`'${path}/["']`));
+  assert.match(listingsSet, new RegExp(`["\']${path}/["\']`));
 }
 assert.match(listingsSet, /["']\/listings\/["']/);
 assert.doesNotMatch(listingsSet, /['"]\/listings['"]/, 'exact /listings stays 200');
@@ -41,7 +41,7 @@ assert.doesNotMatch(listingsSet, /['"]\/terminal['"]/, 'do not invent /terminal'
 assert.doesNotMatch(listingsSet, /['"]\/jup['"]/, 'do not invent /jup');
 for (const path of ['/orca', '/meteora']) {
   assert.match(howtoSet, new RegExp(`["\']${path}["\']`));
-  assert.match(howtoSet, new RegExp(`'${path}/["']`));
+  assert.match(howtoSet, new RegExp(`["\']${path}/["\']`));
 }
 assert.doesNotMatch(howtoSet, /plugin\.jup\.ag/, 'howto set has no plugin.jup.ag');
 
@@ -68,9 +68,7 @@ const STAY_200 = [
   '/how-to-buy/',
 ];
 const STAY_OUT = [
-  '/pump',
   '/terminal',
-  '/jup',
   '/pools',
 ];
 
@@ -85,6 +83,9 @@ for (const path of TO_HOWTO) {
 }
 for (const path of STAY_200) {
   assert.equal(potterHome308Dest(path), null, `${path} stays 200`);
+}
+for (const path of ['/pump', '/jup']) {
+  assert.equal(potterHome308Dest(path), HOWTO, `${path} folds to /how-to-buy (live)`);
 }
 for (const path of STAY_OUT) {
   assert.equal(potterHome308Dest(path), null, `do not invent ${path}`);

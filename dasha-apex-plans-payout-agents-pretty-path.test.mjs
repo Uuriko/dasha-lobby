@@ -46,8 +46,8 @@ for (const leaf of COMPUTE_LEAVES) {
   assert.match(tab, new RegExp(`["']/${leaf}["']`));
   assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
-assert.match(tab, /["']\/compute\/price'/);
-assert.match(tab, /["']\/help'/, '/help now ships in help/credits leftover');
+assert.match(tab, /["\']\/compute\/price["\']/);
+assert.match(tab, /["']\/help["']/, '/help now ships in help/credits leftover');
 assert.doesNotMatch(tab, /['"]\/price['"]/, 'do not fold bare /price');
 assert.doesNotMatch(tab, /['"]\/price\/['"]/, 'do not fold bare /price/');
 assert.doesNotMatch(tab, /['"]\/terms['"]/, 'do not invent /terms');

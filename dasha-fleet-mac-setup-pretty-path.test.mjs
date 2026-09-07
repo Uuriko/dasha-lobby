@@ -39,7 +39,7 @@ for (const leaf of COMPUTE_LEAVES) {
   assert.match(tab, new RegExp(`["']/${leaf}["']`));
   assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
-assert.match(faucet, /["']\/donate'/);
+assert.match(faucet, /["\']\/donate["\']/);
 assert.doesNotMatch(tab, /['"]\/donate['"]/, '/donate is faucet, not compute-tab');
 assert.doesNotMatch(tab, /['"]\/compute\/donate['"]/, 'do not invent /compute/donate');
 assert.doesNotMatch(faucet, /['"]\/compute\/donate['"]/, 'do not invent /compute/donate on faucet set');

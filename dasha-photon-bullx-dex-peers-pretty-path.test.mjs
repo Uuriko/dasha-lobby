@@ -28,7 +28,7 @@ assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
 
 assert.match(
   workerSrc,
-  /On-site \/how-to-buy only —/,
+  /never Jupiter plugin host \/ external DEX hosts/,
   'howto leftover comment forbids external DEX hosts',
 );
 
@@ -40,7 +40,7 @@ for (const path of [
   '/solanafm', '/solana-fm', '/solana_fm',
 ]) {
   assert.match(listingsSet, new RegExp(`["\']${path}["\']`));
-  assert.match(listingsSet, new RegExp(`'${path}/["']`));
+  assert.match(listingsSet, new RegExp(`["\']${path}/["\']`));
 }
 assert.match(listingsSet, /["']\/listings\/["']/);
 assert.doesNotMatch(listingsSet, /['"]\/listings['"]/, 'exact /listings stays 200');
@@ -58,7 +58,7 @@ for (const path of [
   '/pump', '/pumpswap', '/pump-swap', '/pump_swap', '/jup',
 ]) {
   assert.match(howtoSet, new RegExp(`["\']${path}["\']`));
-  assert.match(howtoSet, new RegExp(`'${path}/["']`));
+  assert.match(howtoSet, new RegExp(`["\']${path}/["\']`));
 }
 assert.doesNotMatch(howtoSet, /plugin\.jup\.ag/, 'howto set has no plugin.jup.ag');
 
