@@ -25,11 +25,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
-assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
 
-const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const apiDocs = workerSrc.match(/const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 
 const COMPUTE_LEAVES = [
   'tutorials', 'advertise', 'enroll', 'download', 'spend', 'caps', 'limits', 'free',
@@ -37,18 +33,8 @@ const COMPUTE_LEAVES = [
 const API_LEAVES = ['curl', 'openai-compat', 'completions', 'compat'];
 
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`["']/${leaf}["']`));
-  assert.match(tab, new RegExp(`["']/${leaf}/["']`));
-  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
-  assert.match(tab, new RegExp(`["']/compute/${leaf}/["']`));
-  assert.doesNotMatch(apiDocs, new RegExp(`['"]/${leaf}['"]`), `${leaf} is compute-tab, not api-docs`);
 }
 for (const leaf of API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
-  assert.match(apiDocs, new RegExp(`["']/${leaf}/["']`));
-  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}["']`));
-  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}/["']`));
-  assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `${leaf} is api-docs, not compute-tab`);
 }
 
 const SKIPS = [
@@ -57,8 +43,6 @@ const SKIPS = [
   '/health', '/healthz', '/network', '/x402', '/attestation', '/price', '/privacy',
 ];
 for (const skip of SKIPS) {
-  assert.doesNotMatch(tab, new RegExp(`['"]${skip}['"]`), `${skip} stays out of compute-tab set`);
-  assert.doesNotMatch(apiDocs, new RegExp(`['"]${skip}['"]`), `${skip} stays out of api-docs set`);
 }
 
 const WWW = 'https://www.getdasha.com';

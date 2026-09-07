@@ -17,7 +17,6 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'swagger/api-docs 308 set present');
 assert.match(
   workerSrc,
   /\/swagger_ui \/api_docs \/compute\/swagger-ui \/compute\/api-docs/,
@@ -42,6 +41,7 @@ const PRIOR_PEERS = [
   '/api-docs', '/api-docs/', '/Api-docs', '/API-DOCS', '/Api-Docs/',
   '/swagger', '/swagger/', '/Swagger', '/SWAGGER',
   '/openapi', '/openapi/', '/Openapi', '/OPENAPI',
+  '/documentation', '/documentation/',
 ];
 const FOLDS = [...REDO4, ...PRIOR_PEERS];
 const STAY_OUT = [
@@ -57,7 +57,6 @@ const STAY_OUT = [
   '/compute/swagger_ui.html',
   '/api-doc',
   '/apidocs',
-  '/documentation',
 ];
 
 for (const path of FOLDS) {

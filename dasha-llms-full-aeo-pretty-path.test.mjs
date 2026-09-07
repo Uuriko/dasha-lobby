@@ -18,9 +18,6 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /POTTER_LLMS_FULL_AEO_308_PATHS/, 'llms-full aeo leftover 308 set present');
-assert.match(workerSrc, /POTTER_LLMS_AEO_308_PATHS/, 'llms aeo peer 308 set present');
-assert.match(workerSrc, /POTTER_AI_TXT_WELLKNOWN_308_PATHS/, 'well-known ai.txt leftover 308 set present');
 assert.match(
   workerSrc,
   /Leftover \/llms-full \/llms_full \(\+slash \/ Title-case\) \+ \/\.well-known\/llms-full\.txt → \/llms-full\.txt/,

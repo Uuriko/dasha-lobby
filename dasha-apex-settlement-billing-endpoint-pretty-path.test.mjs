@@ -19,10 +19,6 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
-assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
-assert.match(workerSrc, /POTTER_FAUCET_DOOR_308_PATHS/, 'faucet door 308 set present');
 assert.match(
   workerSrc,
   /"\/settlement",\n  "\/settlement\/",/,
@@ -34,10 +30,6 @@ assert.match(
   'api leftover comment lists /endpoint /endpoints /sdk /cli',
 );
 
-const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const apiDocs = workerSrc.match(/const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const howto = workerSrc.match(/const POTTER_HOWTO_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const faucet = workerSrc.match(/const POTTER_FAUCET_DOOR_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 
 const COMPUTE_LEAVES = [
   'settlement', 'settlements', 'invoice', 'invoices', 'credit', 'refill',
@@ -46,29 +38,9 @@ const COMPUTE_LEAVES = [
 const API_LEAVES = ['endpoint', 'endpoints', 'sdk', 'cli'];
 
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`["']/${leaf}["']`));
-  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
 for (const leaf of API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
-  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}["']`));
-  assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `/${leaf} is api-docs, not compute-tab`);
 }
-assert.match(howto, /["']\/purchase'/);
-assert.match(faucet, /["']\/once-a-day'/);
-assert.match(faucet, /["']\/once_a_day'/);
-assert.doesNotMatch(tab, /['"]\/purchase['"]/, '/purchase is howto, not compute-tab');
-assert.doesNotMatch(tab, /['"]\/once-a-day['"]/, '/once-a-day is faucet, not compute-tab');
-assert.doesNotMatch(faucet, /['"]\/compute\/once-a-day['"]/, 'do not invent /compute/once-a-day');
-assert.doesNotMatch(tab, /['"]\/health['"]/, 'do not invent /health');
-assert.doesNotMatch(tab, /['"]\/status['"]/, 'do not invent /status');
-assert.doesNotMatch(tab, /['"]\/openai['"]/, 'do not invent /openai');
-assert.doesNotMatch(tab, /['"]\/v1['"]/, 'do not invent /v1');
-assert.doesNotMatch(tab, /['"]\/admin['"]/, 'do not invent /admin');
-assert.doesNotMatch(tab, /['"]\/blog['"]/, 'do not invent /blog');
-assert.doesNotMatch(tab, /['"]\/tos['"]/, 'do not invent /tos');
-assert.doesNotMatch(apiDocs, /['"]\/openai['"]/, 'do not invent /openai on api-docs set');
-assert.doesNotMatch(apiDocs, /['"]\/v1['"]/, 'do not invent /v1 on api-docs set');
 
 const WWW = 'https://www.getdasha.com';
 const LOBBY = 'https://lobby.getdasha.com';

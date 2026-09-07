@@ -103,7 +103,7 @@ for (const path of [...TO_FAUCET, ...PRIOR_FAUCET]) {
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.equal(potterHome308Dest('/compute/'), COMPUTE, '/compute/ still folds to /compute');
 assert.equal(potterHome308Dest('/compute/donate'), null, 'do not invent /compute/donate');
-assert.equal(potterHome308Dest('/compute/donate/'), null, 'do not invent /compute/donate/["']);
+assert.equal(potterHome308Dest('/compute/donate/'), null, 'do not invent /compute/donate/');
 for (const path of STAY_OUT) {
   assert.equal(potterHome308Dest(path), null, `do not fold ${path}`);
 }

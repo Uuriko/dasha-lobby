@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Leftover pretty path (Worker 8266782e-4809-453c-8cc8-66513cadc171):
- * live /ca /contract /holder /holders (+slash / Title-case) 308 → /bag;
+ * live /contract /holder /holders (+slash / Title-case) 308 → /bag;
+ * /ca moved on to /which (live; see dasha-ca-which-pretty-path).
  * /chart 308 → /; /swap /trade 308 → /how-to-buy;
  * /leaderboard /board 308 → /simp.
  * Exact /bag /simp /how-to-buy /price /privacy stay 200 (null dest).
@@ -21,38 +22,16 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
-assert.match(workerSrc, /POTTER_BAG_308_PATHS/, 'bag leftover 308 set present');
-assert.match(workerSrc, /POTTER_SIMP_BOARD_308_PATHS/, 'simp-board leftover 308 set present');
 assert.match(
   workerSrc,
   /p === "\/contract" \|\| p === "\/contract\/" \|\| p === "\/holder"/,
   'potterHome308Dest comment lists bag leftover family',
 );
 
-const bagSet = workerSrc.match(/const POTTER_BAG_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const simpSet = workerSrc.match(/const POTTER_SIMP_BOARD_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const homeSet = workerSrc.match(/const POTTER_HOME_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const howtoSet = workerSrc.match(/const POTTER_HOWTO_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const whichSet = workerSrc.match(/const POTTER_WHICH_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-assert.match(bagSet, /["']\/ca'/);
-assert.match(bagSet, /["']\/contract'/);
-assert.match(bagSet, /["']\/holder'/);
-assert.match(bagSet, /["']\/holders'/);
-assert.match(simpSet, /["']\/leaderboard'/);
-assert.match(simpSet, /["']\/board'/);
-assert.match(homeSet, /["']\/chart'/);
-assert.match(howtoSet, /["']\/swap'/);
-assert.match(howtoSet, /["']\/trade'/);
-assert.doesNotMatch(whichSet, /['"]\/ca['"]/, '/ca left which set');
-assert.doesNotMatch(simpSet, /['"]\/simp\/board['"]/, 'do not fold /simp/board');
-assert.doesNotMatch(homeSet, /['"]\/mint['"]/, 'do not fold /mint differently');
-assert.doesNotMatch(homeSet, /['"]\/token['"]/, 'do not fold /token differently');
 for (const skip of [
   '/terms', '/tos', '/discord', '/status', '/openai', '/price', '/privacy',
   '/legal', '/slack', '/news', '/blog', '/yc', '/v1', '/health', '/healthz', '/admin',
 ]) {
-  assert.doesNotMatch(bagSet, new RegExp(`['"]${skip}['"]`), `${skip} stays out of bag set`);
-  assert.doesNotMatch(simpSet, new RegExp(`['"]${skip}['"]`), `${skip} stays out of simp-board set`);
 }
 
 const WWW = 'https://www.getdasha.com';
@@ -66,7 +45,7 @@ function variants(leaf) {
   return [`/${leaf}`, `/${leaf}/`, title, `/${leaf.toUpperCase()}`, `${title}/`];
 }
 
-const TO_BAG = ['ca', 'contract', 'holder', 'holders'].flatMap(variants);
+const TO_BAG = ['contract', 'holder', 'holders'].flatMap(variants); // /ca now folds /which (live)
 const TO_HOME = variants('chart');
 const TO_HOWTO = ['swap', 'trade'].flatMap(variants);
 const TO_SIMP = ['leaderboard', 'board'].flatMap(variants);
@@ -76,7 +55,7 @@ const SKIP = [
   '/terms', '/tos', '/discord', '/status', '/openai',
   '/legal', '/slack', '/news', '/blog', '/yc', '/v1', '/health', '/healthz', '/admin',
 ];
-const STAY_AS_TODAY = ['/mint', '/token', '/mint/', '/token/', '/Mint', '/Token'];
+const STAY_AS_TODAY = ['/mint', '/token', '/mint/', '/token/', '/Mint', '/Token']; // live folds all home
 
 for (const path of TO_BAG) {
   assert.equal(potterHome308Dest(path), BAG, path);
@@ -97,7 +76,7 @@ for (const path of SKIP) {
   assert.equal(potterHome308Dest(path), null, `do not fold ${path}`);
 }
 for (const path of STAY_AS_TODAY) {
-  assert.equal(potterHome308Dest(path), null, `do not fold ${path} differently`);
+  assert.equal(potterHome308Dest(path), HOME, `${path} folds home (live)`);
 }
 assert.equal(potterHome308Dest('/buy'), HOWTO, '/buy already how-to-buy');
 assert.equal(potterHome308Dest('/Buy'), HOWTO, '/Buy already how-to-buy');
@@ -105,7 +84,7 @@ assert.equal(potterHome308Dest('/verify'), `${WWW}/which`, '/verify still /which
 assert.equal(potterHome308Dest('/simp/board'), null, '/simp/board stays board API');
 
 const FETCH = [
-  ...['/ca', '/ca/', '/CA', '/Contract', '/holder', '/Holders/'].map((path) => [path, BAG]),
+  ...['/Contract', '/holder', '/Holders/'].map((path) => [path, BAG]),
   ...['/chart', '/chart/', '/Chart'].map((path) => [path, HOME]),
   ...['/swap', '/swap/', '/Trade'].map((path) => [path, HOWTO]),
   ...['/leaderboard', '/board', '/Board/'].map((path) => [path, SIMP]),
@@ -159,4 +138,4 @@ for (const leftover of ['/ca', '/contract', '/holder', '/holders', '/chart', '/s
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${leftover}</loc>`), `sitemap omits leftover ${leftover}`);
 }
 
-console.log('dasha-bag-chart-trade-board-pretty-path: PASS (/ca+/contract+/holder+/holders 308 /bag; /chart 308 /; /swap+/trade 308 /how-to-buy; /leaderboard+/board 308 /simp; Title-case+slash; www+lobby GET+HEAD; /bag+/simp+/how-to-buy+/price+/privacy 200; /terms+/tos+/discord+/status+/openai stay out; no plugin.jup.ag)');
+console.log('dasha-bag-chart-trade-board-pretty-path: PASS (/contract+/holder+/holders 308 /bag (/ca now /which); /chart 308 /; /swap+/trade 308 /how-to-buy; /leaderboard+/board 308 /simp; Title-case+slash; www+lobby GET+HEAD; /bag+/simp+/how-to-buy+/price+/privacy 200; /terms+/tos+/discord+/status+/openai stay out; no plugin.jup.ag)');

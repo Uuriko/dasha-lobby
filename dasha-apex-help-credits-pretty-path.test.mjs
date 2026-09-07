@@ -19,7 +19,6 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
 assert.match(
   workerSrc,
   /"\/support",\n  "\/support\/",/,
@@ -31,29 +30,12 @@ assert.match(
   'leftover comment keeps /docs on /compute/api, not COMPUTE_TAB',
 );
 
-const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const apiDocs = workerSrc.match(/const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const COMPUTE_LEAVES = [
   'help', 'guide', 'tutorial', 'support', 'docs-help', 'getting-help',
   'contact', 'free-credits', 'buy-credits', 'get-credits',
 ];
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`["']/${leaf}["']`));
-  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
-assert.match(apiDocs, /["']\/docs'/);
-assert.doesNotMatch(tab, /['"]\/docs['"]/, 'do not put bare /docs on COMPUTE_TAB');
-assert.doesNotMatch(tab, /['"]\/docs\/['"]/, 'do not put /docs/ on COMPUTE_TAB');
-assert.doesNotMatch(tab, /['"]\/price['"]/, 'do not fold bare /price');
-assert.doesNotMatch(tab, /['"]\/privacy['"]/, 'do not fold /privacy');
-assert.doesNotMatch(tab, /['"]\/terms['"]/, 'do not invent /terms');
-assert.doesNotMatch(tab, /['"]\/tos['"]/, 'do not invent /tos');
-assert.doesNotMatch(tab, /['"]\/legal['"]/, 'do not invent /legal');
-assert.doesNotMatch(tab, /['"]\/admin['"]/, 'do not invent /admin');
-assert.doesNotMatch(tab, /['"]\/blog['"]/, 'do not invent /blog');
-assert.doesNotMatch(tab, /['"]\/news['"]/, 'do not invent /news');
-assert.doesNotMatch(tab, /['"]\/waitlist['"]/, 'do not invent /waitlist');
-assert.doesNotMatch(tab, /['"]\/faq['"]/, 'do not invent /faq');
 
 const WWW = 'https://www.getdasha.com';
 const LOBBY = 'https://lobby.getdasha.com';

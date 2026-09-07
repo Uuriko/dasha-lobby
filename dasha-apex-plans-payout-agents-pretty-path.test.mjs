@@ -49,7 +49,7 @@ for (const leaf of COMPUTE_LEAVES) {
 assert.match(tab, /["']\/compute\/price'/);
 assert.match(tab, /["']\/help'/, '/help now ships in help/credits leftover');
 assert.doesNotMatch(tab, /['"]\/price['"]/, 'do not fold bare /price');
-assert.doesNotMatch(tab, /['"]\/price\/['"]/, 'do not fold bare /price/["']);
+assert.doesNotMatch(tab, /['"]\/price\/['"]/, 'do not fold bare /price/');
 assert.doesNotMatch(tab, /['"]\/terms['"]/, 'do not invent /terms');
 assert.doesNotMatch(tab, /['"]\/admin['"]/, 'do not invent /admin');
 assert.doesNotMatch(tab, /['"]\/blog['"]/, 'do not invent /blog');

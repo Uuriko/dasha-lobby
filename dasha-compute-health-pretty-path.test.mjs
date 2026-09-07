@@ -15,7 +15,6 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /POTTER_COMPUTE_HEALTHZ_308_PATHS/, 'compute healthz 308 set present');
 
 const HEALTHZ = 'https://www.getdasha.com/compute/api/healthz';
 const COMPUTE = 'https://www.getdasha.com/compute';

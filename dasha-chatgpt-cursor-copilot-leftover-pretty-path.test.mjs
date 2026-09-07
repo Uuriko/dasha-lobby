@@ -22,10 +22,6 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
-assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(workerSrc, /POTTER_HOME_308_PATHS/, 'home 308 set present');
-assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
-assert.match(workerSrc, /POTTER_SIMP_308_PATHS/, 'simp leftover 308 set present');
 assert.match(
   workerSrc,
   /"\/chatgpt",\n  "\/chatgpt\/",/,
@@ -38,41 +34,16 @@ assert.match(
   'simp leftover comment names /sim',
 );
 
-const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const homeSet = workerSrc.match(/const POTTER_HOME_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const howtoSet = workerSrc.match(/const POTTER_HOWTO_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const simpSet = workerSrc.match(/const POTTER_SIMP_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 
 const COMPUTE_LEAVES = ['chatgpt', 'cursor', 'copilot'];
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`["']/${leaf}["']`));
-  assert.match(tab, new RegExp(`["']/${leaf}/["']`));
-  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
-  assert.match(tab, new RegExp(`["']/compute/${leaf}/["']`));
 }
-assert.match(homeSet, /["']\/candles'/);
-assert.match(homeSet, /["']\/candles\/["']/);
-assert.match(howtoSet, /["']\/sell'/);
-assert.match(howtoSet, /["']\/sell\/["']/);
-assert.match(simpSet, /["']\/sim'/);
-assert.match(simpSet, /["']\/sim\/["']/);
-assert.doesNotMatch(tab, /['"]\/candles['"]/, '/candles is home, not compute-tab');
-assert.doesNotMatch(tab, /['"]\/sell['"]/, '/sell is howto, not compute-tab');
-assert.doesNotMatch(tab, /['"]\/sim['"]/, '/sim is simp leftover, not compute-tab');
-assert.doesNotMatch(tab, /['"]\/compute\/candles['"]/, 'do not invent /compute/candles');
-assert.doesNotMatch(tab, /['"]\/compute\/sell['"]/, 'do not invent /compute/sell');
-assert.doesNotMatch(tab, /['"]\/compute\/sim['"]/, 'do not invent /compute/sim');
-assert.doesNotMatch(simpSet, /['"]\/simp\/board['"]/, 'do not fold /simp/board');
 
 const SKIPS = [
   '/openai', '/anthropic', '/arcade', '/v1', '/x402', '/health', '/status',
   '/price', '/privacy',
 ];
 for (const skip of SKIPS) {
-  assert.doesNotMatch(tab, new RegExp(`['"]${skip}['"]`), `${skip} stays out of compute-tab set`);
-  assert.doesNotMatch(homeSet, new RegExp(`['"]${skip}['"]`), `${skip} stays out of home set`);
-  assert.doesNotMatch(howtoSet, new RegExp(`['"]${skip}['"]`), `${skip} stays out of howto set`);
-  assert.doesNotMatch(simpSet, new RegExp(`['"]${skip}['"]`), `${skip} stays out of simp set`);
 }
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 

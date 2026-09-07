@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Leftover pretty path: /verify (+slash / Title-case) 308 → /which.
- * /ca moved to /bag on live Worker 8266782e (see dasha-bag-chart-trade-board-pretty-path).
+ * /ca moved to /bag on live Worker 8266782e, then on to /which (current live).
  * Dest-by-path GET+HEAD on www + lobby. Keep /which 200. Sitemap omits leftover 308.
  * Disk only. No Designer. Never plugin.jup.ag.
  */
@@ -28,8 +28,8 @@ for (const path of PATHS) {
 }
 assert.equal(potterHome308Dest('/which'), null, '/which stays 200');
 assert.equal(potterHome308Dest('/auth/grok/verify'), null, 'SIWG verify stays JSON');
-assert.equal(potterHome308Dest('/ca'), BAG, '/ca now folds /bag (Worker 8266782e)');
-assert.equal(potterHome308Dest('/CA'), BAG, '/CA now folds /bag');
+assert.equal(potterHome308Dest('/ca'), WHICH, '/ca now folds /which (live moved past 8266782e)');
+assert.equal(potterHome308Dest('/CA'), WHICH, '/CA now folds /which');
 
 const env = {};
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
@@ -54,4 +54,4 @@ assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/which<\/loc>/);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/ca</);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/verify</);
 
-console.log('dasha-ca-which-pretty-path: PASS (/verify family 308 /which www+lobby GET+HEAD, /ca now /bag, /which 200, sitemap omits leftover)');
+console.log('dasha-ca-which-pretty-path: PASS (/verify family 308 /which www+lobby GET+HEAD, /ca now /which, /which 200, sitemap omits leftover)');

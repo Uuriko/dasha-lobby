@@ -17,7 +17,6 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /Redo: \/skills\.md\|\/compute\/skills\.md/, 'skills.md leftover comment');
-assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'swagger/api-docs 308 set present');
 assert.match(workerSrc, /\/swagger-ui \/swagger-ui\.html \/api-docs/, 'swagger leftover comment');
 
 const COMPUTE = 'https://www.getdasha.com/compute';

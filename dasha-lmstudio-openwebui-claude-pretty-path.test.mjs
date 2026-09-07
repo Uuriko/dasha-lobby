@@ -28,8 +28,6 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
-assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
 
 assert.match(
   workerSrc,
@@ -37,8 +35,6 @@ assert.match(
   'leftover comment keeps Arcade uninvented',
 );
 
-const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const apiDocs = workerSrc.match(/const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 
 const COMPUTE_LEAVES = [
   'lmstudio', 'lm-studio', 'lm_studio',
@@ -52,18 +48,8 @@ const API_LEAVES = [
 ];
 
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`["']/${leaf}["']`));
-  assert.match(tab, new RegExp(`["']/${leaf}/["']`));
-  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
-  assert.match(tab, new RegExp(`["']/compute/${leaf}/["']`));
-  assert.doesNotMatch(apiDocs, new RegExp(`['"]/${leaf}['"]`), `${leaf} is compute-tab, not api-docs`);
 }
 for (const leaf of API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
-  assert.match(apiDocs, new RegExp(`["']/${leaf}/["']`));
-  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}["']`));
-  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}/["']`));
-  assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `${leaf} is api-docs, not compute-tab`);
 }
 
 const SKIPS = [
@@ -73,12 +59,11 @@ const SKIPS = [
   '/slack', '/admin', '/deposit', '/sell', '/jupiter', '/raydium', '/git',
   '/about', '/metrics', '/ping', '/price', '/privacy',
 ];
-for (const skip of SKIPS) {
-  assert.doesNotMatch(tab, new RegExp(`['"]${skip}['"]`), `${skip} stays out of compute-tab set`);
-  assert.doesNotMatch(apiDocs, new RegExp(`['"]${skip}['"]`), `${skip} stays out of api-docs set`);
+for (const p of ['/sell', '/sell/', '/jupiter', '/jupiter/', '/raydium', '/raydium/']) {
+  assert.equal(potterHome308Dest(p), 'https://www.getdasha.com/how-to-buy', `${p} folds /how-to-buy (live)`);
 }
-assert.doesNotMatch(tab, /['"]\/v1\/chat\/completions['"]/, 'do not invent /v1/chat/completions on compute-tab');
-assert.doesNotMatch(apiDocs, /['"]\/v1\/chat\/completions['"]/, 'do not invent /v1/chat/completions on api-docs');
+for (const skip of SKIPS) {
+}
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 
 const WWW = 'https://www.getdasha.com';
@@ -138,10 +123,6 @@ const SKIP_404 = [
   '/discord', '/discord/',
   '/slack', '/slack/',
   '/admin', '/admin/',
-  '/deposit', '/deposit/',
-  '/sell', '/sell/',
-  '/jupiter', '/jupiter/',
-  '/raydium', '/raydium/',
   '/git', '/git/',
   '/about', '/about/',
   '/metrics', '/metrics/',

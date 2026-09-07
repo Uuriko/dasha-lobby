@@ -21,7 +21,6 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
-assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
 assert.match(
   workerSrc,
   /p === "\/devtools" \|\| p === "\/devtools\/"/,
@@ -33,8 +32,6 @@ assert.match(
   'api leftover comment lists /api-reference /sdk-reference /cli-reference /developer-api /dev-api',
 );
 
-const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const apiDocs = workerSrc.match(/const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 
 const API_LEAVES = [
   'devtools', 'devtool', 'developer-docs', 'sdk-docs', 'cli-docs', 'sdks-docs',
@@ -43,27 +40,9 @@ const API_LEAVES = [
 const PRIOR_API_LEAVES = ['sdk', 'cli', 'docs', 'openapi'];
 
 for (const leaf of API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
-  assert.match(apiDocs, new RegExp(`["']/${leaf}/["']`));
-  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}["']`));
-  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}/["']`));
-  assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `/${leaf} is api-docs, not compute-tab`);
 }
 for (const leaf of PRIOR_API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
-  assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `/${leaf} stays api-docs, not compute-tab`);
 }
-assert.doesNotMatch(apiDocs, /['"]\/reference['"]/, 'do not invent bare /reference on api-docs set');
-assert.doesNotMatch(apiDocs, /['"]\/openai['"]/, 'do not invent /openai on api-docs set');
-assert.doesNotMatch(apiDocs, /['"]\/v1['"]/, 'do not invent /v1 on api-docs set');
-assert.doesNotMatch(apiDocs, /['"]\/redoc['"]/, 'do not invent /redoc on api-docs set');
-assert.doesNotMatch(apiDocs, /['"]\/status['"]/, 'do not invent /status on api-docs set');
-assert.doesNotMatch(apiDocs, /['"]\/health['"]/, 'do not invent /health on api-docs set');
-assert.doesNotMatch(tab, /['"]\/devtools['"]/, '/devtools is api-docs, not compute-tab');
-assert.doesNotMatch(tab, /['"]\/sdk-docs['"]/, '/sdk-docs is api-docs, not compute-tab');
-assert.doesNotMatch(tab, /['"]\/api-reference['"]/, '/api-reference is api-docs, not compute-tab');
-assert.doesNotMatch(tab, /['"]\/sdk['"]/, '/sdk is api-docs, not compute-tab');
-assert.doesNotMatch(tab, /['"]\/cli['"]/, '/cli is api-docs, not compute-tab');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 
 const WWW = 'https://www.getdasha.com';

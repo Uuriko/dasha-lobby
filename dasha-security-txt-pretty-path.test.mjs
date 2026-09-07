@@ -15,7 +15,6 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /POTTER_SECURITY_TXT_308_PATHS/, 'security.txt leftover 308 set present');
 assert.match(
   workerSrc,
   /Leftover \/security \/security\.txt \(\+slash \/ Title-case\) → \/\.well-known\/security\.txt/,

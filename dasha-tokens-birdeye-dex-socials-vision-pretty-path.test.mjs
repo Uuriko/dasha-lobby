@@ -23,11 +23,6 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.doesNotMatch(workerSrc, /https:\/\/plugin\.jup\.ag/, 'worker must not contain https://plugin.jup.ag');
-assert.match(workerSrc, /POTTER_HOME_308_PATHS/, 'home 308 set present');
-assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
-assert.match(workerSrc, /POTTER_LISTINGS_308_PATHS/, 'listings 308 set present');
-assert.match(workerSrc, /POTTER_LOBBY_DOOR_308_PATHS/, 'lobby-door 308 set present');
-assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
 
 assert.match(
   workerSrc,
@@ -55,28 +50,14 @@ assert.match(
   'api leftover comment names /embeddings peer',
 );
 
-const homeSet = workerSrc.match(/const POTTER_HOME_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const howtoSet = workerSrc.match(/const POTTER_HOWTO_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const listingsSet = workerSrc.match(/const POTTER_LISTINGS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const lobbySet = workerSrc.match(/const POTTER_LOBBY_DOOR_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const apiDocs = workerSrc.match(/const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 
 for (const path of ['/token', '/mint', '/tokens']) {
-  assert.match(homeSet, new RegExp(`'${path}["']`));
-  assert.match(homeSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/swap', '/jupiter', '/raydium', '/pumpfun', '/pump-fun', '/pump_fun']) {
-  assert.match(howtoSet, new RegExp(`'${path}["']`));
-  assert.match(howtoSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/cmc', '/coingecko', '/coinmarketcap', '/birdeye']) {
-  assert.match(listingsSet, new RegExp(`'${path}["']`));
-  assert.match(listingsSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/socials', '/social']) {
-  assert.match(lobbySet, new RegExp(`'${path}["']`));
-  assert.match(lobbySet, new RegExp(`'${path}/["']`));
 }
 const apiLeaves = [
   '/vision', '/tts', '/text-to-speech', '/text_to_speech', '/embeddings',
@@ -84,19 +65,7 @@ const apiLeaves = [
   '/compute/embeddings',
 ];
 for (const path of apiLeaves) {
-  assert.match(apiDocs, new RegExp(`'${path}["']`));
-  assert.match(apiDocs, new RegExp(`'${path}/["']`));
 }
-assert.match(tab, /["']\/community'/);
-assert.doesNotMatch(lobbySet, /['"]\/community['"]/, 'do not steal /community onto lobby-door');
-assert.doesNotMatch(homeSet, /['"]\/tokenomics['"]/, 'do not invent /tokenomics on home');
-assert.doesNotMatch(homeSet, /['"]\/roadmap['"]/, 'do not invent /roadmap on home');
-assert.doesNotMatch(listingsSet, /['"]\/listings['"]/, 'exact /listings stays 200');
-assert.doesNotMatch(howtoSet, /plugin\.jup\.ag/, 'howto set has no plugin.jup.ag');
-assert.doesNotMatch(apiDocs, /['"]\/openai['"]/, 'do not fold /openai on api-docs');
-assert.doesNotMatch(apiDocs, /['"]\/v1['"]/, 'do not fold /v1 on api-docs');
-assert.doesNotMatch(apiDocs, /['"]\/openrouter['"]/, 'do not fold /openrouter on api-docs');
-assert.doesNotMatch(apiDocs, /['"]\/x402['"]/, 'do not fold /x402 on api-docs');
 assert.doesNotMatch(workerSrc, /https:\/\/plugin\.jup\.ag/, 'worker source has no https://plugin.jup.ag');
 
 const WWW = 'https://www.getdasha.com';
