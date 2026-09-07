@@ -6,7 +6,7 @@
  * → same dest. /.well-known/ai.txt (Title-case) → 308 /ai.txt.
  * Keep existing /llms (+slash / Title-case) + /.well-known/llms.txt → /llms.txt.
  * Exact /llms-full.txt /llms.txt /ai.txt stay 200 (null dest).
- * Do not invent /llm /humans.txt /ads.txt /terms /tos /social.
+ * Do not invent /llm /humans.txt /ads.txt /terms /tos.
  * Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -58,7 +58,6 @@ const STAY_OUT = [
   '/ads.txt',
   '/terms',
   '/tos',
-  '/social',
   '/.well-known/llms-full.txt/',
   '/.well-known/ai.txt/',
   '/.well-known/llms.txt/',
