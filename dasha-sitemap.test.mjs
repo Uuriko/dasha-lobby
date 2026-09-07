@@ -14,10 +14,12 @@ const robots = worker.match(/const ROBOTS_TXT = `([\s\S]*?)`;/)[1];
 assert.equal(sitemap.trim(), GEN_SITEMAP.trim(), 'worker and static-gen sitemaps agree');
 assert.match(robots, /^Allow:\s*\/forum\s*$/m);
 assert.match(robots, /^Allow:\s*\/bag\s*$/m);
+assert.match(robots, /^Allow:\s*\/listings\s*$/m);
+assert.match(robots, /^Allow:\s*\/listings\.json\s*$/m);
 assert.ok(!/^Allow:\s*\/dasha\s*$/m.test(robots));
 assert.ok(!/^Allow:\s*\/studio\s*$/m.test(robots));
 
-for (const path of ['/forum', '/privacy', '/bag', '/which', '/crew', '/digest', '/compute', '/contribute', '/bounties']) {
+for (const path of ['/forum', '/privacy', '/bag', '/which', '/listings', '/listings.json', '/crew', '/digest', '/compute', '/contribute', '/bounties']) {
   assert.ok(sitemap.includes(`https://www.getdasha.com${path}</loc>`), `sitemap has ${path}`);
 }
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/<\/loc><lastmod>2026-09-01<\/lastmod>/);
@@ -36,4 +38,4 @@ assert.doesNotMatch(injected, /\?t=/);
 assert.doesNotMatch(injected, /lobby\?/);
 assert.ok(injected.includes('https://www.getdasha.com/forum</loc>'));
 
-console.log('dasha-sitemap: PASS (no lobby?t=, has /forum /privacy /bag /which /crew /digest /compute /contribute /bounties, no /studio /login)');
+console.log('dasha-sitemap: PASS (no lobby?t=, has /forum /privacy /bag /which /listings /crew /digest /compute /contribute /bounties, no /studio /login)');

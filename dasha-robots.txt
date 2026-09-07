@@ -7,6 +7,8 @@ Allow: /faucet
 Allow: /which
 Allow: /forum
 Allow: /bag
+Allow: /listings
+Allow: /listings.json
 Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /ai.txt

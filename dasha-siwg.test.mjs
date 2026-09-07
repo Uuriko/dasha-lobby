@@ -75,12 +75,14 @@ assert.match(mintGrokPairCode(Uint8Array.from([0, 1, 2, 3, 4, 5, 6, 7])), /^[0-9
 {
   const html = orderHomeLongPage('<main><header id="content">hero</header><section id="grwm">GRWM</section></main>');
   const grokAt = html.indexOf('id="grok-door"');
+  const listAt = html.indexOf('id="list-door"');
   const grwmAt = html.indexOf('id="grwm"');
   const chatAt = html.indexOf('id="chat-door"');
   const simpAt = html.indexOf('id="simp-door"');
   assert.ok(chatAt >= 0 && simpAt > chatAt, 'chat then simp');
   assert.ok(grwmAt > simpAt, 'grwm after first-paint doors');
   assert.ok(grokAt > grwmAt, 'grok-door after grwm');
+  assert.ok(listAt > grokAt, 'quiet list-door after grwm + grok');
   assert.match(html, /<p class="section-kicker">Grok Bot<\/p>/);
   assert.match(html, /<h2 class="section-title" id="grok-title">Sign in with Grok Bot\.<\/h2>/);
   assert.match(html, /Ray Fernando/);

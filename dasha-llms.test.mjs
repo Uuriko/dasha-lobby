@@ -55,7 +55,10 @@ assert.match(full, /^## Identity/m, 'llms-full is markdown sections, not a URL l
 assert.match(full, /^## Which \$dasha\?/m, 'llms-full inlines Which $dasha');
 assert.match(full, /^## The bag/m, 'llms-full inlines The bag');
 assert.ok(llms.includes('/bag'), 'llms.txt lists /bag');
-for (const path of ['/login', '/contribute', '/bounties', '/crew', '/compute']) {
+assert.ok(llms.includes('/listings'), 'llms.txt lists /listings');
+assert.ok(llms.includes('/listings.json'), 'llms.txt lists /listings.json');
+assert.match(full, /^## Dasha List/m, 'llms-full inlines Dasha List');
+for (const path of ['/login', '/contribute', '/bounties', '/crew', '/compute', '/listings']) {
   assert.ok(llms.includes(path), `llms.txt lists live 200 ${path}`);
   assert.ok(full.includes(`https://www.getdasha.com${path}`), `llms-full lists live 200 ${path}`);
 }
@@ -87,12 +90,20 @@ assert.ok(!/^Allow:\s*\/studio\s*$/m.test(robots), 'robots must not Allow killed
 assert.ok(!/^Allow:\s*\/dasha\s*$/m.test(robots), 'robots must not Allow killed Desk');
 assert.ok(robots.includes('/ai.txt'), 'robots mention /ai.txt');
 assert.ok(robots.includes('/bag'), 'robots mention /bag');
+assert.ok(robots.includes('/listings'), 'robots mention /listings');
+assert.ok(robots.includes('/listings.json'), 'robots mention /listings.json');
 assert.ok(!robots.includes('Disallow:'), 'retired routes stay fetchable');
 
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/llms.txt</loc>'), 'worker sitemap lists /llms.txt');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/llms-full.txt</loc>'), 'worker sitemap lists /llms-full.txt');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/which</loc>'), 'worker sitemap lists /which');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/bag</loc>'), 'worker sitemap lists /bag');
+assert.ok(sitemap.includes('<loc>https://www.getdasha.com/listings</loc>'), 'worker sitemap lists /listings');
+assert.ok(sitemap.includes('<loc>https://www.getdasha.com/listings.json</loc>'), 'worker sitemap lists /listings.json');
+assert.ok(
+  sitemap.includes('<loc>https://www.getdasha.com/listings</loc><lastmod>2026-09-06</lastmod>'),
+  'sitemap lastmod 2026-09-06 for /listings',
+);
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/crew</loc>'), 'worker sitemap lists /crew');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/digest</loc>'), 'worker sitemap lists /digest');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/compute</loc>'), 'worker sitemap lists /compute');
@@ -140,10 +151,10 @@ assert.ok(
   'forum stays lastmod 2026-09-01 (308, not indexable 200)',
 );
 
-assert.ok(diskRobots.includes('/llms.txt') && diskRobots.includes('/llms-full.txt') && diskRobots.includes('/ai.txt') && diskRobots.includes('/bag'), 'dasha-robots.txt mentions llm files, /ai.txt and /bag');
+assert.ok(diskRobots.includes('/llms.txt') && diskRobots.includes('/llms-full.txt') && diskRobots.includes('/ai.txt') && diskRobots.includes('/bag') && diskRobots.includes('/listings'), 'dasha-robots.txt mentions llm files, /ai.txt, /bag and /listings');
 assert.ok(!/^Allow:\s*\/verse\s*$/m.test(diskRobots) && !/^Allow:\s*\/learn\s*$/m.test(diskRobots), 'disk robots keeps /verse /learn gone');
 assert.ok(!/^Allow:\s*\/studio\s*$/m.test(diskRobots), 'disk robots must not Allow /studio');
-assert.ok(diskSitemap.includes('/llms.txt') && diskSitemap.includes('/llms-full.txt') && diskSitemap.includes('/ai.txt') && diskSitemap.includes('/bag'), 'dasha-sitemap.xml lists llm files, /ai.txt and /bag');
+assert.ok(diskSitemap.includes('/llms.txt') && diskSitemap.includes('/llms-full.txt') && diskSitemap.includes('/ai.txt') && diskSitemap.includes('/bag') && diskSitemap.includes('/listings'), 'dasha-sitemap.xml lists llm files, /ai.txt, /bag and /listings');
 assert.ok(!diskSitemap.includes('getdasha.com/studio</loc>'), 'disk sitemap must not list /studio');
 assert.ok(!diskSitemap.includes('getdasha.com/dasha</loc>'), 'disk sitemap must not list /dasha');
 assert.ok(ROBOTS_TXT.includes('/llms.txt') && SITEMAP_XML.includes('/llms.txt'), 'static-gen robots/sitemap stay in sync');
