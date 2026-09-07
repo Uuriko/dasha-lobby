@@ -77,7 +77,7 @@ export const X_CONNECT_JS = `/** Site-wide login status + /login controller. No 
     var pairCode = root.querySelector('[data-grok-code]');
     var pairSay = root.querySelector('[data-grok-say]');
     var returnTo = new URLSearchParams(location.search).get('return');
-    if (!['/compute', '/compute#use', '/compute#provide', '/compute#night', '/compute#build', '/compute#source', '/compute#sponsor'].includes(returnTo)) returnTo = '';
+    if (!['/compute', '/compute#use', '/compute#ask', '/compute#provide', '/compute#night', '/compute#build', '/compute#source', '/compute#sponsor', '/compute#earn', '/compute#credits', '/compute#pay'].includes(returnTo)) returnTo = '';
     if (returnTo) nextLink.href = returnTo;
     var grokTimer = 0;
 
@@ -210,7 +210,7 @@ export const X_CONNECT_JS = `/** Site-wide login status + /login controller. No 
   else boot();
 })(typeof window !== 'undefined' ? window : this);
 `;
-export const X_CONNECT_SRI = "sha384-DD4R1qMUUftlIFJU3g7ZEourjvxcSYVEgduLdXUFYfTr8DlnmAVh+Hm0EVLU/hQY";
+export const X_CONNECT_SRI = "sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD";
 export const ROBOTS_TXT = `# getdasha.com — public crawl rules (also served at lobby.getdasha.com/robots.txt)
 #
 # This file is the source for what the Worker serves at /robots.txt. It used to be a different
@@ -441,7 +441,7 @@ let tickDelay=30000;let every=setTimeout(function again(){tick();tickDelay=Math.
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){tickDelay=30000;tick()}});
 window.addEventListener('pagehide',()=>clearTimeout(every));
 }catch(e){}})();</script>
-<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-DD4R1qMUUftlIFJU3g7ZEourjvxcSYVEgduLdXUFYfTr8DlnmAVh+Hm0EVLU/hQY" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
 </body></html>`;
 export const HOWTO_HTML = `<!doctype html>
 <html lang="en">
@@ -860,7 +860,7 @@ $('promotion').addEventListener('close',function(){var choice=this.returnValue,m
 function onBuyClick(event){event.preventDefault();trackEvent('buy_intent','dasha-chess-buy-intent');openBuySheet()}var buy=$('buy-dasha');if(buy)buy.addEventListener('click',onBuyClick);var buyStage=$('buy-dasha-stage');if(buyStage)buyStage.addEventListener('click',onBuyClick);var stage=stageEl();if(stage)stage.addEventListener('click',function(event){var a=event.target.closest&&event.target.closest('a.buy-dasha');if(!a||!stage.contains(a)||a===buy||a===buyStage)return;event.preventDefault();onBuyClick(event)});var stageOut=$('stage-out');if(stageOut)stageOut.addEventListener('click',leaveStageChrome);document.addEventListener('fullscreenchange',function(){var el=stageEl();if(!(document.fullscreenElement||document.webkitFullscreenElement)&&el)el.classList.remove('stage-on');paintStage()});document.addEventListener('webkitfullscreenchange',function(){var el=stageEl();if(!(document.fullscreenElement||document.webkitFullscreenElement)&&el)el.classList.remove('stage-on');paintStage()});window.addEventListener('message',function(event){if(event.origin===LOBBY&&event.data&&event.data.type==='dasha-x-linked'&&!replay)resumeRoute()});window.addEventListener('offline',function(){stopPoll();clearTimeout(tournamentPoll);tournamentPoll=0;if(game&&game.status==='active')$('game-status').textContent='Offline · clocks continue on the server'});window.addEventListener('online',function(){resumeVisible()});document.addEventListener('visibilitychange',function(){if(document.hidden){stopPoll();clearTimeout(tournamentPoll);tournamentPoll=0;clearInterval(clockTimer);clockTimer=0}else{restoreChessTitle();resumeVisible();armHere()}});window.addEventListener('focus',restoreChessTitle);trackEvent('page_open','dasha-chess-page-open');bindBoard();resumeRoute();
 })();
 </script>
-<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-DD4R1qMUUftlIFJU3g7ZEourjvxcSYVEgduLdXUFYfTr8DlnmAVh+Hm0EVLU/hQY" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
 </body>
 </html>
 `;
@@ -927,7 +927,7 @@ export const LOBBY_PAGE_HTML = `<!doctype html>
 <script>(function(){var mint='53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';var btn=document.getElementById('forum-copy');var ca=document.querySelector('.forum-ca');if(!btn)return;btn.addEventListener('click',function(){function ok(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1200)}function select(){if(!ca){btn.textContent='Select';return}try{var r=document.createRange();r.selectNodeContents(ca);var s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Select'}catch(e){}}function legacy(){try{var ta=document.createElement('textarea');ta.value=mint;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.select();var copied=false;try{copied=document.execCommand('copy')}catch(e){}document.body.removeChild(ta);return copied}catch(e){return false}}function timed(p){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('copy'))},600)})])}if(navigator.clipboard&&navigator.clipboard.writeText)timed(navigator.clipboard.writeText(mint)).then(ok).catch(function(){legacy()?ok():select()});else if(legacy())ok();else select()});})();</script>
 <script>(function(){var go=document.getElementById('forum-play-go');var box=document.getElementById('dasha-chess');if(!go||!box)return;go.addEventListener('click',function(){if(!box.querySelector('iframe')){var f=document.createElement('iframe');f.src='/chess?embed=1';f.title='Dasha chess';f.setAttribute('allow','fullscreen');f.setAttribute('referrerpolicy','same-origin');box.appendChild(f)}box.hidden=false;go.textContent='Playing'});})();</script>
 <script>(function(){var s=document.createElement('script');s.src='https://lobby.getdasha.com/client/lobby.js';s.integrity='sha384-kbdOBgI1xatI29tpC1mTRIhzk6BcknjChBBArU8D2pUxC60kyuxEamHF6+uJbYt0';s.crossOrigin='anonymous';s.defer=true;document.head.appendChild(s)})();</script>
-<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-DD4R1qMUUftlIFJU3g7ZEourjvxcSYVEgduLdXUFYfTr8DlnmAVh+Hm0EVLU/hQY" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
 </body>
 </html>
 `;
@@ -965,7 +965,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     <p class="note" data-login-next hidden><a href="/simp#holder">Verify holder perks →</a></p>
     <p class="note"><a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&amp;buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">Buy</a> · <a href="https://www.getdasha.com/privacy">Privacy</a></p>
   </main>
-  <script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-DD4R1qMUUftlIFJU3g7ZEourjvxcSYVEgduLdXUFYfTr8DlnmAVh+Hm0EVLU/hQY" crossorigin="anonymous" defer></script>
+  <script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
 </body>
 </html>
 `;
@@ -1060,7 +1060,7 @@ main{display:block;width:min(36rem,calc(100% - 32px));margin:0 auto;padding:28px
 })();
 </script>
 <script src="https://lobby.getdasha.com/client/faucet.js" integrity="sha384-LSNvl1mUDLnGLVel61mnmtvL4pk4j8TZf9ZO6fzIgoUw5zJ/SgbRkfYCpkXsw14x" crossorigin="anonymous" defer></script>
-<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-DD4R1qMUUftlIFJU3g7ZEourjvxcSYVEgduLdXUFYfTr8DlnmAVh+Hm0EVLU/hQY" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
 </body>
 </html>`;
 export const ASSET_HASH = "e037071514d17a86";

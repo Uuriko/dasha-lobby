@@ -112,7 +112,7 @@ const WF_SIGNIN = `<div class="w-embed w-script"><style>
 </script></div>`;
 const WF_PRODUCT_EMBED = `<div class="w-embed w-script"><style>@view-transition{navigation:auto}.dasha-hero{min-height:640px}</style>
 <main class="dasha" id="top"><header class="dasha-hero wrap" id="content"><div><h1>$dasha</h1></div></header></main>
-<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-DD4R1qMUUftlIFJU3g7ZEourjvxcSYVEgduLdXUFYfTr8DlnmAVh+Hm0EVLU/hQY" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
 </div>`;
 const RETIRED_ICON = `<!-- The site icon now comes from the site-wide head block (dasha-favicon.svg — cherries). The
      page-level <link rel="icon"> that used to sit here carried the RETIRED product's mark, and

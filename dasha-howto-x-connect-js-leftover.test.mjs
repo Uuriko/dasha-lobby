@@ -21,7 +21,7 @@ import { HOWTO_HTML } from "./dasha-lobby-static-gen.mjs";
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, "dasha-lobby-worker.mjs"), "utf8");
 const MINT = "53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump";
-const XTAG = '<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-DD4R1qMUUftlIFJU3g7ZEourjvxcSYVEgduLdXUFYfTr8DlnmAVh+Hm0EVLU/hQY" crossorigin="anonymous" defer></script>';
+const XTAG = '<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>';
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, "worker must not mention plugin.jup.ag");
 assert.ok(workerSrc.includes("Leftover /how-to-buy x-connect.js after CSS/JS strip"));

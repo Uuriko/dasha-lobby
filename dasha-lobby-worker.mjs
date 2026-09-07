@@ -284,6 +284,7 @@ import {
   validateReport,
   visibleReplies,
 } from './dasha-forum.mjs';
+import { handleMailSmoke, isMailSmokePath } from './dasha-mail-resend.mjs';
 
 const LLMS_TXT = `# $dasha is dash_eats on Solana
 
@@ -10333,6 +10334,9 @@ export default {
     }
     const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
+    if (isMailSmokePath(url.pathname)) {
+      return handleMailSmoke(request, env);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/privacy' || url.pathname === '/privacy/')) {
       return privacyPageResponse(request);
     }
