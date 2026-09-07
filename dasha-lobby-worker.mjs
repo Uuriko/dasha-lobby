@@ -3139,11 +3139,25 @@ const POTTER_HOWTO_308_PATHS = new Set([
   // Leftover: /purchase (+slash / Title-case) still html-404
   // while /buy /howto already 308→/how-to-buy. Exact /how-to-buy stays 200.
   '/purchase', '/purchase/',
-  // Leftover DEX doors (Worker 929dd85a): live /orca /meteora (+slash /
-  // Title-case) html-404 → 308 /how-to-buy. Peers of /buy /howto.
-  // On-site /how-to-buy only — never external DEX hosts from Worker redirects.
+  // Leftover DEX venue peers of /orca /meteora /pumpfun /jupiter (Worker
+  // 66440d1c-ddc7-4f6f-b6a1-bc97ec97b67d). live /phoenix /lifinity /openbook
+  // /drift /serum /pump /pumpswap /pump-swap /pump_swap /jup (+slash /
+  // Title-case) html-404 → 308 /how-to-buy. On-site /how-to-buy only —
+  // never external DEX hosts from Worker redirects.
   '/orca', '/orca/',
   '/meteora', '/meteora/',
+  '/pumpfun', '/pumpfun/',
+  '/jupiter', '/jupiter/',
+  '/phoenix', '/phoenix/',
+  '/lifinity', '/lifinity/',
+  '/openbook', '/openbook/',
+  '/drift', '/drift/',
+  '/serum', '/serum/',
+  '/pump', '/pump/',
+  '/pumpswap', '/pumpswap/',
+  '/pump-swap', '/pump-swap/',
+  '/pump_swap', '/pump_swap/',
+  '/jup', '/jup/',
 ]);
 const POTTER_LOGIN_308_PATHS = new Set([
   '/grok', '/grok/',
@@ -3679,6 +3693,29 @@ const POTTER_LISTINGS_308_PATHS = new Set([
   // Dest slash: live /listings/ 308 → /listings. Exact /listings stays 200.
   '/listings/',
 ]);
+/** Leftover Solana trading-terminal / explorer doors (Worker
+ * 66440d1c-ddc7-4f6f-b6a1-bc97ec97b67d). Live /photon /bullx /axiom /trojan
+ * /gmgn /defined /solanafm /solana-fm /solana_fm (+slash / Title-case)
+ * html-404 → 308 /listings. Peers of /dexscreener /solscan. Dest slash
+ * /listings/ folds here. Exact /listings stays 200 (null dest). Skip
+ * /explorer /faq /waitlist /terms /blog /careers /hiring /openai /discord
+ * /roadmap /whitepaper /tokenomics /x402 /openrouter /status /health
+ * /healthz /v1 (intentional 404). */
+const POTTER_LISTINGS_308_PATHS = new Set([
+  '/dexscreener', '/dexscreener/',
+  '/solscan', '/solscan/',
+  '/photon', '/photon/',
+  '/bullx', '/bullx/',
+  '/axiom', '/axiom/',
+  '/trojan', '/trojan/',
+  '/gmgn', '/gmgn/',
+  '/defined', '/defined/',
+  '/solanafm', '/solanafm/',
+  '/solana-fm', '/solana-fm/',
+  '/solana_fm', '/solana_fm/',
+  // Dest slash: live /listings/ 308 → /listings. Exact /listings stays 200.
+  '/listings/',
+]);
 /** Leftover /bounty (+slash / Title-case) still html-404 while /bounties is 200. */
 const POTTER_BOUNTIES_308_PATHS = new Set([
   '/bounty', '/bounty/',
@@ -3880,8 +3917,8 @@ export function potterHome308Dest(path) {
   // Machine files (/Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Llms-Full.txt) same pattern.
   // Quiet /fill /jar /fill-the-jar /tip /tip-me /tips /compute/tips /donate /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar /once-a-day|/once_a_day → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana /hosted|/community|/mixture|/compute/hosted|/compute/community|/compute/mixture /hosts|/inferences|/key|/keys|/apikey|/api-key|/api_key|/install|/doctor|/me|/usage|/inference|/gpu|/gpus|/pricing|/providing|/mac-kit|/compute/hosts|/compute/inferences|/compute/key|/compute/keys|/compute/apikey|/compute/api-key|/compute/api_key|/compute/install|/compute/doctor|/compute/me|/compute/usage|/compute/inference|/compute/gpu|/compute/gpus|/compute/pricing|/compute/providing|/compute/mac-kit /fleet|/rent|/capacity|/offer|/offers|/worker|/workers|/node|/nodes|/cluster|/pool|/machines|/benchmark|/queue|/dashboard|/console|/balance|/pay-usdc|/apple-silicon|/macos|/silicon|/local|/edge|/onboard|/setup|/quickstart|/playground|/sandbox|/hello|/example|/examples|/prefer|/preference|/preferences|/compute/fleet|/compute/rent|/compute/capacity|/compute/offer|/compute/offers|/compute/worker|/compute/workers|/compute/node|/compute/nodes|/compute/cluster|/compute/pool|/compute/machines|/compute/benchmark|/compute/queue|/compute/dashboard|/compute/console|/compute/balance|/compute/pay-usdc|/compute/apple-silicon|/compute/macos|/compute/silicon|/compute/local|/compute/edge|/compute/onboard|/compute/setup|/compute/quickstart|/compute/playground|/compute/sandbox|/compute/hello|/compute/example|/compute/examples|/compute/prefer|/compute/preference|/compute/preferences /settlement|/settlements|/invoice|/invoices|/credit|/refill|/kits|/try|/getting-started|/get-started|/getstarted|/mac_kit|/compute/settlement|/compute/settlements|/compute/invoice|/compute/invoices|/compute/credit|/compute/refill|/compute/kits|/compute/try|/compute/getting-started|/compute/get-started|/compute/getstarted|/compute/mac_kit /plan|/plans|/prices|/payout|/payouts|/withdraw|/cashout|/payment|/payments|/checkout|/getting_started|/mac-setup|/mac_setup|/agents|/agent|/mcp|/tools|/tool|/earn|/mac|/kit|/compute/plan|/compute/plans|/compute/prices|/compute/price|/compute/payout|/compute/payouts|/compute/withdraw|/compute/cashout|/compute/payment|/compute/payments|/compute/checkout|/compute/getting_started|/compute/mac-setup|/compute/mac_setup|/compute/agents|/compute/agent|/compute/mcp|/compute/tools|/compute/tool| /compute/earn|/compute/mac|/compute/kit /help|/guide|/tutorial|/support|/docs-help|/getting-help|/contact|/free-credits|/buy-credits|/get-credits|/compute/help|/compute/guide|/compute/tutorial|/compute/support|/compute/contact|/compute/free-credits|/compute/buy-credits|/compute/get-credits|/compute/docs-help|/compute/getting-help|/app|/application|/compute/app|/compute/application /prefermlx|/compute/prefermlx|/m4|/compute/m4|/balances|/compute/balances|/credits/buy|/compute/credits/buy|/prefer-mlx|/prefer_mlx|/mlx|/compute/prefer-mlx|/compute/prefer_mlx|/compute/mlx /provider-kit|/provide-kit|/host-kit|/install-kit|/dasha-kit|/compute-kit|/provider_kit|/provide_kit|/host_kit|/install_kit|/dasha_kit|/compute_kit|/compute/provider-kit|/compute/provide-kit|/compute/host-kit|/compute/install-kit|/compute/dasha-kit|/compute/compute-kit|/compute/provider_kit|/compute/provide_kit|/compute/host_kit|/compute/install_kit|/compute/dasha_kit|/compute/compute_kit /chatgpt|/cursor|/copilot|/vscode|/windsurf|/aider|/continue|/zed|/compute/chatgpt|/compute/cursor|/compute/copilot|/compute/vscode|/compute/windsurf|/compute/aider|/compute/continue|/compute/zed → /compute. Apex /gateway|/compute/gateway|/docs|/endpoint|/endpoints|/sdk|/cli|/compute/endpoint|/compute/endpoints|/compute/sdk|/compute/cli → /compute/api. Exact lowercase product stays null for 200 handlers.
   // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
-  // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy|/purchase|/orca|/meteora → /how-to-buy.
-  // Leftover /gecko|/geckoterminal|/gecko-terminal|/gecko_terminal|/dextools|/solscan + dest slash /listings/ → /listings (Worker 929dd85a). Exact /listings stays 200.
+  // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy|/purchase|/orca|/meteora|/pumpfun|/jupiter|/phoenix|/lifinity|/openbook|/drift|/serum|/pump|/pumpswap|/pump-swap|/pump_swap|/jup → /how-to-buy.
+  // Leftover /photon|/bullx|/axiom|/trojan|/gmgn|/defined|/solanafm|/solana-fm|/solana_fm + peers /dexscreener|/solscan + dest slash /listings/ → /listings (Worker 66440d1c). Exact /listings stays 200.
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
   // Privacy synonyms: /privacy stays 200 (null). /help now folds via COMPUTE_TAB → /compute
   // (not /privacy). Still skip /terms /tos /legal /faq — do not invent a privacy dest.
@@ -3914,9 +3951,12 @@ export function potterHome308Dest(path) {
   if (POTTER_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login#grok';
   if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
   if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
-  // Leftover /sim (+slash / Title-case) → /simp. Exact /simp stays 200.
-  // Peer of live /board /leaderboard. Do not fold /simp/board.
-  if (POTTER_SIMP_308_PATHS.has(p)) return 'https://www.getdasha.com/simp';
+  // Leftover /photon /bullx /axiom /trojan /gmgn /defined /solanafm /solana-fm
+  // /solana_fm + peers /dexscreener /solscan (+slash / Title-case) + dest slash
+  // /listings/ → /listings (Worker 66440d1c). Exact /listings stays 200.
+  // Skip /explorer /faq /waitlist /terms /blog /careers /hiring /openai /discord
+  // /roadmap /whitepaper /tokenomics /x402 /openrouter /status /health /healthz /v1.
+  if (POTTER_LISTINGS_308_PATHS.has(p)) return 'https://www.getdasha.com/listings';
   // Leftover /bounty (+slash / Title-case) → /bounties. Exact /bounties stays 200.
   if (POTTER_BOUNTIES_308_PATHS.has(p)) return 'https://www.getdasha.com/bounties';
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/faucet';
