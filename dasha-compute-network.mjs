@@ -203,6 +203,20 @@ function normalizeFactoryCounters(raw) {
 }
 
 
+function computeApiRootBody(env) {
+  return {
+    live: Boolean(env?.AI),
+    model: 'gpt-oss-20b',
+    login_required: true,
+    limit: '3 free / 10 min · then credits',
+    usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)',
+    billing: {
+      chat_completions: 'Prepaid credits ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection',
+      keys: `Create-time spend cap default $${API_KEY_LIMIT_DEFAULT_CENTS / 100}/month · 402 on exceed · see /caps`,
+    },
+  };
+}
+
 function computeV1Gateway(request, allowedOrigin, credentials) {
   const res = json({
     object: 'gateway',
@@ -583,7 +597,7 @@ export class ComputeNetwork {
     const path = new URL(request.url).pathname, now = Date.now(), credentials = Boolean(allowedOrigin);
     const openaiError = (message, status = 400, type = 'invalid_request_error') => json({ error: { message, type, code: null } }, status, allowedOrigin || '*', credentials);
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const res = json({ live: Boolean(this.env.AI), model: 'gpt-oss-20b', login_required: true, limit: '3 free / 10 min · then credits', usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)' }, 200, allowedOrigin || '*', credentials);
+      const res = json(computeApiRootBody(this.env), 200, allowedOrigin || '*', credentials);
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
     }
     if ((path === '/compute/api/healthz' || path === '/compute/api/healthz/') && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -1799,7 +1813,7 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 export async function computeApi(request, env, allowedOrigin) {
   const path = new URL(request.url).pathname, credentials = Boolean(allowedOrigin);
   if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
-    const res = json({ live: Boolean(env.AI), model: 'gpt-oss-20b', login_required: true, limit: '3 free / 10 min · then credits', usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)' }, 200, allowedOrigin || '*', credentials);
+    const res = json(computeApiRootBody(env), 200, allowedOrigin || '*', credentials);
     return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
   }
   if ((path === '/compute/api/healthz' || path === '/compute/api/healthz/') && (request.method === 'GET' || request.method === 'HEAD')) {
