@@ -630,7 +630,7 @@ const DASHA_LIST_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 const DASHA_LIST_PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
 const LISTINGS_UPDATED_AT = '2026-09-07T22:30:00.000Z';
 const LISTINGS_VENUES = [
-  { id: 'getdasha', name: 'getdasha', href: 'https://www.getdasha.com/listings' },
+  { id: 'getdasha', name: 'getdasha', href: 'https://www.getdasha.com/how-to-buy' },
   { id: 'jupiter', name: 'Jupiter', href: 'https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' },
   { id: 'raydium', name: 'Raydium', href: 'https://raydium.io/swap/?inputMint=sol&outputMint=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' },
   { id: 'dexscreener', name: 'DexScreener', href: 'https://dexscreener.com/solana/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7' },
