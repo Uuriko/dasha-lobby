@@ -243,7 +243,7 @@ footer a:hover{color:var(--paper)}
   <h1 class="tf-q" title="OCM host · enroll">Host.</h1>
   <p class="fine" id="host-enroll-fine">Enroll code · never paste a provider token.</p>
   <div class="tf-choices" role="group" aria-label="Host">
-    <a class="tf-choice primary" id="host-run" href="/compute/ocm/provider">Open</a>
+    <a class="tf-choice primary" id="host-run" href="/compute/ocm/provider" title="Enroll code · install guide">Enroll</a>
     <a class="tf-choice secondary" id="host-status" href="/compute/ocm/status" title="Cold loads on first request · Ready/Serving ~1s">Status</a>
   </div>
 </section>
@@ -698,7 +698,7 @@ function paintSplit(){
   }
   const hostOpen=$('host-run');
   if(hostOpen){
-    hostOpen.textContent=(ocmHosts!=null&&ocmHosts>0)?`Open · ${ocmHosts}`:'Open';
+    hostOpen.textContent=(ocmHosts!=null&&ocmHosts>0)?`Enroll · ${ocmHosts}`:'Enroll';
     hostOpen.removeAttribute('aria-description');
   }
   paintProvideBeat();

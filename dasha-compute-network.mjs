@@ -505,7 +505,12 @@ export function resolveJobRoute(owner, input = {}, providers = [], now = Date.no
 function mergeRouteFromHeaders(input, request) {
   const next = input && typeof input === 'object' ? { ...input } : {};
   const hdr = String(request?.headers?.get?.('X-Dasha-Route') || request?.headers?.get?.('x-dasha-route') || '').trim().toLowerCase();
-  if (hdr && !next.route) next.route = hdr;
+  if (!hdr) return next;
+  if (hdr === 'prefer') {
+    if (next.prefer_self !== true && next.preferSelf !== true) next.prefer_self = true;
+    return next;
+  }
+  if ((hdr === 'self' || hdr === 'community' || hdr === 'mixture') && !next.route) next.route = hdr;
   return next;
 }
 

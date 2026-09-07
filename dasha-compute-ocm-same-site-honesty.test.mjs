@@ -26,7 +26,7 @@ function assertHonesty(html, label) {
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits gate`);
   assert.match(html, /id=["']market-open["'][^>]*href=["']\/compute\/ocm["'][^>]*>Console</, `${label} Console → /compute/ocm`);
   assert.match(html, /id=["']market-host["'][^>]*href=["']\/compute\/ocm\/provider["']/, `${label} Market Host → /compute/ocm/provider`);
-  assert.match(html, /id=["']host-run["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Open</, `${label} Host Open → /compute/ocm/provider`);
+  assert.match(html, /id=["']host-run["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Enroll</, `${label} Host Open → /compute/ocm/provider`);
   assert.doesNotMatch(html, /Leaves Dasha\./, `${label} no Leaves Dasha.`);
   assert.doesNotMatch(html, /id=["']market-leave-fine["']/, `${label} no market-leave-fine`);
   assert.doesNotMatch(html, /id=["']host-leave-fine["']/, `${label} no host-leave-fine`);

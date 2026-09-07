@@ -54,11 +54,11 @@ function assertMarkup(html, label) {
   assert.match(html, /ask-credits['"]\)\?\.addEventListener\(['"]click['"],\(\)=>\{setComputeIntent\(['"]credits['"]\);showTf\(['"]credits['"]\)/, `${label} ask-credits → credits`);
   assert.match(html, /if\(step===['"]ask['"]\)\{paintAskCredits\(\);if\(loggedIn\)loadCreditsBalance\(\)\}/, `${label} showTf ask paints credits meter`);
   assert.match(html, /id=["']step-host["'][^>]*data-tf=["']host["']/, `${label} host peek step`);
-  assert.match(html, /id=["']host-run["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Open</, `${label} Host Open → provider`);
+  assert.match(html, /id=["']host-run["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Enroll</, `${label} Host Open → provider`);
   assert.match(html, /showTf\(['"]host['"]\)/, `${label} showTf host`);
   assert.match(html, /path=\['ask','host'\]/, `${label} host progress path`);
   assert.match(html, /hostOpen=\$\(['"]host-run['"]\)/, `${label} hostOpen paint`);
-  assert.match(html, /hostOpen\.textContent=\(ocmHosts!=null&&ocmHosts>0\)\?`Open · \$\{ocmHosts\}`:'Open'/, `${label} host Open · N`);
+  assert.match(html, /hostOpen\.textContent=\(ocmHosts!=null&&ocmHosts>0\)\?`Enroll · \$\{ocmHosts\}`:'Enroll'/, `${label} host Open · N`);
   assert.match(html, /id=["']market-host["'][^>]*href=["']\/compute\/ocm\/provider["']/, `${label} peek Host`);
   assert.match(html, />Host</, `${label} Host label`);
   assert.match(html, /Console · \$\{ocmHosts\}/, `${label} Console · N`);
@@ -481,7 +481,7 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(quietNav.provide, "Provide", "quiet Provide plain");
   assert.equal(quietNav.host, "Host", "quiet Host plain");
   assert.equal(quietNav.open, "Console · 2", "peek Console · N");
-  assert.equal(quietNav.hostOpen, "Open · 2", "host peek Open · N");
+  assert.equal(quietNav.hostOpen, "Enroll · 2", "host peek Open · N");
   // Back → gate
   await page.click("#back-ask");
   assert.equal(await page.evaluate(() => document.body.dataset.step), "gate", "Back → gate");
@@ -556,7 +556,7 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(hostPeek.open, true);
   assert.equal(hostPeek.askGone, true);
   assert.equal(hostPeek.openHref, "/compute/ocm/provider");
-  assert.match(hostPeek.openLabel, /^Open( · \d+)?$/, "Host Open label honesty");
+  assert.match(hostPeek.openLabel, /^Enroll( · \d+)?$/, "Host Enroll label honesty");
   assert.equal(hostPeek.leaveFine, null, "no host-leave-fine");
   assert.equal(hostPeek.leaveCopy, false, "Host peek does not say Leaves Dasha.");
   await page.click("#step-host .tf-back");

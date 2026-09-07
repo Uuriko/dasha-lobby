@@ -56,11 +56,11 @@ function assertLess(html, label) {
   assert.match(html, /id=["']ask-host["'][^>]*>Host</, `${label} quiet Host button`);
   assert.doesNotMatch(html, /id=["']ask-host["'][^>]*href=/, `${label} Ask Host no hard leave`);
   assert.match(html, /id=["']step-host["']/, `${label} host Typeform peek`);
-  assert.match(html, /id=["']host-run["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Open</, `${label} host Open`);
+  assert.match(html, /id=["']host-run["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Enroll</, `${label} host Open`);
   assert.match(html, /showTf\(['"]host['"]\)/, `${label} showTf host`);
   assert.match(html, /path=\['ask','host'\]/, `${label} ask→host progress`);
   assert.match(html, /hostOpen=\$\(['"]host-run['"]\)/, `${label} hostOpen paint`);
-  assert.match(html, /hostOpen\.textContent=\(ocmHosts!=null&&ocmHosts>0\)\?`Open · \$\{ocmHosts\}`:'Open'/, `${label} host Open · N`);
+  assert.match(html, /hostOpen\.textContent=\(ocmHosts!=null&&ocmHosts>0\)\?`Enroll · \$\{ocmHosts\}`:'Enroll'/, `${label} host Open · N`);
   assert.match(html, /id=["']step-market["']/, `${label} market Typeform peek`);
   assert.match(html, /id=["']market-open["'][^>]*href=["']\/compute\/ocm["']/, `${label} market Console href`);
   assert.match(html, /id=["']market-host["'][^>]*href=["']\/compute\/ocm\/provider["']/, `${label} market Host`);

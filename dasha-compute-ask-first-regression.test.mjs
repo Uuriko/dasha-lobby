@@ -101,7 +101,7 @@ function assertAskFirstCore(html, label) {
   assert.doesNotMatch(html, /\['ocm-door','ask-ocm'\]/, `${label} no joint ocm label loop`);
   assert.match(
     html,
-    /hostOpen\.textContent=\(ocmHosts!=null&&ocmHosts>0\)\?`Open · \$\{ocmHosts\}`:'Open'/,
+    /hostOpen\.textContent=\(ocmHosts!=null&&ocmHosts>0\)\?`Enroll · \$\{ocmHosts\}`:'Enroll'/,
     `${label} host peek Open · N`
   );
   if (/Console · \$\{ocmHosts\}/.test(html)) {
