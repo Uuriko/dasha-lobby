@@ -55,8 +55,8 @@ assert.match(
 );
 assert.match(
   workerSrc,
-  /NEVER plugin\.jup\.ag or external DEX hosts/,
-  'howto leftover comment forbids plugin.jup.ag + external DEX hosts',
+  /On-site \/how-to-buy only — never external DEX hosts/,
+  'howto leftover comment forbids external DEX hosts',
 );
 assert.match(
   workerSrc,

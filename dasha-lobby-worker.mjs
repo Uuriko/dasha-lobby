@@ -2873,7 +2873,7 @@ const POTTER_HOWTO_308_PATHS = new Set([
   '/purchase', '/purchase/',
   // Leftover DEX doors (Worker 3f2d0e6d): /jupiter /raydium /pumpfun /pump-fun
   // /pump_fun (+slash / Title-case) → /how-to-buy. DEX peers of /buy /swap.
-  // NEVER plugin.jup.ag or external DEX hosts from Worker redirects.
+  // On-site /how-to-buy only — never external DEX hosts from Worker redirects.
   '/swap', '/swap/',
   '/jupiter', '/jupiter/',
   '/raydium', '/raydium/',
@@ -3531,7 +3531,7 @@ export function potterHome308Dest(path) {
   // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy|/purchase → /how-to-buy.
   // Leftover /tokens|/token|/mint → / (Worker 3f2d0e6d). Skip /tokenomics /whitepaper /roadmap.
   // Leftover /birdeye|/cmc|/coingecko|/coinmarketcap → /listings.
-  // Leftover DEX /jupiter|/raydium|/pumpfun|/pump-fun|/pump_fun|/swap → /how-to-buy (never plugin.jup.ag).
+  // Leftover DEX /jupiter|/raydium|/pumpfun|/pump-fun|/pump_fun|/swap → /how-to-buy (on-site only).
   // Leftover /socials|/social → /lobby (keep /community → /compute). Skip /discord.
   // Leftover /vision|/tts|/text-to-speech|/text_to_speech|/embeddings + /compute/* tabs → /compute/api.
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
