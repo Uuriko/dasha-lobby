@@ -403,7 +403,8 @@ footer a:hover{color:var(--paper)}
     <button type="button" class="tf-choice secondary" id="tf-done">Done</button>
     <a class="tf-quiet" id="answer-api" href="/login?return=/compute%23build" hidden>API key</a>
     <button type="button" class="tf-quiet" id="answer-credits" hidden>Credits</button>
-    <button type="button" class="tf-quiet" id="answer-retry" hidden>Retry</button>
+    <!-- midstream-fail-honesty:2026-09-07 -->
+    <button type="button" class="tf-quiet" id="answer-retry" hidden data-midstream-fail="1">Retry</button>
   </div>
 </section>
 
@@ -1337,8 +1338,8 @@ async function readSse(response){
         const raw=line.slice(5).trimStart();
         if(raw==='[DONE]')return out;
         let payload;try{payload=JSON.parse(raw)}catch{continue}
-        if(payload?.error)throw Error(payload.error.message||payload.error||'stream error');
-        if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;if(payload?.settle&&typeof payload.settle==='object')lastSseSettle=payload.settle;if(payload?.receipt&&typeof payload.receipt==='object')lastSseReceipt=payload.receipt;
+        if(payload?.error){const e=Error(payload.error.message||payload.error||'stream error');e.code=payload.error.code||null;throw e;}
+        if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;
         const delta=typeof payload?.choices?.[0]?.delta?.content==='string'?payload.choices[0].delta.content:typeof payload?.choices?.[0]?.delta==='string'?payload.choices[0].delta:typeof payload?.response==='string'?payload.response:typeof payload?.delta==='string'?payload.delta:'';
         if(delta){if(!saw){saw=true;onFirstToken()}out+=delta;node.textContent=out}
       }
@@ -1487,6 +1488,8 @@ $('run-demo').addEventListener('click',async()=>{
   }catch(error){
     const msg=String(error?.message||error||'');
     const emptyFail=/empty completion/i.test(msg);
+    // Mid-stream provider die (URLError / provider_cut) — fail loud + Retry; never settle/success face.
+    const providerCut=error?.code==='provider_cut'||/provider inference failed|provider cut|URLError|stream ended before completion/i.test(msg);
     if(jobCancelled||error?.name==='AbortError'){
       // Keep partial tokens already painted; only replace waiting placeholders.
       const cur=String($('answer')?.textContent||'');
@@ -1507,6 +1510,15 @@ $('run-demo').addEventListener('click',async()=>{
         window.__dashaEmptyRetryOnce=true;
         queueMicrotask(()=>{const run=$('run-demo'); if(run&&!run.disabled)run.click();});
       }else{window.__dashaEmptyRetryOnce=false}
+    }else if(providerCut){
+      clearAnswerMoney();
+      lastAskFailKind='provider_cut';
+      $('answer-title').textContent='Answer.';
+      // Dasha tone: short fail + Retry. Optional one-liner when advertise stayed up.
+      const note=providersOnline>0?'\nStill listed online.':'';
+      $('answer').textContent='Mac cut out.'+note;
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      paintAnswerMoney();paintAnswerReceipt();
     }else{
       {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
       if(msg==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}
@@ -2640,9 +2652,9 @@ $('answer-credits')?.addEventListener('click',()=>{
     setComputeIntent('credits');showTf('credits');
   }
 });
-$('ask-again').addEventListener('click',()=>{clearAnswerMoney();showTf('ask');$('prompt').focus();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}});
+$('ask-again').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};showTf('ask');$('prompt').focus()});
 $('answer-retry')?.addEventListener('click',()=>{const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};clearAnswerMoney();const run=$('run-demo'); if(run&&!run.disabled)run.click(); else showTf('ask');});
-$('tf-done').addEventListener('click',()=>{clearAnswerMoney();cameFromHow=false;cameFromGate=false;showTf('ask');const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}});
+$('tf-done').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};cameFromHow=false;cameFromGate=false;showTf('ask');});
 $('provide-done-gate').addEventListener('click',()=>{cameFromHow=false;cameFromGate=false;setEngine('hosted',true);});
 document.querySelectorAll('[data-back]').forEach(btn=>{
   btn.addEventListener('click',()=>{

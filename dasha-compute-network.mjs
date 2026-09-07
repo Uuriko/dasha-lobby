@@ -384,65 +384,20 @@ function tokenUsage(input) {
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
 }
 
-/** Fail-closed public settle face. Omit when cents/state unknown. Never invent. */
-export function publicJobSettle(job) {
-  const cents = Math.max(0, Math.floor(Number(job?.settle_cents) || 0));
-  const state = String(job?.settle_state || '').trim();
-  if (!(cents > 0) || !state) return null;
-  return { cents, state };
-}
-
-/** Measured tok/s from capacity[] only — never invent or pad zeros. */
-export function measuredTokPerSecForModel(capacity, model) {
-  const want = String(model || '').trim();
-  if (!want || !Array.isArray(capacity)) return null;
-  const row = capacity.find((item) => item && item.model === want);
-  if (!row) return null;
-  const mp = Number(row.measured_providers || 0);
-  const tps = Number(row.tokens_per_second);
-  if (!(mp >= 1) || !Number.isFinite(tps) || !(tps > 0) || tps > 10_000) return null;
-  return Math.round(tps * 100) / 100;
-}
-
-function capacityFromProviders(providers, now = Date.now()) {
-  const fresh = (providers || []).filter((provider) => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
-  const models = [...new Set(fresh.flatMap((provider) => provider.models || []))];
-  return models.map((model) => {
-    const serving = fresh.filter((provider) => provider.models?.includes(model));
-    const measured = serving.map((provider) => provider.hardware?.benchmarks?.find((row) => row.model === model)?.tokens_per_second).filter(Number.isFinite);
-    const tps = measured.length ? measured.reduce((sum, value) => sum + value, 0) / measured.length : 0;
-    return { model, providers: serving.length, measured_providers: measured.length, tokens_per_second: Math.round(tps * 100) / 100 };
-  });
-}
-
-/**
- * Phase 0 honesty receipt — job/model/class + measured tok/s + attestation:null.
- * Never invent tok/s, cents, or a verify badge. Phase 0 has no enclave attest.
- */
-export function publicPhase0Receipt(job, { capacity } = {}) {
-  if (!job || typeof job !== 'object') return null;
-  const job_id = String(job.id || job.job_id || '').trim();
-  const model_id = String(job.model || job.model_id || '').trim();
-  const route = String(job.route || job.provider_class || '').trim();
-  const provider_class = (route === 'hosted' || route === 'community' || route === 'mixture' || route === 'self') ? route : '';
-  const storedTps = Number(job.tokens_per_second);
-  const tps = (Number.isFinite(storedTps) && storedTps > 0 && storedTps <= 10_000)
-    ? Math.round(storedTps * 100) / 100
-    : measuredTokPerSecForModel(capacity, model_id);
-  let completed_at = '';
-  if (typeof job.completed_at === 'string' && job.completed_at.trim()) completed_at = job.completed_at.trim();
-  else if (Number.isFinite(Number(job.completedAt)) && Number(job.completedAt) > 0) {
-    completed_at = new Date(Number(job.completedAt)).toISOString();
+/** Mid-stream Mac die / URLError — keep provider voice; never invent a success. */
+export function normalizeStreamProviderError(raw) {
+  const msg = String(raw || '').trim().slice(0, 300);
+  if (!msg) return '';
+  if (/^provider inference failed:/i.test(msg) || /^provider cut$/i.test(msg) || /^empty completion$/i.test(msg)) return msg;
+  if (/URLError|urllib\.error|stream ended before completion|Connection reset|Connection refused|IncompleteRead|RemoteDisconnected/i.test(msg)) {
+    return `provider inference failed: ${msg.slice(0, 240)}`;
   }
-  const settle = publicJobSettle(job);
-  const out = { attestation: null };
-  if (job_id) out.job_id = job_id;
-  if (model_id) out.model_id = model_id;
-  if (provider_class) out.provider_class = provider_class;
-  if (tps != null) out.tokens_per_second = tps;
-  if (completed_at) out.completed_at = completed_at;
-  if (settle) out.settled = settle;
-  return out;
+  if (/provider inference failed/i.test(msg)) return msg;
+  return msg;
+}
+
+export function isProviderStreamCutError(msg) {
+  return /provider inference failed|provider cut|empty completion|stream ended before completion|URLError/i.test(String(msg || ''));
 }
 
 async function cancelJob(storage, key, job, now = Date.now()) {
@@ -494,7 +449,16 @@ export class ComputeNetwork {
         await this.state.storage.delete(key);
         if (job?.nightId && ['queued', 'leased'].includes(job.status)) await this.finishNight(job, 'failed', null, 'job expired before completion', now);
       }
-      else if (job.status === 'leased' && Number(job.leaseExpiresAt) <= now) await this.state.storage.put(key, { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) });
+      else if (job.status === 'leased' && Number(job.leaseExpiresAt) <= now) {
+        const hadStreamProgress = job.stream === true && (job.chunks || []).some(chunk => String(chunk || '').trim());
+        if (hadStreamProgress) {
+          await this.state.storage.put(key, { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 });
+          await this.finishNight(job, 'failed', null, 'provider cut', now);
+          await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: true });
+        } else {
+          await this.state.storage.put(key, { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) });
+        }
+      }
     }
     for (const [key, provider] of await this.state.storage.list({ prefix: 'compute:provider:' })) {
       if (!provider || (now - Number(provider.createdAt || 0) > 30 * 24 * 60 * 60_000 && !provider.lastSeenAt)) await this.state.storage.delete(key);
@@ -648,7 +612,19 @@ export class ComputeNetwork {
           controller.close();
           return;
         }
-        if (current.status === 'failed' || current.status === 'cancelled') { emit({ error: { message: current.error || 'job cancelled', type: 'server_error', code: null } }); emit('[DONE]'); controller.close(); return; }
+        if (current.status === 'failed' || current.status === 'cancelled') {
+          const errMsg = current.error || (current.status === 'cancelled' ? 'job cancelled' : 'provider failed');
+          emit({ error: { message: errMsg, type: 'server_error', code: isProviderStreamCutError(errMsg) ? 'provider_cut' : null } });
+          emit('[DONE]');
+          controller.close();
+          return;
+        }
+        if (sent > 0 && current.status === 'queued') {
+          emit({ error: { message: 'provider cut', type: 'server_error', code: 'provider_cut' } });
+          emit('[DONE]');
+          controller.close();
+          return;
+        }
         await new Promise(resolve => setTimeout(resolve, 250));
       }
       if (stopped) return;
@@ -1038,20 +1014,28 @@ export class ComputeNetwork {
       const input = await body(request, 8192), provider = await this.provider(request, input), key = `compute:job:${chunkMatch[1]}`, job = await this.state.storage.get(key);
       if (!provider) return json({ error: 'invalid provider token' }, 401);
       if (!job || job.status !== 'leased' || !job.stream || job.providerId !== provider.id || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
-      const error = String(input.error || '').trim().slice(0, 300), delta = String(input.delta || '');
+      const delta = String(input.delta || '');
       if (delta && ((job.chunks || []).join('').length + delta.length > 20_000)) return json({ error: 'stream result exceeds 20000 characters' }, 400);
       provider.lastSeenAt = now;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
-      const chunks = delta ? [...(job.chunks || []), delta] : job.chunks || [];
+      const rawError = String(input.error || '').trim().slice(0, 300);
+      const chunks = !rawError && delta ? [...(job.chunks || []), delta] : job.chunks || [];
+      let streamError = normalizeStreamProviderError(rawError);
+      if (!streamError && input.done && !String(chunks.join('') || '').trim()) {
+        streamError = 'empty completion';
+      }
+      if (!streamError && rawError) streamError = rawError.slice(0, 300);
       const usage = input.done ? tokenUsage(input) : job.usage;
-      let settlePatch = {};
-      if (!error && input.done && job.route !== 'self') {
-        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-        if (accrued?.ok) {
-          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
-          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
-          await this.recordPaidInferenceSettle({
-            owner: job.owner || null,
+      const failed = Boolean(streamError);
+      const finished = failed || Boolean(input.done);
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000 });
+      if (finished) {
+        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
+        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
+        if (!streamError && input.done && job.route !== 'self') {
+          const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+          if (earned?.ok) await this.recordPaidInferenceSettle({
+            owner: job.owner,
             engine: job.route === 'mixture' ? 'mixture' : 'community',
             usage,
             cents: settleCents,
