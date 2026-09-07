@@ -46,7 +46,7 @@ const body = await res.text();
 assert.doesNotMatch(body, /dasha-home-faucet/, 'worker /faucet drops leftover home-faucet id');
 assert.match(body, /location\.pathname/);
 assert.match(body, /dasha-jar-tape/);
-assert.match(body, /<title>Fill the jar<\/title>/);
+assert.match(body, /<title>Once a day\.<\/title>/);
 assert.match(body, />Buy</);
 assert.match(body, /jup\.ag\/swap/);
 assert.match(body, new RegExp(MINT));

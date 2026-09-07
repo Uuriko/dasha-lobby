@@ -64,7 +64,7 @@ function firstPaint(html) {
 function assertTypeformDoor(html, label) {
   assert.match(html, /id=["']dasha-faucet["']/, `${label} jar`);
   assert.match(html, /data-faucet-api="https:\/\/lobby\.getdasha\.com"/, `${label} claim API stays lobby`);
-  assert.match(html, /<title>Fill the jar<\/title>/, `${label} title`);
+  assert.match(html, /<title>Once a day\.<\/title>/, `${label} title`);
   assert.match(html, /Once a day|dasha-faucet/, `${label} door`);
   assert.doesNotMatch(html, /"funded"\s*:/, `${label} HTML is not status JSON`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin.jup`);

@@ -10,17 +10,17 @@ import { FAUCET_PAGE_HTML } from './dasha-lobby-static-gen.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const pageSrc = readFileSync(join(root, 'dasha-faucet-page.html'), 'utf8');
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
-const TITLE = 'Fill the jar';
+const TITLE = 'Once a day.';
 const DESC = 'Claim. Fill. Buy.';
 
 function assertShare(html, label) {
-  assert.match(html, /<title>Fill the jar<\/title>/, `${label} title`);
-  assert.match(html, /property="og:title" content="Fill the jar"/, `${label} og:title`);
+  assert.match(html, /<title>Once a day\.<\/title>/, `${label} title`);
+  assert.match(html, /property="og:title" content="Once a day."/, `${label} og:title`);
   assert.match(html, /property="og:description" content="Claim\. Fill\. Buy\."/, `${label} og:desc`);
   assert.match(html, /property="og:url" content="https:\/\/www\.getdasha\.com\/faucet"/, `${label} og:url`);
   assert.match(html, /og:image" content="https:\/\/lobby\.getdasha\.com\/og\/dasha-social-card\.png"/, `${label} og:image`);
   assert.match(html, /name="twitter:card" content="summary_large_image"/, `${label} twitter:card`);
-  assert.match(html, /name="twitter:title" content="Fill the jar"/, `${label} twitter:title`);
+  assert.match(html, /name="twitter:title" content="Once a day."/, `${label} twitter:title`);
   assert.match(html, /name="twitter:description" content="Claim\. Fill\. Buy\."/, `${label} twitter:desc`);
   const head = (html.match(/<head[\s\S]*?<\/head>/i) || [html])[0];
   assert.doesNotMatch(head, /Studio|\/studio/i, `${label} no Studio on card`);
@@ -33,7 +33,7 @@ function assertShare(html, label) {
   assert.match(html, />Buy</, `${label} Buy`);
 }
 
-assert.equal(TITLE, 'Fill the jar');
+assert.equal(TITLE, 'Once a day.');
 assert.equal(DESC, 'Claim. Fill. Buy.');
 assertShare(pageSrc, 'disk source');
 assertShare(FAUCET_PAGE_HTML, 'bundled');

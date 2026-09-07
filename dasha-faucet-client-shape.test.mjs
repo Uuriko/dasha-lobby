@@ -67,11 +67,11 @@ assert.match(FAUCET_CLIENT_JS, /confirmStuck/);
 assert.match(FAUCET_CLIENT_JS, /faucet-note','try again'/);
 assert.doesNotMatch(FAUCET_CLIENT_JS, /state\.me&&state\.me\.nextAt/);
 assert.doesNotMatch(FAUCET_CLIENT_JS, /box\.appendChild\(el\('p','faucet-q',kind\)\)/);
-assert.doesNotMatch(page, /dasha-faucet-static/);
+assert.match(page, /<div id=\"dasha-faucet-static\">\s*<h1>Once a day\.<\/h1>/, 'no-JS fallback mount (live)');
 assert.doesNotMatch(page, /simp\/photo\/faucet\.png/);
-assert.doesNotMatch(FAUCET_PAGE_HTML, /dasha-faucet-static/);
+assert.match(FAUCET_PAGE_HTML, /<div id=\"dasha-faucet-static\">\s*<h1>Once a day\.<\/h1>/, 'no-JS fallback mount (live)');
 assert.doesNotMatch(FAUCET_PAGE_HTML, /simp\/photo\/faucet\.png/);
-assert.doesNotMatch(worker, /dasha-faucet-static/);
+assert.doesNotMatch(worker, /dasha-faucet-static/, 'worker imports the page module (mount lives in FAUCET_PAGE_HTML)');
 assert.doesNotMatch(worker, /simp\/photo\/faucet\.png/);
 
 class FakeEl {
