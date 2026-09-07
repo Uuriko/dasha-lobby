@@ -955,12 +955,19 @@ export class ComputeNetwork {
       provider.lastSeenAt = now;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       const chunks = delta ? [...(job.chunks || []), delta] : job.chunks || [];
-      const usage = input.done ? tokenUsage(input) : job.usage;
-      await this.state.storage.put(key, { ...job, chunks, status: error ? 'failed' : input.done ? 'complete' : 'leased', error: error || null, usage, messages: error || input.done ? null : job.messages, completedAt: error || input.done ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: error || input.done ? now + 10 * 60_000 : now + LEASE_MS + 60_000 });
-      if (error || input.done) {
-        await this.finishNight(job, error ? 'failed' : 'complete', error ? null : chunks.join(''), error || null, now);
-        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
-        if (!error && input.done && job.route !== 'self') {
+      // Parity with non-stream /result: empty stream completion is a failure, not silent success.
+      let streamError = error;
+      if (!streamError && input.done && !String(chunks.join('') || '').trim()) {
+        streamError = 'empty completion';
+      }
+      const failed = Boolean(streamError);
+      const finished = failed || Boolean(input.done);
+      const usage = input.done || failed ? tokenUsage(input) : job.usage;
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, answer: failed ? null : job.answer, status: failed ? 'failed' : finished ? 'complete' : 'leased', error: streamError || null, usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000 });
+      if (finished) {
+        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
+        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
+        if (!streamError && input.done && job.route !== 'self') {
           const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
           if (earned?.ok) await this.recordPaidInferenceSettle({
             owner: job.owner,
