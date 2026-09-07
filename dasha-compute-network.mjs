@@ -246,6 +246,10 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
 }
 
+function openaiError(message, status = 400, type = 'invalid_request_error') {
+  return json({ error: { message, type, code: null } }, status);
+}
+
 async function body(request, limit = 4096) {
   if (Number(request.headers.get('Content-Length') || 0) > limit) return {};
   const text = await request.text().catch(() => '');
@@ -339,6 +343,24 @@ function takeRate(rates, key, max, windowMs = 60_000) {
   recent.push(now); rates.set(key, recent); return true;
 }
 
+export function modelIdentitySystemContent(model) {
+  const id = String(model || '').trim();
+  if (!id) return '';
+  return `You are model ${id} on Dasha Compute. If asked your name/model, answer with exactly that id.`;
+}
+
+export function withModelIdentityHint(messages, model) {
+  const tip = modelIdentitySystemContent(model);
+  if (!tip || !Array.isArray(messages) || !messages.length) return messages;
+  const already = messages.some((m) => {
+    if (m?.role !== 'system' || typeof m.content !== 'string') return false;
+    if (m.content === tip) return true;
+    return m.content.includes('on Dasha Compute') && m.content.includes('answer with exactly that id');
+  });
+  if (already) return messages;
+  return [{ role: 'system', content: tip }, ...messages];
+}
+
 function chatMessages(input) {
   const rows = Array.isArray(input?.messages) ? input.messages : typeof input?.prompt === 'string' ? [{ role: 'user', content: input.prompt }] : [];
   if (!rows.length || rows.length > 12) return null;
@@ -350,18 +372,6 @@ function chatMessages(input) {
     messages.push({ role, content });
   }
   return messages.at(-1)?.role === 'user' ? messages : null;
-}
-
-export function modelIdentitySystemContent(modelId) {
-  const id = String(modelId || '').trim();
-  return id ? `You are model ${id} on Dasha Compute. If asked your name/model, answer with exactly that id.` : '';
-}
-
-export function withModelIdentityHint(messages, modelId) {
-  const tip = modelIdentitySystemContent(modelId);
-  if (!tip || !Array.isArray(messages)) return messages;
-  if (messages.some((row) => row?.role === 'system' && typeof row.content === 'string' && row.content.includes('on Dasha Compute') && row.content.includes('answer with exactly that id'))) return messages;
-  return [{ role: 'system', content: tip }, ...messages];
 }
 
 function providerHardware(input, allowedModels) {
@@ -385,12 +395,66 @@ function tokenUsage(input) {
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
 }
 
+function normalizeStreamProviderError(raw) {
+  const msg = String(raw || '').trim().slice(0, 300);
+  if (!msg) return '';
+  if (/^provider inference failed:/i.test(msg) || /^provider cut$/i.test(msg) || /^empty completion$/i.test(msg)) return msg;
+  if (/URLError|urllib\.error|stream ended before completion|Connection reset|Connection refused|IncompleteRead|RemoteDisconnected/i.test(msg)) {
+    return `provider inference failed: ${msg.slice(0, 240)}`;
+  }
+  if (/provider inference failed/i.test(msg)) return msg;
+  return msg;
+}
+
+function isProviderStreamCutError(msg) {
+  return /provider inference failed|provider cut|empty completion|stream ended before completion|URLError/i.test(String(msg || ''));
+}
+
 /** Fail-closed public settle face. Omit when cents/state unknown. Never invent. */
 export function publicJobSettle(job) {
   const cents = Math.max(0, Math.floor(Number(job?.settle_cents) || 0));
   const state = String(job?.settle_state || '').trim();
   if (!(cents > 0) || !state) return null;
   return { cents, state };
+}
+
+function measuredTokPerSecForModel(providers, model, now = Date.now()) {
+  const id = String(model || '').trim();
+  if (!id || !Array.isArray(providers)) return null;
+  const serving = providers.filter((provider) => providerServesModel(provider, id, now));
+  const measured = serving.map((provider) => provider.hardware?.benchmarks?.find((row) => row.model === id)?.tokens_per_second).filter(Number.isFinite);
+  if (!measured.length) return null;
+  const tps = measured.reduce((sum, value) => sum + value, 0) / measured.length;
+  if (!(tps > 0) || tps > 10_000) return null;
+  return Math.round(tps * 100) / 100;
+}
+
+function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
+  if (!job?.id) return null;
+  const status = String(job.status || '');
+  if (status !== 'complete' && status !== 'failed') return null;
+  const route = String(job.route || '').trim();
+  let provider_class = null;
+  if (route === 'community' || route === 'mixture' || route === 'self') provider_class = route;
+  else if (String(job.engine || '') === 'hosted') provider_class = 'hosted';
+  const model_id = String(job.model || '').trim() || null;
+  const completedMs = Number(job.completedAt);
+  const completed_at = Number.isFinite(completedMs) && completedMs > 0 ? new Date(completedMs).toISOString() : null;
+  const receipt = {
+    job_id: String(job.id),
+    attestation: null
+  };
+  if (model_id) receipt.model_id = model_id;
+  if (provider_class) receipt.provider_class = provider_class;
+  if (completed_at) receipt.completed_at = completed_at;
+  const tps = Number(tokensPerSecond);
+  if (Number.isFinite(tps) && tps > 0 && tps <= 10_000) {
+    receipt.tokens_per_second = Math.round(tps * 100) / 100;
+  }
+  const settle = status === 'complete' ? publicJobSettle(job) : null;
+  if (settle) receipt.settled = settle;
+  if (status === 'failed') receipt.ok = false;
+  return receipt;
 }
 
 async function cancelJob(storage, key, job, now = Date.now()) {
@@ -512,22 +576,25 @@ export class ComputeNetwork {
     return counters;
   }
 
+  /** Paid-inference settle only (credits or community earn). Replay-safe. */
+  async recordPaidInferenceSettle(input = {}) {
+    return recordSettledInference(this.state.storage, input);
+  }
   async factoryPayload(now = Date.now()) {
     await this.prune(now);
     const counters = await this.loadFactoryCounters();
     const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
+    const settled = publicSettled24h(await sumSettled24h(this.state.storage, now));
     return {
       schema: 'factory.compute.v0',
       generated_at: new Date(now).toISOString(),
       jobs: counters.jobs,
       models: counters.models,
       providers_online_latest: providers.length,
-      settled_24h: publicSettled24h(await sumSettled24h(this.state.storage, now)),
+      settled_24h: settled,
       note: 'counters only; prompts not included; settled_24h = paid-inference only',
     };
   }
-
-  async recordPaidInferenceSettle(input) { return recordSettledInference(this.state.storage, input); }
 
   async apiKey(request) {
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
@@ -562,10 +629,11 @@ export class ComputeNetwork {
 
 
   async queueJob(owner, input, now) {
-    const parsed = chatMessages(input), model = String(input.model || '');
-    if (!parsed) return { error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total', status: 400 };
+    const model = String(input.model || '');
+    let messages = chatMessages(input);
+    if (!messages) return { error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total', status: 400 };
     if (!MODELS.has(model)) return { error: 'unsupported model', status: 400 };
-    const messages = withModelIdentityHint(parsed, model);
+    messages = withModelIdentityHint(messages, model);
     if (!takeRate(this.rates, owner, 5)) return { error: 'community limit reached; try again shortly', status: 429 };
     await this.prune(now);
     const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
@@ -598,7 +666,21 @@ export class ComputeNetwork {
         sent = (current.chunks || []).length;
         if (current.status === 'complete') {
           const settle = publicJobSettle(current);
-          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}) });
+          const receipt = publicPhase0Receipt(current);
+          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}), ...(receipt ? { receipt } : {}) });
+          emit('[DONE]');
+          controller.close();
+          return;
+        }
+        if (current.status === 'failed' || current.status === 'cancelled') {
+          const errMsg = current.error || (current.status === 'cancelled' ? 'job cancelled' : 'provider failed');
+          emit({ error: { message: errMsg, type: 'server_error', code: isProviderStreamCutError(errMsg) ? 'provider_cut' : null } });
+          emit('[DONE]');
+          controller.close();
+          return;
+        }
+        if (sent > 0 && current.status === 'queued') {
+          emit({ error: { message: 'provider cut', type: 'server_error', code: 'provider_cut' } });
           emit('[DONE]');
           controller.close();
           return;
@@ -618,13 +700,12 @@ export class ComputeNetwork {
 
   async fetch(request, allowedOrigin) {
     const path = new URL(request.url).pathname, now = Date.now(), credentials = Boolean(allowedOrigin);
-    const openaiError = (message, status = 400, type = 'invalid_request_error') => json({ error: { message, type, code: null } }, status, allowedOrigin || '*', credentials);
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const res = json(computeApiRootBody(this.env), 200, allowedOrigin || '*', credentials);
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
     }
     if ((path === '/compute/api/healthz' || path === '/compute/api/healthz/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.0' }, 200, allowedOrigin || '*', credentials));
+      return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.0', midstream_fail_honesty: true }, 200, allowedOrigin || '*', credentials));
     }
     if ((path === '/compute/api/night' || path === '/compute/api/night/') && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'POST')) {
       if (!allowedOrigin) return maybeHead(request, json({ error: 'origin required' }, 403));
@@ -742,7 +823,7 @@ export class ComputeNetwork {
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
-      return maybeHead(request, json({ object: 'list', data: models.map(id => ({ id, object: 'model', created: 0, owned_by: 'dasha-community' })) }, 200, allowedOrigin || '*', credentials));
+      return maybeHead(request, json({ object: 'list', data: models.map(id => ({ id, object: 'model', created: 0, owned_by: 'dasha-community' })) }));
     }
 
     const modelRetrieve = path.match(/^\/compute\/api\/v1\/models\/([A-Za-z0-9._-]+)\/?$/);
@@ -753,7 +834,7 @@ export class ComputeNetwork {
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
       if (!models.includes(id)) return maybeHead(request, openaiError(`The model '${id}' does not exist`, 404, 'invalid_request_error'));
-      return maybeHead(request, json({ id, object: 'model', created: 0, owned_by: 'dasha-community' }, 200, allowedOrigin || '*', credentials));
+      return maybeHead(request, json({ id, object: 'model', created: 0, owned_by: 'dasha-community' }));
     }
 
     if ((path === '/compute/api/v1/embeddings' || path === '/compute/api/v1/embeddings/') && request.method === 'POST') {
@@ -821,12 +902,12 @@ export class ComputeNetwork {
           return openaiError(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error');
         }
       }
-      if (input.stream) return this.streamResponse(queued.job, allowedOrigin);
+      if (input.stream) return this.streamResponse(queued.job);
       while (!request.signal.aborted) {
         const job = await this.state.storage.get(`compute:job:${queued.job.id}`);
         if (!job) return openaiError('job expired', 410, 'server_error');
         if (Number(job.expiresAt) <= Date.now()) break;
-        if (job.status === 'complete') return json({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, message: { role: 'assistant', content: job.answer }, finish_reason: 'stop' }], usage: job.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }, 200, allowedOrigin || '*', credentials);
+        if (job.status === 'complete') return json({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, message: { role: 'assistant', content: job.answer }, finish_reason: 'stop' }], usage: job.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } });
         if (job.status === 'failed') return openaiError(job.error || 'provider failed', 502, 'server_error');
         await new Promise(resolve => setTimeout(resolve, 250));
       }
@@ -843,16 +924,6 @@ export class ComputeNetwork {
     if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && (request.method === 'GET' || request.method === 'HEAD')) {
       return maybeHead(request, json(await this.factoryPayload(now), 200, allowedOrigin || '*', credentials));
     }
-    if ((path === '/compute/api/receipts' || path === '/compute/api/receipts/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const owner = identity(await authSessionFromRequest(this.env, request));
-      const zero = publicSettled24h(null);
-      if (!owner) return maybeHead(request, json({ schema: 'settled.receipts.v0', receipts: [], settled_24h: zero }, 401, allowedOrigin, credentials));
-      return maybeHead(request, json({
-        schema: 'settled.receipts.v0',
-        receipts: await listReceiptsForOwner(this.state.storage, owner),
-        settled_24h: publicSettled24h(await sumSettled24h(this.state.storage, now)),
-      }, 200, allowedOrigin, credentials));
-    }
     if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && request.method === 'POST') {
       // Internal hosted bump from computeApi via DO stub. Low-sensitivity counters; rate-limited.
       const input = await body(request);
@@ -860,6 +931,19 @@ export class ComputeNetwork {
       if (!takeRate(this.rates, 'factory:hosted-bump', 120, 60_000)) return json({ error: 'rate limited' }, 429, allowedOrigin, credentials);
       const failed = input.failed === true;
       await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed });
+      const settle = input?.settled && typeof input.settled === 'object' ? input.settled : null;
+      if (!failed && settle && settle.paid === true) {
+        await this.recordPaidInferenceSettle({
+          owner: settle.owner || null,
+          engine: 'hosted',
+          usage: settle.usage || null,
+          tokens: settle.tokens,
+          cents: settle.cents != null ? settle.cents : HOSTED_ASK_PRICE_CENTS,
+          requestId: settle.request_id || null,
+          replayKey: settle.replay_key || (settle.request_id ? `hosted:${settle.request_id}` : null),
+          now: Date.now()
+        });
+      }
       return json({ ok: true }, 202, allowedOrigin, credentials);
     }
 
@@ -870,7 +954,7 @@ export class ComputeNetwork {
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
       const capacity = models.map(model => {
         const serving = providers.filter(provider => provider.models?.includes(model)), measured = serving.map(provider => provider.hardware?.benchmarks?.find(row => row.model === model)?.tokens_per_second).filter(Number.isFinite);
-        const tps = measured.length ? measured.reduce((s, v) => s + v, 0) / measured.length : 0;
+        const tps = measured.length ? measured.reduce((sum, value) => sum + value, 0) / measured.length : 0;
         return { model, providers: serving.length, measured_providers: measured.length, tokens_per_second: Math.round(tps * 100) / 100 };
       });
       return maybeHead(request, json({ providers_online: providers.length, models_available: models, capacity, jobs_queued: jobs.filter(job => job.status === 'queued').length }, 200, allowedOrigin || '*', credentials));
@@ -998,10 +1082,11 @@ export class ComputeNetwork {
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       const rawError = String(input.error || '').trim().slice(0, 300);
       const chunks = !rawError && delta ? [...(job.chunks || []), delta] : job.chunks || [];
-      let streamError = rawError;
+      let streamError = normalizeStreamProviderError(rawError);
       if (!streamError && input.done && !String(chunks.join('') || '').trim()) {
         streamError = 'empty completion';
       }
+      if (!streamError && rawError) streamError = rawError.slice(0, 300);
       const usage = input.done ? tokenUsage(input) : job.usage;
       let settlePatch = {};
       if (!streamError && input.done && job.route !== 'self') {
@@ -1079,6 +1164,9 @@ export class ComputeNetwork {
       const route = ['community', 'mixture', 'self'].includes(String(job.route || '')) ? String(job.route) : null;
       // jobs/:id settle only on complete — never invent pending/failed money.
       const settle = job.status === 'complete' ? publicJobSettle(job) : null;
+      const freshProviders = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
+      const measuredTps = measuredTokPerSecForModel(freshProviders, job.model, now);
+      const receipt = publicPhase0Receipt(job, { tokensPerSecond: measuredTps });
       return maybeHead(request, json({
         id: job.id,
         status: job.status,
@@ -1091,6 +1179,7 @@ export class ComputeNetwork {
         ...(usage && (usage.total_tokens > 0 || usage.prompt_tokens > 0 || usage.completion_tokens > 0) ? { usage } : {}),
         ...(route ? { route } : {}),
         ...(settle ? { settle } : {}),
+        ...(receipt ? { receipt } : {})
       }, 200, allowedOrigin, credentials));
     }
 
@@ -1240,6 +1329,23 @@ export class ComputeNetwork {
     }
 
     // --- provider earnings + payout preference (pending settle; no auto-chain) ---
+    if ((path === '/compute/api/receipts' || path === '/compute/api/receipts/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) {
+        return maybeHead(request, json({
+          error: 'login required',
+          schema: 'settled.receipts.v0',
+          receipts: [],
+          settled_24h: publicSettled24h(await sumSettled24h(this.state.storage, now))
+        }, 401, allowedOrigin, true));
+      }
+      const receipts = await listReceiptsForOwner(this.state.storage, owner, { limit: 20 });
+      return maybeHead(request, json({
+        schema: 'settled.receipts.v0',
+        receipts,
+        settled_24h: publicSettled24h(await sumSettled24h(this.state.storage, now))
+      }, 200, allowedOrigin, true));
+    }
     if ((path === '/compute/api/provider/earnings' || path === '/compute/api/provider/earnings/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return maybeHead(request, json({ error: 'login required', ...earningsCatalog(), payout_mode: PROVIDER_PAYOUT_MODE }, 401, allowedOrigin, true));
@@ -1486,18 +1592,6 @@ export class ComputeNetwork {
           balance_cents: result.balance_cents ?? 0,
           price_cents: HOSTED_ASK_PRICE_CENTS,
         }, 402, allowedOrigin, true);
-      }
-      if (result.charged_cents > 0) {
-        const spendNow = Date.now();
-        await this.recordPaidInferenceSettle({
-          owner,
-          engine: 'hosted',
-          tokens: 0,
-          cents: result.charged_cents,
-          requestId: requestId || null,
-          replayKey: requestId ? `hosted:${requestId}` : `hosted:${owner}:${spendNow}`,
-          now: spendNow,
-        });
       }
       return json({
         ok: true,
@@ -1803,14 +1897,18 @@ export class ComputeNetwork {
 }
 
 
-async function bumpHostedFactory(env, { failed = false } = {}) {
+async function bumpHostedFactory(env, { failed = false, settled = null } = {}) {
   try {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return;
     await stub.fetch(new Request('https://lobby.getdasha.com/compute/api/factory', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ source: 'hosted-chat', failed: failed === true }),
+      body: JSON.stringify({
+        source: 'hosted-chat',
+        failed: failed === true,
+        ...(settled && typeof settled === 'object' ? { settled } : {})
+      })
     }));
   } catch {}
 }
@@ -1871,7 +1969,7 @@ export async function computeApi(request, env, allowedOrigin) {
       jobs: { hosted: 0, community: 0, mixture: 0, failed: 0 },
       models: {},
       providers_online_latest: 0,
-      settled_24h: publicSettled24h(null),
+      settled_24h: { tokens: 0, jobs: 0, cents: 0 },
       note: 'counters only; prompts not included; settled_24h = paid-inference only',
     }, 200, allowedOrigin || '*', credentials));
   }
@@ -1888,7 +1986,7 @@ export async function computeApi(request, env, allowedOrigin) {
     if (stub) return stub.fetch(request);
     return maybeHead(request, json({ error: 'login required', ...creditsCatalog(null) }, 401, allowedOrigin, Boolean(allowedOrigin)));
   }
-  if (path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/receipts' || path === '/compute/api/receipts/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     return stub ? stub.fetch(request) : json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
   }
@@ -1901,10 +1999,12 @@ export async function computeApi(request, env, allowedOrigin) {
   const input = await body(request, 12 * 1024), messages = chatMessages(input);
   if (!messages) return json({ error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total' }, 400, allowedOrigin, true);
   let creditBalanceHeader = null;
+  let hostedSpendId = null;
+  let hostedChargedCents = 0;
   if (!takeRate(hostedRates, owner, 3, 10 * 60_000)) {
     // Free floor exhausted → prepaid credits extend Hosted Ask (fail closed if insufficient).
-    const spendId = `hosted_${randomUrlToken(12)}`;
-    const spent = await spendHostedAskCredits(env, request, { requestId: spendId });
+    hostedSpendId = `hosted_${randomUrlToken(12)}`;
+    const spent = await spendHostedAskCredits(env, request, { requestId: hostedSpendId });
     if (!spent.ok) {
       return json({
         error: spent.error || 'top up credits',
@@ -1913,7 +2013,16 @@ export async function computeApi(request, env, allowedOrigin) {
       }, spent.status || 402, allowedOrigin, true);
     }
     creditBalanceHeader = String(spent.balance_cents);
+    hostedChargedCents = Math.max(0, Math.floor(Number(spent.charged_cents) || HOSTED_ASK_PRICE_CENTS));
   }
+  const hostedSettledPayload = (usage) => hostedSpendId && hostedChargedCents > 0 ? {
+    paid: true,
+    owner,
+    usage: usage || null,
+    cents: hostedChargedCents,
+    request_id: hostedSpendId,
+    replay_key: `hosted:${hostedSpendId}`
+  } : null;
   const system = { role: 'system', content: 'Answer directly and concisely. Do not claim to be running on a community Mac; this hosted demo uses Cloudflare Workers AI.' };
   try {
     if (input.stream === true) {
@@ -1935,13 +2044,13 @@ export async function computeApi(request, env, allowedOrigin) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ index: 0, delta: { content }, finish_reason: null }] })}\n\n`));
       };
       const emitDone = (controller, failed = false) => {
-        // OpenAI-style usage on final stop chunk (parity with /v1/chat/completions SSE).
+        const usage = failed ? null : hostedUsage();
         if (!failed) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: hostedUsage() })}\n\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage })}\n\n`));
         }
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
-        bumpHostedFactory(env, { failed: Boolean(failed) });
+        bumpHostedFactory(env, { failed: Boolean(failed), settled: failed ? null : hostedSettledPayload(usage) });
       };
       const emitError = (controller, message) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: { message } })}\n\n`));
@@ -2021,8 +2130,12 @@ export async function computeApi(request, env, allowedOrigin) {
     const result = await env.AI.run('@cf/openai/gpt-oss-20b', { messages: [system, ...messages], max_tokens: 256, temperature: 0.6 });
     const answer = String(result?.response || result?.result?.response || result?.choices?.[0]?.message?.content || '').trim();
     if (!answer) throw new Error('empty model response');
-    await bumpHostedFactory(env, { failed: false });
-    return json({ answer, model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, ...(creditBalanceHeader != null ? { balance_cents: Number(creditBalanceHeader) } : {}) }, 200, allowedOrigin, true, { 'X-Dasha-Model': 'gpt-oss-20b', ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) });
+    const approxTokens = (t) => Math.max(0, Math.ceil(String(t || '').length / 4));
+    const prompt_tokens = approxTokens([system.content, ...messages.map((m) => `${m.role}:${m.content}`)].join('\n'));
+    const completion_tokens = approxTokens(answer);
+    const usage = tokenUsage({ usage: { prompt_tokens, completion_tokens, total_tokens: prompt_tokens + completion_tokens } });
+    await bumpHostedFactory(env, { failed: false, settled: hostedSettledPayload(usage) });
+    return json({ answer, model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, usage, ...(creditBalanceHeader != null ? { balance_cents: Number(creditBalanceHeader) } : {}) }, 200, allowedOrigin, true, { 'X-Dasha-Model': 'gpt-oss-20b', ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) });
   } catch {
     await bumpHostedFactory(env, { failed: true });
     return json({ error: 'model request failed; try again' }, 502, allowedOrigin, true);
