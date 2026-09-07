@@ -4428,9 +4428,6 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/listings.json', 'https://www.getdasha.com/listings.json'],
   ['/how-to-buy', 'https://www.getdasha.com/how-to-buy'],
   ['/bounties', 'https://www.getdasha.com/bounties'],
-  // Title-case /Listings leftover while exact lowercase /listings stays 200.
-  ['/listings', 'https://www.getdasha.com/listings'],
-  ['/listings.json', 'https://www.getdasha.com/listings.json'],
   ['/login', 'https://www.getdasha.com/login'],
   // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt html-404 while
   // lowercase siblings already 200. Exact lowercase stays null so 200 handlers run.
@@ -5047,11 +5044,10 @@ export function asStandaloneLobbyPage(html) {
 
 /** Title-case /Forum /Chat /lobby/forum /lobby/chat (and slash) must 308 via forumToLobbyRedirect — not potterHome308Dest (?t=). */
 export function isForumChatAliasPath(pathname) {
-  const p = String(pathname || '').toLowerCase();
-  return (
-    p === '/forum' || p === '/forum/' || p === '/chat' || p === '/chat/' ||
-    p === '/lobby/forum' || p === '/lobby/forum/' || p === '/lobby/chat' || p === '/lobby/chat/'
-  );
+  const p = String(pathname || "").toLowerCase();
+  return p === "/forum" || p === "/forum/" || p === "/chat" || p === "/chat/" || // Nested under /lobby: live /lobby/forum|/lobby/chat html-404 while bare peers
+  // already 308→/lobby via this helper (keep ?t=). Do not put these in potterHome308Dest.
+  p === "/lobby/forum" || p === "/lobby/forum/" || p === "/lobby/chat" || p === "/lobby/chat/";
 }
 
 /** /forum is the same room as /lobby. Keep ?t= so copied thread links still open. */
@@ -5076,28 +5072,29 @@ function pngOgHeaders(edge) {
 }
 
 
-/** Shared Worker ASSETS paths for lobby + www/apex productEdge (SIWG jpg, faucet stills, simp/og). */
 export function isWorkerStaticAssetPath(pathname) {
-  return (
-    pathname.startsWith('/simp/photo/') ||
-    pathname.startsWith('/simp/card/') ||
-    pathname.startsWith('/og/') ||
-    pathname === '/client/faucet.png' ||
-    pathname === '/client/faucet.avif' ||
-    pathname === '/client/faucet.webp' ||
-    pathname === '/client/sign-in-with-grok-bot.jpg'
-  );
+  return pathname === "/favicon.ico" || pathname.startsWith("/simp/photo/") || pathname.startsWith("/simp/card/") || pathname.startsWith("/og/") || pathname === "/client/faucet.png" || pathname === "/client/faucet.avif" || pathname === "/client/faucet.webp" || pathname === "/client/sign-in-with-grok-bot.jpg";
 }
 
 export async function workerStaticAssetResponse(request, url, env) {
-  if (request.method !== 'GET' && request.method !== 'HEAD') return null;
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
   if (!isWorkerStaticAssetPath(url.pathname)) return null;
   if (!env?.ASSETS?.fetch) return null;
-  const asset = await env.ASSETS.fetch(request);
+  let assetReq = request;
+  if (url.pathname === "/favicon.ico") {
+    const u = new URL(request.url);
+    u.pathname = "/client/dasha-icon-192.png";
+    assetReq = new Request(u.toString(), request);
+  }
+  const asset = await env.ASSETS.fetch(assetReq);
   const headers = new Headers(asset.headers);
-  headers.set('Access-Control-Allow-Origin', '*');
-  headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
-  if (asset.ok) headers.set('Cache-Control', 'public, max-age=86400');
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Cross-Origin-Resource-Policy", "cross-origin");
+  if (asset.ok) headers.set("Cache-Control", "public, max-age=86400");
+  if (url.pathname === "/favicon.ico" && asset.ok) {
+    headers.set("Content-Type", "image/png");
+    headers.set("X-Dasha-Edge", "favicon");
+  }
   return new Response(asset.body, { status: asset.status, statusText: asset.statusText, headers });
 }
 
@@ -5696,21 +5693,6 @@ export function stripBountiesDroppedCtaCss(html) {
 }
 
 /** Leftover /bounties dropped-selector CSS after <code> was never in the bounties DOM (htmlPage still emits a,code). Humans see leftover code in view-source. Distinct leftover vs leftover .cta CSS / leftover privacy a,code. a color stays. Product skip-link stays. #bb-x + #bb-app stay. Contribute leftover a,code is a separate leftover (stripContributeLeftoverCodeCss). 404 mint <code> a,code stays. Bounties only. Do not eat a{color}. Do not mount board.js. */
-export function stripBountiesLeftoverCodeCss(html) {
-  let out = String(html || '');
-  const bounties =
-    /<h1>Bounties<\/h1>/.test(out) ||
-    /rel=["']canonical["'][^>]*href=["']https:\/\/www\.getdasha\.com\/bounties["']/.test(out) ||
-    /id=["']bb-app["']/.test(out);
-  if (!bounties) return out;
-  const visible = out
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
-  if (/<code\b/i.test(visible)) return out;
-  return out.replace(/a,\s*code\s*\{/g, 'a{');
-}
-
-/** Empty /bounties drops leftover .cta CSS (and its box-shadow:#ff3b81). Restore Dasha hot-pink accent on product skip-link so empty inventory still carries literal #ff3b81. Funded listings already keep .cta pink. Bounties only. No Designer. */
 export function restoreBountiesHotPinkAccent(html) {
   let out = String(html || '');
   const bounties =
@@ -5723,6 +5705,20 @@ export function restoreBountiesHotPinkAccent(html) {
     return out.replace(/\.skip-link\{([^}]*)\}/, '.skip-link{$1;box-shadow:4px 4px 0 #ff3b81}');
   }
   return out.replace(/<\/style>/i, '#bb-app{border-left:3px solid #ff3b81;padding-left:.75rem}</style>');
+}
+
+export function stripBountiesLeftoverCodeCss(html) {
+  let out = String(html || '');
+  const bounties =
+    /<h1>Bounties<\/h1>/.test(out) ||
+    /rel=["']canonical["'][^>]*href=["']https:\/\/www\.getdasha\.com\/bounties["']/.test(out) ||
+    /id=["']bb-app["']/.test(out);
+  if (!bounties) return out;
+  const visible = out
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+  if (/<code\b/i.test(visible)) return out;
+  return out.replace(/a,\s*code\s*\{/g, 'a{');
 }
 
 /** Leftover /contribute dropped-selector CSS after <code> was never in the contribute DOM (htmlPage still emits a,code). Humans see leftover code in view-source. Distinct leftover vs leftover privacy a,code / leftover bounties a,code. a color stays. .cta stays. Product skip-link stays. 404 mint <code> a,code stays. Contribute only. Do not eat a{color}. Do not eat .cta.
@@ -8599,9 +8595,6 @@ export class DashaLobby {
   /**
    * One Gecko/Dexscreener fetch per TTL for the whole site. Lives on the lobby DO so
    * isolates cannot stampede the free API. Failure never invents a number.
-   * Upstream gecko/dex 429/fail: 503 only when !priceCache.body (cold DO).
-   * Last-known body falls through as 200 + stale:true / staleForMs / reason.
-   * PRICE_STALE_MS does not gate 503.
    */
   async handlePrice(request, allowedOrigin) {
     const now = Date.now();
@@ -9561,8 +9554,7 @@ const RETIRED_SEO_PATHS = new Set([
   '/rally/',
   '/airdrop',
   '/airdrop/',
-  '/earn',
-  '/earn/',
+  // /earn|/earn/ moved to POTTER_COMPUTE_TAB_308_PATHS (real Compute Earnings Typeform).
   '/claim',
   '/claim/',
 ]);
@@ -10182,7 +10174,7 @@ async function productEdge(request, url, env) {
   if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/desk' || url.pathname === '/desk/')) {
     return Response.redirect('https://www.getdasha.com/how-to-buy', 308);
   }
-  if ((request.method === 'GET' || request.method === 'HEAD') && ['/how','/how/','/howto','/howto/','/how-to','/how-to/','/howtobuy','/howtobuy/','/buy','/buy/'].includes(String(url.pathname || '').toLowerCase())) {
+  if ((request.method === 'GET' || request.method === 'HEAD') && ['/how','/how/','/howto','/howto/','/how-to','/how-to/','/howtobuy','/howtobuy/','/howto-buy','/howto-buy/','/how_to_buy','/how_to_buy/','/buy','/buy/'].includes(String(url.pathname || '').toLowerCase())) {
     return Response.redirect('https://www.getdasha.com/how-to-buy', 308);
   }
   if ((request.method === 'GET' || request.method === 'HEAD') && isForumChatAliasPath(url.pathname)) {
@@ -11350,7 +11342,7 @@ export default {
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/desk' || url.pathname === '/desk/')) {
       return Response.redirect('https://www.getdasha.com/how-to-buy', 308);
     }
-    if ((request.method === 'GET' || request.method === 'HEAD') && ['/how','/how/','/howto','/howto/','/how-to','/how-to/','/howtobuy','/howtobuy/','/buy','/buy/'].includes(String(url.pathname || '').toLowerCase())) {
+    if ((request.method === 'GET' || request.method === 'HEAD') && ['/how','/how/','/howto','/howto/','/how-to','/how-to/','/howtobuy','/howtobuy/','/howto-buy','/howto-buy/','/how_to_buy','/how_to_buy/','/buy','/buy/'].includes(String(url.pathname || '').toLowerCase())) {
       return Response.redirect('https://www.getdasha.com/how-to-buy', 308);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/quiz' || url.pathname === '/quiz/')) {
