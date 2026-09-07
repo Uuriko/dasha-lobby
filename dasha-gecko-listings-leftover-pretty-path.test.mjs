@@ -31,7 +31,7 @@ assert.match(
 const listingsSet = workerSrc.match(/const POTTER_LISTINGS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const howtoSet = workerSrc.match(/const POTTER_HOWTO_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const path of ['/gecko', '/geckoterminal', '/gecko-terminal', '/gecko_terminal', '/dextools', '/solscan']) {
-  assert.match(listingsSet, new RegExp(`'${path}["']`));
+  assert.match(listingsSet, new RegExp(`["\']${path}["\']`));
   assert.match(listingsSet, new RegExp(`'${path}/["']`));
 }
 assert.match(listingsSet, /["']\/listings\/["']/);
@@ -40,7 +40,7 @@ assert.doesNotMatch(listingsSet, /['"]\/pump['"]/, 'do not invent /pump');
 assert.doesNotMatch(listingsSet, /['"]\/terminal['"]/, 'do not invent /terminal');
 assert.doesNotMatch(listingsSet, /['"]\/jup['"]/, 'do not invent /jup');
 for (const path of ['/orca', '/meteora']) {
-  assert.match(howtoSet, new RegExp(`'${path}["']`));
+  assert.match(howtoSet, new RegExp(`["\']${path}["\']`));
   assert.match(howtoSet, new RegExp(`'${path}/["']`));
 }
 assert.doesNotMatch(howtoSet, /plugin\.jup\.ag/, 'howto set has no plugin.jup.ag');

@@ -23,7 +23,7 @@ assert.match(
 
 assert.match(
   workerSrc,
-  /p === ["']\/play' \|\| p === ["']\/play\/' \|\| p === ["']\/game' \|\| p === ["']\/game\/["']/,
+  /p === ["']\/play["'] \|\| p === ["']\/play\/["'] \|\| p === ["']\/game["'] \|\| p === ["']\/game\/["']/,
   'exact leftover /play /game (+slash) fold',
 );
 

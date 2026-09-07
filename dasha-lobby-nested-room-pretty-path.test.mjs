@@ -30,17 +30,17 @@ assert.match(
 
 assert.match(
   workerSrc,
-  /p === ["']\/lobby\/play' \|\| p === ["']\/lobby\/play\/["']/,
+  /p === ["\']\/lobby\/play["\'] \|\| p === ["']\/lobby\/play\/["']/,
   'exact nested /lobby/play (+slash) fold',
 );
 assert.match(
   workerSrc,
-  /p === ["']\/lobby\/game' \|\| p === ["']\/lobby\/game\/["']/,
+  /p === ["\']\/lobby\/game["\'] \|\| p === ["']\/lobby\/game\/["']/,
   'exact nested /lobby/game (+slash) fold',
 );
 assert.match(
   workerSrc,
-  /p === ["']\/lobby\/chess' \|\| p === ["']\/lobby\/chess\/["']/,
+  /p === ["\']\/lobby\/chess["\'] \|\| p === ["']\/lobby\/chess\/["']/,
   'exact nested /lobby/chess (+slash) fold',
 );
 assert.match(

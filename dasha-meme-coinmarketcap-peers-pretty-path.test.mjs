@@ -42,15 +42,15 @@ for (const path of [
   '/meme', '/memes', '/memestudio', '/meme-studio', '/meme_studio',
   '/price-chart', '/price_chart',
 ]) {
-  assert.match(homeSet, new RegExp(`'${path}["']`));
+  assert.match(homeSet, new RegExp(`["\']${path}["\']`));
   assert.match(homeSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/coinmarketcap', '/coin_market_cap']) {
-  assert.match(listingsSet, new RegExp(`'${path}["']`));
+  assert.match(listingsSet, new RegExp(`["\']${path}["\']`));
   assert.match(listingsSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/peers', '/peer', '/uptime', '/compute/peers', '/compute/uptime']) {
-  assert.match(tab, new RegExp(`'${path}["']`));
+  assert.match(tab, new RegExp(`["\']${path}["\']`));
   assert.match(tab, new RegExp(`'${path}/["']`));
 }
 assert.doesNotMatch(tab, /['"]\/compute\/peer['"]/, 'do not invent /compute/peer');

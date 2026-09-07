@@ -39,7 +39,7 @@ for (const path of [
   '/photon', '/bullx', '/axiom', '/trojan', '/gmgn', '/defined',
   '/solanafm', '/solana-fm', '/solana_fm',
 ]) {
-  assert.match(listingsSet, new RegExp(`'${path}["']`));
+  assert.match(listingsSet, new RegExp(`["\']${path}["\']`));
   assert.match(listingsSet, new RegExp(`'${path}/["']`));
 }
 assert.match(listingsSet, /["']\/listings\/["']/);
@@ -57,7 +57,7 @@ for (const path of [
   '/phoenix', '/lifinity', '/openbook', '/drift', '/serum',
   '/pump', '/pumpswap', '/pump-swap', '/pump_swap', '/jup',
 ]) {
-  assert.match(howtoSet, new RegExp(`'${path}["']`));
+  assert.match(howtoSet, new RegExp(`["\']${path}["\']`));
   assert.match(howtoSet, new RegExp(`'${path}/["']`));
 }
 assert.doesNotMatch(howtoSet, /plugin\.jup\.ag/, 'howto set has no plugin.jup.ag');

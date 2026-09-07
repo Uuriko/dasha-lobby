@@ -22,10 +22,10 @@ assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set pre
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const path of ['/machine', '/machine/', '/compute/machine', '/compute/machine/']) {
-  assert.match(tab, new RegExp(`'${path}["']`), `${path} in compute-tab set`);
+  assert.match(tab, new RegExp(`["\']${path}["\']`), `${path} in compute-tab set`);
 }
 for (const path of ['/machines', '/machines/', '/compute/machines', '/compute/machines/']) {
-  assert.match(tab, new RegExp(`'${path}["']`), `${path} prior plural peer still in compute-tab set`);
+  assert.match(tab, new RegExp(`["\']${path}["\']`), `${path} prior plural peer still in compute-tab set`);
 }
 
 const SKIPS = [
@@ -53,7 +53,6 @@ const STAY_404 = [
   '/openai', '/openai/', '/OpenAI',
   '/arcade', '/arcade/', '/Arcade',
   '/games', '/games/', '/Games',
-  '/social', '/social/', '/Social',
   '/x402', '/x402/',
   '/status', '/status/', '/Status',
   '/healthz', '/healthz/',

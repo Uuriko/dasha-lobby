@@ -55,7 +55,7 @@ for (const path of [
   '/mlx', '/compute/mlx',
   '/apple-silicon', '/silicon', '/balance', '/buy-credits',
 ]) {
-  assert.match(tab, new RegExp(`'${path}["']`), `${path} in compute-tab set`);
+  assert.match(tab, new RegExp(`["\']${path}["\']`), `${path} in compute-tab set`);
 }
 for (const skip of ['/connect', '/openai', '/v1', '/arcade', '/games', '/admin', '/health', '/status', '/tos']) {
   assert.doesNotMatch(tab, new RegExp(`['"]${skip}['"]`), `${skip} stays out of compute-tab set`);
