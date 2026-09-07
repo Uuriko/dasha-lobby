@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dasha Compute \u2014 ask the Macs</title>
+<title>Dasha Compute — ask the Macs</title>
 <meta name="description" content="Start. Ask. Provide. Pay. Credits.">
 <link rel="canonical" href="https://www.getdasha.com/compute">
 <link rel="icon" type="image/png" href="https://cdn.prod.website-files.com/5f1458122ba25e70a3ff2bd0/6a767a48e1dd29d210f01235_dasha-icon-32.png">
@@ -128,7 +128,7 @@ footer a:hover{color:var(--paper)}
 <a class="skip" href="#prompt">Skip to ask</a>
 <header class="topbar">
   <a class="brand" href="/"><span>$dasha</span> compute</a>
-  <div class="state"><i class="dot" id="live-dot"></i><span id="top-state">\xB7</span></div>
+  <div class="state"><i class="dot" id="live-dot"></i><span id="top-state">·</span></div>
   <a class="home" href="/">getdasha.com</a>
 </header>
 <nav class="tf-progress" id="tf-progress" aria-label="Progress" hidden></nav>
@@ -160,46 +160,46 @@ footer a:hover{color:var(--paper)}
 </section>
 
 <section class="tf-step" id="step-how" data-tf="how" hidden>
-  <button type="button" class="tf-back" data-back="ask">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="ask">← Back</button>
   <h1 class="tf-q">How?</h1>
   <div class="tf-choices engines" role="group" aria-label="Engine">
     <button type="button" class="tf-choice" id="eng-hosted" data-engine="hosted" aria-pressed="false">Hosted</button>
     <button type="button" class="tf-choice" id="eng-community" data-engine="community" aria-pressed="false">Community</button>
     <button type="button" class="tf-choice" id="eng-mixture" data-engine="mixture" aria-pressed="false">Mixture</button>
-    <button type="button" class="tf-choice" id="eng-self" data-engine="self" aria-pressed="false" hidden>My Mac \xB7 free</button>
+    <button type="button" class="tf-choice" id="eng-self" data-engine="self" aria-pressed="false" hidden>My Mac · free</button>
   </div>
-  <select id="engine" hidden aria-hidden="true"><option value="hosted" selected>Hosted</option><option value="community">Community</option><option value="mixture">Mixture</option><option value="self">My Mac \xB7 free</option></select>
+  <select id="engine" hidden aria-hidden="true"><option value="hosted" selected>Hosted</option><option value="community">Community</option><option value="mixture">Mixture</option><option value="self">My Mac · free</option></select>
   <p class="fine" id="how-floor-fine">Local Macs + Hosted floor.</p>
 </section>
 
 <section class="tf-step" id="step-model" data-tf="model" hidden>
-  <button type="button" class="tf-back" data-back="how">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="how">← Back</button>
   <h1 class="tf-q">Which model?</h1>
   <div class="tf-choices" id="model-choices" role="group" aria-label="Model"></div>
   <div class="model-row" id="model-row" hidden>
     <label for="model">Model</label>
     <select id="model">
-      <option value="qwen3-8b" selected>Qwen 3 8B \xB7 5.2 GB \xB7 fast chat</option>
-      <option value="gemma3-12b">Gemma 3 12B \xB7 8.1 GB \xB7 vision + chat</option>
-      <option value="gpt-oss-20b">GPT-OSS 20B \xB7 14 GB \xB7 reasoning + tools</option>
-      <option value="qwen3-30b-a3b">Qwen 3 30B A3B \xB7 19 GB \xB7 efficient MoE</option>
-      <option value="gemma3-27b">Gemma 3 27B \xB7 17 GB \xB7 large multimodal</option>
+      <option value="qwen3-8b" selected>Qwen 3 8B · 5.2 GB · fast chat</option>
+      <option value="gemma3-12b">Gemma 3 12B · 8.1 GB · vision + chat</option>
+      <option value="gpt-oss-20b">GPT-OSS 20B · 14 GB · reasoning + tools</option>
+      <option value="qwen3-30b-a3b">Qwen 3 30B A3B · 19 GB · efficient MoE</option>
+      <option value="gemma3-27b">Gemma 3 27B · 17 GB · large multimodal</option>
     </select>
-    <span class="chip" id="mixture-chip" hidden>sub-24GB specialists \xB7 live default qwen3-8b</span>
+    <span class="chip" id="mixture-chip" hidden>sub-24GB specialists · live default qwen3-8b</span>
   </div>
 </section>
 
 <section class="tf-step" id="step-ask" data-tf="ask" hidden>
-  <button type="button" class="tf-back" id="back-ask" data-back="" hidden>\u2190 Back</button>
+  <button type="button" class="tf-back" id="back-ask" data-back="" hidden>← Back</button>
   <h1 class="tf-q">Ask.</h1>
-  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Write a short welcome for a new teammate." aria-label="Prompt" title="Enter to run \xB7 Esc back"></textarea></label>
+  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Write a short welcome for a new teammate." aria-label="Prompt" title="Enter to run · Esc back"></textarea></label>
   <p class="fine" id="ask-hint" hidden aria-hidden="true"></p>
   <div class="ask-starters" id="ask-starters" role="group" aria-label="Starter prompts">
     <button type="button" class="tf-quiet" id="ask-starter" data-prompt="Write a short welcome for a new teammate.">Welcome note</button>
     <button type="button" class="tf-quiet" id="ask-starter-2" data-prompt="Summarize this in three short bullets:">Summarize this</button>
     <button type="button" class="tf-quiet" id="ask-starter-3" data-prompt="Draft a curl that POSTs JSON to an HTTPS API.">Draft a curl</button>
   </div>
-  <p class="fine" id="ask-free-fine">3 free / 10 min \xB7 then credits.</p>
+  <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
   <div class="actions">
     <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
     <a class="primary" id="login" href="/login?return=/compute%23ask">Sign in</a>
@@ -209,18 +209,18 @@ footer a:hover{color:var(--paper)}
       <button class="tf-quiet" id="clear-chat" type="button" hidden disabled>Clear</button>
     </div>
     <div class="ask-doors" id="ask-doors">
-      <button type="button" class="tf-quiet" id="ask-prefer-mymac" title="Prefer your Mac when online \xB7 else Community" aria-label="Prefer my Mac" aria-pressed="false" hidden>Prefer my Mac</button>
-      <span class="ask-door-sep" id="ask-prefer-mymac-sep" aria-hidden="true" hidden>\xB7</span>
-      <button type="button" class="tf-quiet" id="ask-mymac" title="Run on your Mac \xB7 free" aria-label="My Mac \xB7 free" hidden>My Mac \xB7 free</button>
-      <span class="ask-door-sep" id="ask-mymac-sep" aria-hidden="true" hidden>\xB7</span>
+      <button type="button" class="tf-quiet" id="ask-prefer-mymac" title="Prefer your Mac when online · else Community" aria-label="Prefer my Mac" aria-pressed="false" hidden>Prefer my Mac</button>
+      <span class="ask-door-sep" id="ask-prefer-mymac-sep" aria-hidden="true" hidden>·</span>
+      <button type="button" class="tf-quiet" id="ask-mymac" title="Run on your Mac · free" aria-label="My Mac · free" hidden>My Mac · free</button>
+      <span class="ask-door-sep" id="ask-mymac-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="ask-community" title="Community Mac online" aria-label="Community" hidden>Community</button>
-      <span class="ask-door-sep" id="ask-community-sep" aria-hidden="true" hidden>\xB7</span>
-      <button type="button" class="tf-quiet" id="ask-provide" title="Join with a Mac" aria-label="Provide \xB7 Join with a Mac">Provide</button>
-      <span class="ask-door-sep" aria-hidden="true">\xB7</span>
-      <button type="button" class="tf-quiet" id="ask-ocm" title="OCM console" aria-label="Marketplace \xB7 OCM console">Marketplace</button>
-      <span class="ask-door-sep" aria-hidden="true">\xB7</span>
-      <button type="button" class="tf-quiet" id="ask-host" title="OCM host \xB7 enroll" aria-label="Host \xB7 OCM enroll">Host</button>
-      <span class="ask-door-sep" id="ask-credits-sep" aria-hidden="true" hidden>\xB7</span>
+      <span class="ask-door-sep" id="ask-community-sep" aria-hidden="true" hidden>·</span>
+      <button type="button" class="tf-quiet" id="ask-provide" title="Join with a Mac" aria-label="Provide · Join with a Mac">Provide</button>
+      <span class="ask-door-sep" aria-hidden="true">·</span>
+      <button type="button" class="tf-quiet" id="ask-ocm" title="OCM console" aria-label="Marketplace · OCM console">Marketplace</button>
+      <span class="ask-door-sep" aria-hidden="true">·</span>
+      <button type="button" class="tf-quiet" id="ask-host" title="OCM host · enroll" aria-label="Host · OCM enroll">Host</button>
+      <span class="ask-door-sep" id="ask-credits-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="ask-credits" title="Credits" aria-label="Credits" hidden></button>
     </div>
   </div>
@@ -228,30 +228,30 @@ footer a:hover{color:var(--paper)}
 
 
 <section class="tf-step" id="step-market" data-tf="market" hidden>
-  <button type="button" class="tf-back" data-back="ask">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="ask">← Back</button>
   <h1 class="tf-q" title="OCM console">Marketplace.</h1>
-  <p class="fine" id="market-enroll-fine">Enroll a Mac \xB7 status on console.</p>
+  <p class="fine" id="market-enroll-fine">Enroll a Mac · status on console.</p>
   <div class="tf-choices" role="group" aria-label="Marketplace">
     <a class="tf-choice primary" id="market-open" href="/compute/ocm">Console</a>
     <a class="tf-choice secondary" id="market-host" href="/compute/ocm/provider">Host</a>
-    <a class="tf-quiet" id="market-status" href="/compute/ocm/status" title="Cold loads on first request \xB7 Ready/Serving ~1s">Status</a>
+    <a class="tf-quiet" id="market-status" href="/compute/ocm/status" title="Cold loads on first request · Ready/Serving ~1s">Status</a>
   </div>
 </section>
 
 <section class="tf-step" id="step-host" data-tf="host" hidden>
-  <button type="button" class="tf-back" data-back="ask">\u2190 Back</button>
-  <h1 class="tf-q" title="OCM host \xB7 enroll">Host.</h1>
-  <p class="fine" id="host-enroll-fine">Enroll code \xB7 never paste a provider token.</p>
+  <button type="button" class="tf-back" data-back="ask">← Back</button>
+  <h1 class="tf-q" title="OCM host · enroll">Host.</h1>
+  <p class="fine" id="host-enroll-fine">Enroll code · never paste a provider token.</p>
   <div class="tf-choices" role="group" aria-label="Host">
     <a class="tf-choice primary" id="host-run" href="/compute/ocm/provider">Open</a>
-    <a class="tf-choice secondary" id="host-status" href="/compute/ocm/status" title="Cold loads on first request \xB7 Ready/Serving ~1s">Status</a>
+    <a class="tf-choice secondary" id="host-status" href="/compute/ocm/status" title="Cold loads on first request · Ready/Serving ~1s">Status</a>
   </div>
 </section>
 
 
 
 <section class="tf-step" id="step-pay" data-tf="pay" hidden>
-  <button type="button" class="tf-back" data-back="gate">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="gate">← Back</button>
   <h1 class="tf-q">Pay.</h1>
   <div class="tf-choices" role="group" aria-label="Pay.">
     <button type="button" class="tf-choice primary" id="pay-topup" title="Add credits">Top up</button>
@@ -262,7 +262,7 @@ footer a:hover{color:var(--paper)}
 </section>
 
 <section class="tf-step" id="step-pay-buy" data-tf="pay-buy" hidden>
-  <button type="button" class="tf-back" data-back="pay">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="pay">← Back</button>
   <h1 class="tf-q">Buy.</h1>
   <div class="tf-choices" role="group" aria-label="Amount.">
     <button type="button" class="tf-choice primary" id="pack-5" data-pack="5" aria-pressed="true">$5</button>
@@ -270,18 +270,18 @@ footer a:hover{color:var(--paper)}
     <button type="button" class="tf-choice secondary" id="pack-50" data-pack="50" aria-pressed="false">$50</button>
   </div>
   <div class="tf-choices" role="group" aria-label="Pay with.">
-    <button type="button" class="tf-choice primary" id="pay-usdc" data-method="usdc">USDC \xB7 $4.85</button>
-    <button type="button" class="tf-choice secondary" id="pay-dasha" data-method="dasha">$dasha \xB7 $4.75</button>
+    <button type="button" class="tf-choice primary" id="pay-usdc" data-method="usdc">USDC · $4.85</button>
+    <button type="button" class="tf-choice secondary" id="pay-dasha" data-method="dasha">$dasha · $4.75</button>
     <a class="tf-choice secondary" id="pay-method-login" href="/login?return=/compute%23pay" hidden>Sign in</a>
   </div>
   <p class="fine" id="pay-method-err" hidden></p>
-  <p class="fine" id="pay-buy-fine">$5 credits \xB7 crypto discount \xB7 no card yet.</p>
+  <p class="fine" id="pay-buy-fine">$5 credits · crypto discount · no card yet.</p>
 </section>
 
 <section class="tf-step" id="step-pay-send" data-tf="pay-send" hidden>
-  <button type="button" class="tf-back" data-back="pay-buy">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="pay-buy">← Back</button>
   <h1 class="tf-q">Send.</h1>
-  <p class="fine" id="pay-send-line">\xB7</p>
+  <p class="fine" id="pay-send-line">·</p>
   <div class="tf-choices" role="group" aria-label="Send.">
     <button type="button" class="tf-choice primary" id="pay-copy">Copy</button>
     <a class="tf-choice secondary" id="pay-open" target="_blank" rel="noopener noreferrer">Open Phantom</a>
@@ -301,7 +301,7 @@ footer a:hover{color:var(--paper)}
 </section>
 
 <section class="tf-step" id="step-sponsor" data-tf="sponsor" hidden>
-  <button type="button" class="tf-back" data-back="pay">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="pay">← Back</button>
   <h1 class="tf-q">Sponsor.</h1>
   <div class="tf-choices" role="group" aria-label="Sponsor.">
     <button type="button" class="tf-choice primary" id="sponsor-network" data-sponsor-target="network">Network</button>
@@ -309,11 +309,11 @@ footer a:hover{color:var(--paper)}
   <div class="tf-choices" id="sponsor-macs" role="group" aria-label="Mac." hidden></div>
   <p class="fine" id="sponsor-raised">$0 raised</p>
   <p class="fine" id="sponsor-credit" hidden></p>
-  <p class="fine" id="sponsor-fine">Tip face \xB7 USDC or $dasha \xB7 wallet OK without login \xB7 name on board when signed in.</p>
+  <p class="fine" id="sponsor-fine">Tip face · USDC or $dasha · wallet OK without login · name on board when signed in.</p>
 </section>
 
 <section class="tf-step" id="step-sponsor-buy" data-tf="sponsor-buy" hidden>
-  <button type="button" class="tf-back" data-back="sponsor">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="sponsor">← Back</button>
   <h1 class="tf-q">Amount.</h1>
   <div class="tf-choices" role="group" aria-label="Amount.">
     <button type="button" class="tf-choice primary" id="sponsor-pack-5" data-sponsor-pack="5" aria-pressed="true">$5</button>
@@ -322,18 +322,18 @@ footer a:hover{color:var(--paper)}
   </div>
   <label class="field" id="sponsor-custom-wrap"><span class="fine">Custom</span><input id="sponsor-custom" type="number" min="1" max="1000" step="1" inputmode="numeric" autocomplete="off" aria-label="Custom dollars" placeholder="$"></label>
   <div class="tf-choices" role="group" aria-label="Pay with.">
-    <button type="button" class="tf-choice primary" id="sponsor-usdc" data-sponsor-method="usdc">USDC \xB7 $5</button>
-    <button type="button" class="tf-choice secondary" id="sponsor-dasha" data-sponsor-method="dasha">$dasha \xB7 $5</button>
+    <button type="button" class="tf-choice primary" id="sponsor-usdc" data-sponsor-method="usdc">USDC · $5</button>
+    <button type="button" class="tf-choice secondary" id="sponsor-dasha" data-sponsor-method="dasha">$dasha · $5</button>
     <a class="tf-choice secondary" id="sponsor-method-login" href="/login?return=/compute%23sponsor" hidden>Sign in</a>
   </div>
   <p class="fine" id="sponsor-method-err" hidden></p>
-  <p class="fine" id="sponsor-buy-fine">$5 tip \xB7 face \xB7 no crypto discount.</p>
+  <p class="fine" id="sponsor-buy-fine">$5 tip · face · no crypto discount.</p>
 </section>
 
 <section class="tf-step" id="step-sponsor-send" data-tf="sponsor-send" hidden>
-  <button type="button" class="tf-back" data-back="sponsor-buy">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="sponsor-buy">← Back</button>
   <h1 class="tf-q">Send.</h1>
-  <p class="fine" id="sponsor-send-line">\xB7</p>
+  <p class="fine" id="sponsor-send-line">·</p>
   <div class="tf-choices" role="group" aria-label="Send.">
     <button type="button" class="tf-choice primary" id="sponsor-copy">Copy</button>
     <a class="tf-choice secondary" id="sponsor-open" target="_blank" rel="noopener noreferrer">Open Phantom</a>
@@ -352,10 +352,10 @@ footer a:hover{color:var(--paper)}
 </section>
 
 <section class="tf-step" id="step-credits" data-tf="credits" hidden>
-  <button type="button" class="tf-back" data-back="gate">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="gate">← Back</button>
   <h1 class="tf-q">Credits.</h1>
   <p class="fine" id="credits-balance" hidden></p>
-  <p class="fine" id="credits-fine">Pack credits \xB7 crypto discount \xB7 no card yet.</p>
+  <p class="fine" id="credits-fine">Pack credits · crypto discount · no card yet.</p>
   <div class="tf-choices" role="group" aria-label="Credits.">
     <button type="button" class="tf-choice primary" id="credits-use">Use credits</button>
     <button type="button" class="tf-choice secondary" id="credits-topup">Top up</button>
@@ -364,7 +364,7 @@ footer a:hover{color:var(--paper)}
 </section>
 
 <section class="tf-step" id="step-you" data-tf="you" hidden>
-  <button type="button" class="tf-back" data-back="gate">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="gate">← Back</button>
   <h1 class="tf-q">You.</h1>
   <p class="fine" id="you-id" hidden></p>
   <div class="tf-choices" role="group" aria-label="You.">
@@ -377,19 +377,19 @@ footer a:hover{color:var(--paper)}
 </section>
 
 <section class="tf-step" id="step-earn" data-tf="earn" hidden>
-  <button type="button" class="tf-back" data-back="you">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="you">← Back</button>
   <h1 class="tf-q">Earn.</h1>
-  <p class="fine" id="earn-rates">$0.05/job + $0.01/1k completion \xB7 min $1 \xB7 pending operator settle</p>
+  <p class="fine" id="earn-rates">$0.05/job + $0.01/1k completion · min $1 · pending operator settle</p>
   <p class="fine" id="earn-balance" hidden></p>
   <p class="fine" id="earn-jobs" hidden></p>
   <div class="tf-choices" role="group" aria-label="Payout." id="earn-methods" hidden>
     <button type="button" class="tf-choice secondary" id="earn-usdc" data-earn-method="usdc">USDC</button>
-    <button type="button" class="tf-choice secondary" id="earn-dasha" data-earn-method="dasha">$dasha \xB7 +10%</button>
+    <button type="button" class="tf-choice secondary" id="earn-dasha" data-earn-method="dasha">$dasha · +10%</button>
   </div>
   <p class="fine" id="earn-compare" hidden></p>
   <label class="field" id="earn-wallet-wrap" hidden>Wallet<input id="earn-wallet" type="text" maxlength="64" autocomplete="off" spellcheck="false" aria-label="Solana wallet" placeholder="Solana address"></label>
   <div class="actions" id="earn-actions" hidden>
-    <button class="primary" id="earn-payout" type="button" hidden disabled title="Queues for operator settle \xB7 not auto" aria-label="Request payout \xB7 operator settles \xB7 not auto">Request payout</button>
+    <button class="primary" id="earn-payout" type="button" hidden disabled title="Queues for operator settle · not auto" aria-label="Request payout · operator settles · not auto">Request payout</button>
   </div>
   <p class="fine" id="earn-status" role="status" aria-live="polite" hidden></p>
   <p class="fine" id="earn-pending" hidden></p>
@@ -415,7 +415,7 @@ footer a:hover{color:var(--paper)}
 </section>
 
 <section class="tf-step" id="step-night" data-tf="night" hidden>
-  <button type="button" class="tf-back" data-back="how">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="how">← Back</button>
   <h1 class="tf-q" id="night-q">No Mac online.</h1>
   <div id="night-offer" hidden role="status" aria-live="polite">
     <p class="fine" id="night-offer-copy" hidden aria-hidden="true"></p>
@@ -429,9 +429,9 @@ footer a:hover{color:var(--paper)}
 </section>
 
 <section class="tf-step" id="step-provide-name" data-tf="provide-name" hidden>
-  <button type="button" class="tf-back" id="provide-name-back" data-back="ask">\u2190 Back</button>
+  <button type="button" class="tf-back" id="provide-name-back" data-back="ask">← Back</button>
   <h1 class="tf-q">Name this Mac.</h1>
-  <p class="fine" id="provide-name-fine" hidden>Join with a Mac \xB7 keeps capacity warm.</p>
+  <p class="fine" id="provide-name-fine" hidden>Join with a Mac · keeps capacity warm.</p>
   <input id="provider-name" maxlength="64" value="My Mac" required aria-label="Mac name">
   <div class="actions">
     <button class="primary" id="provide-next" type="button">Next</button>
@@ -439,12 +439,12 @@ footer a:hover{color:var(--paper)}
 </section>
 
 <section class="tf-step" id="step-provide-reg" data-tf="provide-reg" hidden>
-  <button type="button" class="tf-back" data-back="provide-name">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="provide-name">← Back</button>
   <h1 class="tf-q">Register.</h1>
   <p class="fine" id="provide-next-line" hidden aria-hidden="true"></p>
-  <p class="fine" id="provide-ocm-fine">Community kit \xB7 one Register \u2192 Setup \xB7 soft doctor warns only.</p>
+  <p class="fine" id="provide-ocm-fine">Community kit · one Register → Setup · soft doctor warns only.</p>
   <div class="tf-choices" role="group" aria-label="Provide status" style="margin:0 0 18px">
-    <a class="tf-quiet" id="provide-ocm-status" href="/compute/ocm/status" title="Cold loads on first request \xB7 Ready/Serving ~1s">Status</a>
+    <a class="tf-quiet" id="provide-ocm-status" href="/compute/ocm/status" title="Cold loads on first request · Ready/Serving ~1s">Status</a>
   </div>
   <div class="actions" id="provide">
     <button class="primary" id="register-provider" type="button" hidden disabled>Register</button>
@@ -456,10 +456,10 @@ footer a:hover{color:var(--paper)}
 
 <section class="tf-step" id="step-provide-done" data-tf="provide-done" hidden>
   <h1 class="tf-q">Setup.</h1>
-  <p class="fine" id="provide-tto">About 15\u201330 min to online.</p>
-  <p class="fine" id="provide-prefer-mlx">Prefer MLX when you can \xB7 Ollama \u22650.33.1 \xB7 models on internal SSD.</p>
-  <p class="fine" id="provide-keepalive">Keep Ollama warm \xB7 OLLAMA_KEEP_ALIVE=-1 on launch agent \xB7 advertise \u2260 mid-Ask inference.</p>
-  <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion \xB7 min $1 \xB7 pending operator settle</p>
+  <p class="fine" id="provide-tto">About 15–30 min to online.</p>
+  <p class="fine" id="provide-prefer-mlx">Prefer MLX when you can · Ollama ≥0.33.1 · models on internal SSD.</p>
+  <p class="fine" id="provide-keepalive">Keep Ollama warm · OLLAMA_KEEP_ALIVE=-1 on launch agent · advertise ≠ mid-Ask inference.</p>
+  <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion · min $1 · pending operator settle</p>
   <pre class="setup" id="setup" aria-live="polite">curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
 tar -xzf dasha-compute-open-alpha.tar.gz
 cd dasha-compute-open-alpha
@@ -469,30 +469,30 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
   <div class="actions row">
     <button class="tf-quiet" id="copy-skill-provide-done" type="button">Copy AI skill</button>
     <a class="secondary" href="/dasha-compute-open-alpha.tar.gz" download>Download kit</a>
-    <a class="tf-quiet" href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Get Ollama \u2197</a>
+    <a class="tf-quiet" href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Get Ollama ↗</a>
   </div>
   <details class="build" id="provider-macs" hidden>
-    <summary id="provider-macs-sum">Your Macs \xB7 0</summary>
+    <summary id="provider-macs-sum">Your Macs · 0</summary>
     <div class="models" id="provider-list"></div>
     <button class="tf-quiet" id="refresh-providers" type="button" hidden disabled>Refresh</button>
   </details>
   <div class="tf-choices" style="margin-top:28px">
     <button type="button" class="tf-choice secondary" id="provide-done-gate">Done</button>
-    <button type="button" class="tf-quiet" id="provide-add-mac" title="Community Register \xB7 not Host / OCM enroll">Add another Mac</button>
+    <button type="button" class="tf-quiet" id="provide-add-mac" title="Community Register · not Host / OCM enroll">Add another Mac</button>
     <button type="button" class="tf-quiet" id="provide-done-earn">Earnings</button>
   </div>
 </section>
 
 <section class="tf-step" id="step-build" data-tf="build" hidden>
-  <button type="button" class="tf-back" data-back="answer">\u2190 Back</button>
+  <button type="button" class="tf-back" data-back="answer">← Back</button>
   <h1 class="tf-q">API.</h1>
   <details class="build" id="build" open>
-    <summary>API \xB7 one base URL</summary>
-    <p class="fine" id="api-usage-fine">Usage on stream \xB7 v1 + Hosted stop \xB7 jobs/:id when stored.</p>
+    <summary>API · one base URL</summary>
+    <p class="fine" id="api-usage-fine">Usage on stream · v1 + Hosted stop · jobs/:id when stored.</p>
     <label class="field">HTTPS gateway URL<input id="gateway" type="url" value="https://lobby.getdasha.com/compute/api/v1"></label>
-    <pre id="code">curl https://lobby.getdasha.com/compute/api/v1/chat/completions \\
-  -H "Authorization: Bearer $DASHA_API_KEY" \\
-  -H "Content-Type: application/json" \\
+    <pre id="code">curl https://lobby.getdasha.com/compute/api/v1/chat/completions \
+  -H "Authorization: Bearer $DASHA_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{"model":"qwen3-8b","messages":[{"role":"user","content":"hello"}],"stream":true}'</pre>
     <div class="actions row">
       <button class="copy secondary" data-copy="code" type="button">Copy curl</button>
@@ -500,7 +500,7 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
       <button class="primary" id="create-api-key" type="button" hidden disabled>Create API key</button>
       <button class="secondary" id="check" type="button">Run check</button>
     </div>
-    <p class="fine" id="api-key-cap-hint">Credits \xB7 Cap $5 / month</p>
+    <p class="fine" id="api-key-cap-hint">Credits · Cap $5 / month</p>
     <label class="field" id="api-key-limit-wrap" hidden>Spend cap (USD / month)<input id="api-key-limit" type="number" min="1" max="1000" step="1" value="5" inputmode="decimal" placeholder="5"></label>
     <pre id="api-key-output" aria-live="polite">Sign in to create a developer key.</pre>
     <div class="models" id="api-key-list"><p class="fine">Sign in to create a developer key.</p></div>
@@ -509,34 +509,34 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
 </section>
 
 <aside id="presence-act-boot" class="fine presence-act-boot" aria-live="polite" data-presence-act="boot">
-  <span id="presence-strip-boot" data-presence="live" title="Community advertising \u2260 OCM enrolled">
+  <span id="presence-strip-boot" data-presence="live" title="Community advertising ≠ OCM enrolled">
     <span id="presence-community">No Mac advertising</span>
-    <span class="honesty-sep" id="presence-enrolled-boot-sep" aria-hidden="true" hidden>\xB7</span>
+    <span class="honesty-sep" id="presence-enrolled-boot-sep" aria-hidden="true" hidden>·</span>
     <span id="presence-enrolled-boot" hidden></span>
   </span>
-  <span class="honesty-sep" aria-hidden="true">\xB7</span>
-  <span id="act-tape-boot" data-act="settled" title="Visible acts \xB7 settled paid-inference \xB7 24h">0 tok \xB7 24h</span>
+  <span class="honesty-sep" aria-hidden="true">·</span>
+  <span id="act-tape-boot" data-act="settled" title="Visible acts · settled paid-inference · 24h">0 tok · 24h</span>
 </aside>
 
 <aside id="honesty-panel" class="fine honesty-panel" hidden
   aria-live="polite" data-honesty="live">
-  <span id="honesty-hosted" class="honesty-ok">Hosted \xB7 live</span>
-  <span class="honesty-sep" aria-hidden="true">\xB7</span>
-  <span id="presence-strip" data-presence="live" title="Community advertising \u2260 OCM enrolled">
+  <span id="honesty-hosted" class="honesty-ok">Hosted · live</span>
+  <span class="honesty-sep" aria-hidden="true">·</span>
+  <span id="presence-strip" data-presence="live" title="Community advertising ≠ OCM enrolled">
     <span id="honesty-macs">No Mac online</span>
-    <span class="honesty-sep" id="honesty-enrolled-sep" aria-hidden="true" hidden>\xB7</span>
+    <span class="honesty-sep" id="honesty-enrolled-sep" aria-hidden="true" hidden>·</span>
     <span id="honesty-enrolled" hidden></span>
   </span>
-  <span class="honesty-sep" aria-hidden="true">\xB7</span>
-  <span id="act-tape" data-act="settled" title="Visible acts \xB7 settled paid-inference \xB7 24h">
-    <span id="honesty-settled" title="Settled paid-inference \xB7 last 24h">0 tok \xB7 24h</span>
+  <span class="honesty-sep" aria-hidden="true">·</span>
+  <span id="act-tape" data-act="settled" title="Visible acts · settled paid-inference · 24h">
+    <span id="honesty-settled" title="Settled paid-inference · last 24h">0 tok · 24h</span>
   </span>
 </aside>
 
 <footer>
-  <span>$dasha compute \xB7 v0.3 open alpha</span>
-  <span id="settled-24h" title="Settled paid-inference \xB7 last 24h">0 tok \xB7 24h</span>
-  <a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">53ux\u2026pump</a>
+  <span>$dasha compute · v0.3 open alpha</span>
+  <span id="settled-24h" title="Settled paid-inference · last 24h">0 tok · 24h</span>
+  <a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">53ux…pump</a>
   <a href="/privacy">Privacy</a>
   <span>local-first</span>
 </footer>
@@ -551,13 +551,13 @@ const MODELS=[
   ['gemma3-27b','gemma3:27b','Gemma 3 27B','17 GB',24,'large multimodal']
 ];
 const SUB24=new Set(['qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b']);
-const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\\n\\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\\n\\n## Goal\\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\\n\\n## Facts (do not invent others)\\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\\n- Coordinator: https://lobby.getdasha.com/compute/api\\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\n- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)\\n- Token goes in \`.dasha-provider-key\` mode 0600 \\u2014 never put the provider key on argv or shell history\\n- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh\\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens \\u00b7 min $1 payout \\u00b7 pending operator settle \\u00b7 not auto \\u00b7 $dasha payout +10% \\u00b7 never invent balances\\n\\n## Steps for the AI to run with the human\\n1. Open https://www.getdasha.com/compute \\u2192 Provide (quiet link) \\u2192 name the Mac \\u2192 Sign in (X) if needed \\u2192 Register.\\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once \\u2014 refresh loses it. Prefer that block over this template.\\n3. On the Mac, run the Setup command \\u2014 or this template with the pasted values:\\n\\n\`\`\`bash\\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\ntar -xzf dasha-compute-open-alpha.tar.gz\\ncd dasha-compute-open-alpha\\n# install Ollama from https://ollama.com/download if missing\\nollama pull qwen3:8b\\numask 077\\ncat > .dasha-provider-key <<'TOKEN'\\nPASTE_ONE_TIME_TOKEN_HERE\\nTOKEN\\nchmod 0600 .dasha-provider-key\\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\\\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\\\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b \\\\\\n./install.sh\\n\`\`\`\\n\\n4. Verify after install (\`install.sh\` already ran doctor and moved the key):\\n\\n\`\`\`bash\\ndasha-compute doctor\\ndasha-compute status\\n\`\`\`\\n\\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\\n\\n## Prefer MLX (Apple Silicon, optional)\\n- Prefer MLX when you can \\u2014 often faster on Apple Silicon; Ollama still works.\\n- Recommend Ollama \\u22650.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\\n- Keep models on internal SSD \\u2014 slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\\n- Official Ollama path (live docs): Ollama \\u22650.33.1 + models tagged \`*-mlx\` (example: \`gemma4:12b-mlx\`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\\n- Else quiet note: for speed, LM Studio MLX server or \`mlx_lm\`; keep mapped Ollama chat models so Dasha heartbeats still work.\\n- \`dasha-compute doctor\` prints a soft \`mlx\` hint when detectable; never fails solely for missing MLX.\\n- After install, \`dasha-compute benchmark\` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks \\u2014 never invent.\\n- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.\\n\\n## Host power / thermal / SIP (soft)\\n- \`dasha-compute doctor\` soft-warns when on battery, Low Power Mode, elevated thermal pressure, or SIP disabled/unreadable (Darwin best-effort).\\n- Never fails solely for battery / AC / Low Power / thermal / SIP.\\n- Local OS health only \\u2014 never claims Secure Enclave, TEE, Nitro, or network \`sip_enabled\` attestation.\\n\\n## Keep-alive (sub-24GB)\\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service \\u2014 a shell export alone is not enough for the macOS app).\\n- Do not pin 27B on a 16\\u201324GB Air for interactive chat; use 8B/12B.\\n- \`dasha-compute doctor\` soft-hints when a mapped model looks \\u226527B, and when mapped chat is cold in Ollama \`/api/ps\` (keep-alive). Never fails solely for size or keep-alive.\\n- Advertising/heartbeat OK while mid-Ask fails with \`provider inference failed: URLError\` \\u2192 localhost Ollama on \`127.0.0.1:11434\` was refused/reset. Soft doctor does not block advertise alone \\u2014 fix Ollama keep-alive / restart service.\\n\\n## Success\\n- dasha-compute doctor exits 0\\n- Heartbeats succeed\\n- A Community Run from another session can complete on this Mac\\n\\n## If stuck\\n- Re-register for a fresh token\\n- Check dasha-compute logs\\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\\n- Mid-Ask \`URLError\` / partial stream while still online \\u2192 \`curl -sS http://127.0.0.1:11434/api/ps\` (and \`/api/tags\`); set OLLAMA_KEEP_ALIVE=-1 on the Ollama launch agent; restart Ollama; re-run \`dasha-compute doctor\` (keepalive soft is OK \\u2014 exit should still be 0)\\n";
-const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\\n\\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute \\u2014 Hosted demo or community Macs \\u2014 without becoming a provider.\\n\\n## Goal\\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\\n\\n## Facts\\n- URL: https://www.getdasha.com/compute\\n- Flow is Typeform-style: cold boot \\u2192 Start. (Ask / Provide / Pay / Credits). Ask \\u2192 Hosted Ask \\u00b7 quiet Provide / Marketplace / Host \\u00b7 Change engine for Community/Mixture \\u00b7 model if community \\u2192 Run. Pay \\u2192 Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login \\u00b7 quiet named tip credits when signed in). Credits \\u2192 balance + Use credits / Top up. No card yet.\\n- Login with X is required to Run or queue\\n- Hosted model: gpt-oss-20b \\u00b7 3 free / 10 min \\u00b7 then credits\\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\\n- API billing: non-self \`v1/chat/completions\` spends prepaid credits via USDC/$dasha ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection \\u2014 not a free allowance. Top up via Pay / Credits \\u00b7 no card.\\n- API usage: OpenAI-style \`usage\` on non-stream JSON and on the SSE final \`finish_reason=stop\` chunk (v1 chat/completions + Hosted Ask). \`GET /compute/api/jobs/:id\` returns stored \`usage\` (+ \`route\`) when present \\u2014 never invent tokens. See \`GET /compute/api/v1\` \\u2192 \`usage\`.\\n- Marketplace: https://www.getdasha.com/compute/ocm\\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\\n- Community Macs: Prefer MLX when you can (providers) \\u00b7 Ollama \\u22650.33.1 \\u00b7 models on internal SSD; Ollama still works.\\n- Ask top-state shows measured tok/s only when network capacity has benchmarks \\u2014 never invent speed.\\n- When Macs are online, Ask shows a quiet Community \\u00b7 N door (measured tok/s in the title) \\u2014 Hosted stays the default; Change engine still opens How.\\n\\n## Steps for the AI to guide\\n1. Open https://www.getdasha.com/compute\\n2. Cold boot shows Start. \\u2014 Ask \\u2192 Hosted Ask. Pay \\u2192 Pay. (Top up \\u2192 Buy (amount+method) \\u2192 Send \\u00b7 Sponsor \\u2192 Amount \\u2192 Send). Credits \\u2192 Credits. (Use credits \\u2192 Ask \\u00b7 Top up \\u2192 Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Community or Mixture; quiet Provide / Marketplace / Host links\\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\\n4. Sign in if prompted\\n5. Type a prompt \\u2192 Run (Enter). Keyboard: 1\\u20134 choices \\u00b7 Esc Back\\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community \\u00b7 N (honest capacity) \\u2014 Hosted stays available\\n\\n## Optional API\\n\\n\`\`\`bash\\nexport DASHA_API_KEY='your-key'\\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\\\\n  -H \\"Authorization: Bearer $DASHA_API_KEY\\" \\\\\\n  -H \\"Content-Type: application/json\\" \\\\\\n  -d '{\\"model\\":\\"qwen3-8b\\",\\"messages\\":[{\\"role\\":\\"user\\",\\"content\\":\\"hello\\"}],\\"stream\\":true}'\\n\`\`\`\\n\\n## Success\\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\\n- On stream, read \`usage\` from the final stop chunk (not earlier deltas)\\n\\n## If stuck\\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\\n";
+const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\n\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\n\n## Goal\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\n\n## Facts (do not invent others)\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\n- Coordinator: https://lobby.getdasha.com/compute/api\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\n- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)\n- Token goes in `.dasha-provider-key` mode 0600 \u2014 never put the provider key on argv or shell history\n- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens \u00b7 min $1 payout \u00b7 pending operator settle \u00b7 not auto \u00b7 $dasha payout +10% \u00b7 never invent balances\n\n## Steps for the AI to run with the human\n1. Open https://www.getdasha.com/compute \u2192 Provide (quiet link) \u2192 name the Mac \u2192 Sign in (X) if needed \u2192 Register.\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once \u2014 refresh loses it. Prefer that block over this template.\n3. On the Mac, run the Setup command \u2014 or this template with the pasted values:\n\n```bash\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\n# install Ollama from https://ollama.com/download if missing\nollama pull qwen3:8b\numask 077\ncat > .dasha-provider-key <<'TOKEN'\nPASTE_ONE_TIME_TOKEN_HERE\nTOKEN\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b \\\n./install.sh\n```\n\n4. Verify after install (`install.sh` already ran doctor and moved the key):\n\n```bash\ndasha-compute doctor\ndasha-compute status\n```\n\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\n\n## Prefer MLX (Apple Silicon, optional)\n- Prefer MLX when you can \u2014 often faster on Apple Silicon; Ollama still works.\n- Recommend Ollama \u22650.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\n- Keep models on internal SSD \u2014 slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\n- Official Ollama path (live docs): Ollama \u22650.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\n- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks \u2014 never invent.\n- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.\n\n## Host power / thermal / SIP (soft)\n- `dasha-compute doctor` soft-warns when on battery, Low Power Mode, elevated thermal pressure, or SIP disabled/unreadable (Darwin best-effort).\n- Never fails solely for battery / AC / Low Power / thermal / SIP.\n- Local OS health only \u2014 never claims Secure Enclave, TEE, Nitro, or network `sip_enabled` attestation.\n\n## Keep-alive (sub-24GB)\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service \u2014 a shell export alone is not enough for the macOS app).\n- Do not pin 27B on a 16\u201324GB Air for interactive chat; use 8B/12B.\n- `dasha-compute doctor` soft-hints when a mapped model looks \u226527B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.\n- Advertising/heartbeat OK while mid-Ask fails with `provider inference failed: URLError` \u2192 localhost Ollama on `127.0.0.1:11434` was refused/reset. Soft doctor does not block advertise alone \u2014 fix Ollama keep-alive / restart service.\n\n## Success\n- dasha-compute doctor exits 0\n- Heartbeats succeed\n- A Community Run from another session can complete on this Mac\n\n## If stuck\n- Re-register for a fresh token\n- Check dasha-compute logs\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\n- Mid-Ask `URLError` / partial stream while still online \u2192 `curl -sS http://127.0.0.1:11434/api/ps` (and `/api/tags`); set OLLAMA_KEEP_ALIVE=-1 on the Ollama launch agent; restart Ollama; re-run `dasha-compute doctor` (keepalive soft is OK \u2014 exit should still be 0)\n";
+const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\n\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute \u2014 Hosted demo or community Macs \u2014 without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot \u2192 Start. (Ask / Provide / Pay / Credits). Ask \u2192 Hosted Ask \u00b7 quiet Provide / Marketplace / Host \u00b7 Change engine for Community/Mixture \u00b7 model if community \u2192 Run. Pay \u2192 Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login \u00b7 quiet named tip credits when signed in). Credits \u2192 balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b \u00b7 3 free / 10 min \u00b7 then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- API billing: non-self `v1/chat/completions` spends prepaid credits via USDC/$dasha ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection \u2014 not a free allowance. Top up via Pay / Credits \u00b7 no card.\n- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present \u2014 never invent tokens. See `GET /compute/api/v1` \u2192 `usage`.\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) \u00b7 Ollama \u22650.33.1 \u00b7 models on internal SSD; Ollama still works.\n- Ask top-state shows measured tok/s only when network capacity has benchmarks \u2014 never invent speed.\n- When Macs are online, Ask shows a quiet Community \u00b7 N door (measured tok/s in the title) \u2014 Hosted stays the default; Change engine still opens How.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. \u2014 Ask \u2192 Hosted Ask. Pay \u2192 Pay. (Top up \u2192 Buy (amount+method) \u2192 Send \u00b7 Sponsor \u2192 Amount \u2192 Send). Credits \u2192 Credits. (Use credits \u2192 Ask \u00b7 Top up \u2192 Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Community or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\n4. Sign in if prompted\n5. Type a prompt \u2192 Run (Enter). Keyboard: 1\u20134 choices \u00b7 Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community \u00b7 N (honest capacity) \u2014 Hosted stays available\n\n## Optional API\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n- On stream, read `usage` from the final stop chunk (not earlier deltas)\n\n## If stuck\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n";
 const API='https://lobby.getdasha.com';
 let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacKnown=0,ownMacModels=new Set(),ownMacTps=0,preferSelf=false,lastPreferAttempted=false,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask';
 
 function pendingMessages(){
-  const content=$('prompt').value.trim()||'\u2026',kept=[];
+  const content=$('prompt').value.trim()||'…',kept=[];
   let budget=6000-content.length;
   for(let index=conversation.length-1;index>=0&&kept.length<10;index--){
     const message=conversation[index];
@@ -568,7 +568,7 @@ function pendingMessages(){
   return[...kept,{role:'user',content}];
 }
 function mixtureFraming(messages){
-  const tip='You are Dasha Mixture \xB7 sub-24GB. Prefer a hot small specialist on the selected model. Be short, fun, useful.';
+  const tip='You are Dasha Mixture · sub-24GB. Prefer a hot small specialist on the selected model. Be short, fun, useful.';
   return[{role:'system',content:tip},...messages];
 }
 function modelIdentityFraming(messages,modelId){
@@ -581,7 +581,7 @@ function modelIdentityFraming(messages,modelId){
 function paintRequest(){/* character chrome cut from typeform flow */}
 function renderConversation(){
   const answer=$('answer');
-  answer.textContent=conversation.length?conversation.map(message=>\`\${message.role==='user'?'You':'Assistant'}:\\n\${message.content}\`).join('\\n\\n'):'';
+  answer.textContent=conversation.length?conversation.map(message=>`${message.role==='user'?'You':'Assistant'}:\n${message.content}`).join('\n\n'):'';
   $('clear-chat').disabled=!conversation.length;
   document.body.classList.toggle('has-chat',conversation.length>0);
 }
@@ -590,7 +590,7 @@ function paintAnswerApi(){
   const el=$('answer-api');
   if(!el)return;
   // Progressive: quiet door only after first successful Answer; stay quiet if keys exist.
-  // Night/queue failures never increment sent / add assistant \u2014 stay hidden.
+  // Night/queue failures never increment sent / add assistant — stay hidden.
   if(!hasSuccessfulAnswer()||(loggedIn&&apiKeyCount>0)){
     el.hidden=true;
     return;
@@ -609,7 +609,7 @@ function paintAnswerApi(){
 function paintAnswerMoney(){
   const el=$('answer-credits');
   if(!el)return;
-  // Quiet Pay/Credits nudge only after rate-limit / credits 402 \u2014 never on happy Answer.
+  // Quiet Pay/Credits nudge only after rate-limit / credits 402 — never on happy Answer.
   if(lastAskFailKind!=='rate'&&lastAskFailKind!=='credits'){
     el.hidden=true;
     el.textContent='';
@@ -672,19 +672,19 @@ function paintSplit(){
     if(mp>=1&&Number.isFinite(tps)&&tps>0)measuredTps=tps;
   }
   if(top){
-    // Gate: never Community boast on Start. \u2014 quiet chrome; count only past gate.
-    // Measured tok/s only when capacity.measured_providers\u22651 \u2014 never invent.
-    if(tfStep==='gate'){top.textContent=!window.__dashaAuthReady?'\xB7':'';}
+    // Gate: never Community boast on Start. — quiet chrome; count only past gate.
+    // Measured tok/s only when capacity.measured_providers≥1 — never invent.
+    if(tfStep==='gate'){top.textContent=!window.__dashaAuthReady?'·':'';}
     else if(n>=1){
       const tpsLabel=formatTokPerSec(measuredTps);
-      if(modelName&&tpsLabel)top.textContent=\`\${n} \xB7 \${modelName} \xB7 \${tpsLabel} tok/s\`;
-      else if(modelName)top.textContent=\`\${n} \xB7 \${modelName}\`;
-      else top.textContent=\`\${n}\`;
+      if(modelName&&tpsLabel)top.textContent=`${n} · ${modelName} · ${tpsLabel} tok/s`;
+      else if(modelName)top.textContent=`${n} · ${modelName}`;
+      else top.textContent=`${n}`;
     }
-    else if(!window.__dashaAuthReady)top.textContent='\xB7';
+    else if(!window.__dashaAuthReady)top.textContent='·';
     else top.textContent='';
   }
-  // Quiet Ask Marketplace plain (no \xB7 N). Count lives on peek Console \xB7 N only.
+  // Quiet Ask Marketplace plain (no · N). Count lives on peek Console · N only.
   const askOcm=$('ask-ocm');
   if(askOcm){
     askOcm.textContent='Marketplace';
@@ -692,12 +692,12 @@ function paintSplit(){
   }
   const open=$('market-open');
   if(open){
-    open.textContent=(ocmHosts!=null&&ocmHosts>0)?\`Console \xB7 \${ocmHosts}\`:'Console';
+    open.textContent=(ocmHosts!=null&&ocmHosts>0)?`Console · ${ocmHosts}`:'Console';
     open.removeAttribute('aria-description');
   }
   const hostOpen=$('host-run');
   if(hostOpen){
-    hostOpen.textContent=(ocmHosts!=null&&ocmHosts>0)?\`Open \xB7 \${ocmHosts}\`:'Open';
+    hostOpen.textContent=(ocmHosts!=null&&ocmHosts>0)?`Open · ${ocmHosts}`:'Open';
     hostOpen.removeAttribute('aria-description');
   }
   paintProvideBeat();
@@ -710,7 +710,7 @@ function shortModelHint(hint){
   if(/reason/i.test(h))return 'reason';
   if(/MoE/i.test(h))return 'MoE';
   if(/large|multi/i.test(h))return 'large';
-  return (h.split(/\\s+/)[0]||'').trim();
+  return (h.split(/\s+/)[0]||'').trim();
 }
 function paintModelChoices(){
   const box=$('model-choices');
@@ -718,7 +718,7 @@ function paintModelChoices(){
   const eng=$('engine').value;
   const mixture=eng==='mixture';
   let pool=mixture?MODELS.filter(m=>SUB24.has(m[0])):MODELS;
-  // Fleet known: only list models in models_available \u2014 every chip is selectable (no dead fake-clickable offline rows).
+  // Fleet known: only list models in models_available — every chip is selectable (no dead fake-clickable offline rows).
   if(networkModels.size>0)pool=pool.filter(m=>networkModels.has(m[0]));
   box.replaceChildren();
   pool.forEach(([id,,label,size,,hint])=>{
@@ -728,7 +728,7 @@ function paintModelChoices(){
     b.dataset.model=id;
     b.setAttribute('aria-pressed',$('model').value===id?'true':'false');
     const cap=shortModelHint(hint);
-    b.textContent=cap?\`\${label} \xB7 \${size} \xB7 \${cap}\`:\`\${label} \xB7 \${size}\`;
+    b.textContent=cap?`${label} · ${size} · ${cap}`:`${label} · ${size}`;
     b.title=hint||'';
     b.addEventListener('click',()=>{
       $('model').value=id;
@@ -809,10 +809,10 @@ function paintProvideBeat(){
   if(!beat)return;
   if(tfStep!=='provide-done'){beat.hidden=true;return}
   beat.hidden=false;
-  // Online = your Mac advertising (ownMacOnline) \u2014 not fleet providers_online / OCM enrolled.
+  // Online = your Mac advertising (ownMacOnline) — not fleet providers_online / OCM enrolled.
   const mine=loggedIn?ownMacOnline:0;
   if(mine>=1){
-    beat.textContent=mine===1?'Online':\`\${mine} online\`;
+    beat.textContent=mine===1?'Online':`${mine} online`;
     beat.classList.add('acid');
     beat.classList.remove('waiting');
     beat.setAttribute('aria-label',beat.textContent);
@@ -887,8 +887,8 @@ function showTf(step){
     const prompt=$('prompt');
     const backHidden=!!$('back-ask')?.hidden;
     if(prompt){
-      if(nightQueueIntent)prompt.title=backHidden?'Enter to queue':'Enter to queue \xB7 Esc back';
-      else prompt.title=backHidden?'Enter to run':'Enter to run \xB7 Esc back';
+      if(nightQueueIntent)prompt.title=backHidden?'Enter to queue':'Enter to queue · Esc back';
+      else prompt.title=backHidden?'Enter to run':'Enter to run · Esc back';
     }
     setTimeout(()=>$('prompt')?.focus(),40);
   }else if(step==='provide-name'){
@@ -904,7 +904,7 @@ function showTf(step){
       if(!section||section.hidden)return;
       const active=document.activeElement;
       if(active&&section.contains(active))return;
-      // Guest Buy: Sign in is the only money CTA \u2014 prefer it over pack chips.
+      // Guest Buy: Sign in is the only money CTA — prefer it over pack chips.
       if(step==='pay-buy'&&!loggedIn){
         const payLogin=$('pay-method-login');
         if(payLogin&&!payLogin.hidden&&payLogin.offsetParent!==null){payLogin.focus();return}
@@ -943,7 +943,7 @@ function showTf(step){
     if(!loggedIn){
       const wait=$('pay-wait'),line=$('pay-send-line');
       if(wait)wait.textContent='';
-      if(line)line.textContent='\xB7';
+      if(line)line.textContent='·';
       creditOrder=null;clearCreditPoll();
       paintPayBuy();showTf('pay-buy');return
     }
@@ -1012,10 +1012,10 @@ function paintAskCommunity(){
     return;
   }
   const {model,tpsLabel}=fleetMeasuredLabel();
-  chip.textContent=\`Community \xB7 \${providersOnline}\`;
-  const title=tpsLabel?(model?\`\${model} \xB7 \${tpsLabel} tok/s measured\`:\`\${tpsLabel} tok/s measured\`):(model?\`\${model} \xB7 online\`:'Community Mac online');
+  chip.textContent=`Community · ${providersOnline}`;
+  const title=tpsLabel?(model?`${model} · ${tpsLabel} tok/s measured`:`${tpsLabel} tok/s measured`):(model?`${model} · online`:'Community Mac online');
   chip.title=title;
-  chip.setAttribute('aria-label',tpsLabel?(\`Community \xB7 \${providersOnline} \xB7 \${tpsLabel} tok/s\`):(\`Community \xB7 \${providersOnline}\`));
+  chip.setAttribute('aria-label',tpsLabel?(`Community · ${providersOnline} · ${tpsLabel} tok/s`):(`Community · ${providersOnline}`));
 }
 function paintHowFloorFine(){
   const el=$('how-floor-fine');
@@ -1023,9 +1023,9 @@ function paintHowFloorFine(){
   if(!(providersOnline>=1)){el.textContent='Local Macs + Hosted floor.';return}
   const {model,tpsLabel}=fleetMeasuredLabel();
   const n=providersOnline;
-  if(model&&tpsLabel)el.textContent=\`\${n} \xB7 \${model} \xB7 \${tpsLabel} tok/s \xB7 Hosted floor.\`;
-  else if(model)el.textContent=\`\${n} \xB7 \${model} \xB7 Hosted floor.\`;
-  else el.textContent=\`\${n} online \xB7 Hosted floor.\`;
+  if(model&&tpsLabel)el.textContent=`${n} · ${model} · ${tpsLabel} tok/s · Hosted floor.`;
+  else if(model)el.textContent=`${n} · ${model} · Hosted floor.`;
+  else el.textContent=`${n} online · Hosted floor.`;
 }
 function paintAskFreeFine(){
   const el=$('ask-free-fine');
@@ -1034,16 +1034,16 @@ function paintAskFreeFine(){
   // Hosted floor honesty: 3-free only on Hosted. Community / Prefer / self say so explicitly.
   if(eng==='hosted'){
     el.hidden=false;el.removeAttribute('hidden');
-    el.textContent='3 free / 10 min \xB7 then credits.';
+    el.textContent='3 free / 10 min · then credits.';
     return;
   }
   el.hidden=false;el.removeAttribute('hidden');
   if(eng==='self'){
-    el.textContent='Your Mac \xB7 charge:0 \xB7 not Hosted 3-free.';
+    el.textContent='Your Mac · charge:0 · not Hosted 3-free.';
   }else if(preferSelf&&(eng==='community'||eng==='mixture')){
-    el.textContent='Prefer \xB7 else Community settle \xB7 not Hosted 3-free.';
+    el.textContent='Prefer · else Community settle · not Hosted 3-free.';
   }else if(eng==='community'||eng==='mixture'){
-    el.textContent='Community settle \xB7 USDC/$dasha \xB7 not Hosted 3-free.';
+    el.textContent='Community settle · USDC/$dasha · not Hosted 3-free.';
   }else{
     el.hidden=true;el.setAttribute('hidden','');el.textContent='';
   }
@@ -1053,29 +1053,29 @@ function paintAskEngine(){
   if(!btn)return;
   const eng=$('engine')?.value||'hosted';
   if(preferSelf&&(eng==='community'||eng==='mixture')){
-    const base=eng==='mixture'?'Mixture':(providersOnline>=1?('Community \xB7 '+providersOnline):'Community');
-    btn.textContent='Prefer \xB7 '+base;
-  }else if(eng==='community')btn.textContent=providersOnline>=1?\`Community \xB7 \${providersOnline}\`:'Community';
+    const base=eng==='mixture'?'Mixture':(providersOnline>=1?('Community · '+providersOnline):'Community');
+    btn.textContent='Prefer · '+base;
+  }else if(eng==='community')btn.textContent=providersOnline>=1?`Community · ${providersOnline}`:'Community';
   else if(eng==='mixture')btn.textContent='Mixture';
-  else if(eng==='self')btn.textContent='My Mac \xB7 free';
+  else if(eng==='self')btn.textContent='My Mac · free';
   else btn.textContent='Hosted';
   btn.setAttribute('aria-label','Change engine');
   if(preferSelf&&(eng==='community'||eng==='mixture')){
     const tpsLabel=formatTokPerSec(ownMacTps);
-    btn.title=tpsLabel?('Prefer my Mac when online \xB7 '+tpsLabel+' tok/s measured \xB7 else Community'):'Prefer your Mac when online \xB7 else Community';
+    btn.title=tpsLabel?('Prefer my Mac when online · '+tpsLabel+' tok/s measured · else Community'):'Prefer your Mac when online · else Community';
   }else if(providersOnline>=1&&(eng==='hosted'||(eng==='mixture'&&fleetEmpty('mixture')))){
     const {model,tpsLabel}=fleetMeasuredLabel();
     const bits=['Community',String(providersOnline)];
     if(model)bits.push(model);
     if(tpsLabel)bits.push(tpsLabel+' tok/s');
-    btn.title='Change engine \xB7 '+bits.join(' \xB7 ')+' available';
+    btn.title='Change engine · '+bits.join(' · ')+' available';
   }else btn.title='Change engine';
 }
 function paintAskMyMac(){
   const chip=$('ask-mymac'),sep=$('ask-mymac-sep'),prefer=$('ask-prefer-mymac'),preferSep=$('ask-prefer-mymac-sep'),engSelf=$('eng-self');
   const online=!!loggedIn&&ownMacOnline>=1;
   const known=!!loggedIn&&ownMacKnown>=1;
-  // Soft Prefer stays visible when an owned Mac is registered but offline \u2014 hard My Mac \xB7 free stays fail-closed.
+  // Soft Prefer stays visible when an owned Mac is registered but offline — hard My Mac · free stays fail-closed.
   const showPrefer=online||known;
   const showHard=online;
   if(!online)preferSelf=false;
@@ -1091,24 +1091,24 @@ function paintAskMyMac(){
   if(sep)sep.hidden=!showHard;
   if(engSelf)engSelf.hidden=!showHard;
   const tpsLabel=formatTokPerSec(ownMacTps);
-  const title=tpsLabel?('My Mac \xB7 free \xB7 '+tpsLabel+' tok/s measured'):'Run on your Mac \xB7 free';
-  if(chip){chip.title=title;chip.setAttribute('aria-label',tpsLabel?('My Mac \xB7 free \xB7 '+tpsLabel+' tok/s'):'My Mac \xB7 free')}
+  const title=tpsLabel?('My Mac · free · '+tpsLabel+' tok/s measured'):'Run on your Mac · free';
+  if(chip){chip.title=title;chip.setAttribute('aria-label',tpsLabel?('My Mac · free · '+tpsLabel+' tok/s'):'My Mac · free')}
   if(prefer){
     if(!online&&known){
-      prefer.textContent='Prefer \xB7 offline';
-      prefer.title='Your Mac is offline \xB7 Prefer resumes when online \xB7 else Community';
-      prefer.setAttribute('aria-label','Prefer my Mac \xB7 offline');
+      prefer.textContent='Prefer · offline';
+      prefer.title='Your Mac is offline · Prefer resumes when online · else Community';
+      prefer.setAttribute('aria-label','Prefer my Mac · offline');
     }else if(preferSelf){
-      prefer.textContent='Prefer \xB7 on';
-      prefer.title=tpsLabel?('Prefer my Mac on \xB7 '+tpsLabel+' tok/s measured \xB7 else Community'):'Prefer my Mac on \xB7 else Community';
-      prefer.setAttribute('aria-label',tpsLabel?('Prefer my Mac on \xB7 '+tpsLabel+' tok/s'):'Prefer my Mac on');
+      prefer.textContent='Prefer · on';
+      prefer.title=tpsLabel?('Prefer my Mac on · '+tpsLabel+' tok/s measured · else Community'):'Prefer my Mac on · else Community';
+      prefer.setAttribute('aria-label',tpsLabel?('Prefer my Mac on · '+tpsLabel+' tok/s'):'Prefer my Mac on');
     }else{
       prefer.textContent='Prefer my Mac';
-      prefer.title=tpsLabel?('Prefer my Mac \xB7 '+tpsLabel+' tok/s measured \xB7 else Community'):'Prefer your Mac when online \xB7 else Community';
+      prefer.title=tpsLabel?('Prefer my Mac · '+tpsLabel+' tok/s measured · else Community'):'Prefer your Mac when online · else Community';
       prefer.setAttribute('aria-label','Prefer my Mac');
     }
   }
-  if(engSelf){engSelf.title=tpsLabel?('My Mac \xB7 '+tpsLabel+' tok/s measured'):'My Mac \xB7 free'}
+  if(engSelf){engSelf.title=tpsLabel?('My Mac · '+tpsLabel+' tok/s measured'):'My Mac · free'}
   if(!showHard&&$('engine')?.value==='self')setEngine('hosted',false);
   paintAskEngine();
 }
@@ -1123,7 +1123,7 @@ function saveAskDraftForLogin(){
     if(text)sessionStorage.setItem(ASK_DRAFT_KEY,text.slice(0,2000));
     else sessionStorage.removeItem(ASK_DRAFT_KEY);
     sessionStorage.setItem(ASK_RESUME_KEY,'1');
-    // Guest Community/Mixture Sign in must resume that engine when Mac still up \u2014 not silent Hosted steal.
+    // Guest Community/Mixture Sign in must resume that engine when Mac still up — not silent Hosted steal.
     const eng=$('engine')?.value||'hosted';
     if(eng==='community'||eng==='mixture'||eng==='self'||eng==='hosted')sessionStorage.setItem(ASK_ENGINE_KEY,eng);
     else sessionStorage.removeItem(ASK_ENGINE_KEY);
@@ -1155,7 +1155,7 @@ function applyAskResumeEngine(){
   else if(eng==='mixture'&&!fleetEmpty('mixture'))want='mixture';
   else if(eng==='self'&&ownMacOnline>=1)want='self';
   else if(eng==='hosted')want='hosted';
-  // else Mac/self gone while signing in \u2192 honest Hosted floor (keep draft).
+  // else Mac/self gone while signing in → honest Hosted floor (keep draft).
   if(want==='hosted'){cameFromGate=true;cameFromHow=false}
   else {cameFromHow=true;cameFromGate=false}
   setEngine(want,false);
@@ -1188,10 +1188,10 @@ function updateRun(){
   const available=selfRoute?ownMacModels.has(model.value):community?networkModels.has(model.value):hostedLive;
   const noMac=community&&!available;
   const communityOption=[...$('engine').options].find(option=>option.value==='community');
-  if(communityOption){communityOption.hidden=false;communityOption.text=providersOnline>=1?\`Community \xB7 \${providersOnline}\`:'Community'}
+  if(communityOption){communityOption.hidden=false;communityOption.text=providersOnline>=1?`Community · ${providersOnline}`:'Community'}
   $('run-demo').textContent='Run';
   // Guest + Mac/hosted available: hide Run so Sign in is the only primary (no dual CTA muddle).
-  // Guest + noMac: one primary Run (opens Night); hide Ask #login \u2014 Night already has Sign in for Queue. Hosted still on Night.
+  // Guest + noMac: one primary Run (opens Night); hide Ask #login — Night already has Sign in for Queue. Hosted still on Night.
   // Logged-in: Run on, Sign in off.
   const run=$('run-demo'),loginBtn=$('login');
   if(loggedIn){
@@ -1206,23 +1206,23 @@ function updateRun(){
     run.hidden=true;run.setAttribute('hidden','');run.style.display='none';run.disabled=true;
     if(loginBtn){
       loginBtn.hidden=false;
-      // Guest with a filled prompt (starter chip or typed): name the next step \u2014 not bare Sign in.
+      // Guest with a filled prompt (starter chip or typed): name the next step — not bare Sign in.
       loginBtn.textContent=($('prompt')?.value||'').trim()?'Sign in to run':'Sign in';
     }
   }
   const engHost=$('eng-hosted'),engCom=$('eng-community'),engMix=$('eng-mixture'),engSelf=$('eng-self');
   if(engHost)engHost.textContent='Hosted';
-  if(engSelf)engSelf.textContent='My Mac \xB7 free';
+  if(engSelf)engSelf.textContent='My Mac · free';
   if(engCom){
-    engCom.textContent=providersOnline>=1?\`Community \xB7 \${providersOnline}\`:'Community';
+    engCom.textContent=providersOnline>=1?`Community · ${providersOnline}`:'Community';
     engCom.classList.toggle('is-dim',providersOnline===0);
     if(providersOnline===0){
-      engCom.title='No Mac \xB7 opens Night';
-      engCom.setAttribute('aria-label','Community \xB7 offline \xB7 opens Night');
+      engCom.title='No Mac · opens Night';
+      engCom.setAttribute('aria-label','Community · offline · opens Night');
     }else{
       const {model,tpsLabel}=fleetMeasuredLabel();
-      engCom.title=tpsLabel?(model?\`\${model} \xB7 \${tpsLabel} tok/s measured\`:\`\${tpsLabel} tok/s measured\`):(model?\`\${model} \xB7 online\`:'Community Mac online');
-      engCom.setAttribute('aria-label',tpsLabel?(\`Community \xB7 \${providersOnline} \xB7 \${tpsLabel} tok/s\`):(\`Community \xB7 \${providersOnline}\`));
+      engCom.title=tpsLabel?(model?`${model} · ${tpsLabel} tok/s measured`:`${tpsLabel} tok/s measured`):(model?`${model} · online`:'Community Mac online');
+      engCom.setAttribute('aria-label',tpsLabel?(`Community · ${providersOnline} · ${tpsLabel} tok/s`):(`Community · ${providersOnline}`));
     }
   }
   if(engMix){
@@ -1231,11 +1231,11 @@ function updateRun(){
     engMix.classList.toggle('is-dim',mixEmpty);
     if(mixEmpty){
       if(providersOnline>=1){
-        engMix.title=\`No Mixture Mac \xB7 Community \xB7 \${providersOnline} online\`;
-        engMix.setAttribute('aria-label',\`Mixture \xB7 no sub-24GB \xB7 Community \xB7 \${providersOnline} online\`);
+        engMix.title=`No Mixture Mac · Community · ${providersOnline} online`;
+        engMix.setAttribute('aria-label',`Mixture · no sub-24GB · Community · ${providersOnline} online`);
       }else{
-        engMix.title='No Mixture Mac \xB7 opens Night';
-        engMix.setAttribute('aria-label','Mixture \xB7 no sub-24GB Mac online');
+        engMix.title='No Mixture Mac · opens Night';
+        engMix.setAttribute('aria-label','Mixture · no sub-24GB Mac online');
       }
     }else{
       engMix.removeAttribute('title');
@@ -1288,7 +1288,7 @@ function startRunTick(waiting){
   clearRunTick();
   runStartedAt=Date.now();
   const label=waiting?'Waiting for a Mac':'Thinking';
-  const tick=()=>{const s=Math.floor((Date.now()-runStartedAt)/1000);$('answer-title').textContent=label+' \xB7 '+s+'s'};
+  const tick=()=>{const s=Math.floor((Date.now()-runStartedAt)/1000);$('answer-title').textContent=label+' · '+s+'s'};
   tick();
   runTickTimer=setInterval(tick,1000);
 }
@@ -1312,10 +1312,10 @@ function paintNightAuth(reason){
     com.hidden=!show;
     if(show){
       const {model,tpsLabel}=fleetMeasuredLabel();
-      com.textContent=\`Community \xB7 \${providersOnline}\`;
-      const title=tpsLabel?(model?\`\${model} \xB7 \${tpsLabel} tok/s measured\`:\`\${tpsLabel} tok/s measured\`):(model?\`\${model} \xB7 online\`:'Community Mac online');
+      com.textContent=`Community · ${providersOnline}`;
+      const title=tpsLabel?(model?`${model} · ${tpsLabel} tok/s measured`:`${tpsLabel} tok/s measured`):(model?`${model} · online`:'Community Mac online');
       com.title=title;
-      com.setAttribute('aria-label',tpsLabel?(\`Community \xB7 \${providersOnline} \xB7 \${tpsLabel} tok/s\`):(\`Community \xB7 \${providersOnline}\`));
+      com.setAttribute('aria-label',tpsLabel?(`Community · ${providersOnline} · ${tpsLabel} tok/s`):(`Community · ${providersOnline}`));
     }else{
       com.textContent='Community';
       com.removeAttribute('title');
@@ -1352,14 +1352,14 @@ async function queueForMac(){
   if(prompt.length>2000){$('answer').textContent='Keep the prompt under 2,000 characters.';showTf('ask');return}
   if(!loggedIn){showNightOffer();return}
   const queue=$('queue-night'),run=$('run-demo');
-  if(queue){queue.disabled=true;queue.textContent='Queuing\u2026'}
-  if(run){run.disabled=true;run.textContent='Queuing\u2026'}
+  if(queue){queue.disabled=true;queue.textContent='Queuing…'}
+  if(run){run.disabled=true;run.textContent='Queuing…'}
   $('answer').textContent='Queued';
   $('answer-title').textContent='Night.';
   showTf('answer');
   try{
-    const title=(prompt.slice(0,72)+(prompt.length>72?'\u2026':'')).trim()||'Queued ask';
-    const body={title,prompt:eng==='mixture'?('Mixture \xB7 sub-24GB\\n\\n'+prompt):prompt,model,template:'custom',repeat:'none'};
+    const title=(prompt.slice(0,72)+(prompt.length>72?'…':'')).trim()||'Queued ask';
+    const body={title,prompt:eng==='mixture'?('Mixture · sub-24GB\n\n'+prompt):prompt,model,template:'custom',repeat:'none'};
     const data=await api('/compute/api/night',{method:'POST',body:JSON.stringify(body)});
     const status=data?.task?.status||'scheduled';
     $('answer').textContent=status==='running'?'Running':'Queued';
@@ -1387,9 +1387,9 @@ async function readSse(response){
     const {done,value}=await reader.read();
     if(done||jobCancelled)break;
     buf+=decoder.decode(value,{stream:true});
-    const parts=buf.split(/\\n\\n/);buf=parts.pop()||'';
+    const parts=buf.split(/\n\n/);buf=parts.pop()||'';
     for(const part of parts){
-      for(const line of part.split(/\\n/)){
+      for(const line of part.split(/\n/)){
         if(!line.startsWith('data:'))continue;
         const raw=line.slice(5).trimStart();
         if(raw==='[DONE]')return out;
@@ -1427,8 +1427,8 @@ $('run-demo').addEventListener('click',async()=>{
   hideNightOffer();
   if(!loggedIn){$('answer').textContent='Sign in.';$('answer-title').textContent='Ask.';showTf('answer');return}
   button.disabled=true;$('clear-chat').disabled=true;
-  button.textContent=community?'Waiting for Mac\u2026':'Running\u2026';
-  $('answer').textContent=community?'Waiting for a Mac\u2026':'Thinking\u2026';
+  button.textContent=community?'Waiting for Mac…':'Running…';
+  $('answer').textContent=community?'Waiting for a Mac…':'Thinking…';
   showTf('answer');
   $('after-answer').hidden=true;
   {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
@@ -1445,7 +1445,7 @@ $('run-demo').addEventListener('click',async()=>{
       const body={messages,model:$('model').value,stream:true};
       if(mixture)body.route='mixture';
       else if(selfRoute)body.route='self';
-      // Soft Prefer my Mac: try own Mac first; fall to community/mixture \u2014 never invent free unless route resolves self.
+      // Soft Prefer my Mac: try own Mac first; fall to community/mixture — never invent free unless route resolves self.
       lastPreferAttempted=!!(preferSelf&&!selfRoute);
       if(lastPreferAttempted)body.prefer_self=true;
       const res=await fetch(API+'/compute/api/jobs',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:runAbort.signal});
@@ -1459,9 +1459,9 @@ $('run-demo').addEventListener('click',async()=>{
           const tot=Number(u?.total_tokens);
           const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
           const eng=mixture?'mixture':selfRoute?'self':'community';
-          // settle only from final SSE settle object or follow-up job JSON \u2014 never invent cents.
+          // settle only from final SSE settle object or follow-up job JSON — never invent cents.
           lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||''),model:String($('model').value||''),...settleFieldsFrom(lastSseSettle),...honestyFieldsFrom(lastSseReceipt)};
-          // Prefer/self honesty: promote receipt provider_class \u2192 route so charge:0 paints even if job GET lags.
+          // Prefer/self honesty: promote receipt provider_class → route so charge:0 paints even if job GET lags.
           if(!lastPaidReceipt.route){
             const pc=String(lastPaidReceipt.provider_class||'').trim();
             if(pc==='self'||pc==='community'||pc==='mixture')lastPaidReceipt.route=pc;
@@ -1494,8 +1494,8 @@ $('run-demo').addEventListener('click',async()=>{
           if(jobCancelled)break;
           data=await api('/compute/api/jobs/'+job.id);
           if(data.answer){$('answer').textContent=data.answer;onFirstToken()}
-          else if(data.status==='leased')$('answer').textContent='A Mac is generating\u2026';
-          else $('answer').textContent=data.queue_position?\`Queued \xB7 \${data.queue_position}\`:'Queued';
+          else if(data.status==='leased')$('answer').textContent='A Mac is generating…';
+          else $('answer').textContent=data.queue_position?`Queued · ${data.queue_position}`:'Queued';
           if(data.status==='complete')break;
           if(data.status==='failed')throw Error(data.error||'Provider failed');
         }
@@ -1531,14 +1531,14 @@ $('run-demo').addEventListener('click',async()=>{
       }else{lastPaidReceipt=null}
     }
     if(!String(answer||'').trim()){
-      // Empty completion \u2014 explicit error face, not blank success Assistant.
+      // Empty completion — explicit error face, not blank success Assistant.
       const job=String(activeJob||lastPaidReceipt?.job_id||'').trim();
-      const shortJob=job?(job.length>18?job.slice(0,14)+'\\u2026':job):'';
+      const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
       $('answer-title').textContent='Answer.';
-      $('answer').textContent=shortJob?('No reply.\\n'+shortJob):'No reply.';
+      $('answer').textContent=shortJob?('No reply.\n'+shortJob):'No reply.';
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
       // Keep prompt for quiet Retry. Do not push empty assistant / do not count sent.
-      // Never paint settle success on empty/fail \u2014 USDC/$dasha cents only on real complete.
+      // Never paint settle success on empty/fail — USDC/$dasha cents only on real complete.
       clearAnswerMoney();
       lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
       // One automatic retry on empty community/hosted completion (intermittent Mac/stream).
@@ -1555,22 +1555,22 @@ $('run-demo').addEventListener('click',async()=>{
   }catch(error){
     const msg=String(error?.message||error||'');
     const emptyFail=/empty completion/i.test(msg);
-    // Mid-stream provider die (URLError / provider_cut) \u2014 fail loud + Retry; never settle/success face.
+    // Mid-stream provider die (URLError / provider_cut) — fail loud + Retry; never settle/success face.
     const providerCut=error?.code==='provider_cut'||/provider inference failed|provider cut|URLError|stream ended before completion/i.test(msg);
     if(jobCancelled||error?.name==='AbortError'){
       // Keep partial tokens already painted; only replace waiting placeholders.
       const cur=String($('answer')?.textContent||'');
-      const waiting=/^(Waiting for a Mac\u2026|Waiting for Mac\u2026|Thinking\u2026|A Mac is generating\u2026|Queued)/.test(cur);
+      const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|Queued)/.test(cur);
       if(waiting||!cur.trim()){$('answer').textContent='Request cancelled. Prompt deleted.';}
       $('answer-title').textContent='Answer.';
       clearAnswerMoney();
       {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
     }else if(emptyFail){
-      // Worker/provider empty stream fail \u2014 same No reply. + Retry face (prompt kept).
+      // Worker/provider empty stream fail — same No reply. + Retry face (prompt kept).
       const job=String(activeJob||lastPaidReceipt?.job_id||'').trim();
-      const shortJob=job?(job.length>18?job.slice(0,14)+'\\u2026':job):'';
+      const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
       $('answer-title').textContent='Answer.';
-      $('answer').textContent=shortJob?('No reply.\\n'+shortJob):'No reply.';
+      $('answer').textContent=shortJob?('No reply.\n'+shortJob):'No reply.';
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
       clearAnswerMoney();
       lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
@@ -1583,7 +1583,7 @@ $('run-demo').addEventListener('click',async()=>{
       lastAskFailKind='provider_cut';
       $('answer-title').textContent='Answer.';
       // Dasha tone: short fail + Retry. Optional one-liner when advertise stayed up.
-      const note=providersOnline>0?'\\nStill listed online.':'';
+      const note=providersOnline>0?'\nStill listed online.':'';
       $('answer').textContent='Mac cut out.'+note;
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
       paintAnswerMoney();paintAnswerReceipt();
@@ -1591,7 +1591,7 @@ $('run-demo').addEventListener('click',async()=>{
       {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
       if(msg==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}
       else if(/top up|credits|insufficient/i.test(msg)){
-        // Past free floor / 402 \u2014 stay on Answer; one quiet Top up nudge (no yank mid-read).
+        // Past free floor / 402 — stay on Answer; one quiet Top up nudge (no yank mid-read).
         lastAskFailKind='credits';
         $('answer').textContent='Top up credits.';
         $('answer-title').textContent='Answer.';
@@ -1612,7 +1612,7 @@ $('model').addEventListener('change',updateRun);
 
 let registeredSetup='';
 function defaultSetup(){
-  return \`curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\ntar -xzf dasha-compute-open-alpha.tar.gz\\ncd dasha-compute-open-alpha\\nollama pull qwen3:8b\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor\`;
+  return `curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\nollama pull qwen3:8b\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor`;
 }
 $('provide-next').addEventListener('click',()=>{
   const name=$('provider-name').value.trim();
@@ -1624,10 +1624,10 @@ $('register-provider').addEventListener('click',async()=>{
   const models=MODELS.filter(m=>SUB24.has(m[0])||m[0]==='gemma3-27b').map(m=>m[0]);
   const best=MODELS.find(m=>m[0]==='qwen3-8b');
   if(!name){$('provider-status').textContent='Name this Mac first.';showTf('provide-name');$('provider-name').focus();return}
-  button.disabled=true;button.textContent='Registering\u2026';$('provider-status').textContent='';
+  button.disabled=true;button.textContent='Registering…';$('provider-status').textContent='';
   try{
     const credentials=await api('/compute/api/providers/register',{method:'POST',body:JSON.stringify({name,models})});
-    registeredSetup='curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\ntar -xzf dasha-compute-open-alpha.tar.gz\\ncd dasha-compute-open-alpha\\nollama pull '+best[1]+'\\numask 077\\ncat > .dasha-provider-key <<\\'EOF\\'\\n'+credentials.provider_token+'\\nEOF\\nchmod 0600 .dasha-provider-key\\nDASHA_COORDINATOR_URL='+credentials.coordinator_url+' \\\\\\nDASHA_PROVIDER_ID='+credentials.provider_id+' \\\\\\nDASHA_MODEL_MAP='+best[0]+'='+best[1]+' \\\\\\n./install.sh\\n\\nhttps://t.me/+xB7S8mIQaKFiZjRh';
+    registeredSetup='curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\nollama pull '+best[1]+'\numask 077\ncat > .dasha-provider-key <<\'EOF\'\n'+credentials.provider_token+'\nEOF\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL='+credentials.coordinator_url+' \\\nDASHA_PROVIDER_ID='+credentials.provider_id+' \\\nDASHA_MODEL_MAP='+best[0]+'='+best[1]+' \\\n./install.sh\n\nhttps://t.me/+xB7S8mIQaKFiZjRh';
     $('setup').textContent=registeredSetup;
     $('provider-status').textContent='';
     button.textContent='Register another Mac';
@@ -1637,7 +1637,7 @@ $('register-provider').addEventListener('click',async()=>{
 function paintProviderMacsSum(n){
   const sum=$('provider-macs-sum');
   if(!sum)return;
-  if(Number.isInteger(n))sum.textContent='Your Macs \xB7 '+n;
+  if(Number.isInteger(n))sum.textContent='Your Macs · '+n;
 }
 async function loadProviders(){
   if(!loggedIn){ownMacOnline=0;ownMacKnown=0;ownMacModels=new Set();ownMacTps=0;paintAskMyMac();paintProvideBeat();return}
@@ -1658,12 +1658,12 @@ async function loadProviders(){
     if(!providers.length){paintProvideBeat();return}
     data.providers.forEach(provider=>{
       const row=document.createElement('div'),label=document.createElement('span'),name=document.createElement('strong'),detail=document.createElement('small'),remove=document.createElement('button');
-      const state=provider.online?'online':provider.last_seen_at?'offline \xB7 last seen '+new Date(provider.last_seen_at).toLocaleString():'waiting for first heartbeat';
+      const state=provider.online?'online':provider.last_seen_at?'offline · last seen '+new Date(provider.last_seen_at).toLocaleString():'waiting for first heartbeat';
       const benches=Array.isArray(provider.hardware?.benchmarks)?provider.hardware.benchmarks:[];
       const tpsVals=benches.map(b=>Number(b?.tokens_per_second)).filter(v=>Number.isFinite(v)&&v>0);
       const tpsLabel=tpsVals.length?formatTokPerSec(tpsVals.reduce((a,b)=>a+b,0)/tpsVals.length):'';
       row.className='model';name.textContent=provider.name;
-      detail.textContent=[state,provider.models.length+' model'+(provider.models.length===1?'':'s'),tpsLabel?tpsLabel+' tok/s':''].filter(Boolean).join(' \xB7 ');
+      detail.textContent=[state,provider.models.length+' model'+(provider.models.length===1?'':'s'),tpsLabel?tpsLabel+' tok/s':''].filter(Boolean).join(' · ');
       label.append(name,detail);remove.className='secondary';remove.type='button';remove.dataset.revoke=provider.id;remove.textContent='Revoke';
       row.append(label,remove);list.append(row);
     });
@@ -1698,9 +1698,9 @@ async function loadApiKeys(){
       const row=document.createElement('div'),label=document.createElement('span'),name=document.createElement('strong'),detail=document.createElement('small'),remove=document.createElement('button');
       row.className='model';name.textContent=key.name;
       const lim=key.limit_cents==null?'uncapped':('$'+((Number(key.limit_cents)||0)/100).toFixed((Number(key.limit_cents)||0)%100?2:0));
-      const rem=key.limit_cents==null?'':(' \xB7 $'+((Number(key.limit_remaining_cents)||0)/100).toFixed(2)+' left');
+      const rem=key.limit_cents==null?'':(' · $'+((Number(key.limit_remaining_cents)||0)/100).toFixed(2)+' left');
       const reset=key.limit_reset&&key.limit_reset!=='none'?' / '+key.limit_reset:'';
-      detail.textContent=key.prefix+'\u2026 \xB7 '+lim+reset+rem+' \xB7 '+(key.last_used_at?'last used '+new Date(key.last_used_at).toLocaleString():'never used');
+      detail.textContent=key.prefix+'… · '+lim+reset+rem+' · '+(key.last_used_at?'last used '+new Date(key.last_used_at).toLocaleString():'never used');
       label.append(name,detail);remove.className='secondary';remove.type='button';remove.dataset.key=key.id;remove.textContent='Revoke';
       row.append(label,remove);list.append(row);
     });
@@ -1714,7 +1714,7 @@ $('create-api-key').addEventListener('click',async()=>{
     const limit_cents=Number.isFinite(dollars)&&dollars>0?Math.round(dollars*100):500;
     const key=await api('/compute/api/keys',{method:'POST',body:JSON.stringify({name:'Developer key',limit_cents,limit_reset:'monthly'})});
     const cap=key.limit_cents==null?'uncapped':('$'+((key.limit_cents)/100).toFixed(key.limit_cents%100?2:0)+' / '+(key.limit_reset||'month'));
-    $('api-key-output').textContent="export DASHA_API_KEY='"+key.api_key+"'\\n\\nCopy this now. Dasha stores only its hash.\\nSpend cap: "+cap+".";
+    $('api-key-output').textContent="export DASHA_API_KEY='"+key.api_key+"'\n\nCopy this now. Dasha stores only its hash.\nSpend cap: "+cap+".";
     await loadApiKeys();
   }catch(error){$('api-key-output').textContent=error.message}
   finally{button.disabled=!loggedIn}
@@ -1728,14 +1728,14 @@ $('api-key-list').addEventListener('click',async event=>{
   catch(error){$('api-key-output').textContent=error.message;event.target.disabled=false}
 });
 function paintCode(){
-  const base=$('gateway').value.replace(/\\/$/,'');
+  const base=$('gateway').value.replace(/\/$/,'');
   // Soft-prefer live online catalog model when fleet known and qwen3-8b offline (example id still OK).
   let model='qwen3-8b';
   if(networkModels.size&&!networkModels.has(model)){
     const hit=MODELS.find(item=>networkModels.has(item[0]));
     if(hit)model=hit[0];
   }
-  $('code').textContent=\`curl \${base}/chat/completions \\\\\\n  -H "Authorization: Bearer $DASHA_API_KEY" \\\\\\n  -H "Content-Type: application/json" \\\\\\n  -d '\${JSON.stringify({model,messages:[{role:'user',content:'hello'}],stream:true})}'\`;
+  $('code').textContent=`curl ${base}/chat/completions \\\n  -H "Authorization: Bearer $DASHA_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify({model,messages:[{role:'user',content:'hello'}],stream:true})}'`;
 }
 $('gateway').addEventListener('input',paintCode);
 function paintApiKeyCapHint(){
@@ -1767,8 +1767,8 @@ $('copy-skill-use')?.addEventListener('click',()=>copy(USE_SKILL,$('copy-skill-u
 $('copy-skill-provide-reg')?.addEventListener('click',()=>copy(PROVIDE_SKILL,$('copy-skill-provide-reg')));
 $('copy-skill-provide-done')?.addEventListener('click',()=>copy(PROVIDE_SKILL,$('copy-skill-provide-done')));
 $('check').addEventListener('click',async()=>{
-  const button=$('check'),base=$('gateway').value.replace(/\\/v1\\/?$/,'');
-  button.disabled=true;$('check-result').textContent='Checking\u2026';
+  const button=$('check'),base=$('gateway').value.replace(/\/v1\/?$/,'');
+  button.disabled=true;$('check-result').textContent='Checking…';
   try{
     const [health,network]=await Promise.all([fetch(base+'/healthz',{cache:'no-store'}),fetch(base+'/v1/network',{cache:'no-store'})]);
     if(!health.ok||!network.ok)throw Error('Gateway returned an error');
@@ -1785,7 +1785,7 @@ function setComputeIntent(intent){
 function goAskFromGate(intent){
   cameFromHow=false;cameFromGate=true;setComputeIntent(intent);setEngine('hosted',true);
 }
-function shortDest(addr){const s=String(addr||'');return s.length>12?s.slice(0,4)+'\u2026'+s.slice(-4):s}
+function shortDest(addr){const s=String(addr||'');return s.length>12?s.slice(0,4)+'…'+s.slice(-4):s}
 const CREDIT_DISCOUNTS={usdc:0.03,dasha:0.05};
 const CREDIT_PACK_CENTS={5:500,20:2000,50:5000};
 function priceFor(method,pack){
@@ -1806,7 +1806,7 @@ function formatCredits(cents){
 function paintPayMethodAuth(){
   const login=$('pay-method-login'), usdc=$('pay-usdc'), dasha=$('pay-dasha');
   if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23pay'}
-  // Guest: only Sign in \u2014 no payable method buttons to click through.
+  // Guest: only Sign in — no payable method buttons to click through.
   if(usdc)usdc.hidden=!loggedIn;
   if(dasha)dasha.hidden=!loggedIn;
 }
@@ -1815,15 +1815,15 @@ function paintPayBuyFine(){
   if(!el)return;
   const pack=creditPack||'5';
   const face=CREDIT_PACK_CENTS[String(pack)];
-  if(!(face>0)){el.textContent='Pack credits \xB7 crypto discount \xB7 no card yet.';return}
-  el.textContent=formatCredits(face)+' credits \xB7 crypto discount \xB7 no card yet.';
+  if(!(face>0)){el.textContent='Pack credits · crypto discount · no card yet.';return}
+  el.textContent=formatCredits(face)+' credits · crypto discount · no card yet.';
 }
 function paintPayMethodPrices(){
   const pack=creditPack||'5';
   const usdc=$('pay-usdc'),dasha=$('pay-dasha');
   const u=priceFor('usdc',pack),d=priceFor('dasha',pack);
-  if(usdc&&u!=null)usdc.textContent='USDC \xB7 '+formatChargeDollars(u);
-  if(dasha&&d!=null)dasha.textContent='$dasha \xB7 '+formatChargeDollars(d);
+  if(usdc&&u!=null)usdc.textContent='USDC · '+formatChargeDollars(u);
+  if(dasha&&d!=null)dasha.textContent='$dasha · '+formatChargeDollars(d);
   paintPayBuyFine();
 }
 function paintPayPacks(){
@@ -1881,7 +1881,7 @@ function paintPresenceActBoot(){
       const tps=Number(row?.tokens_per_second);
       const mp=Number(row?.measured_providers||0);
       model=row?.model?String(row.model):'';
-      // Advertising only (providers_online) \u2014 never pad enrolled OCM hosts.
+      // Advertising only (providers_online) — never pad enrolled OCM hosts.
       if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
       if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
     }
@@ -1890,9 +1890,9 @@ function paintPresenceActBoot(){
       const bits=[n+' advertising'];
       if(model)bits.push(model);
       if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
-      community.textContent=bits.join(' \xB7 ');
+      community.textContent=bits.join(' · ');
     }
-    community.title=n>=1?'Community advertising (providers_online) \xB7 not OCM enrolled':'Community advertising \xB7 none online';
+    community.title=n>=1?'Community advertising (providers_online) · not OCM enrolled':'Community advertising · none online';
   }
   const enrolled=$('presence-enrolled-boot');
   const enrolledSep=$('presence-enrolled-boot-sep');
@@ -1900,7 +1900,7 @@ function paintPresenceActBoot(){
     if(Number.isInteger(ocmHosts)&&ocmHosts>=1){
       enrolled.hidden=false;
       enrolled.textContent=ocmHosts+' enrolled';
-      enrolled.title='OCM enrolled \xB7 not the same as advertising';
+      enrolled.title='OCM enrolled · not the same as advertising';
       if(enrolledSep)enrolledSep.hidden=false;
     }else{
       enrolled.hidden=true;
@@ -1911,7 +1911,7 @@ function paintPresenceActBoot(){
   }
   const act=$('act-tape-boot');
   if(act){
-    // Visible acts: factory settled_24h only \u2014 never invent.
+    // Visible acts: factory settled_24h only — never invent.
     act.textContent=formatSettledLine();
   }
 }
@@ -1925,13 +1925,13 @@ function paintHonestyPanel(){
   const hosted=$('honesty-hosted');
   if(hosted){
     if(!window.__dashaAuthReady){
-      hosted.textContent='Hosted \xB7 live';
+      hosted.textContent='Hosted · live';
       hosted.className='honesty-ok';
     }else if(hostedLive){
-      hosted.textContent='Hosted \xB7 live';
+      hosted.textContent='Hosted · live';
       hosted.className='honesty-ok';
     }else{
-      hosted.textContent='Hosted \xB7 \u2014';
+      hosted.textContent='Hosted · —';
       hosted.className='';
     }
   }
@@ -1945,31 +1945,31 @@ function paintHonestyPanel(){
       const tps=Number(row?.tokens_per_second);
       const mp=Number(row?.measured_providers||0);
       model=row?.model?String(row.model):'';
-      // Advertising only (providers_online) \u2014 never pad enrolled OCM hosts.
+      // Advertising only (providers_online) — never pad enrolled OCM hosts.
       if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
-      // Live measured only \u2014 stamp capacity[].tokens_per_second; never invent/pad.
+      // Live measured only — stamp capacity[].tokens_per_second; never invent/pad.
       if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
     }
     if(n===0)macs.textContent='No Mac online';
     else{
-      // Quiet presence: N online \xB7 model id \xB7 ~tok/s \u2014 only fields live network has.
+      // Quiet presence: N online · model id · ~tok/s — only fields live network has.
       const bits=[n+' online'];
       if(model)bits.push(model);
       if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
-      macs.textContent=bits.join(' \xB7 ');
+      macs.textContent=bits.join(' · ');
     }
     let title='';
     if(n>=1&&(model||tpsLabel)){
       const tbits=[];
       if(model)tbits.push(model);
       if(tpsLabel)tbits.push(tpsLabel+' tok/s measured');
-      title=tbits.join(' \xB7 ');
+      title=tbits.join(' · ');
     }
     if(title){macs.title=title;macs.setAttribute('aria-label',title)}
     else{macs.removeAttribute('title');macs.removeAttribute('aria-label')}
     const strip=$('presence-strip');
     if(strip){
-      strip.title='Community advertising \u2260 OCM enrolled';
+      strip.title='Community advertising ≠ OCM enrolled';
       strip.dataset.advertising=String(n);
       strip.dataset.enrolled=Number.isInteger(ocmHosts)?String(ocmHosts):'';
     }
@@ -1977,11 +1977,11 @@ function paintHonestyPanel(){
   const enrolled=$('honesty-enrolled');
   const enrolledSep=$('honesty-enrolled-sep');
   if(enrolled){
-    // Fail closed: integer hosts from /compute/ocm/healthz only \u2014 never invent; never pad advertising.
+    // Fail closed: integer hosts from /compute/ocm/healthz only — never invent; never pad advertising.
     if(Number.isInteger(ocmHosts)&&ocmHosts>=1){
       enrolled.hidden=false;
       enrolled.textContent=ocmHosts+' enrolled';
-      enrolled.title='OCM enrolled \xB7 not the same as online';
+      enrolled.title='OCM enrolled · not the same as online';
       enrolled.setAttribute('aria-label',enrolled.title);
       if(enrolledSep)enrolledSep.hidden=false;
     }else{
@@ -1994,12 +1994,12 @@ function paintHonestyPanel(){
   }
   const settled=$('honesty-settled');
   if(settled){
-    // Visible acts: factory settled_24h tokens/jobs/cents only \u2014 never invent.
+    // Visible acts: factory settled_24h tokens/jobs/cents only — never invent.
     settled.textContent=formatSettledLine();
   }
   const actTape=$('act-tape');
   if(actTape){
-    actTape.title='Visible acts \xB7 settled paid-inference \xB7 24h';
+    actTape.title='Visible acts · settled paid-inference · 24h';
     actTape.dataset.tokens=String(Math.max(0,Math.floor(Number(settled24h?.tokens)||0)));
     actTape.dataset.jobs=String(Math.max(0,Math.floor(Number(settled24h?.jobs)||0)));
     actTape.dataset.cents=String(Math.max(0,Math.floor(Number(settled24h?.cents)||0)));
@@ -2049,18 +2049,18 @@ function formatSettledLine(){
   const tok=Math.max(0,Math.floor(Number(settled24h?.tokens)||0));
   const jobs=Math.max(0,Math.floor(Number(settled24h?.jobs)||0));
   const cents=Math.max(0,Math.floor(Number(settled24h?.cents)||0));
-  // Honest zero stays finished; non-zero shows last settled / jobs (+\xA2 when present).
-  if(tok===0&&jobs===0&&cents===0)return '0 tok \xB7 24h';
+  // Honest zero stays finished; non-zero shows last settled / jobs (+¢ when present).
+  if(tok===0&&jobs===0&&cents===0)return '0 tok · 24h';
   const bits=[formatSettledTok(tok)+' tok'];
   if(jobs>0)bits.push(jobs===1?'1 job':(jobs+' jobs'));
-  if(cents>0)bits.push(cents+'\xA2');
+  if(cents>0)bits.push(cents+'¢');
   bits.push('24h');
-  return bits.join(' \xB7 ');
+  return bits.join(' · ');
 }
 function paintSettled24h(){
   const el=$('settled-24h');
   if(!el)return;
-  // Quiet footer \u2014 honest zero, never invent volume.
+  // Quiet footer — honest zero, never invent volume.
   el.textContent=formatSettledLine();
   paintHonestyPanel();
 }
@@ -2070,7 +2070,7 @@ function settleFieldsFrom(src){
   if(!(cents>0)||!state)return {};
   return {settle_cents:cents,settle_state:state};
 }
-/** Phase 0 honesty fields from job/SSE receipt \u2014 never invent tok/s, cents, or attestation. */
+/** Phase 0 honesty fields from job/SSE receipt — never invent tok/s, cents, or attestation. */
 function honestyFieldsFrom(src){
   const out={};
   if(!src||typeof src!=='object')return out;
@@ -2084,7 +2084,7 @@ function honestyFieldsFrom(src){
   if(Number.isFinite(tps)&&tps>0&&tps<=10000)out.tokens_per_second=Math.round(tps*100)/100;
   const completed=String(src.completed_at||'').trim();
   if(completed)out.completed_at=completed;
-  // Phase 0: attestation always null/omitted \u2014 never invent a verify badge.
+  // Phase 0: attestation always null/omitted — never invent a verify badge.
   if('attestation' in src)out.attestation=src.attestation==null?null:null;
   if(src.settled&&typeof src.settled==='object')Object.assign(out,settleFieldsFrom(src.settled));
   else Object.assign(out,settleFieldsFrom(src));
@@ -2103,15 +2103,15 @@ function measuredTpsForModel(model){
 function paintAnswerReceiptNote(routeFace){
   const note=$('answer-receipt-note');
   if(!note)return;
-  // Quiet Dasha tone \u2014 community peer Mac is not an enclave. No disclaimer lecture.
+  // Quiet Dasha tone — community peer Mac is not an enclave. No disclaimer lecture.
   // Prefer miss: Prefer missed so charge:0 is never implied on Community settle.
   if(routeFace==='community'||routeFace==='mixture'){
     note.hidden=false;note.removeAttribute('hidden');
-    const base=routeFace==='mixture'?'Mixture \xB7 no enclave \xB7 attestation N/A':'no enclave \xB7 attestation N/A';
-    note.textContent=lastPreferAttempted?('Prefer missed \xB7 '+base):base;
+    const base=routeFace==='mixture'?'Mixture · no enclave · attestation N/A':'no enclave · attestation N/A';
+    note.textContent=lastPreferAttempted?('Prefer missed · '+base):base;
   }else if(routeFace==='self'&&lastPreferAttempted){
     note.hidden=false;note.removeAttribute('hidden');
-    note.textContent='Prefer \xB7 Your Mac \xB7 charge:0';
+    note.textContent='Prefer · Your Mac · charge:0';
   }else{
     note.hidden=true;note.setAttribute('hidden','');note.textContent='';
   }
@@ -2144,17 +2144,17 @@ function paintAnswerReceipt(){
   // selected/routed model id from client/job only (never trust answer self-description); receipt or live select.
   const model=String(r.model||$('model')?.value||'').trim();
   const job=String(r.job_id||'').trim();
-  const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
-  // tok/s only when measured on capacity[] (receipt or live network) \u2014 never invent.
+  const shortJob=job?(job.length>18?job.slice(0,14)+'…':job):'';
+  // tok/s only when measured on capacity[] (receipt or live network) — never invent.
   let tps=Number(r.tokens_per_second);
   if(!(Number.isFinite(tps)&&tps>0)){
     const live=measuredTpsForModel(model);
     tps=live==null?NaN:live;
   }
   const tpsLabel=(Number.isFinite(tps)&&tps>0)?('~'+formatTokPerSec(tps)+' tok/s'):'';
-  // Community / Mixture / self \u2014 job receipt; never show provider-earn cents as user $.
+  // Community / Mixture / self — job receipt; never show provider-earn cents as user $.
   // Quiet settle face only when job/usage JSON provided settle_cents + settle_state (fail closed).
-  // Self: assert charge:0; omit settle \xA2 (no-earn/no-settle on self).
+  // Self: assert charge:0; omit settle ¢ (no-earn/no-settle on self).
   if(routeFace==='community'||routeFace==='mixture'||routeFace==='self'){
     const label=routeFace==='mixture'?'Mixture':routeFace==='self'?'Your Mac':'Community';
     const parts=[label];
@@ -2163,25 +2163,25 @@ function paintAnswerReceipt(){
     if(tpsLabel)parts.push(tpsLabel);
     if(shortJob)parts.push(shortJob);
     if(routeFace==='self'){
-      // Fail closed: only paint free when route confirmed self \u2014 never invent for Community/Hosted.
+      // Fail closed: only paint free when route confirmed self — never invent for Community/Hosted.
       parts.push('charge:0');
     }else{
       const settleCents=Math.max(0,Math.floor(Number(r.settle_cents)||0));
       const settleState=String(r.settle_state||'').trim();
       if(settleCents>0&&settleState){
-        parts.push(settleCents+'\xA2 USDC');
+        parts.push(settleCents+'¢ USDC');
         parts.push(settleState==='settled'||settleState==='paid'?'settled':'pending operator settle');
       }
     }
     if(parts.length<2){hide();return}
-    show(parts.join(' \xB7 '),routeFace);
+    show(parts.join(' · '),routeFace);
     return;
   }
   // Hosted paid settle only (user charged). Free floor stays quiet. Attestation omitted in Phase 0.
   if(!(tok>0||cents>0)){hide();return}
   const hostedCore=cents>0
-    ?('Settled \xB7 '+formatSettledTok(tok)+' tok'+(tpsLabel?(' \xB7 '+tpsLabel):'')+' \xB7 '+formatUsdCents(cents)+' credits')
-    :('Settled \xB7 '+formatSettledTok(tok)+' tok'+(tpsLabel?(' \xB7 '+tpsLabel):''));
+    ?('Settled · '+formatSettledTok(tok)+' tok'+(tpsLabel?(' · '+tpsLabel):'')+' · '+formatUsdCents(cents)+' credits')
+    :('Settled · '+formatSettledTok(tok)+' tok'+(tpsLabel?(' · '+tpsLabel):''));
   show(hostedCore,'hosted');
 }
 async function loadSettled24h(){
@@ -2194,7 +2194,7 @@ async function loadSettled24h(){
       cents:Math.max(0,Math.floor(Number(s?.cents)||0)),
     };
   }catch{
-    // Keep prior / zero \u2014 never invent.
+    // Keep prior / zero — never invent.
     if(!settled24h)settled24h={tokens:0,jobs:0,cents:0};
   }
   paintSettled24h();
@@ -2203,14 +2203,14 @@ function formatEarnRatesLine(rates){
   const job=Math.max(0,Math.floor(Number(rates?.job_cents)));
   const tok=Math.max(0,Math.floor(Number(rates?.token_cents_per_1k)));
   const min=Math.max(0,Math.floor(Number(rates?.min_payout_cents)));
-  // Fall back to published schedule constants when rates missing \u2014 never invent balances.
+  // Fall back to published schedule constants when rates missing — never invent balances.
   const j=Number.isFinite(job)&&job>0?job:5;
   const t=Number.isFinite(tok)&&tok>=0?tok:1;
   const m=Number.isFinite(min)&&min>0?min:100;
-  const jobUsd='$'+(j/100).toFixed(2).replace(/\\.00$/,'');
-  const tokUsd='$'+(t/100).toFixed(2).replace(/\\.00$/,'');
-  const minUsd='$'+(m/100).toFixed(2).replace(/\\.00$/,'');
-  return jobUsd+'/job + '+tokUsd+'/1k completion \xB7 min '+minUsd+' \xB7 pending operator settle';
+  const jobUsd='$'+(j/100).toFixed(2).replace(/\.00$/,'');
+  const tokUsd='$'+(t/100).toFixed(2).replace(/\.00$/,'');
+  const minUsd='$'+(m/100).toFixed(2).replace(/\.00$/,'');
+  return jobUsd+'/job + '+tokUsd+'/1k completion · min '+minUsd+' · pending operator settle';
 }
 function paintEarnRates(rates){
   const el=$('earn-rates');
@@ -2225,7 +2225,7 @@ function paintEarn(){
   const usdc=$('earn-usdc'),dasha=$('earn-dasha');
   if(login){login.hidden=loggedIn;login.textContent='Sign in'}
   paintEarnRates(earnRates);
-  // Guest: Sign in only \u2014 never invent $0.
+  // Guest: Sign in only — never invent $0.
   if(!loggedIn){
     earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;
     if(bal){bal.hidden=true;bal.textContent=''}
@@ -2252,8 +2252,8 @@ function paintEarn(){
   }
   const face=Math.max(0,Math.floor(Number(earnTotalUsdc)||0));
   const dashaCents=Math.floor(face*1.1);
-  if(bal){bal.hidden=false;bal.textContent=formatUsdCents(face)+' owed \xB7 USDC face'}
-  if(jobs){jobs.hidden=false;const tpsLabel=formatTokPerSec(ownMacTps);jobs.textContent=(earnTotalJobs===1?'1 job':earnTotalJobs+' jobs')+' completed'+(tpsLabel?' \xB7 '+tpsLabel+' tok/s':'')}
+  if(bal){bal.hidden=false;bal.textContent=formatUsdCents(face)+' owed · USDC face'}
+  if(jobs){jobs.hidden=false;const tpsLabel=formatTokPerSec(ownMacTps);jobs.textContent=(earnTotalJobs===1?'1 job':earnTotalJobs+' jobs')+' completed'+(tpsLabel?' · '+tpsLabel+' tok/s':'')}
   if(methods)methods.hidden=false;
   if(wrap)wrap.hidden=false;
   if(actions)actions.hidden=false;
@@ -2262,14 +2262,14 @@ function paintEarn(){
   if(compare){
     compare.hidden=false;
     compare.textContent=earnMethod==='dasha'
-      ?('Payout '+formatUsdCents(dashaCents)+' in $dasha \xB7 face '+formatUsdCents(face)+' USDC')
-      :('Payout '+formatUsdCents(face)+' USDC \xB7 $dasha would be '+formatUsdCents(dashaCents));
+      ?('Payout '+formatUsdCents(dashaCents)+' in $dasha · face '+formatUsdCents(face)+' USDC')
+      :('Payout '+formatUsdCents(face)+' USDC · $dasha would be '+formatUsdCents(dashaCents));
   }
   const canPay=face>=100;
   if(btn){
     btn.hidden=!canPay;
     btn.disabled=!canPay;
-    btn.textContent='Request payout';btn.title='Queues for operator settle \xB7 not auto';btn.setAttribute('aria-label','Request payout \xB7 operator settles \xB7 not auto');
+    btn.textContent='Request payout';btn.title='Queues for operator settle · not auto';btn.setAttribute('aria-label','Request payout · operator settles · not auto');
   }
   if(pending){
     const rows=(earnPending||[]);
@@ -2277,7 +2277,7 @@ function paintEarn(){
     if(!rows.length){pending.hidden=true;return}
     pending.hidden=false;
     rows.forEach((row,i)=>{
-      if(i)pending.append(document.createTextNode(' \xB7 '));
+      if(i)pending.append(document.createTextNode(' · '));
       const st=String(row.status||'pending');
       const amt=formatUsdCents(row.payout_cents!=null?row.payout_cents:row.usdc_cents);
       const meth=row.method==='dasha'?' $dasha':' USDC';
@@ -2293,7 +2293,7 @@ function paintEarn(){
         a.style.padding='0';
         pending.append(a);
       }else{
-        pending.append(document.createTextNode((st==='pending'?'Pending \xB7 operator settles':'Paid')+' '+amt+meth));
+        pending.append(document.createTextNode((st==='pending'?'Pending · operator settles':'Paid')+' '+amt+meth));
       }
     });
   }
@@ -2324,11 +2324,11 @@ async function saveEarnPref(){
 }
 async function requestEarnPayout(){
   const status=$('earn-status');
-  if(status){status.hidden=false;status.textContent='\xB7'}
+  if(status){status.hidden=false;status.textContent='·'}
   try{
     await saveEarnPref();
     const data=await api('/compute/api/provider/payout',{method:'POST',body:JSON.stringify({method:earnMethod,wallet:String($('earn-wallet')?.value||'').trim()})});
-    if(status){status.hidden=false;status.textContent='Pending \xB7 operator settles \xB7 '+formatUsdCents(data.payout_cents||data.usdc_cents)+(data.method==='dasha'?' $dasha':' USDC')+' \xB7 not auto';status.title='Operator settles \xB7 not auto'}
+    if(status){status.hidden=false;status.textContent='Pending · operator settles · '+formatUsdCents(data.payout_cents||data.usdc_cents)+(data.method==='dasha'?' $dasha':' USDC')+' · not auto';status.title='Operator settles · not auto'}
     await loadEarn();
   }catch(e){
     if(status){status.hidden=false;status.textContent=e?.message||'Request failed'}
@@ -2340,7 +2340,7 @@ function paintCreditsBalance(){
   const login=$('credits-login');
   const use=$('credits-use'), topup=$('credits-topup');
   if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23credits'}
-  // Guest: Sign in only \u2014 no $0 balance, no Use/Top up pretending a session.
+  // Guest: Sign in only — no $0 balance, no Use/Top up pretending a session.
   if(use)use.hidden=!loggedIn;
   if(topup)topup.hidden=!loggedIn;
   if(!el){paintAskCredits();return}
@@ -2364,19 +2364,19 @@ function paintPaySend(){
   if(err){err.hidden=true;err.textContent=''}
   if(login){login.hidden=true;login.href='/login?return=/compute%23pay'}
   if(!loggedIn||!creditOrder){
-    if(line)line.textContent='\xB7';
+    if(line)line.textContent='·';
     if(wait)wait.textContent='';
     if(open){open.removeAttribute('href')}
     return;
   }
   const meth=creditOrder.method==='dasha'?'$dasha':'USDC';
   const credits=formatCredits(creditOrder.credits_cents||creditOrder.face_cents||CREDIT_PACK_CENTS[String(creditPack||'5')]||0);
-  if(line)line.textContent=creditOrder.amount+' '+meth+' \xB7 +'+credits+' credits \u2192 '+shortDest(creditOrder.dest);
+  if(line)line.textContent=creditOrder.amount+' '+meth+' · +'+credits+' credits → '+shortDest(creditOrder.dest);
   if(open&&creditOrder.pay_url){
     open.href=creditOrder.pay_url;
     open.setAttribute('href',creditOrder.pay_url);
   }
-  if(wait)wait.textContent='Waiting\u2026';
+  if(wait)wait.textContent='Waiting…';
 }
 async function createCreditOrder(){
   const methodErr=$('pay-method-err');
@@ -2415,12 +2415,12 @@ async function pollCreditOrder(){
       clearCreditPoll();
       creditBalanceCents=Number.isFinite(Number(data.balance_cents))?Math.floor(Number(data.balance_cents)):creditBalanceCents;
       const done=$('pay-done-line');
-      if(done)done.textContent=formatCredits(data.credits_cents||creditOrder.credits_cents)+' added \xB7 '+formatCredits(creditBalanceCents)+' total';
+      if(done)done.textContent=formatCredits(data.credits_cents||creditOrder.credits_cents)+' added · '+formatCredits(creditBalanceCents)+' total';
       showTf('pay-done');
       return;
     }
     const wait=$('pay-wait');
-    if(wait&&data?.status==='pending')wait.textContent='Waiting\u2026';
+    if(wait&&data?.status==='pending')wait.textContent='Waiting…';
   }catch(e){
     if(e.message==='order expired'){
       clearCreditPoll();
@@ -2451,8 +2451,8 @@ function paintSponsorBuyFine(){
   const el=$('sponsor-buy-fine');
   if(!el)return;
   const face=sponsorFaceCents();
-  if(!(face>0)){el.textContent='Tip face \xB7 no crypto discount.';return}
-  el.textContent=formatSponsorTip(face)+' \xB7 face \xB7 no crypto discount.';
+  if(!(face>0)){el.textContent='Tip face · no crypto discount.';return}
+  el.textContent=formatSponsorTip(face)+' · face · no crypto discount.';
 }
 function formatSponsorRaised(cents){
   const n=Math.max(0,Math.floor(Number(cents)||0));
@@ -2462,7 +2462,7 @@ function formatSponsorRaised(cents){
 function paintSponsorRaised(data){
   const el=$('sponsor-raised');
   if(!el)return;
-  // Honesty: tip pledge cents only \u2014 never catalog machine.usd / goal.
+  // Honesty: tip pledge cents only — never catalog machine.usd / goal.
   const cents=data&&data.raised_cents!=null?data.raised_cents:(data&&data.raised_usd!=null?Math.round(Number(data.raised_usd)*100):0);
   el.textContent=formatSponsorRaised(cents);
   el.hidden=false;
@@ -2471,14 +2471,14 @@ function paintSponsorRaised(data){
 function paintSponsorCredit(data){
   const el=$('sponsor-credit');
   if(!el)return;
-  // Quiet named tip credits only \u2014 anonymous tips stay nameless (no invented Mac names).
+  // Quiet named tip credits only — anonymous tips stay nameless (no invented Mac names).
   const rows=Array.isArray(data&&data.credit)?data.credit.filter(r=>r&&String(r.name||'').trim()):[];
   if(!rows.length){el.textContent='';el.hidden=true;return}
   el.textContent=rows.slice(0,6).map(r=>{
     const raw=String(r.handle||'').trim()||String(r.name||'').trim();
     const label=r.handle?('@'+String(r.handle).replace(/^@+/,'')):raw;
-    return label+' \xB7 '+formatCredits(r.cents);
-  }).join(' \xB7 ');
+    return label+' · '+formatCredits(r.cents);
+  }).join(' · ');
   el.hidden=false;
 }
 function paintSponsorTargets(){
@@ -2523,8 +2523,8 @@ function paintSponsorBuy(){
   if(dasha)dasha.hidden=false;
   const face=sponsorFaceCents();
   const faceLabel=face>0?formatCredits(face):'$5';
-  if(usdc)usdc.textContent='USDC \xB7 '+faceLabel;
-  if(dasha)dasha.textContent='$dasha \xB7 '+faceLabel;
+  if(usdc)usdc.textContent='USDC · '+faceLabel;
+  if(dasha)dasha.textContent='$dasha · '+faceLabel;
   const err=$('sponsor-method-err');
   if(err){err.hidden=true;err.textContent=''}
   const custom=$('sponsor-custom');
@@ -2535,19 +2535,19 @@ function paintSponsorSend(){
   const line=$('sponsor-send-line'),wait=$('sponsor-wait'),err=$('sponsor-send-err'),open=$('sponsor-open');
   if(err){err.hidden=true;err.textContent=''}
   if(!sponsorOrder){
-    if(line)line.textContent='\xB7';
+    if(line)line.textContent='·';
     if(wait)wait.textContent='';
     if(open){open.removeAttribute('href')}
     return;
   }
   const meth=sponsorOrder.method==='dasha'?'$dasha':'USDC';
   const tip=formatSponsorTip(sponsorOrder.face_cents||sponsorOrder.charge_cents||sponsorFaceCents());
-  if(line)line.textContent=sponsorOrder.amount+' '+meth+' \xB7 '+tip+' \u2192 '+shortDest(sponsorOrder.dest);
+  if(line)line.textContent=sponsorOrder.amount+' '+meth+' · '+tip+' → '+shortDest(sponsorOrder.dest);
   if(open&&sponsorOrder.pay_url){
     open.href=sponsorOrder.pay_url;
     open.setAttribute('href',sponsorOrder.pay_url);
   }
-  if(wait)wait.textContent='Waiting\u2026';
+  if(wait)wait.textContent='Waiting…';
 }
 async function createSponsorOrder(){
   const methodErr=$('sponsor-method-err');
@@ -2578,12 +2578,12 @@ async function pollSponsorOrder(){
       const done=$('sponsor-done-line');
       const dollars=formatCredits(data.face_cents||sponsorOrder.face_cents||sponsorFaceCents());
       const who=data.name||sponsorOrder.name||'';
-      if(done)done.textContent=who?('Thanks '+who+' \xB7 '+dollars):('Thanks \xB7 '+dollars);
+      if(done)done.textContent=who?('Thanks '+who+' · '+dollars):('Thanks · '+dollars);
       showTf('sponsor-done');
       return;
     }
     const wait=$('sponsor-wait');
-    if(wait&&data?.status==='pending')wait.textContent='Waiting\u2026';
+    if(wait&&data?.status==='pending')wait.textContent='Waiting…';
   }catch(e){
     if(e.message==='order expired'){
       clearSponsorPoll();
@@ -2701,7 +2701,7 @@ $('ask-credits')?.addEventListener('click',()=>{setComputeIntent('credits');show
 $('pick-provide').addEventListener('click',()=>{setComputeIntent('provide');provideBack='gate';clearPaySponsorFine();showTf('provide-name');});
 $('pick-provide-after').addEventListener('click',()=>{clearAnswerMoney();provideBack='ask';clearPaySponsorFine();showTf('provide-name')});
 $('answer-api')?.addEventListener('click',event=>{
-  if(!loggedIn)return; // <a> \u2192 login return=/compute%23build
+  if(!loggedIn)return; // <a> → login return=/compute%23build
   event.preventDefault();
   showTf('build');
   setTimeout(()=>{
@@ -2794,6 +2794,6 @@ bootHash();
   showTf('ask');
 })();
 paintRequest();paintCode();updateRun();auth();
-<\/script>
+</script>
 </body>
 </html>

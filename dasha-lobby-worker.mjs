@@ -4564,6 +4564,28 @@ export function potterHome308Dest(path) {
   if (p === "/compute/v1/models" || p === "/compute/v1/models/") {
     return "https://www.getdasha.com/compute/api/v1/models";
   }
+  const KIT_TAR = "https://www.getdasha.com/dasha-compute-open-alpha.tar.gz";
+  if (
+    p === "/compute/open-alpha.tar.gz" ||
+    p === "/compute/open-alpha.tar.gz/" ||
+    p === "/compute/dasha-compute-open-alpha.tar.gz" ||
+    p === "/compute/dasha-compute-open-alpha.tar.gz/" ||
+    p === "/assets/dasha-compute-open-alpha.tar.gz" ||
+    p === "/assets/dasha-compute-open-alpha.tar.gz/" ||
+    p === "/assets/open-alpha.tar.gz" ||
+    p === "/assets/open-alpha.tar.gz/" ||
+    p === "/open-alpha.tar.gz" ||
+    p === "/open-alpha.tar.gz/"
+  ) {
+    return KIT_TAR;
+  }
+  if (
+    p === "/dasha-compute-open-alpha.tar.gz" ||
+    p === "/dasha-compute-open-alpha.tar.gz/"
+  ) {
+    if (raw !== "/dasha-compute-open-alpha.tar.gz") return KIT_TAR;
+    return null;
+  }
   if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) return "https://www.getdasha.com/compute";
   if (p === "/compute/" || p === "/compute/index.html") {
     return "https://www.getdasha.com/compute";
