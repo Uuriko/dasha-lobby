@@ -509,7 +509,7 @@ const BAG_HTML = `<!doctype html>
       <button type="submit">Look</button>
     </form>
     <div id="out" hidden></div>
-    <p><a href="https://www.getdasha.com/">getdasha.com</a> · <a href="https://www.getdasha.com/which">Which</a></p>
+    <p><a href="https://www.getdasha.com/">getdasha.com</a> · <a href="https://www.getdasha.com/listings">List</a> · <a href="https://www.getdasha.com/how-to-buy">Buy</a> · <a href="https://www.getdasha.com/which">Which</a></p>
   </main>
   <script>
   (function () {
@@ -628,7 +628,7 @@ const BAG_HTML = `<!doctype html>
 
 const DASHA_LIST_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 const DASHA_LIST_PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
-const LISTINGS_UPDATED_AT = '2026-09-07T22:30:00.000Z';
+const LISTINGS_UPDATED_AT = '2026-09-07T23:10:00.000Z';
 const LISTINGS_VENUES = [
   { id: 'getdasha', name: 'getdasha', href: 'https://www.getdasha.com/how-to-buy' },
   { id: 'jupiter', name: 'Jupiter', href: 'https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' },
@@ -682,13 +682,14 @@ const LISTINGS_HTML = `<!doctype html>
     .card { border: 1px solid #666; padding: 1.1rem 1rem; margin: 1.4rem 0; }
     .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.55rem 0; }
     .row code { display: inline; padding: 0.35rem 0.5rem; flex: 1 1 12rem; }
-    button.copy { font: inherit; color: #dfff00; background: transparent; border: 1px solid #666; padding: 0.35rem 0.7rem; cursor: pointer; }
+    button.copy { font: inherit; color: #dfff00; background: transparent; border: 1px solid #666; min-height: 44px; padding: 0.35rem 0.85rem; cursor: pointer; box-sizing: border-box; }
     button.copy:focus-visible { outline: 3px solid #dfff00; outline-offset: 3px; }
     .status { color: #dfff00; font-weight: 800; letter-spacing: 0.02em; }
-    .cta { display: flex; flex-wrap: wrap; gap: 0.75rem 1.1rem; margin: 1rem 0 0.2rem; }
+    .cta { display: flex; flex-wrap: wrap; gap: 0.75rem 1.1rem; margin: 1rem 0 0.2rem; align-items: center; }
+    .cta a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.15rem; box-sizing: border-box; }
     .cta a.primary { font-weight: 800; }
     .venues { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.55rem; margin: 0.6rem 0 0; }
-    .venues a { display: block; border: 1px solid #666; padding: 0.55rem 0.7rem; text-decoration: none; }
+    .venues a { display: flex; align-items: center; min-height: 44px; border: 1px solid #666; padding: 0.55rem 0.7rem; text-decoration: none; box-sizing: border-box; }
     .venues a:hover { border-color: #dfff00; }
     .quiet { opacity: 0.72; font-size: 0.95rem; }
   </style>
@@ -717,7 +718,7 @@ const LISTINGS_HTML = `<!doctype html>
       <a href="https://trade.phantom.com/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Phantom</a>
     </div>
     <p class="quiet">One listing for now · $dasha.</p>
-    <p class="quiet"><a href="/listings.json">listings.json</a> · <a href="/which">Which</a></p>
+    <p class="quiet"><a href="/listings.json">listings.json</a> · <a href="/bag">Bag</a> · <a href="/how-to-buy">Buy</a> · <a href="/which">Which</a></p>
   </main>
   <script>
   (function () {
@@ -1047,6 +1048,12 @@ export function polishHowtoHtml(html) {
   page = stripHowtoLeftoverNavBtnCss(page);
   /* Leftover /how-to-buy x-connect.js after CSS/JS strip. No login mount. Home/lobby/chess/login/faucet/bounties x-connect.js stay. */
   page = stripHowtoLeftoverXConnectJs(page);
+  if (!/<a\b[^>]*href=["']\/listings["'][^>]*>\s*List\s*<\/a>/i.test(page)) {
+    page = page.replace(
+      /(<footer>\s*<p>\s*<a\b[^>]*href=["']\/["'][^>]*>Home<\/a>)(\s*·)/i,
+      '$1 · <a href="/listings">List</a> · <a href="/bag">Bag</a>$2',
+    );
+  }
   return page;
 }
 

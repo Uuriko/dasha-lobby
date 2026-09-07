@@ -1295,7 +1295,17 @@ function startRunTick(waiting){
   tick();
   runTickTimer=setInterval(tick,1000);
 }
-function onFirstToken(){clearRunTick();$('answer-title').textContent='Answer.';paintSplit()}
+function onFirstToken(){
+  clearRunTick();
+  // Lean TTFT on Answer title only — decode split stays parked. Prefer miss waits still surface as TTFT.
+  let title='Answer.';
+  if(runStartedAt>0){
+    const sec=(Date.now()-runStartedAt)/1000;
+    if(Number.isFinite(sec)&&sec>=0)title='Answer · '+(Math.round(sec*10)/10).toFixed(1)+'s';
+  }
+  $('answer-title').textContent=title;
+  paintSplit();
+}
 function hideNightOffer(){
   const offer=$('night-offer');
   if(offer)offer.hidden=true;
