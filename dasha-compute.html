@@ -376,6 +376,8 @@ footer a:hover{color:var(--paper)}
     <button type="button" class="tf-choice secondary" id="tf-done">Done</button>
     <a class="tf-quiet" id="answer-api" href="/login?return=/compute%23build" hidden>API key</a>
     <button type="button" class="tf-quiet" id="answer-credits" hidden>Credits</button>
+    <!-- midstream-fail-honesty:2026-09-07 -->
+    <button type="button" class="tf-quiet" id="answer-retry" hidden data-midstream-fail="1">Retry</button>
   </div>
 </section>
 
@@ -1288,7 +1290,7 @@ async function readSse(response){
         const raw=line.slice(5).trimStart();
         if(raw==='[DONE]')return out;
         let payload;try{payload=JSON.parse(raw)}catch{continue}
-        if(payload?.error)throw Error(payload.error.message||payload.error||'stream error');
+        if(payload?.error){const e=Error(payload.error.message||payload.error||'stream error');e.code=payload.error.code||null;throw e;}
         if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;
         const delta=typeof payload?.choices?.[0]?.delta?.content==='string'?payload.choices[0].delta.content:typeof payload?.choices?.[0]?.delta==='string'?payload.choices[0].delta:typeof payload?.response==='string'?payload.response:typeof payload?.delta==='string'?payload.delta:'';
         if(delta){if(!saw){saw=true;onFirstToken()}out+=delta;node.textContent=out}
@@ -1325,6 +1327,7 @@ $('run-demo').addEventListener('click',async()=>{
   $('answer').textContent=community?'Waiting for a Mac…':'Thinking…';
   showTf('answer');
   $('after-answer').hidden=true;
+  {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
   jobCancelled=false;
   if(runAbort){try{runAbort.abort()}catch{}}
   runAbort=new AbortController();
@@ -1405,24 +1408,77 @@ $('run-demo').addEventListener('click',async()=>{
         lastPaidReceipt={tokens:tok,cents:5,engine:'hosted'};
       }else{lastPaidReceipt=null}
     }
-    conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
-    renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+    if(!String(answer||'').trim()){
+      // Empty completion — explicit error face, not blank success Assistant.
+      const job=String(activeJob||lastPaidReceipt?.job_id||'').trim();
+      const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
+      $('answer-title').textContent='Answer.';
+      $('answer').textContent=shortJob?('No reply.\n'+shortJob):'No reply.';
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      // Keep prompt for quiet Retry. Do not push empty assistant / do not count sent.
+      lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+      // One automatic retry on empty community/hosted completion (intermittent Mac/stream).
+      if(!window.__dashaEmptyRetryOnce){
+        window.__dashaEmptyRetryOnce=true;
+        queueMicrotask(()=>{const run=$('run-demo'); if(run&&!run.disabled)run.click();});
+      }else{window.__dashaEmptyRetryOnce=false}
+    }else{
+      window.__dashaEmptyRetryOnce=false;
+      const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}
+      conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
+      renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+    }
   }catch(error){
-    if(jobCancelled||error?.name==='AbortError'){clearAnswerMoney();$('answer').textContent='Request cancelled. Prompt deleted.';$('answer-title').textContent='Answer.';}
-    else if(error.message==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}
-    else if(/top up|credits|insufficient/i.test(String(error.message||''))){
-      // Past free floor / 402 — stay on Answer; one quiet Top up nudge (no yank mid-read).
-      lastAskFailKind='credits';
-      $('answer').textContent='Top up credits.';
+    const msg=String(error?.message||error||'');
+    const emptyFail=/empty completion/i.test(msg);
+    // Mid-stream provider die (URLError / provider_cut) — fail loud + Retry; never settle/success face.
+    const providerCut=error?.code==='provider_cut'||/provider inference failed|provider cut|URLError|stream ended before completion/i.test(msg);
+    if(jobCancelled||error?.name==='AbortError'){
+      // Keep partial tokens already painted; only replace waiting placeholders.
+      const cur=String($('answer')?.textContent||'');
+      const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|Queued)/.test(cur);
+      if(waiting||!cur.trim()){$('answer').textContent='Request cancelled. Prompt deleted.';}
       $('answer-title').textContent='Answer.';
-      loadCreditsBalance();
-    }
-    else if(/rate.?limit|limit reached|try again shortly/i.test(String(error.message||''))){
-      lastAskFailKind='rate';
-      $('answer').textContent=error.message;
+      clearAnswerMoney();
+      {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
+    }else if(emptyFail){
+      // Worker/provider empty stream fail — same No reply. + Retry face (prompt kept).
+      const job=String(activeJob||lastPaidReceipt?.job_id||'').trim();
+      const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
       $('answer-title').textContent='Answer.';
+      $('answer').textContent=shortJob?('No reply.\n'+shortJob):'No reply.';
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+      if(!window.__dashaEmptyRetryOnce){
+        window.__dashaEmptyRetryOnce=true;
+        queueMicrotask(()=>{const run=$('run-demo'); if(run&&!run.disabled)run.click();});
+      }else{window.__dashaEmptyRetryOnce=false}
+    }else if(providerCut){
+      clearAnswerMoney();
+      lastAskFailKind='provider_cut';
+      $('answer-title').textContent='Answer.';
+      // Dasha tone: short fail + Retry. Optional one-liner when advertise stayed up.
+      const note=providersOnline>0?'\nStill listed online.':'';
+      $('answer').textContent='Mac cut out.'+note;
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      paintAnswerMoney();paintAnswerReceipt();
+    }else{
+      {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
+      if(msg==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}
+      else if(/top up|credits|insufficient/i.test(msg)){
+        // Past free floor / 402 — stay on Answer; one quiet Top up nudge (no yank mid-read).
+        lastAskFailKind='credits';
+        $('answer').textContent='Top up credits.';
+        $('answer-title').textContent='Answer.';
+        loadCreditsBalance();
+      }
+      else if(/rate.?limit|limit reached|try again shortly/i.test(msg)){
+        lastAskFailKind='rate';
+        $('answer').textContent=msg;
+        $('answer-title').textContent='Answer.';
+      }
+      else {clearAnswerMoney();$('answer').textContent=msg||'Request failed';}
     }
-    else {clearAnswerMoney();$('answer').textContent=error.message;}
   }
   finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();$('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
 });
@@ -2355,8 +2411,9 @@ $('answer-credits')?.addEventListener('click',()=>{
     setComputeIntent('credits');showTf('credits');
   }
 });
-$('ask-again').addEventListener('click',()=>{clearAnswerMoney();showTf('ask');$('prompt').focus()});
-$('tf-done').addEventListener('click',()=>{clearAnswerMoney();cameFromHow=false;cameFromGate=false;showTf('ask');});
+$('ask-again').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};showTf('ask');$('prompt').focus()});
+$('answer-retry')?.addEventListener('click',()=>{const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};clearAnswerMoney();const run=$('run-demo'); if(run&&!run.disabled)run.click(); else showTf('ask');});
+$('tf-done').addEventListener('click',()=>{clearAnswerMoney();cameFromHow=false;cameFromGate=false;showTf('ask');const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};});
 $('provide-done-gate').addEventListener('click',()=>{cameFromHow=false;cameFromGate=false;setEngine('hosted',true);});
 document.querySelectorAll('[data-back]').forEach(btn=>{
   btn.addEventListener('click',()=>{

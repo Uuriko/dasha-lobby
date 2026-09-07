@@ -365,6 +365,22 @@ function tokenUsage(input) {
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
 }
 
+/** Mid-stream Mac die / URLError — keep provider voice; never invent a success. */
+export function normalizeStreamProviderError(raw) {
+  const msg = String(raw || '').trim().slice(0, 300);
+  if (!msg) return '';
+  if (/^provider inference failed:/i.test(msg) || /^provider cut$/i.test(msg) || /^empty completion$/i.test(msg)) return msg;
+  if (/URLError|urllib\.error|stream ended before completion|Connection reset|Connection refused|IncompleteRead|RemoteDisconnected/i.test(msg)) {
+    return `provider inference failed: ${msg.slice(0, 240)}`;
+  }
+  if (/provider inference failed/i.test(msg)) return msg;
+  return msg;
+}
+
+export function isProviderStreamCutError(msg) {
+  return /provider inference failed|provider cut|empty completion|stream ended before completion|URLError/i.test(String(msg || ''));
+}
+
 async function cancelJob(storage, key, job, now = Date.now()) {
   if (job.status === 'leased') await storage.put(key, { ...job, status: 'cancelled', messages: null, chunks: null, answer: null, error: null, expiresAt: now + LEASE_MS });
   else await storage.delete(key);
@@ -414,7 +430,16 @@ export class ComputeNetwork {
         await this.state.storage.delete(key);
         if (job?.nightId && ['queued', 'leased'].includes(job.status)) await this.finishNight(job, 'failed', null, 'job expired before completion', now);
       }
-      else if (job.status === 'leased' && Number(job.leaseExpiresAt) <= now) await this.state.storage.put(key, { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) });
+      else if (job.status === 'leased' && Number(job.leaseExpiresAt) <= now) {
+        const hadStreamProgress = job.stream === true && (job.chunks || []).some(chunk => String(chunk || '').trim());
+        if (hadStreamProgress) {
+          await this.state.storage.put(key, { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 });
+          await this.finishNight(job, 'failed', null, 'provider cut', now);
+          await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: true });
+        } else {
+          await this.state.storage.put(key, { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) });
+        }
+      }
     }
     for (const [key, provider] of await this.state.storage.list({ prefix: 'compute:provider:' })) {
       if (!provider || (now - Number(provider.createdAt || 0) > 30 * 24 * 60 * 60_000 && !provider.lastSeenAt)) await this.state.storage.delete(key);
@@ -565,7 +590,19 @@ export class ComputeNetwork {
           controller.close();
           return;
         }
-        if (current.status === 'failed' || current.status === 'cancelled') { emit({ error: { message: current.error || 'job cancelled', type: 'server_error', code: null } }); emit('[DONE]'); controller.close(); return; }
+        if (current.status === 'failed' || current.status === 'cancelled') {
+          const errMsg = current.error || (current.status === 'cancelled' ? 'job cancelled' : 'provider failed');
+          emit({ error: { message: errMsg, type: 'server_error', code: isProviderStreamCutError(errMsg) ? 'provider_cut' : null } });
+          emit('[DONE]');
+          controller.close();
+          return;
+        }
+        if (sent > 0 && current.status === 'queued') {
+          emit({ error: { message: 'provider cut', type: 'server_error', code: 'provider_cut' } });
+          emit('[DONE]');
+          controller.close();
+          return;
+        }
         await new Promise(resolve => setTimeout(resolve, 250));
       }
       if (stopped) return;
@@ -950,17 +987,25 @@ export class ComputeNetwork {
       const input = await body(request, 8192), provider = await this.provider(request, input), key = `compute:job:${chunkMatch[1]}`, job = await this.state.storage.get(key);
       if (!provider) return json({ error: 'invalid provider token' }, 401);
       if (!job || job.status !== 'leased' || !job.stream || job.providerId !== provider.id || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
-      const error = String(input.error || '').trim().slice(0, 300), delta = String(input.delta || '');
+      const delta = String(input.delta || '');
       if (delta && ((job.chunks || []).join('').length + delta.length > 20_000)) return json({ error: 'stream result exceeds 20000 characters' }, 400);
       provider.lastSeenAt = now;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
-      const chunks = delta ? [...(job.chunks || []), delta] : job.chunks || [];
+      const rawError = String(input.error || '').trim().slice(0, 300);
+      const chunks = !rawError && delta ? [...(job.chunks || []), delta] : job.chunks || [];
+      let streamError = normalizeStreamProviderError(rawError);
+      if (!streamError && input.done && !String(chunks.join('') || '').trim()) {
+        streamError = 'empty completion';
+      }
+      if (!streamError && rawError) streamError = rawError.slice(0, 300);
       const usage = input.done ? tokenUsage(input) : job.usage;
-      await this.state.storage.put(key, { ...job, chunks, status: error ? 'failed' : input.done ? 'complete' : 'leased', error: error || null, usage, messages: error || input.done ? null : job.messages, completedAt: error || input.done ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: error || input.done ? now + 10 * 60_000 : now + LEASE_MS + 60_000 });
-      if (error || input.done) {
-        await this.finishNight(job, error ? 'failed' : 'complete', error ? null : chunks.join(''), error || null, now);
-        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
-        if (!error && input.done && job.route !== 'self') {
+      const failed = Boolean(streamError);
+      const finished = failed || Boolean(input.done);
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000 });
+      if (finished) {
+        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
+        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
+        if (!streamError && input.done && job.route !== 'self') {
           const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
           if (earned?.ok) await this.recordPaidInferenceSettle({
             owner: job.owner,
