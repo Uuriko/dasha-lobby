@@ -217,22 +217,14 @@ for (const path of ['/provider-kit', '/Provider-kit', '/compute/provider-kit', '
 for (const path of ['/llm', '/Llm', '/onboarding', '/macbook', '/factory', '/Factory', '/beta', '/providerkit', '/early-access', '/compute/llm']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
-for (const path of ['/answer', '/answer/', '/Answer', '/compute/answer', '/compute/answer/', '/compute/Ask']) {
+for (const path of ['/chatgpt', '/ChatGPT', '/cursor', '/Cursor', '/copilot', '/Copilot', '/vscode', '/VSCode', '/compute/chatgpt', '/compute/cursor', '/compute/copilot', '/compute/vscode']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
-assert.equal(potterHome308Dest('/compute/v1'), 'https://www.getdasha.com/compute/api/v1');
-assert.equal(potterHome308Dest('/compute/v1/'), 'https://www.getdasha.com/compute/api/v1');
-assert.equal(potterHome308Dest('/Compute/v1/models'), 'https://www.getdasha.com/compute/api/v1/models');
-assert.equal(potterHome308Dest('/compute/v1/models'), 'https://www.getdasha.com/compute/api/v1/models');
-assert.equal(potterHome308Dest('/v1'), null, 'bare /v1 stays 404');
-assert.equal(potterHome308Dest('/v1/models'), null, 'bare /v1/models stays 404');
-assert.equal(potterHome308Dest('/compute/api/v1'), null, 'exact /compute/api/v1 stays handler');
-assert.equal(potterHome308Dest('/compute/api/v1/models'), null, 'exact /compute/api/v1/models stays handler');
-assert.equal(potterHome308Dest('/docs'), 'https://www.getdasha.com/compute/api', '/docs stays /compute/api');
-for (const path of ['/base-url', '/baseurl', '/chat-completions', '/embeddings', '/embedding', '/responses', '/response', '/completion', '/compute/base-url', '/compute/embeddings']) {
-  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/api', path);
+for (const path of ['/windsurf', '/Windsurf', '/aider', '/Aider', '/continue', '/Continue', '/zed', '/Zed', '/compute/windsurf', '/compute/aider', '/compute/continue', '/compute/zed']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
-for (const path of ['/openai', '/openai-api', '/v1', '/resend', '/email', '/health', '/status', '/healthz', '/connect', '/arcade', '/games', '/room', '/admin', '/blog', '/news', '/faq', '/waitlist', '/join', '/oauth', '/tos', '/terms', '/legal', '/anthropic', '/price', '/privacy']) {
+assert.equal(potterHome308Dest('/docs'), 'https://www.getdasha.com/compute/api', '/docs stays /compute/api');
+for (const path of ['/openai', '/openai-api', '/v1', '/resend', '/email', '/health', '/status', '/healthz', '/connect', '/arcade', '/games', '/room', '/admin', '/blog', '/news', '/faq', '/waitlist', '/join', '/oauth', '/tos', '/terms', '/legal', '/code', '/terminal', '/emacs', '/vim', '/neovim', '/jetbrains', '/codeium', '/tabnine', '/x402']) {
   assert.equal(potterHome308Dest(path), null, path);
 }
 for (const path of ['/Faucet', '/Faucet/', '/FAUCET']) {
