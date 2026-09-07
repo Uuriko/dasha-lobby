@@ -168,8 +168,9 @@ describe('route contract (worker, offline)', () => {
     const compute = await edgeWorker.fetch(new Request('https://www.getdasha.com/compute'), {});
     const computeBody = await compute.text();
     assert.match(computeBody, /Dasha Compute/);
-    assert.match(computeBody, />Use</);
-    assert.match(computeBody, /Night Shift/);
+    assert.match(computeBody, />Start\.</);
+    assert.match(computeBody, />Ask\.</);
+    assert.match(computeBody, />Provide</);
     assert.doesNotMatch(computeBody, /Compute is gone/);
     const crew = await edgeWorker.fetch(new Request('https://www.getdasha.com/crew'), {});
     const crewBody = await crew.text();
