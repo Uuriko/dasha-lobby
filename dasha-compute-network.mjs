@@ -234,7 +234,7 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
     usage: {
       chat_completions: 'OpenAI-style usage on non-stream JSON and on the SSE final finish_reason=stop chunk',
       hosted_chat: 'POST /compute/api/chat SSE emits usage on the final stop chunk (Hosted UI)',
-      jobs: 'GET /compute/api/jobs/:id returns stored usage (+ route + settle) when present — never invent',
+      jobs: 'GET /compute/api/jobs/:id returns stored usage (+ route + settle + receipt) when present — never invent',
     },
     billing: {
       chat_completions: 'Prepaid credits ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection',
@@ -390,6 +390,59 @@ export function publicJobSettle(job) {
   const state = String(job?.settle_state || '').trim();
   if (!(cents > 0) || !state) return null;
   return { cents, state };
+}
+
+/** Measured tok/s from capacity[] only — never invent or pad zeros. */
+export function measuredTokPerSecForModel(capacity, model) {
+  const want = String(model || '').trim();
+  if (!want || !Array.isArray(capacity)) return null;
+  const row = capacity.find((item) => item && item.model === want);
+  if (!row) return null;
+  const mp = Number(row.measured_providers || 0);
+  const tps = Number(row.tokens_per_second);
+  if (!(mp >= 1) || !Number.isFinite(tps) || !(tps > 0) || tps > 10_000) return null;
+  return Math.round(tps * 100) / 100;
+}
+
+function capacityFromProviders(providers, now = Date.now()) {
+  const fresh = (providers || []).filter((provider) => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
+  const models = [...new Set(fresh.flatMap((provider) => provider.models || []))];
+  return models.map((model) => {
+    const serving = fresh.filter((provider) => provider.models?.includes(model));
+    const measured = serving.map((provider) => provider.hardware?.benchmarks?.find((row) => row.model === model)?.tokens_per_second).filter(Number.isFinite);
+    const tps = measured.length ? measured.reduce((sum, value) => sum + value, 0) / measured.length : 0;
+    return { model, providers: serving.length, measured_providers: measured.length, tokens_per_second: Math.round(tps * 100) / 100 };
+  });
+}
+
+/**
+ * Phase 0 honesty receipt — job/model/class + measured tok/s + attestation:null.
+ * Never invent tok/s, cents, or a verify badge. Phase 0 has no enclave attest.
+ */
+export function publicPhase0Receipt(job, { capacity } = {}) {
+  if (!job || typeof job !== 'object') return null;
+  const job_id = String(job.id || job.job_id || '').trim();
+  const model_id = String(job.model || job.model_id || '').trim();
+  const route = String(job.route || job.provider_class || '').trim();
+  const provider_class = (route === 'hosted' || route === 'community' || route === 'mixture' || route === 'self') ? route : '';
+  const storedTps = Number(job.tokens_per_second);
+  const tps = (Number.isFinite(storedTps) && storedTps > 0 && storedTps <= 10_000)
+    ? Math.round(storedTps * 100) / 100
+    : measuredTokPerSecForModel(capacity, model_id);
+  let completed_at = '';
+  if (typeof job.completed_at === 'string' && job.completed_at.trim()) completed_at = job.completed_at.trim();
+  else if (Number.isFinite(Number(job.completedAt)) && Number(job.completedAt) > 0) {
+    completed_at = new Date(Number(job.completedAt)).toISOString();
+  }
+  const settle = publicJobSettle(job);
+  const out = { attestation: null };
+  if (job_id) out.job_id = job_id;
+  if (model_id) out.model_id = model_id;
+  if (provider_class) out.provider_class = provider_class;
+  if (tps != null) out.tokens_per_second = tps;
+  if (completed_at) out.completed_at = completed_at;
+  if (settle) out.settled = settle;
+  return out;
 }
 
 async function cancelJob(storage, key, job, now = Date.now()) {
@@ -588,7 +641,9 @@ export class ComputeNetwork {
         sent = (current.chunks || []).length;
         if (current.status === 'complete') {
           const settle = publicJobSettle(current);
-          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}) });
+          const providers = [...(await storage.list({ prefix: 'compute:provider:' })).values()];
+          const receipt = publicPhase0Receipt(current, { capacity: capacityFromProviders(providers) });
+          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}), ...(receipt ? { receipt } : {}) });
           emit('[DONE]');
           controller.close();
           return;
@@ -988,22 +1043,15 @@ export class ComputeNetwork {
       provider.lastSeenAt = now;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       const chunks = delta ? [...(job.chunks || []), delta] : job.chunks || [];
-      // Parity with non-stream /result: empty stream completion is a failure, not silent success.
-      let streamError = error;
-      if (!streamError && input.done && !String(chunks.join('') || '').trim()) {
-        streamError = 'empty completion';
-      }
-      const failed = Boolean(streamError);
-      const finished = failed || Boolean(input.done);
-      const usage = input.done || failed ? tokenUsage(input) : job.usage;
-      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, answer: failed ? null : job.answer, status: failed ? 'failed' : finished ? 'complete' : 'leased', error: streamError || null, usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000 });
-      if (finished) {
-        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
-        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
-        if (!streamError && input.done && job.route !== 'self') {
-          const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-          if (earned?.ok) await this.recordPaidInferenceSettle({
-            owner: job.owner,
+      const usage = input.done ? tokenUsage(input) : job.usage;
+      let settlePatch = {};
+      if (!error && input.done && job.route !== 'self') {
+        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+        if (accrued?.ok) {
+          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
+          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
+          await this.recordPaidInferenceSettle({
+            owner: job.owner || null,
             engine: job.route === 'mixture' ? 'mixture' : 'community',
             usage,
             cents: settleCents,
@@ -1069,6 +1117,8 @@ export class ComputeNetwork {
       } : null;
       const route = ['community', 'mixture', 'self'].includes(String(job.route || '')) ? String(job.route) : null;
       const settle = publicJobSettle(job);
+      const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
+      const receipt = publicPhase0Receipt(job, { capacity: capacityFromProviders(providers, now) });
       return maybeHead(request, json({
         id: job.id,
         status: job.status,
@@ -1081,6 +1131,7 @@ export class ComputeNetwork {
         ...(usage && (usage.total_tokens > 0 || usage.prompt_tokens > 0 || usage.completion_tokens > 0) ? { usage } : {}),
         ...(route ? { route } : {}),
         ...(settle ? { settle } : {}),
+        ...(receipt ? { receipt } : {}),
       }, 200, allowedOrigin, credentials));
     }
 

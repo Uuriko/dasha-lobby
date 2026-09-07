@@ -17,6 +17,8 @@ assert.match(html, /settled_24h/);
 assert.match(html, /loadSettled24h/);
 assert.match(html, /Settled \u00b7/);
 assert.match(html, /paintAnswerReceipt/);
+assert.match(html, /id=["']act-tape["']/);
+assert.match(html, /id=["']act-tape-boot["']/);
 assert.doesNotMatch(html, /\/room|Project Room/);
 
 // Must not compete with Start. first paint

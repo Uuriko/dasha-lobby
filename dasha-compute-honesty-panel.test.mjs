@@ -69,8 +69,10 @@ assert.match(html, /el\.textContent=formatSettledLine\(\)/);
 assert.match(html, /title=["']Settled paid-inference · last 24h["']/);
 assert.doesNotMatch(html, /\/room|Project Room/);
 
-assert.match(html, /if\(step===['"]gate['"]\)\{clearHonestyPoll\(\);paintHonestyPanel\(\)\}/);
-assert.match(html, /else\{paintHonestyPanel\(\);startHonestyPoll\(\)\}/);
+assert.match(html, /paintHonestyPanel\(\);startHonestyPoll\(\)/);
+assert.match(html, /function paintPresenceActBoot\(/);
+assert.match(html, /id=["']presence-strip["']/);
+assert.match(html, /id=["']act-tape["']/);
 
 const refreshSrc = html.slice(html.indexOf('async function refreshHonesty'), html.indexOf('function formatTokPerSec'));
 assert.match(refreshSrc, /\/compute\/ocm\/healthz/);

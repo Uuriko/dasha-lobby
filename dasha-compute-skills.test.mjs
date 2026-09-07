@@ -26,6 +26,11 @@ assert.match(PROVIDE_SKILL_MD, /Prefer MLX when you can/);
 assert.match(USE_SKILL_MD, /Prefer MLX when you can \(providers\)/);
 assert.match(USE_SKILL_MD, /Use Dasha Compute \(ask the network\)/);
 assert.match(OCM_HOST_SKILL_MD, /Host on OCM/);
+assert.match(OCM_HOST_SKILL_MD, /ocm_enroll_/);
+assert.match(OCM_HOST_SKILL_MD, /ocm-agent-update/);
+assert.match(OCM_HOST_SKILL_MD, /\bCold\b/);
+assert.doesNotMatch(OCM_HOST_SKILL_MD, /New provider token/);
+assert.doesNotMatch(OCM_HOST_SKILL_MD, /OCM_HOST_TOKEN="ocm_host_/);
 
 assert.match(html, /id=["']copy-skill-use["']/);
 assert.match(html, /id=["']copy-skill-provide-reg["']/);
