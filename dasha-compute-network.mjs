@@ -48,7 +48,6 @@ import { X402_BILLING_DOCS, x402BillingDocsLine } from './dasha-compute-x402.mjs
 
 export { HOSTED_ASK_PRICE_CENTS };
 
-const BILLING_CHAT_COMPLETIONS = 'Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card';
 
 const MODELS = new Set(['qwen3-8b', 'gemma3-12b', 'gpt-oss-20b', 'qwen3-30b-a3b', 'gemma3-27b', 'gpt-oss-120b']);
 const FRESH_MS = 45_000;
@@ -214,7 +213,7 @@ function computeApiRootBody(env) {
     limit: '3 free / 10 min · then credits',
     usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)',
     billing: {
-      chat_completions: BILLING_CHAT_COMPLETIONS,
+      chat_completions: "Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card",
       keys: `Create-time spend cap default $${API_KEY_LIMIT_DEFAULT_CENTS / 100}/month · 402 on exceed · see /caps`,
       // Honesty only — COMPUTE_X402_POC default off; no facilitator / settle this hop.
       x402: x402BillingDocsLine(env),
@@ -236,10 +235,10 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
     usage: {
       chat_completions: 'OpenAI-style usage on non-stream JSON and on the SSE final finish_reason=stop chunk',
       hosted_chat: 'POST /compute/api/chat SSE emits usage on the final stop chunk (Hosted UI)',
-      jobs: 'GET /compute/api/jobs/:id returns stored usage (+ route + settle + receipt) when present — never invent',
+      jobs: "GET /compute/api/jobs/:id returns stored usage (+ route) when present — never invent",
     },
     billing: {
-      chat_completions: BILLING_CHAT_COMPLETIONS,
+      chat_completions: "Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card",
       // Honesty only — flag off / planned; not an enable switch.
       x402: X402_BILLING_DOCS,
     },
