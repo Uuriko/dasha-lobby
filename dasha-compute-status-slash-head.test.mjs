@@ -41,6 +41,7 @@ for (const path of ['/compute/api/status', '/compute/api/status/']) {
   assert.match(get.body.billing?.keys || '', /Create-time spend cap default \$5\/month/);
   assert.match(get.body.billing?.keys || '', /402 on exceed/);
   assert.match(get.body.billing?.keys || '', /\/caps/);
+  assert.equal(get.body.billing?.x402, 'flag_off');
   const head = await network.fetch(new Request(`https://lobby.getdasha.com${path}`, { method: 'HEAD' }));
   assert.equal(head.status, 200, `${path} HEAD`);
   assert.match(head.headers.get('content-type') || '', /application\/json/);
@@ -91,6 +92,7 @@ for (const path of ['/compute/api', '/compute/api/']) {
   const body = await root.json();
   assert.match(body.billing?.keys || '', /Create-time spend cap default \$5\/month/);
   assert.match(body.billing?.chat_completions || '', /runaway protection/);
+  assert.equal(body.billing?.x402, 'flag_off');
 }
 
 assert.equal([...rows.keys()].some(key => key.startsWith('compute:provider:')), false, 'must not invent Macs');

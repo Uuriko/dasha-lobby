@@ -44,6 +44,7 @@ import {
   recordSettledInference,
   sumSettled24h,
 } from './dasha-compute-settled.mjs';
+import { X402_BILLING_DOCS, x402BillingDocsLine } from './dasha-compute-x402.mjs';
 
 export { HOSTED_ASK_PRICE_CENTS };
 
@@ -213,6 +214,8 @@ function computeApiRootBody(env) {
     billing: {
       chat_completions: 'Prepaid credits ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection',
       keys: `Create-time spend cap default $${API_KEY_LIMIT_DEFAULT_CENTS / 100}/month · 402 on exceed · see /caps`,
+      // Honesty only — COMPUTE_X402_POC default off; no facilitator / settle this hop.
+      x402: x402BillingDocsLine(env),
     },
   };
 }
@@ -235,6 +238,8 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
     },
     billing: {
       chat_completions: 'Prepaid credits ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection',
+      // Honesty only — flag off / planned; not an enable switch.
+      x402: X402_BILLING_DOCS,
     },
   }, 200, allowedOrigin || '*', credentials);
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
