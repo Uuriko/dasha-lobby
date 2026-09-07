@@ -90,8 +90,8 @@ assert.match(polished, /\.identity\{/, "polish keeps .identity");
 assert.match(polished, /id=["']buy-sheet["']/, "buy sheet stays after polish");
 assert.match(polished, /src="\/client\/chess-local\.js"/, "chess-local stays after polish");
 
-assert.match(chessDisk, /\.panel\{padding:0\}/, "disk source still has leftover .panel CSS (polish drops it; did not run static-gen)");
-assert.match(CHESS_PAGE_HTML, /\.panel\{padding:0\}/, "bundled still has leftover .panel CSS");
+assert.doesNotMatch(chessDisk, /\.panel\{padding:0\}/, "disk source has no leftover .panel CSS (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\.panel\{padding:0\}/, "bundled has no leftover .panel CSS");
 
 const HOME = `<!doctype html><html lang="en"><head>
 <title>$dasha</title>
@@ -138,7 +138,7 @@ assert.equal(stripChessLeftoverPanelCss(HOME), HOME, "home is not a chess leftov
   const compute = await edgeWorker.fetch(new Request("https://www.getdasha.com/compute"), {});
   assert.equal(compute.status, 200);
   const html = await compute.text();
-  assert.match(html, /\.panel-head/, "compute .panel-head CSS stays");
+  assert.match(html, /\.panel\{/, "compute .panel CSS stays (chess strip only drops .panel{padding:0})");
 }
 
 {

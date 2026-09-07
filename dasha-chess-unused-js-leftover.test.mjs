@@ -54,12 +54,12 @@ function onlyDecl(src, name, label) {
   assert.doesNotMatch(src, /onclick\s*=/, `${label} has no onclick`);
 }
 
-onlyDecl(chessDisk, "loadLeaders", "chess disk");
-onlyDecl(chessDisk, "playNow", "chess disk");
-onlyDecl(chessDisk, "flashBought", "chess disk");
-onlyDecl(CHESS_PAGE_HTML, "loadLeaders", "bundled chess");
-onlyDecl(CHESS_PAGE_HTML, "playNow", "bundled chess");
-onlyDecl(CHESS_PAGE_HTML, "flashBought", "bundled chess");
+assert.doesNotMatch(chessDisk, /\bloadLeaders\b/, "chess disk loadLeaders fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /\bplayNow\b/, "chess disk playNow fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /\bflashBought\b/, "chess disk flashBought fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\bloadLeaders\b/, "bundled chess loadLeaders fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\bplayNow\b/, "bundled chess playNow fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\bflashBought\b/, "bundled chess flashBought fully gone (static-gen polish ran out-of-band)");
 
 const LIVE = `<!doctype html><html lang="en"><head>
 <title>Dasha Chess</title>
@@ -158,12 +158,12 @@ assert.match(polished, /Play\. Invite\. Find\./, "polish keeps JSON-LD Invite co
 assert.match(polished, /id=["']buy-sheet["']/, "buy sheet stays after polish");
 assert.match(polished, /src="\/client\/chess-local\.js"/, "chess-local stays after polish");
 
-assert.match(chessDisk, /function loadLeaders\(\)/, "chess disk still emits leftover loadLeaders (polish drops it)");
-assert.match(chessDisk, /function playNow\(button\)/, "chess disk still emits leftover playNow (polish drops it)");
-assert.match(chessDisk, /function flashBought\(\)/, "chess disk still emits leftover flashBought (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /function loadLeaders\(\)/, "bundled chess still emits leftover loadLeaders (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /function playNow\(button\)/, "bundled chess still emits leftover playNow (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /function flashBought\(\)/, "bundled chess still emits leftover flashBought (polish drops it)");
+assert.doesNotMatch(chessDisk, /function loadLeaders\(\)/, "chess disk no longer emits leftover loadLeaders (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /function playNow\(button\)/, "chess disk no longer emits leftover playNow (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /function flashBought\(\)/, "chess disk no longer emits leftover flashBought (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /function loadLeaders\(\)/, "bundled chess no longer emits leftover loadLeaders (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /function playNow\(button\)/, "bundled chess no longer emits leftover playNow (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /function flashBought\(\)/, "bundled chess no longer emits leftover flashBought (static-gen polish ran out-of-band)");
 assert.match(chessDisk, /function hideLecture\(\)/, "chess disk hideLecture stays");
 assert.match(chessDisk, /function findNow\(/, "chess disk findNow stays");
 assert.match(chessDisk, /function joinQueue\(/, "chess disk joinQueue stays");

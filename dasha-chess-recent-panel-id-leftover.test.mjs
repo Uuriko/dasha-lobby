@@ -124,8 +124,9 @@ assert.ok(gone.length > LIVE.length * 0.7, "id drop is per-attr, not eat-the-pag
 
 {
   const raw = stripChessLeftoverRecentPanelId(chessDisk);
-  assert.match(raw, /id=["']recent-panel["']/, "strip alone keeps id while disk still has loadLeaders");
-  assert.match(chessDisk, /function loadLeaders\s*\(/, "disk still emits leftover loadLeaders (unused-js strip drops it)");
+  assert.equal(raw, chessDisk, "strip no-ops: disk already clean of loadLeaders");
+  assert.doesNotMatch(raw, /id=["']recent-panel["']/, "disk already clean: no leftover id=recent-panel (static-gen polish ran out-of-band)");
+  assert.doesNotMatch(chessDisk, /function loadLeaders\s*\(/, "disk no longer emits leftover loadLeaders (static-gen polish ran out-of-band)");
 }
 
 const polished = polishServedSlim(LIVE);
@@ -135,8 +136,8 @@ assert.match(polished, /class=["']recent["']/, "polish class=recent stays");
 assert.match(polished, /function tournamentAction\(action,name\)/, "polish tournamentAction(action,name) stays");
 assert.match(polished, /tournamentAction\('create'/, "polish tournamentAction create stays");
 
-assert.match(chessDisk, /id=["']recent-panel["']/, "disk source still has leftover id=recent-panel (polish drops it; did not run static-gen)");
-assert.match(CHESS_PAGE_HTML, /id=["']recent-panel["']/, "bundled still has leftover id=recent-panel");
+assert.doesNotMatch(chessDisk, /id=["']recent-panel["']/, "disk source has no leftover id=recent-panel (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /id=["']recent-panel["']/, "bundled has no leftover id=recent-panel");
 
 function assertNoRecentPanelId(html, label) {
   assert.doesNotMatch(afterStyleScript(html), /\bid=["']recent-panel["']/, `${label} no leftover id=recent-panel after style/script strip`);

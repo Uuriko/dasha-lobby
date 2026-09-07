@@ -117,8 +117,8 @@ assert.match(polished, /Play\. Invite\. Find\./, "polish keeps JSON-LD Invite co
 assert.match(polished, /id=["']buy-sheet["']/, "buy sheet stays after polish");
 assert.match(polished, /src="\/client\/chess-local\.js"/, "chess-local stays after polish");
 
-assert.match(chessDisk, /\/\* Invite \/ 1v1 \*\//, "chess disk still emits leftover Invite / 1v1 (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /\/\* Invite \/ 1v1 \*\//, "bundled chess still emits leftover Invite / 1v1 (polish drops it)");
+assert.doesNotMatch(chessDisk, /\/\* Invite \/ 1v1 \*\//, "chess disk no longer emits leftover Invite / 1v1 (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\/\* Invite \/ 1v1 \*\//, "bundled chess no longer emits leftover Invite / 1v1 (static-gen polish ran out-of-band)");
 assert.match(chessDisk, /function watchingGame\(g\)/, "chess disk watchingGame stays");
 assert.match(chessDisk, /g\.watch===true/, "chess disk g.watch===true stays");
 assert.match(chessDisk, /id=["']gate-invite["']/, "chess disk #gate-invite stays");

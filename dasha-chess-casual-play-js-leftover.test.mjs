@@ -54,14 +54,14 @@ function onlyDecl(src, name, label) {
   assert.doesNotMatch(src, /onclick\s*=/, `${label} has no onclick`);
 }
 
-onlyDecl(chessDisk, "casualRematch", "chess disk");
-onlyDecl(chessDisk, "nextPlay", "chess disk");
-onlyDecl(chessDisk, "playReady", "chess disk");
-onlyDecl(chessDisk, "showPlayPair", "chess disk");
-onlyDecl(CHESS_PAGE_HTML, "casualRematch", "bundled chess");
-onlyDecl(CHESS_PAGE_HTML, "nextPlay", "bundled chess");
-onlyDecl(CHESS_PAGE_HTML, "playReady", "bundled chess");
-onlyDecl(CHESS_PAGE_HTML, "showPlayPair", "bundled chess");
+assert.doesNotMatch(chessDisk, /\bcasualRematch\b/, "chess disk casualRematch fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /\bnextPlay\b/, "chess disk nextPlay fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /\bplayReady\b/, "chess disk playReady fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /\bshowPlayPair\b/, "chess disk showPlayPair fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\bcasualRematch\b/, "bundled chess casualRematch fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\bnextPlay\b/, "bundled chess nextPlay fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\bplayReady\b/, "bundled chess playReady fully gone (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\bshowPlayPair\b/, "bundled chess showPlayPair fully gone (static-gen polish ran out-of-band)");
 
 const LIVE = `<!doctype html><html lang="en"><head>
 <title>Dasha Chess</title>
@@ -160,14 +160,14 @@ assert.match(polished, /Play\. Invite\. Find\./, "polish keeps JSON-LD Invite co
 assert.match(polished, /id=["']buy-sheet["']/, "buy sheet stays after polish");
 assert.match(polished, /src="\/client\/chess-local\.js"/, "chess-local stays after polish");
 
-assert.match(chessDisk, /function casualRematch\(g\)/, "chess disk still emits leftover casualRematch (polish drops it)");
-assert.match(chessDisk, /function nextPlay\(\)/, "chess disk still emits leftover nextPlay (polish drops it)");
-assert.match(chessDisk, /function playReady\(\)/, "chess disk still emits leftover playReady (polish drops it)");
-assert.match(chessDisk, /function showPlayPair\(enabled\)/, "chess disk still emits leftover showPlayPair (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /function casualRematch\(g\)/, "bundled chess still emits leftover casualRematch (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /function nextPlay\(\)/, "bundled chess still emits leftover nextPlay (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /function playReady\(\)/, "bundled chess still emits leftover playReady (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /function showPlayPair\(enabled\)/, "bundled chess still emits leftover showPlayPair (polish drops it)");
+assert.doesNotMatch(chessDisk, /function casualRematch\(g\)/, "chess disk no longer emits leftover casualRematch (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /function nextPlay\(\)/, "chess disk no longer emits leftover nextPlay (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /function playReady\(\)/, "chess disk no longer emits leftover playReady (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /function showPlayPair\(enabled\)/, "chess disk no longer emits leftover showPlayPair (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /function casualRematch\(g\)/, "bundled chess no longer emits leftover casualRematch (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /function nextPlay\(\)/, "bundled chess no longer emits leftover nextPlay (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /function playReady\(\)/, "bundled chess no longer emits leftover playReady (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /function showPlayPair\(enabled\)/, "bundled chess no longer emits leftover showPlayPair (static-gen polish ran out-of-band)");
 assert.match(chessDisk, /function showCasualBar\(\)/, "chess disk showCasualBar stays");
 assert.match(chessDisk, /function hidePlayPair\(\)/, "chess disk hidePlayPair stays");
 assert.match(chessDisk, /function hideLecture\(\)/, "chess disk hideLecture stays");

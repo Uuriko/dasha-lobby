@@ -99,8 +99,8 @@ assert.match(polished, /id=["']buy-share-x["']/, "polish #buy-share-x stays");
 assert.match(polished, />TG<\/a>/, "polish TG stays");
 assert.match(polished, /id=["']buy-sheet["']/, "polish buy sheet stays");
 
-assert.match(chessDisk, /id=["']buy-sheet-fallback["']/, "disk source still has leftover id=buy-sheet-fallback (polish drops it; did not run static-gen)");
-assert.match(CHESS_PAGE_HTML, /id=["']buy-sheet-fallback["']/, "bundled still has leftover id=buy-sheet-fallback");
+assert.doesNotMatch(chessDisk, /id=["']buy-sheet-fallback["']/, "disk source has no leftover id=buy-sheet-fallback (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /id=["']buy-sheet-fallback["']/, "bundled has no leftover id=buy-sheet-fallback");
 
 function assertNoBuySheetFallbackId(html, label) {
   assert.doesNotMatch(afterStyleScript(html), /\bid=["']buy-sheet-fallback["']/, `${label} no leftover id=buy-sheet-fallback after style/script strip`);

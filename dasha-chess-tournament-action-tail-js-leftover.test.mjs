@@ -140,25 +140,25 @@ assert.match(afterStyleScript(LIVE), /id=["']tournament["']/, "fixture #tourname
 assert.match(afterStyleScript(LIVE), /class=["']tournament-form["']/, "fixture .tournament-form stays in DOM");
 
 assert.equal(stripChessLeftoverTournamentActionTailJs(chessDisk), chessDisk, "disk Start essay button still paints so strip no-ops");
-assert.match(chessDisk, /tournamentAction\(action\)/, "chess disk leftover tournamentAction(action) fallthrough (polish drops it)");
-assert.match(chessDisk, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "chess disk leftover generic POST tail (polish drops it)");
-assert.match(chessDisk, /tournamentButton\('Start','start'/, "chess disk still emits leftover Start essay button (essay leftover drops it)");
-assert.match(chessDisk, /tournamentButton\('Leave','leave'/, "chess disk leftover Leave essay button");
-assert.match(chessDisk, /tournamentButton\('Join','join'/, "chess disk leftover Join essay button");
-assert.match(chessDisk, /tournamentButton\('Cancel','cancel'/, "chess disk leftover Cancel essay button");
+assert.doesNotMatch(chessDisk, /tournamentAction\(action\)/, "chess disk leftover tournamentAction(action) fallthrough (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "chess disk leftover generic POST tail (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /tournamentButton\('Start','start'/, "chess disk no longer emits leftover Start essay button (essay leftover drops it)");
+assert.doesNotMatch(chessDisk, /tournamentButton\('Leave','leave'/, "chess disk leftover Leave essay button");
+assert.doesNotMatch(chessDisk, /tournamentButton\('Join','join'/, "chess disk leftover Join essay button");
+assert.doesNotMatch(chessDisk, /tournamentButton\('Cancel','cancel'/, "chess disk leftover Cancel essay button");
 
 const essayGone = stripChessLeftoverTournamentEssayJs(chessDisk);
 assert.doesNotMatch(essayGone, /tournamentButton\('Start','start'/, "essay leftover drops Start essay button");
 assert.doesNotMatch(essayGone, /tournamentButton\('Leave','leave'/, "essay leftover drops Leave essay button");
 assert.doesNotMatch(essayGone, /tournamentButton\('Join','join'/, "essay leftover drops Join essay button");
 assert.doesNotMatch(essayGone, /tournamentButton\('Cancel','cancel'/, "essay leftover drops Cancel essay button");
-assert.match(essayGone, /tournamentAction\(action\)/, "essay leftover keeps leftover tournamentAction(action) fallthrough");
-assert.match(essayGone, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "essay leftover keeps leftover generic POST tail");
+assert.doesNotMatch(essayGone, /tournamentAction\(action\)/, "essay leftover disk already clean of leftover tournamentAction(action) fallthrough (static-gen polish ran out-of-band)");
+assert.doesNotMatch(essayGone, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "essay leftover disk already clean of leftover generic POST tail (static-gen polish ran out-of-band)");
 
 const shareGone = stripChessLeftoverShareTournamentJs(essayGone);
 assert.doesNotMatch(shareGone, /\bshareTournament\b/, "share leftover drops shareTournament");
-assert.match(shareGone, /tournamentAction\(action\)/, "share leftover keeps leftover tournamentAction(action) fallthrough");
-assert.match(shareGone, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "share leftover keeps leftover generic POST tail");
+assert.doesNotMatch(shareGone, /tournamentAction\(action\)/, "share leftover disk already clean of leftover tournamentAction(action) fallthrough (static-gen polish ran out-of-band)");
+assert.doesNotMatch(shareGone, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "share leftover disk already clean of leftover generic POST tail (static-gen polish ran out-of-band)");
 
 const gone = stripChessLeftoverTournamentActionTailJs(LIVE);
 noActionTail(gone, "strip");
@@ -203,8 +203,8 @@ assert.doesNotMatch(polished, /Dasha's challenge/, "polish does not restore left
 assert.doesNotMatch(polished, /\.tournament-meta\{/, "polish does not restore leftover .tournament-meta CSS");
 assert.doesNotMatch(polished, /,'tournament-meta'/, "polish still drops leftover classNames");
 
-assert.match(CHESS_PAGE_HTML, /tournamentAction\(action\)/, "bundled chess still emits leftover tournamentAction(action) fallthrough (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "bundled chess leftover generic POST tail (polish drops it)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /tournamentAction\(action\)/, "bundled chess no longer emits leftover tournamentAction(action) fallthrough (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "bundled chess leftover generic POST tail (static-gen polish ran out-of-band)");
 assert.match(afterStyleScript(chessDisk), /id=["']tournament["']/, "chess disk #tournament stays");
 assert.match(afterStyleScript(chessDisk), /class=["']tournament-form["']/, "chess disk .tournament-form stays");
 assert.match(chessDisk, /function wantTournamentChrome\(\)\{return false\}/, "chess disk wantTournamentChrome stays false");

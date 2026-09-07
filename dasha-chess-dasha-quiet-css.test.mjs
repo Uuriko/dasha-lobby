@@ -86,8 +86,8 @@ assert.match(polished, /\.identity\{/, "polish keeps .identity");
 assert.match(polished, /id=["']buy-sheet["']/, "buy sheet stays after polish");
 assert.match(polished, /src="\/client\/chess-local\.js"/, "chess-local stays after polish");
 
-assert.match(chessDisk, /\.dasha-slim a\.dasha-quiet\{/, "disk source still has leftover .dasha-quiet CSS (polish drops it; did not run static-gen)");
-assert.match(CHESS_PAGE_HTML, /\.dasha-slim a\.dasha-quiet\{/, "bundled still has leftover .dasha-quiet CSS");
+assert.doesNotMatch(chessDisk, /\.dasha-slim a\.dasha-quiet\{/, "disk source has no leftover .dasha-quiet CSS (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\.dasha-slim a\.dasha-quiet\{/, "bundled has no leftover .dasha-quiet CSS");
 
 const HOME = `<!doctype html><html lang="en"><head>
 <title>$dasha</title>

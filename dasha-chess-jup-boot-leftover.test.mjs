@@ -61,10 +61,10 @@ assert.match(gone, /src="\/client\/chess-local\.js"/, 'chess-local stays');
 assert.doesNotMatch(gone, /plugin\.jup\.ag/, 'no plugin.jup.ag');
 assert.ok(gone.length > LIVE.length * 0.4, 'boot drop is per-function, not eat-the-page');
 
-assert.match(chessDisk, /function bootJup\(\)/, 'disk source still has leftover bootJup (polish drops it; did not run static-gen)');
-assert.match(CHESS_PAGE_HTML, /function bootJup\(\)/, 'bundled still has leftover bootJup');
-assert.match(chessDisk, /window\.Jupiter\.init/, 'disk leftover Jupiter.init');
-assert.match(CHESS_PAGE_HTML, /window\.Jupiter\.init/, 'bundled leftover Jupiter.init');
+assert.doesNotMatch(chessDisk, /function bootJup\(\)/, 'disk source has no leftover bootJup (static-gen polish ran out-of-band)');
+assert.doesNotMatch(CHESS_PAGE_HTML, /function bootJup\(\)/, 'bundled has no leftover bootJup');
+assert.doesNotMatch(chessDisk, /window\.Jupiter\.init/, 'disk leftover Jupiter.init');
+assert.doesNotMatch(CHESS_PAGE_HTML, /window\.Jupiter\.init/, 'bundled leftover Jupiter.init');
 
 function polish(html) {
   return stripChessJupPluginBoot(stripChessJupPluginMount(html));

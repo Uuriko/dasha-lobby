@@ -58,9 +58,9 @@ assert.match(gone, /function watchPrice/, 'buy watchPrice stays');
 assert.doesNotMatch(gone, /plugin\.jup\.ag/, 'no plugin.jup.ag');
 assert.ok(gone.length > LIVE.length * 0.7, 'call drop is per-call, not eat-the-page');
 
-assert.match(chessDisk, /return;bootJup\(\)/, 'disk source still has leftover bootJup() call (polish drops it; did not run static-gen)');
-assert.match(CHESS_PAGE_HTML, /return;bootJup\(\)/, 'bundled still has leftover bootJup() call');
-assert.match(chessDisk, /function bootJup\(\)/, 'disk still has leftover function bootJup (prior polish drops it)');
+assert.doesNotMatch(chessDisk, /return;bootJup\(\)/, 'disk source has no leftover bootJup() call (static-gen polish ran out-of-band)');
+assert.doesNotMatch(CHESS_PAGE_HTML, /return;bootJup\(\)/, 'bundled has no leftover bootJup() call');
+assert.doesNotMatch(chessDisk, /function bootJup\(\)/, 'disk has no leftover function bootJup (static-gen polish ran out-of-band)');
 
 function polish(html) {
   return stripChessJupPluginBootCall(stripChessJupPluginBoot(stripChessJupPluginMount(html)));

@@ -103,8 +103,8 @@ assert.match(polished, /id=["']buy-share-x["']/, "polish #buy-share-x stays");
 assert.match(polished, />TG<\/a>/, "polish TG stays");
 assert.match(polished, /id=["']buy-sheet["']/, "polish buy sheet stays");
 
-assert.match(chessDisk, /id=["']leaders-panel["']/, "disk source still has leftover id=leaders-panel (polish drops it; did not run static-gen)");
-assert.match(CHESS_PAGE_HTML, /id=["']leaders-panel["']/, "bundled still has leftover id=leaders-panel");
+assert.doesNotMatch(chessDisk, /id=["']leaders-panel["']/, "disk source has no leftover id=leaders-panel (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /id=["']leaders-panel["']/, "bundled has no leftover id=leaders-panel");
 
 function assertNoLeadersPanelId(html, label) {
   assert.doesNotMatch(afterStyleScript(html), /\bid=["']leaders-panel["']/, `${label} no leftover id=leaders-panel after style/script strip`);

@@ -152,8 +152,8 @@ assert.ok(gone.length > LIVE.length * 0.7, "id drop is per-attr, not eat-the-pag
   assert.match(other, /id="promotion-title"/, "non-chess pages keep leftover promotion-title id");
 }
 
-assert.match(chessDisk, /id=["']promotion-title["']/, "disk source still has leftover id=promotion-title (polish drops it; did not run static-gen)");
-assert.match(CHESS_PAGE_HTML, /id=["']promotion-title["']/, "bundled still has leftover id=promotion-title");
+assert.doesNotMatch(chessDisk, /id=["']promotion-title["']/, "disk source has no leftover id=promotion-title (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /id=["']promotion-title["']/, "bundled has no leftover id=promotion-title");
 assert.match(chessDisk, /id=["']tc-3["']/, "disk #tc-3 stays");
 assert.match(chessDisk, /\$\('tc-'\+n\)/, "disk JS binds $('tc-'+n)");
 

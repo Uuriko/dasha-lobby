@@ -127,14 +127,14 @@ assert.match(afterStyleScript(LIVE), /id=["']tournament["']/, "fixture #tourname
 assert.match(afterStyleScript(LIVE), /class=["']tournament-form["']/, "fixture .tournament-form stays in DOM");
 
 assert.equal(stripChessLeftoverShareTournamentJs(chessDisk), chessDisk, "disk Share essay button still paints so strip no-ops");
-assert.match(chessDisk, /function shareTournament\(\)/, "chess disk still emits leftover shareTournament (polish drops it)");
-assert.match(chessDisk, /if\(action==='share'\)return shareTournament\(\);/, "chess disk leftover share dispatcher (polish drops it)");
-assert.match(chessDisk, /tournamentButton\('Share','share'\)/, "chess disk still emits leftover Share essay button (essay leftover drops it)");
+assert.doesNotMatch(chessDisk, /function shareTournament\(\)/, "chess disk no longer emits leftover shareTournament (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /if\(action==='share'\)return shareTournament\(\);/, "chess disk leftover share dispatcher (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /tournamentButton\('Share','share'\)/, "chess disk no longer emits leftover Share essay button (essay leftover drops it)");
 
 const essayGone = stripChessLeftoverTournamentEssayJs(chessDisk);
 assert.doesNotMatch(essayGone, /tournamentButton\('Share','share'\)/, "essay leftover drops Share essay button");
-assert.match(essayGone, /function shareTournament\(\)/, "essay leftover keeps leftover shareTournament");
-assert.match(essayGone, /if\(action==='share'\)return shareTournament\(\);/, "essay leftover keeps leftover share dispatcher");
+assert.doesNotMatch(essayGone, /function shareTournament\(\)/, "essay leftover disk already clean of leftover shareTournament (static-gen polish ran out-of-band)");
+assert.doesNotMatch(essayGone, /if\(action==='share'\)return shareTournament\(\);/, "essay leftover disk already clean of leftover share dispatcher (static-gen polish ran out-of-band)");
 
 const gone = stripChessLeftoverShareTournamentJs(LIVE);
 noShareTournament(gone, "strip");
@@ -178,8 +178,8 @@ assert.doesNotMatch(polished, /Dasha's challenge/, "polish does not restore left
 assert.doesNotMatch(polished, /\.tournament-meta\{/, "polish does not restore leftover .tournament-meta CSS");
 assert.doesNotMatch(polished, /,'tournament-meta'/, "polish still drops leftover classNames");
 
-assert.match(CHESS_PAGE_HTML, /function shareTournament\(\)/, "bundled chess still emits leftover shareTournament (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /if\(action==='share'\)return shareTournament\(\);/, "bundled chess leftover share dispatcher (polish drops it)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /function shareTournament\(\)/, "bundled chess no longer emits leftover shareTournament (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /if\(action==='share'\)return shareTournament\(\);/, "bundled chess leftover share dispatcher (static-gen polish ran out-of-band)");
 assert.match(afterStyleScript(chessDisk), /id=["']tournament["']/, "chess disk #tournament stays");
 assert.match(afterStyleScript(chessDisk), /class=["']tournament-form["']/, "chess disk .tournament-form stays");
 assert.match(chessDisk, /function wantTournamentChrome\(\)\{return false\}/, "chess disk wantTournamentChrome stays false");

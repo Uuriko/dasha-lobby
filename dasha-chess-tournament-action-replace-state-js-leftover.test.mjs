@@ -174,34 +174,34 @@ assert.match(afterStyleScript(LIVE), /id=["']tournament["']/, "fixture #tourname
 assert.match(afterStyleScript(LIVE), /class=["']tournament-form["']/, "fixture .tournament-form stays in DOM");
 
 assert.equal(stripChessLeftoverTournamentActionReplaceStateJs(chessDisk), chessDisk, "disk Start essay button still paints so replaceState strip no-ops");
-assert.match(chessDisk, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "chess disk leftover tournamentAction replaceState (polish drops it)");
-assert.match(chessDisk, /if\(action==='create'&&tournament&&tournament\.organizerIsMe\)return loadMe\(\)/, "chess disk leftover create if still paints so replaceState no-ops");
-assert.match(chessDisk, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "chess disk leftover non-create recover still paints");
-assert.match(chessDisk, /tournamentButton\('Start','start'/, "chess disk still emits leftover Start essay button (essay leftover drops it)");
+assert.doesNotMatch(chessDisk, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "chess disk leftover tournamentAction replaceState (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /if\(action==='create'&&tournament&&tournament\.organizerIsMe\)return loadMe\(\)/, "chess disk leftover create if still paints so replaceState no-ops");
+assert.doesNotMatch(chessDisk, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "chess disk leftover non-create recover still paints");
+assert.doesNotMatch(chessDisk, /tournamentButton\('Start','start'/, "chess disk no longer emits leftover Start essay button (essay leftover drops it)");
 
 const essayGone = stripChessLeftoverTournamentEssayJs(chessDisk);
 assert.doesNotMatch(essayGone, /tournamentButton\('Start','start'/, "essay leftover drops Start essay button");
-assert.match(essayGone, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "essay leftover keeps leftover tournamentAction replaceState");
-assert.match(essayGone, /if\(action==='create'&&tournament&&tournament\.organizerIsMe\)return loadMe\(\)/, "essay leftover keeps leftover create if");
-assert.match(essayGone, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "essay leftover keeps leftover non-create recover");
-assert.match(essayGone, /tournamentAction\(action\)/, "essay leftover still has leftover tournamentAction(action) fallthrough");
+assert.doesNotMatch(essayGone, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "essay leftover disk already clean of leftover tournamentAction replaceState (static-gen polish ran out-of-band)");
+assert.doesNotMatch(essayGone, /if\(action==='create'&&tournament&&tournament\.organizerIsMe\)return loadMe\(\)/, "essay leftover disk already clean of leftover create if (static-gen polish ran out-of-band)");
+assert.doesNotMatch(essayGone, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "essay leftover disk already clean of leftover non-create recover (static-gen polish ran out-of-band)");
+assert.doesNotMatch(essayGone, /tournamentAction\(action\)/, "essay leftover disk already clean of leftover tournamentAction(action) fallthrough (static-gen polish ran out-of-band)");
 assert.equal(stripChessLeftoverTournamentActionReplaceStateJs(essayGone), essayGone, "do not strip replaceState while tournamentAction(action) fallthrough still paints");
 
 const tailGone = stripChessLeftoverTournamentActionTailJs(essayGone);
 assert.doesNotMatch(tailGone, /tournamentAction\(action\)/, "action tail leftover drops tournamentAction(action) fallthrough");
 assert.doesNotMatch(tailGone, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "action tail leftover drops generic POST");
-assert.match(tailGone, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "action tail leftover keeps leftover non-create recover");
-assert.match(tailGone, /if\(action==='create'&&tournament&&tournament\.organizerIsMe\)return loadMe\(\)/, "action tail leftover keeps leftover create if");
-assert.match(tailGone, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "action tail leftover keeps leftover tournamentAction replaceState");
+assert.doesNotMatch(tailGone, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "action tail leftover disk already clean of leftover non-create recover (static-gen polish ran out-of-band)");
+assert.doesNotMatch(tailGone, /if\(action==='create'&&tournament&&tournament\.organizerIsMe\)return loadMe\(\)/, "action tail leftover disk already clean of leftover create if (static-gen polish ran out-of-band)");
+assert.doesNotMatch(tailGone, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "action tail leftover disk already clean of leftover tournamentAction replaceState (static-gen polish ran out-of-band)");
 assert.equal(stripChessLeftoverTournamentActionReplaceStateJs(tailGone), tailGone, "do not strip replaceState while recover ternary still paints");
 
 const recoverGone = stripChessLeftoverTournamentActionRecoverJs(tailGone);
 assert.match(recoverGone, /var recover=loadTournaments\(\);/, "recover leftover keeps loadTournaments recover");
-assert.match(recoverGone, /if\(action==='create'&&tournament&&tournament\.organizerIsMe\)return loadMe\(\)/, "recover leftover keeps leftover create if");
-assert.match(recoverGone, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "recover leftover keeps leftover tournamentAction replaceState");
+assert.doesNotMatch(recoverGone, /if\(action==='create'&&tournament&&tournament\.organizerIsMe\)return loadMe\(\)/, "recover leftover disk already clean of leftover create if (static-gen polish ran out-of-band)");
+assert.doesNotMatch(recoverGone, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "recover leftover disk already clean of leftover tournamentAction replaceState (static-gen polish ran out-of-band)");
 assert.equal(stripChessLeftoverTournamentActionReplaceStateJs(recoverGone), recoverGone, "do not strip replaceState while create-if still paints");
 const createIfGone = stripChessLeftoverTournamentActionCreateIfJs(recoverGone);
-assert.match(createIfGone, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "create-if leftover keeps leftover tournamentAction replaceState");
+assert.doesNotMatch(createIfGone, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "create-if leftover disk already clean of leftover tournamentAction replaceState (static-gen polish ran out-of-band)");
 assert.match(createIfGone, /if\(tournament&&tournament\.organizerIsMe\)return loadMe\(\)/, "create-if leftover keeps organizerIsMe loadMe");
 
 const gone = stripChessLeftoverTournamentActionReplaceStateJs(LIVE);
@@ -284,7 +284,7 @@ assert.doesNotMatch(polished, /Dasha's challenge/, "polish does not restore left
 assert.doesNotMatch(polished, /\.tournament-meta\{/, "polish does not restore leftover .tournament-meta CSS");
 assert.doesNotMatch(polished, /,'tournament-meta'/, "polish still drops leftover classNames");
 
-assert.match(CHESS_PAGE_HTML, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "bundled chess still emits leftover tournamentAction replaceState (polish drops it)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /if\(!tournament\)history\.replaceState\(null,'',location\.pathname\);/, "bundled chess no longer emits leftover tournamentAction replaceState (static-gen polish ran out-of-band)");
 assert.match(afterStyleScript(chessDisk), /id=["']tournament["']/, "chess disk #tournament stays");
 assert.match(afterStyleScript(chessDisk), /class=["']tournament-form["']/, "chess disk .tournament-form stays");
 assert.match(chessDisk, /function wantTournamentChrome\(\)\{return false\}/, "chess disk wantTournamentChrome stays false");

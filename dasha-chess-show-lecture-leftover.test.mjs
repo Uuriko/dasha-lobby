@@ -120,8 +120,8 @@ assert.match(polished, /Play\. Invite\. Find\./, "polish keeps JSON-LD Invite co
 assert.match(polished, /id=["']buy-sheet["']/, "buy sheet stays after polish");
 assert.match(polished, /src="\/client\/chess-local\.js"/, "chess-local stays after polish");
 
-assert.match(chessDisk, /function showLecture\(title,copy\)/, "chess disk still emits leftover showLecture (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /function showLecture\(title,copy\)/, "bundled chess still emits leftover showLecture (polish drops it)");
+assert.doesNotMatch(chessDisk, /function showLecture\(title,copy\)/, "chess disk no longer emits leftover showLecture (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /function showLecture\(title,copy\)/, "bundled chess no longer emits leftover showLecture (static-gen polish ran out-of-band)");
 assert.match(chessDisk, /function hideLecture\(\)/, "chess disk hideLecture stays");
 assert.match(chessDisk, /function watchingGame\(g\)/, "chess disk watchingGame stays");
 assert.match(chessDisk, /g\.watch===true/, "chess disk g.watch===true stays");

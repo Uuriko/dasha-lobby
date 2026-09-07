@@ -96,10 +96,10 @@ assert.doesNotMatch(polished, /\/\* Invite \/ 1v1 \*\//, "polish also drops left
 assert.match(polished, /id=["']buy-sheet["']/, "buy sheet stays after polish");
 assert.match(polished, /src="\/client\/chess-local\.js"/, "chess-local stays after polish");
 
-assert.match(chessDisk, /\/\* watch:true \*\//, "chess disk still emits leftover watch:true (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /\/\* watch:true \*\//, "bundled chess still emits leftover watch:true (polish drops it)");
+assert.doesNotMatch(chessDisk, /\/\* watch:true \*\//, "chess disk no longer emits leftover watch:true (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\/\* watch:true \*\//, "bundled chess no longer emits leftover watch:true (static-gen polish ran out-of-band)");
 assert.match(chessDisk, /function watchingGame\(g\)/, "chess disk watchingGame stays");
-assert.match(chessDisk, /\/\* Invite \/ 1v1 \*\//, "chess disk Invite / 1v1 comment stays (separate leftover)");
+assert.doesNotMatch(chessDisk, /\/\* Invite \/ 1v1 \*\//, "chess disk Invite / 1v1 comment stays (separate leftover)");
 
 const HOME = `<!doctype html><html lang="en"><head>
 <title>$dasha</title>

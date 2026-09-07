@@ -180,16 +180,16 @@ assert.doesNotMatch(polished, /\.tournament-meta\{/, "polish does not restore le
 assert.doesNotMatch(polished, /\.tournament-actions\{/, "polish does not restore leftover .tournament-actions CSS");
 assert.doesNotMatch(polished, /\.champion\{/, "polish does not restore leftover .champion CSS");
 
-assert.match(chessDisk, /,'tournament-meta'/, "chess disk still emits leftover 'tournament-meta' className (polish drops it)");
-assert.match(chessDisk, /'tournament-actions'/, "chess disk still emits leftover 'tournament-actions' className (polish drops it)");
-assert.match(chessDisk, /,null,'entrants'/, "chess disk still emits leftover 'entrants' className (polish drops it)");
-assert.match(chessDisk, /,null,'bracket'/, "chess disk still emits leftover 'bracket' className (polish drops it)");
-assert.match(chessDisk, /,'champion'/, "chess disk still emits leftover 'champion' className (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /,'tournament-meta'/, "bundled chess still emits leftover 'tournament-meta' className (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /'tournament-actions'/, "bundled chess still emits leftover 'tournament-actions' className (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /,null,'entrants'/, "bundled chess still emits leftover 'entrants' className (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /,null,'bracket'/, "bundled chess still emits leftover 'bracket' className (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /,'champion'/, "bundled chess still emits leftover 'champion' className (polish drops it)");
+assert.doesNotMatch(chessDisk, /,'tournament-meta'/, "chess disk no longer emits leftover 'tournament-meta' className (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /'tournament-actions'/, "chess disk no longer emits leftover 'tournament-actions' className (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /,null,'entrants'/, "chess disk no longer emits leftover 'entrants' className (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /,null,'bracket'/, "chess disk no longer emits leftover 'bracket' className (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /,'champion'/, "chess disk no longer emits leftover 'champion' className (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /,'tournament-meta'/, "bundled chess no longer emits leftover 'tournament-meta' className (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /'tournament-actions'/, "bundled chess no longer emits leftover 'tournament-actions' className (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /,null,'entrants'/, "bundled chess no longer emits leftover 'entrants' className (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /,null,'bracket'/, "bundled chess no longer emits leftover 'bracket' className (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /,'champion'/, "bundled chess no longer emits leftover 'champion' className (static-gen polish ran out-of-band)");
 noPaintedClass(chessDisk, "tournament-meta", "chess disk");
 noPaintedClass(chessDisk, "tournament-actions", "chess disk");
 noPaintedClass(chessDisk, "entrants", "chess disk");

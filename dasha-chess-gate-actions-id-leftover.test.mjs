@@ -95,8 +95,8 @@ assert.match(polished, /class=["']gate-actions["']/, "polish class=gate-actions 
 assert.match(polished, /class=["']app["']/, "polish .app stays");
 assert.match(polished, /class=["']gate["']/, "polish .gate stays");
 
-assert.match(chessDisk, /id=["']gate-actions["']/, "disk source still has leftover id=gate-actions (polish drops it; did not run static-gen)");
-assert.match(CHESS_PAGE_HTML, /id=["']gate-actions["']/, "bundled still has leftover id=gate-actions");
+assert.doesNotMatch(chessDisk, /id=["']gate-actions["']/, "disk source has no leftover id=gate-actions (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /id=["']gate-actions["']/, "bundled has no leftover id=gate-actions");
 
 function assertNoGateActionsId(html, label) {
   assert.doesNotMatch(afterStyleScript(html), /\bid=["']gate-actions["']/, `${label} no leftover id=gate-actions after style/script strip`);

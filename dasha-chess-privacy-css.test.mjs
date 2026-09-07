@@ -75,8 +75,8 @@ assert.match(polished, /\.identity\{/, "polish keeps .identity");
 assert.match(polished, /id=["']buy-sheet["']/, "buy sheet stays after polish");
 assert.match(polished, /src="\/client\/chess-local\.js"/, "chess-local stays after polish");
 
-assert.match(chessDisk, /\.privacy\{/, "disk source still has leftover .privacy CSS (polish drops it; did not run static-gen)");
-assert.match(CHESS_PAGE_HTML, /\.privacy\{/, "bundled still has leftover .privacy CSS");
+assert.doesNotMatch(chessDisk, /\.privacy\{/, "disk source has no leftover .privacy CSS (static-gen polish ran out-of-band)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /\.privacy\{/, "bundled has no leftover .privacy CSS");
 
 const HOME = `<!doctype html><html lang="en"><head>
 <title>$dasha</title>

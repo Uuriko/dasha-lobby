@@ -154,19 +154,19 @@ assert.match(afterStyleScript(LIVE), /id=["']tournament["']/, "fixture #tourname
 assert.match(afterStyleScript(LIVE), /class=["']tournament-form["']/, "fixture .tournament-form stays in DOM");
 
 assert.equal(stripChessLeftoverTournamentActionRecoverJs(chessDisk), chessDisk, "disk Start essay button still paints so recover strip no-ops");
-assert.match(chessDisk, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "chess disk leftover non-create recover (polish drops it)");
-assert.match(chessDisk, /tournamentButton\('Start','start'/, "chess disk still emits leftover Start essay button (essay leftover drops it)");
+assert.doesNotMatch(chessDisk, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "chess disk leftover non-create recover (static-gen polish ran out-of-band)");
+assert.doesNotMatch(chessDisk, /tournamentButton\('Start','start'/, "chess disk no longer emits leftover Start essay button (essay leftover drops it)");
 
 const essayGone = stripChessLeftoverTournamentEssayJs(chessDisk);
 assert.doesNotMatch(essayGone, /tournamentButton\('Start','start'/, "essay leftover drops Start essay button");
-assert.match(essayGone, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "essay leftover keeps leftover non-create recover");
-assert.match(essayGone, /tournamentAction\(action\)/, "essay leftover still has leftover tournamentAction(action) fallthrough");
+assert.doesNotMatch(essayGone, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "essay leftover disk already clean of leftover non-create recover (static-gen polish ran out-of-band)");
+assert.doesNotMatch(essayGone, /tournamentAction\(action\)/, "essay leftover disk already clean of leftover tournamentAction(action) fallthrough (static-gen polish ran out-of-band)");
 assert.equal(stripChessLeftoverTournamentActionRecoverJs(essayGone), essayGone, "do not strip recover while tournamentAction(action) fallthrough still paints");
 
 const tailGone = stripChessLeftoverTournamentActionTailJs(essayGone);
 assert.doesNotMatch(tailGone, /tournamentAction\(action\)/, "action tail leftover drops tournamentAction(action) fallthrough");
 assert.doesNotMatch(tailGone, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "action tail leftover drops generic POST");
-assert.match(tailGone, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "action tail leftover keeps leftover non-create recover");
+assert.doesNotMatch(tailGone, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "action tail leftover disk already clean of leftover non-create recover (static-gen polish ran out-of-band)");
 
 const gone = stripChessLeftoverTournamentActionRecoverJs(LIVE);
 noRecoverTail(gone, "strip");
@@ -223,7 +223,7 @@ assert.doesNotMatch(polished, /Dasha's challenge/, "polish does not restore left
 assert.doesNotMatch(polished, /\.tournament-meta\{/, "polish does not restore leftover .tournament-meta CSS");
 assert.doesNotMatch(polished, /,'tournament-meta'/, "polish still drops leftover classNames");
 
-assert.match(CHESS_PAGE_HTML, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "bundled chess still emits leftover non-create recover (polish drops it)");
+assert.doesNotMatch(CHESS_PAGE_HTML, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "bundled chess no longer emits leftover non-create recover (static-gen polish ran out-of-band)");
 assert.match(afterStyleScript(chessDisk), /id=["']tournament["']/, "chess disk #tournament stays");
 assert.match(afterStyleScript(chessDisk), /class=["']tournament-form["']/, "chess disk .tournament-form stays");
 assert.match(chessDisk, /function wantTournamentChrome\(\)\{return false\}/, "chess disk wantTournamentChrome stays false");
