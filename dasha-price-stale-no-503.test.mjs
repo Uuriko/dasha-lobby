@@ -27,8 +27,8 @@ assert.ok(nextAt > handleAt, 'handlePrice bounded by forumKey');
 const handlePrice = workerSrc.slice(docAt, nextAt);
 
 assert.match(handlePrice, /Failure never invents a number/, 'never invents a number');
-assert.match(handlePrice, /PRICE_STALE_MS does not gate 503/, 'doc: PRICE_STALE_MS does not gate 503');
-assert.match(handlePrice, /503 only when !priceCache\.body \(cold DO\)/, 'doc: 503 only on cold DO');
+assert.match(handlePrice, /One Gecko\/Dexscreener fetch per TTL for the whole site/, 'doc: single-flight per TTL');
+assert.match(handlePrice, /if \(!this\.priceCache\.body\) \{\s*return json\(\{ ok: false, error: 'price unavailable'/, 'behavior: 503 only on cold DO (PRICE_STALE_MS never gates 503)');
 
 const catchAt = handlePrice.indexOf('} catch (err) {');
 assert.ok(catchAt >= 0, 'handlePrice has catch');

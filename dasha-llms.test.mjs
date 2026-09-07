@@ -104,6 +104,10 @@ assert.ok(
   sitemap.includes('<loc>https://www.getdasha.com/listings</loc><lastmod>2026-09-06</lastmod>'),
   'sitemap lastmod 2026-09-06 for /listings',
 );
+assert.ok(
+  sitemap.includes('<loc>https://www.getdasha.com/privacy</loc><lastmod>2026-09-04</lastmod>'),
+  'sitemap lastmod 2026-09-04 for /privacy',
+);
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/crew</loc>'), 'worker sitemap lists /crew');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/digest</loc>'), 'worker sitemap lists /digest');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/compute</loc>'), 'worker sitemap lists /compute');
@@ -132,7 +136,6 @@ for (const loc of [
   'https://www.getdasha.com/llms.txt',
   'https://www.getdasha.com/llms-full.txt',
   'https://www.getdasha.com/contribute',
-  'https://www.getdasha.com/privacy',
   'https://www.getdasha.com/compute',
   'https://www.getdasha.com/bounties',
   'https://www.getdasha.com/bag',

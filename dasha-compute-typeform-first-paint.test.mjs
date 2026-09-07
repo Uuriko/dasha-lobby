@@ -76,7 +76,7 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']eng-mixture["']/, `${label} mixture engine chip`);
   assert.match(html, /Promise\.allSettled/, `${label} resilient auth`);
   assert.match(html, /else if\(id==='ask'\)\{cameFromHow=false;cameFromGate=true;setComputeIntent\('ask'\);setEngine\('hosted',true\)\}/, `${label} #ask hash stays Hosted`);
-  assert.match(html, /ask-community['"]\)\?\.addEventListener\(['"]click['"],\(\)=>\{if\(providersOnline<1\)return;cameFromHow=true;cameFromGate=false;setEngine\('community',true\)/, `${label} Community door is click-only`);
+  assert.match(html, /ask-community['"]\)\?\.addEventListener\(['"]click['"],\(\)=>\{if\(providersOnline<1\)return;preferSelf=false;cameFromHow=true;cameFromGate=false;setEngine\('community',true\)/, `${label} Community door is click-only`);
   assert.doesNotMatch(html, /id==='ask'[\s\S]{0,160}setEngine\(['"]community/, `${label} no auto Community yank on #ask`);
   assert.match(html, /id=["']answer-api["'][^>]*hidden/, `${label} answer-api hidden first paint`);
   assert.match(html, /id=["']answer-api["'][^>]*>API key</, `${label} answer-api label`);
@@ -276,7 +276,7 @@ function assertMarkup(html, label) {
   assert.match(html, /step===['"]gate['"]\|\|step===['"]credits['"]\|\|step===['"]you['"]\|\|step===['"]earn['"]/, `${label} hide progress gate|credits|you|earn`);
   assert.match(html, /title=["']OCM console["']/, `${label} Marketplace OCM console title`);
   assert.doesNotMatch(html, /OCM catalog/, `${label} no OCM catalog`);
-  assert.match(html, /title=["']OCM host["']/, `${label} Host OCM host title`);
+  assert.match(html, /title=["']OCM host · enroll["']/, `${label} Host OCM host title`);
   assert.match(html, /3 free \/ 10 min · then credits/, `${label} free floor skill copy`);
   assert.doesNotMatch(html, /id=["']pick-you["']/, `${label} no pick-you fifth primary`);
 }
