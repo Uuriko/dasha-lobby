@@ -224,7 +224,7 @@ function assertMarkup(html, label) {
   assert.match(html, /class=["']tf-quiet["'] id=["']copy-skill-use["']/, `${label} copy-skill-use quiet`);
   assert.match(html, /classList\.add\(['"]waiting['"]\)/, `${label} heartbeat waiting pulse`);
   assert.doesNotMatch(html, /Waiting for heartbeat…/, `${label} no waiting essay`);
-  assert.match(html, /tf-done['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearAnswerMoney\(\);)?cameFromHow=false;cameFromGate=false;showTf\(['"]ask['"]\)/, `${label} Done → Ask`);
+  assert.match(html, /tf-done['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearAnswerMoney\(\);)?(?:const retry=\$\(['"]answer-retry['"]\); if\(retry\)\{retry\.hidden=true;retry\.setAttribute\(['"]hidden['"],['"]['"]\)\};)?cameFromHow=false;cameFromGate=false;showTf\(['"]ask['"]\)/, `${label} Done → Ask`);
   assert.match(html, /data-back=["']ask["']/, `${label} How Back → Ask`);
   assert.match(html, /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{cameFromHow=false;cameFromGate=false;setEngine\(['"]hosted['"],true\)/, `${label} Provide Done → Ask`);
   assert.doesNotMatch(html, /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>showTf\(['"]gate['"]\)/, `${label} Provide Done not gate`);

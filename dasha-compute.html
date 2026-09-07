@@ -2421,9 +2421,9 @@ $('answer-credits')?.addEventListener('click',()=>{
     setComputeIntent('credits');showTf('credits');
   }
 });
-$('ask-again').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};showTf('ask');$('prompt').focus()});
+$('ask-again').addEventListener('click',()=>{clearAnswerMoney();showTf('ask');$('prompt').focus();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}});
 $('answer-retry')?.addEventListener('click',()=>{const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};clearAnswerMoney();const run=$('run-demo'); if(run&&!run.disabled)run.click(); else showTf('ask');});
-$('tf-done').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};cameFromHow=false;cameFromGate=false;showTf('ask');});
+$('tf-done').addEventListener('click',()=>{clearAnswerMoney();cameFromHow=false;cameFromGate=false;showTf('ask');const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}});
 $('provide-done-gate').addEventListener('click',()=>{cameFromHow=false;cameFromGate=false;setEngine('hosted',true);});
 document.querySelectorAll('[data-back]').forEach(btn=>{
   btn.addEventListener('click',()=>{
