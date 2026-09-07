@@ -188,7 +188,7 @@ for (const path of ['/plan', '/Plans', '/prices', '/payout', '/agents', '/mcp', 
 }
 assert.equal(potterHome308Dest('/price'), null, 'bare /price stays token-price API');
 assert.equal(potterHome308Dest('/price/'), null, 'bare /price/ stays token-price API');
-for (const path of ['/endpoint', '/endpoints', '/sdk', '/cli', '/compute/sdk']) {
+for (const path of ['/endpoint', '/endpoints', '/sdk', '/cli', '/compute/sdk', '/devtools', '/sdk-docs', '/api-reference', '/compute/devtools', '/compute/sdk-docs']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/api', path);
 }
 for (const path of ['/purchase', '/Purchase']) {
