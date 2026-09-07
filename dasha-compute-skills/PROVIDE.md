@@ -56,6 +56,11 @@ dasha-compute status
 - After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks — never invent.
 - Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.
 
+## Host power / thermal / SIP (soft)
+- `dasha-compute doctor` soft-warns when on battery, Low Power Mode, elevated thermal pressure, or SIP disabled/unreadable (Darwin best-effort).
+- Never fails solely for battery / AC / Low Power / thermal / SIP.
+- Local OS health only — never claims Secure Enclave, TEE, Nitro, or network `sip_enabled` attestation.
+
 ## Keep-alive (sub-24GB)
 - Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service — a shell export alone is not enough for the macOS app).
 - Do not pin 27B on a 16–24GB Air for interactive chat; use 8B/12B.

@@ -471,58 +471,6 @@ const WHICH_HTML = `<!doctype html>
 
 
 
-export function listingsJsonBody() {
-  const buy = `https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=${MINT}`;
-  return {
-    schema: 'dasha.listings.v0',
-    updated_at: '2026-09-06T23:05:00.000Z',
-    listings: [{
-      id: 'dasha',
-      symbol: '$dasha',
-      name: 'dash_eats',
-      chain: 'solana',
-      mint: MINT,
-      pair: PAIR,
-      status: 'listed',
-      url: 'https://www.getdasha.com/listings',
-      buy: 'https://www.getdasha.com/how-to-buy',
-      venues: [
-        { id: 'getdasha', name: 'getdasha', href: 'https://www.getdasha.com/listings' },
-        { id: 'jupiter', name: 'Jupiter', href: buy },
-        { id: 'raydium', name: 'Raydium', href: `https://raydium.io/swap/?inputMint=sol&outputMint=${MINT}` },
-        { id: 'dexscreener', name: 'DexScreener', href: `https://dexscreener.com/solana/${PAIR}` },
-        { id: 'birdeye', name: 'Birdeye', href: `https://birdeye.so/token/${MINT}?chain=solana` },
-        { id: 'pump', name: 'Pump', href: `https://pump.fun/coin/${MINT}` },
-        { id: 'geckoterminal', name: 'GeckoTerminal', href: `https://www.geckoterminal.com/solana/pools/${PAIR}` },
-        { id: 'phantom', name: 'Phantom', href: `https://trade.phantom.com/token/${MINT}` },
-      ],
-    }],
-  };
-}
-
-function listingsPageResponse(request) {
-  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LISTINGS_HTML), {
-    headers: htmlHeaders({
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
-      'X-Dasha-Edge': 'listings',
-      Link: LLMS_DESCRIBEDBY,
-    }),
-  });
-}
-
-function listingsJsonResponse(request) {
-  return new Response(request.method === 'HEAD' ? null : JSON.stringify(listingsJsonBody()), {
-    headers: {
-      ...SECURITY,
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
-      'X-Dasha-Edge': 'listings-json',
-      Link: LLMS_DESCRIBEDBY,
-    },
-  });
-}
-
 const BAG_HTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -678,6 +626,39 @@ const BAG_HTML = `<!doctype html>
 </html>
 `;
 
+const DASHA_LIST_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
+const DASHA_LIST_PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
+const LISTINGS_UPDATED_AT = '2026-09-06T23:05:00.000Z';
+const LISTINGS_VENUES = [
+  { id: 'getdasha', name: 'getdasha', href: 'https://www.getdasha.com/listings' },
+  { id: 'jupiter', name: 'Jupiter', href: 'https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' },
+  { id: 'raydium', name: 'Raydium', href: 'https://raydium.io/swap/?inputMint=sol&outputMint=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' },
+  { id: 'dexscreener', name: 'DexScreener', href: 'https://dexscreener.com/solana/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7' },
+  { id: 'birdeye', name: 'Birdeye', href: 'https://birdeye.so/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump?chain=solana' },
+  { id: 'pump', name: 'Pump', href: 'https://pump.fun/coin/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' },
+  { id: 'geckoterminal', name: 'GeckoTerminal', href: 'https://www.geckoterminal.com/solana/pools/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7' },
+  { id: 'phantom', name: 'Phantom', href: 'https://trade.phantom.com/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' },
+];
+
+export function listingsJsonBody() {
+  return {
+    schema: 'dasha.listings.v0',
+    updated_at: LISTINGS_UPDATED_AT,
+    listings: [{
+      id: 'dasha',
+      symbol: '$dasha',
+      name: 'dash_eats',
+      chain: 'solana',
+      mint: DASHA_LIST_MINT,
+      pair: DASHA_LIST_PAIR,
+      status: 'listed',
+      url: 'https://www.getdasha.com/listings',
+      buy: 'https://www.getdasha.com/how-to-buy',
+      venues: LISTINGS_VENUES,
+    }],
+  };
+}
+
 const LISTINGS_HTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -736,7 +717,7 @@ const LISTINGS_HTML = `<!doctype html>
       <a href="https://trade.phantom.com/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Phantom</a>
     </div>
     <p class="quiet">More listings soon.</p>
-    <p class="quiet"><a href="/which">Which</a></p>
+    <p class="quiet"><a href="/listings.json">listings.json</a> · <a href="/which">Which</a></p>
   </main>
   <script>
   (function () {
@@ -1954,8 +1935,6 @@ const FAUCET_STILL_SRI = 'sha384-gBA7pSgRRjXqzLiv5Efw8XzPjimgMxeDt3R1sP8svmrzZnj
 const HOME_LEDE = `<p id="dasha-home-lede" class="dasha-home-lede">dash_eats culture. Match the mint.</p>`;
 const HOME_CHAT_DOOR = `<section id="chat-door" aria-labelledby="chat-title"><div class="wrap door"><div><p class="section-kicker">Lobby</p><h2 class="section-title" id="chat-title">Chat.</h2><p class="door-line">Chat in the lobby.</p></div><a class="pill primary" href="/lobby">Open chat →</a></div></section>`;
 const HOME_SIMP_DOOR = `<section id="simp-door" aria-labelledby="simp-title"><div class="wrap door"><div><p class="section-kicker">Simp Quiz</p><h2 class="section-title" id="simp-title">Simp Quiz.</h2><p class="door-line">Take the quiz.</p></div><a class="pill primary" href="/simp">Take the quiz</a></div></section>`;
-const HOME_WHICH_DOOR = `<section id="which-door" aria-labelledby="which-title"><div class="wrap door"><div><p class="section-kicker">dash_eats</p><h2 class="section-title" id="which-title">Which $dasha?</h2><p class="door-line">This mint. Not VVAIFU.</p></div><a class="pill primary" href="/which">This mint</a></div></section>`;
-const HOME_TG_DOOR = `<section id="tg-door" aria-labelledby="tg-title"><div class="wrap door"><div><p class="section-kicker">Telegram</p><h2 class="section-title" id="tg-title">The one group.</h2><p class="door-line">Official room only.</p></div><a class="pill primary" href="https://t.me/+xB7S8mIQaKFiZjRh" target="_blank" rel="noopener noreferrer">Open Telegram</a></div></section>`;
 const HOME_BAG_LINE = `<p class="dasha-bag-line"><a href="/bag">Bag</a></p>`;
 const HOME_LIST_DOOR = `<section id="list-door" aria-labelledby="list-title"><style id="dasha-list-door">#list-door{margin:0;padding:36px 0 48px;background:#070608}#list-door .door{display:grid;gap:14px;justify-items:start}#list-door .section-kicker{color:#dfff00;font:800 12px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase}#list-door .section-title{margin:0;color:#f4eddb;font:900 clamp(1.6rem,4vw,2.2rem)/1 Arial,Helvetica,sans-serif}#list-door .door-line{margin:0;color:rgba(244,237,219,.78);font:700 1rem/1.4 Arial,Helvetica,sans-serif}#list-door .pill.list{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #dfff00;color:#dfff00;background:transparent;font:800 14px/1 Arial,Helvetica,sans-serif;text-decoration:none}#list-door .pill.list:focus-visible{outline:3px solid #dfff00;outline-offset:3px}</style><div class="wrap door"><div><p class="section-kicker">List</p><h2 class="section-title" id="list-title">List.</h2><p class="door-line">We list $dasha here.</p></div><a class="pill list" href="/listings">Open List →</a></div></section>`;
 const HOME_GRWM_AIR = '<style id="dasha-grwm-air">#grwm{display:block;margin:0;padding:min(18vh,8rem) 0 min(14vh,6rem);box-sizing:border-box}#grwm video,#grwm .grwm-go{touch-action:pan-y}@media(max-width:800px){#grwm{padding:min(10vh,4rem) 0 min(8vh,3rem)}#grwm .grwm-phone{max-height:min(52svh,420px);width:min(100%,calc(52svh * 720 / 1280))}}</style>';
@@ -2206,10 +2185,6 @@ export function orderHomeLongPage(html) {
   let out = String(html || '');
   const chat = cutIded(out, 'section', 'chat-door');
   out = chat.html;
-  const whichDoor = cutIded(out, 'section', 'which-door');
-  out = whichDoor.html;
-  const tgDoor = cutIded(out, 'section', 'tg-door');
-  out = tgDoor.html;
   const simp = cutIded(out, 'section', 'simp-door');
   out = simp.html;
   const faucet = cutIded(out, 'section', 'dasha-home-faucet');
@@ -2223,14 +2198,12 @@ export function orderHomeLongPage(html) {
   out = grwm.html;
   const grokDoor = cutIded(out, 'section', 'grok-door');
   out = grokDoor.html;
-  const listDoor = cutIded(out, 'section', 'list-door');
-  out = listDoor.html;
   const bag = cutIded(out, 'section', 'bag-door');
   out = bag.html;
+  const listDoor = cutIded(out, 'section', 'list-door');
+  out = listDoor.html;
   const lede = /id=["']dasha-home-lede["']/.test(out) ? '' : HOME_LEDE;
   const chatBit = HOME_CHAT_DOOR;
-  const whichBit = HOME_WHICH_DOOR;
-  const tgBit = HOME_TG_DOOR;
   const simpBit = HOME_SIMP_DOOR;
   const faucetBit = faucet.cut || HOME_FAUCET_MOUNT;
   const styleBit = HOME_FAUCET_STYLE;
@@ -3019,51 +2992,97 @@ export function dashaHomeBodySafeStrip(originalHtml, transformedHtml) {
 }
 
 const POTTER_HOME_308_PATHS = new Set([
-  '/studio', '/studio/',
-  '/verse', '/verse/',
-  '/learn', '/learn/',
-  '/graph', '/graph/',
-  '/index.html', '/index.html/',
-  // Leftover /tokens (+slash / Title-case) (Worker 3f2d0e6d): live html-404 → 308 home.
-  // Peer of /token /mint (also live → home). Skip /tokenomics /whitepaper /roadmap.
-  '/token', '/token/',
-  '/mint', '/mint/',
-  '/tokens', '/tokens/',
+  "/studio",
+  "/studio/",
+  "/verse",
+  "/verse/",
+  "/learn",
+  "/learn/",
+  "/graph",
+  "/graph/",
+  "/index.html",
+  "/index.html/",
+  // Retired Meme Studio doors: live /meme /memes /memestudio /meme-studio /meme_studio
+  // html-404 while /studio already 308→/. Fold to home (never invent a Studio page).
+  "/meme",
+  "/meme/",
+  "/memes",
+  "/memes/",
+  "/memestudio",
+  "/memestudio/",
+  "/meme-studio",
+  "/meme-studio/",
+  "/meme_studio",
+  "/meme_studio/"
 ]);
 const POTTER_HOWTO_308_PATHS = new Set([
-  '/dasha', '/dasha/',
-  '/desk', '/desk/',
-  '/how', '/how/',
-  '/howto', '/howto/',
-  '/how-to', '/how-to/',
-  '/howtobuy', '/howtobuy/',
-  '/buy', '/buy/',
-  // Leftover: /how-tobuy /howto_buy (+slash / Title-case) still html-404
-  // while /howtobuy /how-to already 308→/how-to-buy. Exact /how-to-buy stays 200.
-  '/how-tobuy', '/how-tobuy/',
-  '/howto_buy', '/howto_buy/',
-  // Leftover: /purchase (+slash / Title-case) still html-404
-  // while /buy /howto already 308→/how-to-buy. Exact /how-to-buy stays 200.
-  '/purchase', '/purchase/',
-  // Leftover DEX venue peers of /orca /meteora /pumpfun /jupiter (Worker
-  // 66440d1c-ddc7-4f6f-b6a1-bc97ec97b67d). live /phoenix /lifinity /openbook
-  // /drift /serum /pump /pumpswap /pump-swap /pump_swap /jup (+slash /
-  // Title-case) html-404 → 308 /how-to-buy. On-site /how-to-buy only —
-  // never external DEX hosts from Worker redirects.
-  '/orca', '/orca/',
-  '/meteora', '/meteora/',
-  '/pumpfun', '/pumpfun/',
-  '/jupiter', '/jupiter/',
-  '/phoenix', '/phoenix/',
-  '/lifinity', '/lifinity/',
-  '/openbook', '/openbook/',
-  '/drift', '/drift/',
-  '/serum', '/serum/',
-  '/pump', '/pump/',
-  '/pumpswap', '/pumpswap/',
-  '/pump-swap', '/pump-swap/',
-  '/pump_swap', '/pump_swap/',
-  '/jup', '/jup/',
+  "/dasha",
+  "/dasha/",
+  "/desk",
+  "/desk/",
+  "/how",
+  "/how/",
+  "/howto",
+  "/howto/",
+  "/how-to",
+  "/how-to/",
+  "/howtobuy",
+  "/howtobuy/",
+  "/howto-buy",
+  "/howto-buy/",
+  // Underscore sibling of /how-to-buy (hyphen/glued already 308).
+  "/how_to_buy",
+  "/how_to_buy/",
+  // Typos: live /how-tobuy /howto_buy html-404 while /howtobuy /how_to_buy already 308.
+  "/how-tobuy",
+  "/how-tobuy/",
+  "/howto_buy",
+  "/howto_buy/",
+  "/buy",
+  "/buy/",
+  // Purchase peer of /buy: live /purchase html-404 while /buy already 308→/how-to-buy.
+  "/purchase",
+  "/purchase/",
+  // DEX venue peers of /buy /swap (live html-404). Fold to how-to-buy;
+  // never Jupiter plugin host / external DEX hosts from the Worker.
+  "/jupiter",
+  "/jupiter/",
+  "/raydium",
+  "/raydium/",
+  "/pumpfun",
+  "/pumpfun/",
+  "/pump-fun",
+  "/pump-fun/",
+  "/pump_fun",
+  "/pump_fun/",
+  // More DEX venue peers of /jupiter /raydium (live html-404). Never Jupiter plugin host.
+  "/orca",
+  "/orca/",
+  "/meteora",
+  "/meteora/",
+  // More Solana DEX / AMM venue peers of /orca /meteora (live html-404). Never Jupiter plugin host.
+  "/phoenix",
+  "/phoenix/",
+  "/lifinity",
+  "/lifinity/",
+  "/openbook",
+  "/openbook/",
+  "/drift",
+  "/drift/",
+  "/serum",
+  "/serum/",
+  // Pump.fun short + PumpSwap peers of /pumpfun (live html-404).
+  "/pump",
+  "/pump/",
+  "/pumpswap",
+  "/pumpswap/",
+  "/pump-swap",
+  "/pump-swap/",
+  "/pump_swap",
+  "/pump_swap/",
+  // Short Jupiter door (live /jup html-404 while /jupiter already 308→/how-to-buy).
+  "/jup",
+  "/jup/"
 ]);
 const POTTER_LOGIN_308_PATHS = new Set([
   '/grok', '/grok/',
@@ -3084,327 +3103,696 @@ const POTTER_PLAIN_LOGIN_308_PATHS = new Set([
   '/log_in', '/log_in/',
 ]);
 const POTTER_COMPUTE_TAB_308_PATHS = new Set([
-  '/compute/use', '/compute/use/',
-  '/compute/provide', '/compute/provide/',
-  '/compute/night', '/compute/night/',
-  '/compute/build', '/compute/build/',
-  '/compute/sponsor', '/compute/sponsor/',
+  "/compute/use",
+  "/compute/use/",
+  "/compute/provide",
+  "/compute/provide/",
+  "/compute/night",
+  "/compute/night/",
+  "/compute/build",
+  "/compute/build/",
+  "/compute/sponsor",
+  "/compute/sponsor/",
   // Typeform doors + quiet peers: live Ask/Pay/Credits/Host/Marketplace/You html-404
   // while Provide/Night/Sponsor already 308→/compute (Start. Ask. Provide. Pay. Credits.).
-  '/compute/ask', '/compute/ask/',
-  '/compute/pay', '/compute/pay/',
-  '/compute/credits', '/compute/credits/',
-  '/compute/host', '/compute/host/',
-  '/compute/market', '/compute/market/',
-  '/compute/marketplace', '/compute/marketplace/',
-  '/compute/you', '/compute/you/',
-  // Profile synonym peers of /compute/you (You hub). Live /account /compute/account already 308.
-  // Live /profile /settings /compute/profile /compute/settings were html-404.
-  '/compute/account', '/compute/account/',
-  '/account', '/account/',
-  '/profile', '/profile/',
-  '/settings', '/settings/',
-  '/compute/profile', '/compute/profile/',
-  '/compute/settings', '/compute/settings/',
-  // Apex product doors: /provide /start /sponsor(s) already 308→/compute.
-  // Leftover apex Ask/Pay/Credits/Host/Use/Night/Marketplace/Market/You/Build/Ocm
-  // still html-404 while /compute/* peers already 308 (or /compute/ocm is a real 200 —
-  // apex /ocm still folds to the same /compute tab pattern).
-  '/provide', '/provide/',
-  '/start', '/start/',
-  '/sponsor', '/sponsor/',
-  '/sponsors', '/sponsors/',
-  '/ask', '/ask/',
-  // Leftover: /answer /compute/answer (+slash / Title-case) still html-404
-  // while /ask /compute/ask already 308→/compute. Fold to plain /compute (no hash).
-  '/answer', '/answer/',
-  '/compute/answer', '/compute/answer/',
-  '/pay', '/pay/',
-  '/credits', '/credits/',
-  '/host', '/host/',
-  '/use', '/use/',
-  '/marketplace', '/marketplace/',
-  '/market', '/market/',
-  '/you', '/you/',
-  '/night', '/night/',
-  '/build', '/build/',
-  '/ocm', '/ocm/',
-  // Redo: /skills.md|/compute/skills.md (+slash) still html-404 while singular
-  // /skill.md peers already 308 — fold the plural .md doors too.
-  '/skills.md', '/skills.md/',
-  '/compute/skills.md', '/compute/skills.md/',
-  // Leftover: /products|/compute/products (+slash / Title-case) still html-404
-  // while prior peers /product /providers already 308→/compute.
-  '/product', '/product/',
-  '/providers', '/providers/',
-  '/products', '/products/',
-  '/compute/products', '/compute/products/',
-  // Leftover product bridge: /faucet/compute (+slash / Title-case) still
-  // html-404 while /compute is 200 — fold to /compute. Inverse
-  // /compute/faucet lives on POTTER_FAUCET_DOOR_308_PATHS → /faucet.
-  '/faucet/compute', '/faucet/compute/',
-  // Leftover: /run|/ollama|/compute/run|/compute/ollama (+slash / Title-case)
-  // still html-404 while /compute is 200 — fold to /compute.
-  '/run', '/run/',
-  '/ollama', '/ollama/',
-  '/compute/run', '/compute/run/',
-  '/compute/ollama', '/compute/ollama/',
-  // Apex Models leftovers fold to Compute (Ask model picker). Live /models /model
-  // (+slash / Title-case / compute tab) html-404 while Ask picker lives on /compute.
-  // Do NOT fold /compute/api/* (models list JSON stays on the API).
-  '/models', '/models/',
-  '/model', '/model/',
-  '/compute/models', '/compute/models/',
-  '/compute/model', '/compute/model/',
-  // USDC/settle/topup/billing/wallet/phantom/solana leftovers while Pay/Credits
-  // already 308→/compute. Apex + /compute/* tabs (+slash / Title-case).
-  // Skip /openai /v1 /api/v1 /v1/models /status /health /healthz /resend.
-  '/usdc', '/usdc/',
-  '/settle', '/settle/',
-  '/topup', '/topup/',
-  '/top-up', '/top-up/',
-  '/billing', '/billing/',
-  '/wallet', '/wallet/',
-  '/phantom', '/phantom/',
-  '/solana', '/solana/',
-  '/compute/usdc', '/compute/usdc/',
-  '/compute/settle', '/compute/settle/',
-  '/compute/topup', '/compute/topup/',
-  '/compute/top-up', '/compute/top-up/',
-  '/compute/billing', '/compute/billing/',
-  '/compute/wallet', '/compute/wallet/',
-  '/compute/phantom', '/compute/phantom/',
-  '/compute/solana', '/compute/solana/',
+  "/compute/ask",
+  "/compute/ask/",
+  "/compute/pay",
+  "/compute/pay/",
+  "/compute/credits",
+  "/compute/credits/",
+  "/compute/host",
+  "/compute/host/",
+  "/compute/market",
+  "/compute/market/",
+  "/compute/marketplace",
+  "/compute/marketplace/",
+  "/compute/you",
+  "/compute/you/",
+  // Profile synonym peers of /compute/you (You hub). Live /account /compute/account html-404.
+  "/compute/account",
+  "/compute/account/",
+  "/account",
+  "/account/",
+  // Live /profile /settings html-404; You hub peers of /account /you.
+  "/profile",
+  "/profile/",
+  "/settings",
+  "/settings/",
+  "/compute/profile",
+  "/compute/profile/",
+  "/compute/settings",
+  "/compute/settings/",
+  // Apex product doors: /provide /start /sponsor(s) /ask /pay /credits /host /use
+  // /marketplace /market /you /night /build /ocm already 308→/compute.
+  // Leftover apex Product/Provider/Mac + Prefer-MLX (/mlx /prefer-mlx /kit) still
+  // html-404 while peers 308. /api is dedicated → /compute/api (not this set).
+  "/provide",
+  "/provide/",
+  "/start",
+  "/start/",
+  "/sponsor",
+  "/sponsor/",
+  "/sponsors",
+  "/sponsors/",
+  "/ask",
+  "/ask/",
+  // Ask synonym: live /answer /compute/answer (+slash / Title-case) html-404 while
+  // /ask /compute/ask already 308→/compute. Fold to plain /compute (no hash).
+  "/answer",
+  "/answer/",
+  "/compute/answer",
+  "/compute/answer/",
+  "/pay",
+  "/pay/",
+  "/credits",
+  "/credits/",
+  "/host",
+  "/host/",
+  "/use",
+  "/use/",
+  "/marketplace",
+  "/marketplace/",
+  "/market",
+  "/market/",
+  "/you",
+  "/you/",
+  "/night",
+  "/night/",
+  "/build",
+  "/build/",
+  "/ocm",
+  "/ocm/",
   // How? engine synonyms: live /hosted /community /mixture (+ /compute/* tabs,
   // Title-case) html-404 while Start. How? already names Hosted · Community · Mixture
   // and /night /provide /ask already 308→/compute. Fold to plain /compute (no hash).
-  '/hosted', '/hosted/',
-  '/community', '/community/',
-  '/mixture', '/mixture/',
-  '/compute/hosted', '/compute/hosted/',
-  '/compute/community', '/compute/community/',
-  '/compute/mixture', '/compute/mixture/',
-  // Leftover compute doors: live /hosts /inferences /key /keys /apikey /api-key
-  // /api_key /install /doctor /me /usage + /inference /gpu /gpus /pricing
-  // /providing /mac-kit (+ /compute/* peers, slash / Title-case) html-404 while
-  // /host /pay /usdc already 308→/compute. Fold to plain /compute (no hash).
-  // Skip /openai /v1 /resend /email /health /status /healthz. Do NOT fold
-  // /api/keys here — that lands on POTTER_COMPUTE_API_KEYS_308_PATHS.
-  // Exact /faucet/me stays 200 (Title-case leaf only). Never Demigod.
-  '/hosts', '/hosts/',
-  '/inferences', '/inferences/',
-  '/key', '/key/',
-  '/keys', '/keys/',
-  '/apikey', '/apikey/',
-  '/api-key', '/api-key/',
-  '/api_key', '/api_key/',
-  '/install', '/install/',
-  '/doctor', '/doctor/',
-  '/me', '/me/',
-  '/usage', '/usage/',
-  '/inference', '/inference/',
-  '/gpu', '/gpu/',
-  '/gpus', '/gpus/',
-  '/pricing', '/pricing/',
-  '/providing', '/providing/',
-  '/mac-kit', '/mac-kit/',
-  '/compute/hosts', '/compute/hosts/',
-  '/compute/inferences', '/compute/inferences/',
-  '/compute/key', '/compute/key/',
-  '/compute/keys', '/compute/keys/',
-  '/compute/apikey', '/compute/apikey/',
-  '/compute/api-key', '/compute/api-key/',
-  '/compute/api_key', '/compute/api_key/',
-  '/compute/install', '/compute/install/',
-  '/compute/doctor', '/compute/doctor/',
-  '/compute/me', '/compute/me/',
-  '/compute/usage', '/compute/usage/',
-  '/compute/inference', '/compute/inference/',
-  '/compute/gpu', '/compute/gpu/',
-  '/compute/gpus', '/compute/gpus/',
-  '/compute/pricing', '/compute/pricing/',
-  '/compute/providing', '/compute/providing/',
-  '/compute/mac-kit', '/compute/mac-kit/',
-  // Fleet/capacity + console/credits + Mac/local + setup/try + kit/prefer leftovers
-  // (Worker e8adc1ad). Apex + trailing slash + /compute/* tab peers
-  // (+ Title-case) html-404 while /host /pay /usdc /mac-kit already 308→/compute.
-  // Skip /admin /blog /news /faq /waitlist /join /oauth /status /health.
-  // Do not invent /compute/donate (apex /donate is faucet).
-  // Leftover /fleet /compute/fleet (Worker 0d7b2adc). Apex + slash + Title-case
-  // html-404 while /rent /capacity /workers already 308→/compute.
-  // Skip /health /status /openai /v1.
-  '/fleet', '/fleet/',
-  '/rent', '/rent/',
-  '/capacity', '/capacity/',
-  '/offer', '/offer/',
-  '/offers', '/offers/',
-  '/worker', '/worker/',
-  '/workers', '/workers/',
-  '/node', '/node/',
-  '/nodes', '/nodes/',
-  '/cluster', '/cluster/',
-  '/pool', '/pool/',
-  '/machines', '/machines/',
-  // Leftover /machine /compute/machine (Worker a5171335): live /machine
-  // (+slash / Title-case / /compute/machine) html-404 while /machines
-  // /compute/machines already 308→/compute. Fold to plain /compute (no hash).
-  // Title-case covered by lowercasing in potterHome308Dest.
-  // Skip /openai /arcade /games /social /x402 /status /health /healthz /v1.
-  '/machine', '/machine/',
-  '/benchmark', '/benchmark/',
-  '/queue', '/queue/',
-  '/dashboard', '/dashboard/',
-  '/console', '/console/',
-  '/balance', '/balance/',
-  // Plural sibling of /balance (live /balances html-404).
-  '/balances', '/balances/',
-  '/pay-usdc', '/pay-usdc/',
-  '/apple-silicon', '/apple-silicon/',
-  '/macos', '/macos/',
-  '/silicon', '/silicon/',
-  '/mlx', '/mlx/',
-  // Chip sibling of /apple-silicon /silicon /mlx (live /m4 html-404).
-  '/m4', '/m4/',
-  '/local', '/local/',
-  '/edge', '/edge/',
-  '/onboard', '/onboard/',
-  '/setup', '/setup/',
-  '/quickstart', '/quickstart/',
-  '/playground', '/playground/',
-  '/sandbox', '/sandbox/',
-  '/hello', '/hello/',
-  '/example', '/example/',
-  '/examples', '/examples/',
-  '/prefer', '/prefer/',
-  '/prefer-mlx', '/prefer-mlx/',
+  "/hosted",
+  "/hosted/",
+  "/community",
+  "/community/",
+  "/mixture",
+  "/mixture/",
+  "/compute/hosted",
+  "/compute/hosted/",
+  "/compute/community",
+  "/compute/community/",
+  "/compute/mixture",
+  "/compute/mixture/",
+  // Apex Product/Provider/Mac/Api leftovers: live /product /provider(s) /mac(s)
+  // /mlx /prefer-mlx /prefermlx /kit html-404 while peers already 308→/compute. Prefer-MLX doors
+  // fold to /compute (not a separate page). /api is NOT in this set — dedicated branch
+  // below sends /api → /compute/api (bare /compute would be wrong).
+  // Plural /products peer of /product (live html-404 while singular already 308).
+  "/product",
+  "/product/",
+  "/products",
+  "/products/",
+  "/provider",
+  "/provider/",
+  "/providers",
+  "/providers/",
+  "/mac",
+  "/mac/",
+  "/macs",
+  "/macs/",
+  "/mlx",
+  "/mlx/",
+  "/prefer-mlx",
+  "/prefer-mlx/",
   // Underscore sibling of /prefer-mlx.
-  '/prefer_mlx', '/prefer_mlx/',
+  "/prefer_mlx",
+  "/prefer_mlx/",
   // Concat sibling of /prefer-mlx (live /prefermlx html-404 while hyphen/underscore peers already 308).
-  '/prefermlx', '/prefermlx/',
-  '/preference', '/preference/',
-  '/preferences', '/preferences/',
-  '/compute/fleet', '/compute/fleet/',
-  '/compute/rent', '/compute/rent/',
-  '/compute/capacity', '/compute/capacity/',
-  '/compute/offer', '/compute/offer/',
-  '/compute/offers', '/compute/offers/',
-  '/compute/worker', '/compute/worker/',
-  '/compute/workers', '/compute/workers/',
-  '/compute/node', '/compute/node/',
-  '/compute/nodes', '/compute/nodes/',
-  '/compute/cluster', '/compute/cluster/',
-  '/compute/pool', '/compute/pool/',
-  '/compute/machines', '/compute/machines/',
-  // Singular sibling of /compute/machines (Worker a5171335).
-  '/compute/machine', '/compute/machine/',
-  '/compute/benchmark', '/compute/benchmark/',
-  '/compute/queue', '/compute/queue/',
-  '/compute/dashboard', '/compute/dashboard/',
-  '/compute/console', '/compute/console/',
-  '/compute/balance', '/compute/balance/',
-  '/compute/balances', '/compute/balances/',
-  '/compute/pay-usdc', '/compute/pay-usdc/',
-  '/compute/apple-silicon', '/compute/apple-silicon/',
-  '/compute/macos', '/compute/macos/',
-  '/compute/silicon', '/compute/silicon/',
-  '/compute/mlx', '/compute/mlx/',
-  '/compute/m4', '/compute/m4/',
-  '/compute/local', '/compute/local/',
-  '/compute/edge', '/compute/edge/',
-  '/compute/onboard', '/compute/onboard/',
-  '/compute/setup', '/compute/setup/',
-  '/compute/quickstart', '/compute/quickstart/',
-  '/compute/playground', '/compute/playground/',
-  '/compute/sandbox', '/compute/sandbox/',
-  '/compute/hello', '/compute/hello/',
-  '/compute/example', '/compute/example/',
-  '/compute/examples', '/compute/examples/',
-  '/compute/prefer', '/compute/prefer/',
-  '/compute/prefer-mlx', '/compute/prefer-mlx/',
+  "/prefermlx",
+  "/prefermlx/",
+  "/kit",
+  "/kit/",
+  // Apex Earn leftovers: was RETIRED_SEO → home while Compute #step-earn + login
+  // return %23earn are live. /earnings synonym matches hash deep-link. /compute/earn*
+  // peers /compute/ask. Keep /claim /airdrop /rally retired → home.
+  "/earn",
+  "/earn/",
+  "/earnings",
+  "/earnings/",
+  "/compute/earn",
+  "/compute/earn/",
+  "/compute/earnings",
+  "/compute/earnings/",
+  // /compute/provider(s) tab peers: apex /provider already 308→/compute; subpaths
+  // were still html-404 (www) / JSON 404 (lobby). Fold like /compute/ask /earn.
+  // Do NOT fold /compute/ocm/provider (200 edge=compute-ocm) or /compute/api/providers.
+  "/compute/provider",
+  "/compute/provider/",
+  "/compute/providers",
+  "/compute/providers/",
+  // /compute/product(s)|/mac(s)|/mlx|/prefer-mlx|/kit tab peers: apex doors already
+  // 308→/compute; subpaths were still html-404 (www) / JSON 404 (lobby).
+  // Prefer-MLX folds to /compute (not a separate page). Do NOT fold /compute/api/*.
+  // Plural /compute/products peer of /compute/product (live html-404).
+  "/compute/product",
+  "/compute/product/",
+  "/compute/products",
+  "/compute/products/",
+  "/compute/mac",
+  "/compute/mac/",
+  "/compute/macs",
+  "/compute/macs/",
+  "/compute/mlx",
+  "/compute/mlx/",
+  "/compute/prefer-mlx",
+  "/compute/prefer-mlx/",
   // Underscore sibling of /compute/prefer-mlx.
-  '/compute/prefer_mlx', '/compute/prefer_mlx/',
+  "/compute/prefer_mlx",
+  "/compute/prefer_mlx/",
   // Concat sibling of /compute/prefer-mlx.
-  '/compute/prefermlx', '/compute/prefermlx/',
-  '/compute/preference', '/compute/preference/',
-  '/compute/preferences', '/compute/preferences/',
-  // Settlement/billing + getting-started leftovers (Worker 66c5ac55). Apex +
-  // /compute/* tabs (+slash / Title-case) html-404 while /settle /billing /pay
-  // /usdc /mac-kit already 308→/compute. Fold to plain /compute (no hash).
-  // Skip /health /status /openai /v1 /admin /blog /tos.
-  '/settlement', '/settlement/',
-  '/settlements', '/settlements/',
-  '/invoice', '/invoice/',
-  '/invoices', '/invoices/',
-  '/credit', '/credit/',
-  '/refill', '/refill/',
-  '/kits', '/kits/',
-  '/try', '/try/',
-  '/getting-started', '/getting-started/',
-  '/get-started', '/get-started/',
-  '/getstarted', '/getstarted/',
-  '/mac_kit', '/mac_kit/',
-  '/compute/settlement', '/compute/settlement/',
-  '/compute/settlements', '/compute/settlements/',
-  '/compute/invoice', '/compute/invoice/',
-  '/compute/invoices', '/compute/invoices/',
-  '/compute/credit', '/compute/credit/',
-  '/compute/refill', '/compute/refill/',
-  '/compute/kits', '/compute/kits/',
-  '/compute/try', '/compute/try/',
-  '/compute/getting-started', '/compute/getting-started/',
-  '/compute/get-started', '/compute/get-started/',
-  '/compute/getstarted', '/compute/getstarted/',
-  '/compute/mac_kit', '/compute/mac_kit/',
+  "/compute/prefermlx",
+  "/compute/prefermlx/",
+  "/compute/kit",
+  "/compute/kit/",
+  // Cross-product bridge: live /faucet/compute html-404 while /compute 200 and
+  // /compute/faucet peers fold to /faucet. Do NOT invent /faucet/jar (intentional gap).
+  "/faucet/compute",
+  "/faucet/compute/",
+  // Pasteable AI skills live on /compute Typeform + /compute/skill/*.md.
+  // Live /skills /skill /ai-skills /compute/skills (+slash) html-404; /compute/skills/
+  // even 301→/compute/skills 404. Fold to /compute (Copy AI skill). Do NOT fold
+  // /compute/skill/*.md (200 markdown). Bare /skill.md (+ /compute/skill.md) were
+  // html-404 while /skill already 308→/compute — fold the .md doors too.
+  // Redo: /skills.md|/compute/skills.md (+slash) still html-404 while singular
+  // /skill.md peers already 308 — fold the plural .md doors too.
+  "/skills",
+  "/skills/",
+  "/skill",
+  "/skill/",
+  "/skill.md",
+  "/skill.md/",
+  "/skills.md",
+  "/skills.md/",
+  "/ai-skills",
+  "/ai-skills/",
+  // Underscore sibling of /ai-skills.
+  "/ai_skills",
+  "/ai_skills/",
+  "/compute/skills",
+  "/compute/skills/",
+  "/compute/skill",
+  "/compute/skill/",
+  "/compute/skill.md",
+  "/compute/skill.md/",
+  "/compute/skills.md",
+  "/compute/skills.md/",
+  // Show HN / launch doors: live /Show /hn /show-hn /showhn /launch /demo
+  // /alpha /open-alpha(+slash / Title-case) html-404 while Compute is the target.
+  // Skip /yc /news /hackernews /openai (too generic / wrong product).
+  "/show",
+  "/show/",
+  "/hn",
+  "/hn/",
+  "/show-hn",
+  "/show-hn/",
+  // Underscore sibling of /show-hn.
+  "/show_hn",
+  "/show_hn/",
+  "/showhn",
+  "/showhn/",
+  "/launch",
+  "/launch/",
+  "/demo",
+  "/demo/",
+  "/alpha",
+  "/alpha/",
+  "/open-alpha",
+  "/open-alpha/",
+  // Underscore sibling of /open-alpha.
+  "/open_alpha",
+  "/open_alpha/",
+  "/openalpha",
+  "/openalpha/",
+  // Apex Run/Ollama leftovers: live /run /ollama (+slash / Title-case) html-404
+  // while /mlx /kit /use peers already 308→/compute. Local-run / Ollama doors fold
+  // to Compute (not a separate page). Tab peers /compute/run|/ollama too.
+  // Skip /yc /news (too generic / wrong product).
+  "/run",
+  "/run/",
+  "/ollama",
+  "/ollama/",
+  "/compute/run",
+  "/compute/run/",
+  "/compute/ollama",
+  "/compute/ollama/",
+  // Apex Models leftovers fold to Compute (Ask model picker). Live /models /model
+  // (+slash / Title-case / compute tab) html-404 while Ask picker lives on /compute.
+  // Do NOT fold /compute/api/* (models list JSON stays on the API).
+  "/models",
+  "/models/",
+  "/model",
+  "/model/",
+  "/compute/models",
+  "/compute/models/",
+  "/compute/model",
+  "/compute/model/",
+  // Apex USDC/settle/topup/billing/wallet/phantom/solana leftovers while Pay/Credits
+  // already 308→/compute. Live html-404 credit top-up / wallet synonym doors.
+  // Skip /openai /v1 /api/v1 /v1/models /status /health /healthz /resend.
+  "/usdc",
+  "/usdc/",
+  "/settle",
+  "/settle/",
+  "/topup",
+  "/topup/",
+  "/top-up",
+  "/top-up/",
+  // Peer of /topup /credits (live /deposit html-404).
+  "/deposit",
+  "/deposit/",
+  "/billing",
+  "/billing/",
+  "/wallet",
+  "/wallet/",
+  "/phantom",
+  "/phantom/",
+  "/solana",
+  "/solana/",
+  "/compute/usdc",
+  "/compute/usdc/",
+  "/compute/settle",
+  "/compute/settle/",
+  "/compute/topup",
+  "/compute/topup/",
+  "/compute/top-up",
+  "/compute/top-up/",
+  "/compute/deposit",
+  "/compute/deposit/",
+  "/compute/billing",
+  "/compute/billing/",
+  "/compute/wallet",
+  "/compute/wallet/",
+  "/compute/phantom",
+  "/compute/phantom/",
+  "/compute/solana",
+  "/compute/solana/",
+  // Inference/GPU/pricing/provide-kit leftovers: live /inference /gpu(s) /pricing
+  // /providing /mac-kit (+ /compute/* tabs, Title-case) html-404 while /run /models
+  // /provide /kit already 308→/compute. Fold typos/peers to plain /compute (no hash).
+  "/inference",
+  "/inference/",
+  // Short peer of /inference (live /infer html-404).
+  "/infer",
+  "/infer/",
+  "/gpu",
+  "/gpu/",
+  "/gpus",
+  "/gpus/",
+  // VRAM peer of /gpu(s) (live /vram html-404).
+  "/vram",
+  "/vram/",
+  // Hosting peer of /host /hosts /provider (live /hosting html-404).
+  "/hosting",
+  "/hosting/",
+  // Hyphen peer of /rent (live /rent-gpu html-404).
+  "/rent-gpu",
+  "/rent-gpu/",
+  "/pricing",
+  "/pricing/",
+  "/providing",
+  "/providing/",
+  "/mac-kit",
+  "/mac-kit/",
+  "/compute/inference",
+  "/compute/inference/",
+  "/compute/infer",
+  "/compute/infer/",
+  "/compute/gpu",
+  "/compute/gpu/",
+  "/compute/gpus",
+  "/compute/gpus/",
+  "/compute/vram",
+  "/compute/vram/",
+  "/compute/hosting",
+  "/compute/hosting/",
+  "/compute/rent-gpu",
+  "/compute/rent-gpu/",
+  "/compute/pricing",
+  "/compute/pricing/",
+  "/compute/providing",
+  "/compute/providing/",
+  "/compute/mac-kit",
+  "/compute/mac-kit/",
+  // Apex Hosts/Keys/Install/Doctor/Me/Usage leftovers: live html-404 while /host
+  // /providers /kit /account /you /models peers already 308→/compute. Plural /hosts
+  // peer of /host. Plural /inferences peer of /inference. API-key doors fold to
+  // Compute UI (browser); /api/keys has a dedicated API fold below. Skip /openai
+  // /v1 /resend /email /health /status.
+  "/hosts",
+  "/hosts/",
+  "/inferences",
+  "/inferences/",
+  "/key",
+  "/key/",
+  "/keys",
+  "/keys/",
+  "/apikey",
+  "/apikey/",
+  "/api-key",
+  "/api-key/",
+  "/api_key",
+  "/api_key/",
+  "/install",
+  "/install/",
+  "/doctor",
+  "/doctor/",
+  "/me",
+  "/me/",
+  "/usage",
+  "/usage/",
+  "/compute/hosts",
+  "/compute/hosts/",
+  "/compute/inferences",
+  "/compute/inferences/",
+  "/compute/key",
+  "/compute/key/",
+  "/compute/keys",
+  "/compute/keys/",
+  "/compute/apikey",
+  "/compute/apikey/",
+  "/compute/api-key",
+  "/compute/api-key/",
+  "/compute/api_key",
+  "/compute/api_key/",
+  "/compute/install",
+  "/compute/install/",
+  "/compute/doctor",
+  "/compute/doctor/",
+  "/compute/me",
+  "/compute/me/",
+  "/compute/usage",
+  "/compute/usage/",
+  // Fleet/capacity leftovers: live /fleet /rent /capacity /offer(s) /worker(s) /node(s)
+  // /cluster /pool /machines /benchmark /queue html-404 while /hosts /providers
+  // /hosted already 308→/compute. Singular /machine + /compute/machine were still
+  // live html-404 while plural /machines + /compute/machines already folded here.
+  // Console/credits peers /dashboard /console /balance
+  // /pay-usdc. Mac/local peers /apple-silicon /macos /silicon /local /edge (Prefer-MLX
+  // /run /ollama family). Setup/try doors /onboard /setup /quickstart /playground
+  // /sandbox. Kit hello peers /hello /example /examples. Prefer synonyms /prefer
+  // /preference /preferences. Skip /admin /blog /news /faq /waitlist /join /oauth.
+  "/fleet",
+  "/fleet/",
+  "/rent",
+  "/rent/",
+  "/capacity",
+  "/capacity/",
+  "/offer",
+  "/offer/",
+  "/offers",
+  "/offers/",
+  "/worker",
+  "/worker/",
+  "/workers",
+  "/workers/",
+  "/node",
+  "/node/",
+  "/nodes",
+  "/nodes/",
+  // 2026-09-07 keep-swarm (hop DOWN): live /peers /peer /uptime (+ /compute/*)
+  // html-404 while Provide/community network doors already 308→/compute.
+  // Product-ish uptime. Do NOT fold /status|/health|/healthz|/v1|/openai|/x402.
+  "/peers",
+  "/peers/",
+  "/peer",
+  "/peer/",
+  "/uptime",
+  "/uptime/",
+  "/compute/peers",
+  "/compute/peers/",
+  "/compute/uptime",
+  "/compute/uptime/",
+  "/cluster",
+  "/cluster/",
+  "/pool",
+  "/pool/",
+  // Singular peer of /machines (live /machine html-404 while plural already 308).
+  "/machine",
+  "/machine/",
+  "/machines",
+  "/machines/",
+  "/benchmark",
+  "/benchmark/",
+  "/queue",
+  "/queue/",
+  "/dashboard",
+  "/dashboard/",
+  "/console",
+  "/console/",
+  "/balance",
+  "/balance/",
+  // Plural sibling of /balance (live /balances html-404).
+  "/balances",
+  "/balances/",
+  "/pay-usdc",
+  "/pay-usdc/",
+  "/apple-silicon",
+  "/apple-silicon/",
+  "/macos",
+  "/macos/",
+  "/silicon",
+  "/silicon/",
+  // Chip sibling of /apple-silicon /silicon /mlx (live /m4 html-404).
+  "/m4",
+  "/m4/",
+  "/local",
+  "/local/",
+  "/edge",
+  "/edge/",
+  "/onboard",
+  "/onboard/",
+  "/setup",
+  "/setup/",
+  "/quickstart",
+  "/quickstart/",
+  "/playground",
+  "/playground/",
+  "/sandbox",
+  "/sandbox/",
+  "/hello",
+  "/hello/",
+  "/example",
+  "/example/",
+  "/examples",
+  "/examples/",
+  "/prefer",
+  "/prefer/",
+  "/preference",
+  "/preference/",
+  "/preferences",
+  "/preferences/",
+  "/compute/fleet",
+  "/compute/fleet/",
+  "/compute/rent",
+  "/compute/rent/",
+  "/compute/capacity",
+  "/compute/capacity/",
+  "/compute/offer",
+  "/compute/offer/",
+  "/compute/offers",
+  "/compute/offers/",
+  "/compute/worker",
+  "/compute/worker/",
+  "/compute/workers",
+  "/compute/workers/",
+  "/compute/node",
+  "/compute/node/",
+  "/compute/nodes",
+  "/compute/nodes/",
+  "/compute/cluster",
+  "/compute/cluster/",
+  "/compute/pool",
+  "/compute/pool/",
+  // Singular peer of /compute/machines (live /compute/machine html-404 while plural already 308).
+  "/compute/machine",
+  "/compute/machine/",
+  "/compute/machines",
+  "/compute/machines/",
+  "/compute/benchmark",
+  "/compute/benchmark/",
+  "/compute/queue",
+  "/compute/queue/",
+  "/compute/dashboard",
+  "/compute/dashboard/",
+  "/compute/console",
+  "/compute/console/",
+  "/compute/balance",
+  "/compute/balance/",
+  "/compute/balances",
+  "/compute/balances/",
+  "/compute/pay-usdc",
+  "/compute/pay-usdc/",
+  "/compute/apple-silicon",
+  "/compute/apple-silicon/",
+  "/compute/macos",
+  "/compute/macos/",
+  "/compute/silicon",
+  "/compute/silicon/",
+  "/compute/m4",
+  "/compute/m4/",
+  "/compute/local",
+  "/compute/local/",
+  "/compute/edge",
+  "/compute/edge/",
+  "/compute/onboard",
+  "/compute/onboard/",
+  "/compute/setup",
+  "/compute/setup/",
+  "/compute/quickstart",
+  "/compute/quickstart/",
+  "/compute/playground",
+  "/compute/playground/",
+  "/compute/sandbox",
+  "/compute/sandbox/",
+  "/compute/hello",
+  "/compute/hello/",
+  "/compute/example",
+  "/compute/example/",
+  "/compute/examples",
+  "/compute/examples/",
+  "/compute/prefer",
+  "/compute/prefer/",
+  "/compute/preference",
+  "/compute/preference/",
+  "/compute/preferences",
+  "/compute/preferences/",
+  // Settlement/billing/credit leftovers: live /settlement(s) /invoice(s) /credit /refill
+  // html-404 while /settle /billing /credits /topup already 308→/compute. Getting-started
+  // peers of /start /quickstart. /try peer of /demo. /kits plural of /kit. /mac_kit
+  // underscore sibling of /mac-kit. Skip /openai /v1 /admin /blog /tos /health /status.
+  "/settlement",
+  "/settlement/",
+  "/settlements",
+  "/settlements/",
+  "/invoice",
+  "/invoice/",
+  "/invoices",
+  "/invoices/",
+  "/credit",
+  "/credit/",
+  "/refill",
+  "/refill/",
+  "/kits",
+  "/kits/",
+  "/try",
+  "/try/",
+  "/getting-started",
+  "/getting-started/",
+  "/get-started",
+  "/get-started/",
+  "/getstarted",
+  "/getstarted/",
+  "/mac_kit",
+  "/mac_kit/",
+  "/compute/settlement",
+  "/compute/settlement/",
+  "/compute/settlements",
+  "/compute/settlements/",
+  "/compute/invoice",
+  "/compute/invoice/",
+  "/compute/invoices",
+  "/compute/invoices/",
+  "/compute/credit",
+  "/compute/credit/",
+  "/compute/refill",
+  "/compute/refill/",
+  "/compute/kits",
+  "/compute/kits/",
+  "/compute/try",
+  "/compute/try/",
+  "/compute/getting-started",
+  "/compute/getting-started/",
+  "/compute/get-started",
+  "/compute/get-started/",
+  "/compute/getstarted",
+  "/compute/getstarted/",
+  "/compute/mac_kit",
+  "/compute/mac_kit/",
   // Plans/prices/payout/payment/agents leftovers (2026-09-06): live /plan(s) /prices
   // /payout(s) /withdraw /cashout /payment(s) /checkout /getting_started /mac-setup
   // /mac_setup /agents|/agent /mcp /tools|/tool (+ /compute/* tabs, Title-case) html-404
   // while /pricing /pay /earn /getting-started /mac /kit peers already 308→/compute.
   // Do NOT fold bare /price (live 200 JSON token-price API). Only /compute/price folds.
-  // Skip /terms /blog /news /admin /waitlist /tos /legal. /help now ships in the
-  // help/support/credits leftover block below (308→/compute, not skipped).
-  '/plan', '/plan/',
-  '/plans', '/plans/',
-  '/prices', '/prices/',
-  '/payout', '/payout/',
-  '/payouts', '/payouts/',
-  '/withdraw', '/withdraw/',
-  '/cashout', '/cashout/',
-  '/payment', '/payment/',
-  '/payments', '/payments/',
-  '/checkout', '/checkout/',
-  '/getting_started', '/getting_started/',
-  '/mac-setup', '/mac-setup/',
-  '/mac_setup', '/mac_setup/',
-  '/agents', '/agents/',
-  '/agent', '/agent/',
-  '/mcp', '/mcp/',
-  '/tools', '/tools/',
-  '/tool', '/tool/',
-  '/compute/plan', '/compute/plan/',
-  '/compute/plans', '/compute/plans/',
-  '/compute/prices', '/compute/prices/',
-  '/compute/price', '/compute/price/',
-  '/compute/payout', '/compute/payout/',
-  '/compute/payouts', '/compute/payouts/',
-  '/compute/withdraw', '/compute/withdraw/',
-  '/compute/cashout', '/compute/cashout/',
-  '/compute/payment', '/compute/payment/',
-  '/compute/payments', '/compute/payments/',
-  '/compute/checkout', '/compute/checkout/',
-  '/compute/getting_started', '/compute/getting_started/',
-  '/compute/mac-setup', '/compute/mac-setup/',
-  '/compute/mac_setup', '/compute/mac_setup/',
-  '/compute/agents', '/compute/agents/',
-  '/compute/agent', '/compute/agent/',
-  '/compute/mcp', '/compute/mcp/',
-  '/compute/tools', '/compute/tools/',
-  '/compute/tool', '/compute/tool/',
-  '/earn', '/earn/',
-  '/mac', '/mac/',
-  '/kit', '/kit/',
-  '/compute/earn', '/compute/earn/',
-  '/compute/mac', '/compute/mac/',
-  '/compute/kit', '/compute/kit/',
+  // Skip /terms /blog /news /admin /waitlist /tos /legal (/help shipped in help/credits block).
+  "/plan",
+  "/plan/",
+  "/plans",
+  "/plans/",
+  "/prices",
+  "/prices/",
+  "/payout",
+  "/payout/",
+  "/payouts",
+  "/payouts/",
+  "/withdraw",
+  "/withdraw/",
+  "/cashout",
+  "/cashout/",
+  "/payment",
+  "/payment/",
+  "/payments",
+  "/payments/",
+  "/checkout",
+  "/checkout/",
+  "/getting_started",
+  "/getting_started/",
+  "/mac-setup",
+  "/mac-setup/",
+  "/mac_setup",
+  "/mac_setup/",
+  "/agents",
+  "/agents/",
+  "/agent",
+  "/agent/",
+  "/mcp",
+  "/mcp/",
+  "/tools",
+  "/tools/",
+  "/tool",
+  "/tool/",
+  "/compute/plan",
+  "/compute/plan/",
+  "/compute/plans",
+  "/compute/plans/",
+  "/compute/prices",
+  "/compute/prices/",
+  "/compute/price",
+  "/compute/price/",
+  "/compute/payout",
+  "/compute/payout/",
+  "/compute/payouts",
+  "/compute/payouts/",
+  "/compute/withdraw",
+  "/compute/withdraw/",
+  "/compute/cashout",
+  "/compute/cashout/",
+  "/compute/payment",
+  "/compute/payment/",
+  "/compute/payments",
+  "/compute/payments/",
+  "/compute/checkout",
+  "/compute/checkout/",
+  "/compute/getting_started",
+  "/compute/getting_started/",
+  "/compute/mac-setup",
+  "/compute/mac-setup/",
+  "/compute/mac_setup",
+  "/compute/mac_setup/",
+  "/compute/agents",
+  "/compute/agents/",
+  "/compute/agent",
+  "/compute/agent/",
+  "/compute/mcp",
+  "/compute/mcp/",
+  "/compute/tools",
+  "/compute/tools/",
+  "/compute/tool",
+  "/compute/tool/",
   // Help/support/contact + Pay/Credits honesty leftovers (2026-09-06): live /help
   // /guide /tutorial /support /docs-help /getting-help /contact /free-credits
   // /buy-credits /get-credits (+ /compute/* tabs, Title-case) html-404 while /pay
@@ -3412,69 +3800,117 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // (Pay/Credits/Ask live there) + free/buy/get-credits to plain /compute — NOT faucet
   // earn. /topup|/top-up already in set. /docs stays dedicated → /compute/api (not here).
   // Skip /terms /tos /legal /admin /blog /news /waitlist /faq (leave 404; no invent dest).
-  '/help', '/help/',
-  '/guide', '/guide/',
-  '/tutorial', '/tutorial/',
-  '/support', '/support/',
-  '/docs-help', '/docs-help/',
-  '/getting-help', '/getting-help/',
-  '/contact', '/contact/',
-  '/free-credits', '/free-credits/',
-  '/buy-credits', '/buy-credits/',
-  '/get-credits', '/get-credits/',
+  "/help",
+  "/help/",
+  "/guide",
+  "/guide/",
+  "/tutorial",
+  "/tutorial/",
+  "/support",
+  "/support/",
+  "/docs-help",
+  "/docs-help/",
+  "/getting-help",
+  "/getting-help/",
+  "/contact",
+  "/contact/",
+  "/free-credits",
+  "/free-credits/",
+  "/buy-credits",
+  "/buy-credits/",
+  "/get-credits",
+  "/get-credits/",
   // Nested peer of /buy-credits (live /credits/buy html-404).
-  '/credits/buy', '/credits/buy/',
-  '/compute/help', '/compute/help/',
-  '/compute/guide', '/compute/guide/',
-  '/compute/tutorial', '/compute/tutorial/',
-  '/compute/support', '/compute/support/',
-  '/compute/contact', '/compute/contact/',
-  '/compute/free-credits', '/compute/free-credits/',
-  '/compute/buy-credits', '/compute/buy-credits/',
-  '/compute/get-credits', '/compute/get-credits/',
-  '/compute/credits/buy', '/compute/credits/buy/',
-  '/compute/docs-help', '/compute/docs-help/',
-  '/compute/getting-help', '/compute/getting-help/',
+  "/credits/buy",
+  "/credits/buy/",
+  "/compute/help",
+  "/compute/help/",
+  "/compute/guide",
+  "/compute/guide/",
+  "/compute/tutorial",
+  "/compute/tutorial/",
+  "/compute/support",
+  "/compute/support/",
+  "/compute/contact",
+  "/compute/contact/",
+  "/compute/free-credits",
+  "/compute/free-credits/",
+  "/compute/buy-credits",
+  "/compute/buy-credits/",
+  "/compute/get-credits",
+  "/compute/get-credits/",
+  "/compute/credits/buy",
+  "/compute/credits/buy/",
+  "/compute/docs-help",
+  "/compute/docs-help/",
+  "/compute/getting-help",
+  "/compute/getting-help/",
   // App/application leftovers (2026-09-06 hop DOWN): live /app /application (+slash /
   // Title-case) html-404 while /dashboard /console /sandbox /playground /demo /try
   // peers already 308→/compute. Fold product-door synonyms + /compute/app|/application
   // tabs to plain /compute. Do NOT invent /arcade /games. Do NOT fold /connect
   // (ambiguous). Skip /v1 /openai /status /health /terms /admin (leave 404).
-  '/app', '/app/',
-  '/application', '/application/',
-  '/compute/app', '/compute/app/',
-  '/compute/application', '/compute/application/',
-  // Provider-kit leftovers (Worker 0289a6ac): live /provider-kit /provide-kit
-  // /host-kit /install-kit /dasha-kit /compute-kit + underscore siblings
-  // (+ /compute/* tabs, Title-case) html-404 while /kit /mac-setup /fleet
-  // already 308→/compute. Fold to plain /compute (no hash). Title-case via
-  // potterHome308Dest toLowerCase — do not invent a second casefold.
-  // Skip /openai /openai-api /v1 /llm /status /health /connect /arcade /games
-  // /room /terms. Never fold /price (200 JSON) or /privacy (200).
-  '/provider-kit', '/provider-kit/',
-  '/provide-kit', '/provide-kit/',
-  '/host-kit', '/host-kit/',
-  '/install-kit', '/install-kit/',
-  '/dasha-kit', '/dasha-kit/',
-  '/compute-kit', '/compute-kit/',
-  '/provider_kit', '/provider_kit/',
-  '/provide_kit', '/provide_kit/',
-  '/host_kit', '/host_kit/',
-  '/install_kit', '/install_kit/',
-  '/dasha_kit', '/dasha_kit/',
-  '/compute_kit', '/compute_kit/',
-  '/compute/provider-kit', '/compute/provider-kit/',
-  '/compute/provide-kit', '/compute/provide-kit/',
-  '/compute/host-kit', '/compute/host-kit/',
-  '/compute/install-kit', '/compute/install-kit/',
-  '/compute/dasha-kit', '/compute/dasha-kit/',
-  '/compute/compute-kit', '/compute/compute-kit/',
-  '/compute/provider_kit', '/compute/provider_kit/',
-  '/compute/provide_kit', '/compute/provide_kit/',
-  '/compute/host_kit', '/compute/host_kit/',
-  '/compute/install_kit', '/compute/install_kit/',
-  '/compute/dasha_kit', '/compute/dasha_kit/',
-  '/compute/compute_kit', '/compute/compute_kit/',
+  "/app",
+  "/app/",
+  "/application",
+  "/application/",
+  "/compute/app",
+  "/compute/app/",
+  "/compute/application",
+  "/compute/application/",
+  // Provider-kit leftovers (2026-09-06 hop DOWN): live /provider-kit /provide-kit
+  // /host-kit /install-kit /dasha-kit /compute-kit (+ /compute/* tabs, Title-case,
+  // underscore siblings) html-404 while /kit /mac-kit /mac-setup /fleet /provider
+  // already 308→/compute. Fold kit synonyms to plain /compute. Skip /openai /v1
+  // /arcade /connect /terms /health /status. Never fold /price (200 JSON) or /privacy.
+  "/provider-kit",
+  "/provider-kit/",
+  "/provide-kit",
+  "/provide-kit/",
+  "/host-kit",
+  "/host-kit/",
+  "/install-kit",
+  "/install-kit/",
+  "/dasha-kit",
+  "/dasha-kit/",
+  "/compute-kit",
+  "/compute-kit/",
+  "/provider_kit",
+  "/provider_kit/",
+  "/provide_kit",
+  "/provide_kit/",
+  "/host_kit",
+  "/host_kit/",
+  "/install_kit",
+  "/install_kit/",
+  "/dasha_kit",
+  "/dasha_kit/",
+  "/compute_kit",
+  "/compute_kit/",
+  "/compute/provider-kit",
+  "/compute/provider-kit/",
+  "/compute/provide-kit",
+  "/compute/provide-kit/",
+  "/compute/host-kit",
+  "/compute/host-kit/",
+  "/compute/install-kit",
+  "/compute/install-kit/",
+  "/compute/dasha-kit",
+  "/compute/dasha-kit/",
+  "/compute/compute-kit",
+  "/compute/compute-kit/",
+  "/compute/provider_kit",
+  "/compute/provider_kit/",
+  "/compute/provide_kit",
+  "/compute/provide_kit/",
+  "/compute/host_kit",
+  "/compute/host_kit/",
+  "/compute/install_kit",
+  "/compute/install_kit/",
+  "/compute/dasha_kit",
+  "/compute/dasha_kit/",
+  "/compute/compute_kit",
+  "/compute/compute_kit/",
   // Leftover llm/onboard/macbook/providerkit/factory/beta batch (2026-09-06 keep-working):
   // live /llm /llms-api /onboarding /on-boarding /macbook /m-series /silicon-mac
   // /ollama-setup /providerkit /factory /beta /early /early-access /earlyaccess
@@ -3484,46 +3920,252 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // /compute/factory|/api/factory stay dedicated → /compute/api/factory (JSON). Do NOT
   // put /compute/factory in this set. /llms stays AEO → /llms.txt (not this set).
   // Skip locks: /arcade /games /multichain /room /project* /rooms /chatroom /connect
-  // /v1 /openai /openai-api /x402 /admin /blog /news /faq /waitlist /join /oauth /terms /tos
+  // /v1 /openai /openai-api /admin /blog /news /faq /waitlist /join /oauth /terms /tos
   // /legal /status /health /discord /slack. Never /price (200 JSON) /privacy.
-  '/llm', '/llm/',
-  '/llms-api', '/llms-api/',
-  '/onboarding', '/onboarding/',
-  '/on-boarding', '/on-boarding/',
-  '/macbook', '/macbook/',
-  '/m-series', '/m-series/',
-  '/silicon-mac', '/silicon-mac/',
-  '/ollama-setup', '/ollama-setup/',
-  '/providerkit', '/providerkit/',
-  '/factory', '/factory/',
-  '/beta', '/beta/',
-  '/early', '/early/',
-  '/early-access', '/early-access/',
-  '/earlyaccess', '/earlyaccess/',
-  '/compute/llm', '/compute/llm/',
-  '/compute/llms-api', '/compute/llms-api/',
-  '/compute/onboarding', '/compute/onboarding/',
-  '/compute/on-boarding', '/compute/on-boarding/',
-  '/compute/macbook', '/compute/macbook/',
-  '/compute/m-series', '/compute/m-series/',
-  '/compute/silicon-mac', '/compute/silicon-mac/',
-  '/compute/ollama-setup', '/compute/ollama-setup/',
-  '/compute/providerkit', '/compute/providerkit/',
-  '/compute/beta', '/compute/beta/',
-  '/compute/early', '/compute/early/',
-  '/compute/early-access', '/compute/early-access/',
-  '/compute/earlyaccess', '/compute/earlyaccess/',
-  // Leftover /peers /peer /uptime + /compute/peers /compute/uptime (Worker 1d5f3c49).
-  // Apex + slash + Title-case html-404 → 308 /compute. Do NOT add /status /health
-  // /v1 /openai /x402 (leave 404). Do not invent /compute/peer.
-  '/peers', '/peers/',
-  '/peer', '/peer/',
-  '/uptime', '/uptime/',
-  '/compute/peers', '/compute/peers/',
-  '/compute/uptime', '/compute/uptime/',
+  "/llm",
+  "/llm/",
+  "/llms-api",
+  "/llms-api/",
+  "/onboarding",
+  "/onboarding/",
+  "/on-boarding",
+  "/on-boarding/",
+  "/macbook",
+  "/macbook/",
+  "/m-series",
+  "/m-series/",
+  "/silicon-mac",
+  "/silicon-mac/",
+  "/ollama-setup",
+  "/ollama-setup/",
+  "/providerkit",
+  "/providerkit/",
+  "/factory",
+  "/factory/",
+  "/beta",
+  "/beta/",
+  "/early",
+  "/early/",
+  "/early-access",
+  "/early-access/",
+  "/earlyaccess",
+  "/earlyaccess/",
+  "/compute/llm",
+  "/compute/llm/",
+  "/compute/llms-api",
+  "/compute/llms-api/",
+  "/compute/onboarding",
+  "/compute/onboarding/",
+  "/compute/on-boarding",
+  "/compute/on-boarding/",
+  "/compute/macbook",
+  "/compute/macbook/",
+  "/compute/m-series",
+  "/compute/m-series/",
+  "/compute/silicon-mac",
+  "/compute/silicon-mac/",
+  "/compute/ollama-setup",
+  "/compute/ollama-setup/",
+  "/compute/providerkit",
+  "/compute/providerkit/",
+  "/compute/beta",
+  "/compute/beta/",
+  "/compute/early",
+  "/compute/early/",
+  "/compute/early-access",
+  "/compute/early-access/",
+  "/compute/earlyaccess",
+  "/compute/earlyaccess/",
+  // Advertise/caps/curl leftovers (2026-09-06 hop DOWN keep-swarm-busy): live
+  // /tutorials /advertise /enroll /download /spend /caps /limits /free (+ /compute/*
+  // tabs, Title-case) html-404 while /tutorial /provide /kit /credits /balance
+  // /free-credits peers already 308→/compute. Fold product synonyms to plain
+  // /compute — NOT faucet earn. /curl /openai-compat /completions /compat fold
+  // via potterHome308Dest → /compute/api (not this set). Skip /arcade /games
+  // /multichain /room /connect /faq /waitlist /blog /tos /legal /discord /slack
+  // /openai /v1 /status /health /healthz /network /x402 /attestation /price.json.
+  // Never fold /price (200 JSON) or /privacy.
+  "/tutorials",
+  "/tutorials/",
+  "/advertise",
+  "/advertise/",
+  "/enroll",
+  "/enroll/",
+  "/download",
+  "/download/",
+  "/spend",
+  "/spend/",
+  "/caps",
+  "/caps/",
+  "/limits",
+  "/limits/",
+  "/free",
+  "/free/",
+  "/compute/tutorials",
+  "/compute/tutorials/",
+  "/compute/advertise",
+  "/compute/advertise/",
+  "/compute/enroll",
+  "/compute/enroll/",
+  "/compute/download",
+  "/compute/download/",
+  "/compute/spend",
+  "/compute/spend/",
+  "/compute/caps",
+  "/compute/caps/",
+  "/compute/limits",
+  "/compute/limits/",
+  "/compute/free",
+  "/compute/free/",
+  // LM Studio / Open WebUI / Claude / M3 / gettingstarted / hi-welcome leftovers
+  // (2026-09-06 hop DOWN keep-swarm-busy): live /lmstudio /lm-studio /lm_studio
+  // /openwebui /open-webui /open_webui /webui /claude /m3 /gettingstarted /hi
+  // /welcome (+ /compute/* tabs, Title-case) html-404 while /ollama /m4
+  // /apple-silicon /get-started /hello peers already 308→/compute. Local-run
+  // doors like Ollama. /claude = local/API peer door (NOT Anthropic product).
+  // /m3 peer of /m4. /gettingstarted glued peer of /get-started (/getstarted
+  // already in set). /hi /welcome kit hello peers of /hello. Skip /anthropic
+  // /openai /arcade /games /v1 /status /health /network /x402 /attestation.
+  // Never fold /price (200 JSON) or /privacy.
+  "/lmstudio",
+  "/lmstudio/",
+  "/lm-studio",
+  "/lm-studio/",
+  "/lm_studio",
+  "/lm_studio/",
+  "/openwebui",
+  "/openwebui/",
+  "/open-webui",
+  "/open-webui/",
+  "/open_webui",
+  "/open_webui/",
+  "/webui",
+  "/webui/",
+  "/claude",
+  "/claude/",
+  "/m3",
+  "/m3/",
+  "/gettingstarted",
+  "/gettingstarted/",
+  "/hi",
+  "/hi/",
+  "/welcome",
+  "/welcome/",
+  // ChatGPT / Cursor / Copilot leftovers (2026-09-06 ~6:48 PM PT hop DOWN
+  // keep-swarm-busy): live /chatgpt /cursor /copilot (+slash / Title-case /
+  // /compute/* tabs) html-404 while /claude /lmstudio /openwebui peers already
+  // 308→/compute. Peer AI-client doors like /claude (NOT OpenAI/Microsoft
+  // product pages). /vscode peer added 2026-09-06 ~8:40 PM PT (live html-404).
+  // Skip /openai /anthropic /arcade /v1 /x402 /code /terminal. Never fold
+  // /price or /privacy.
+  "/chatgpt",
+  "/chatgpt/",
+  "/cursor",
+  "/cursor/",
+  "/copilot",
+  "/copilot/",
+  // IDE peer of /cursor /copilot (live /vscode html-404). Skip /code /terminal.
+  "/vscode",
+  "/vscode/",
+  // IDE peers of /cursor /copilot /vscode (2026-09-07 keep-swarm hop DOWN):
+  // /windsurf /aider /continue /zed (+slash / Title-case /compute/*) html-404
+  // while /vscode /cursor /copilot already 308→/compute. Skip /code /terminal
+  // /emacs /vim /neovim /jetbrains /codeium /tabnine /openai /arcade /x402.
+  // Never fold /price or /privacy. /continue is the Continue.dev IDE door
+  // (OAuth ?continue=1 query is unrelated).
+  "/windsurf",
+  "/windsurf/",
+  "/aider",
+  "/aider/",
+  "/continue",
+  "/continue/",
+  "/zed",
+  "/zed/",
+  "/compute/lmstudio",
+  "/compute/lmstudio/",
+  "/compute/lm-studio",
+  "/compute/lm-studio/",
+  "/compute/lm_studio",
+  "/compute/lm_studio/",
+  "/compute/openwebui",
+  "/compute/openwebui/",
+  "/compute/open-webui",
+  "/compute/open-webui/",
+  "/compute/open_webui",
+  "/compute/open_webui/",
+  "/compute/webui",
+  "/compute/webui/",
+  "/compute/claude",
+  "/compute/claude/",
+  "/compute/chatgpt",
+  "/compute/chatgpt/",
+  "/compute/cursor",
+  "/compute/cursor/",
+  "/compute/copilot",
+  "/compute/copilot/",
+  "/compute/vscode",
+  "/compute/vscode/",
+  "/compute/windsurf",
+  "/compute/windsurf/",
+  "/compute/aider",
+  "/compute/aider/",
+  "/compute/continue",
+  "/compute/continue/",
+  "/compute/zed",
+  "/compute/zed/",
+  "/compute/m3",
+  "/compute/m3/",
+  "/compute/gettingstarted",
+  "/compute/gettingstarted/",
+  "/compute/hi",
+  "/compute/hi/",
+  "/compute/welcome",
+  "/compute/welcome/"
+  // /status|/health|/healthz|/v1|/openai|/x402 — those stay intentional skips).
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
-  '/verify', '/verify/',
+  "/fill",
+  "/fill/",
+  "/jar",
+  "/jar/",
+  "/fill-the-jar",
+  "/fill-the-jar/",
+  // Underscore sibling of /fill-the-jar.
+  "/fill_the_jar",
+  "/fill_the_jar/",
+  // Claim path ends tip me; apex /tip /tip-me were html-404.
+  "/tip",
+  "/tip/",
+  "/tip-me",
+  "/tip-me/",
+  // Underscore sibling of /tip-me.
+  "/tip_me",
+  "/tip_me/",
+  // Cross-product bridge: live /compute/faucet html-404 while /faucet 200 and
+  // /compute/product(s) already 308→/compute. Fold to the Faucet product (not a Compute tab).
+  "/compute/faucet",
+  "/compute/faucet/",
+  // Nested Fill-the-jar: live /faucet/fill-the-jar html-404 while bare /fill-the-jar
+  // already 308→/faucet and /faucet/fill already 308→/faucet. Underscore sibling too.
+  // Do NOT invent /faucet/jar (intentional gap). Not a fillShareApi sig path.
+  "/faucet/fill-the-jar",
+  "/faucet/fill-the-jar/",
+  "/faucet/fill_the_jar",
+  "/faucet/fill_the_jar/",
+  // Plural /tips peer of /tip. Live html-404 while /tip already 308→/faucet.
+  // /compute/tips cross-product bridge like /compute/faucet.
+  "/tips",
+  "/tips/",
+  "/compute/tips",
+  "/compute/tips/",
+  // Donate peer of /tip: live /donate html-404 while /tip already 308→/faucet.
+  "/donate",
+  "/donate/",
+  // Once-a-day peer of faucet H1: live /once-a-day html-404 while /faucet 200.
+  "/once-a-day",
+  "/once-a-day/",
+  "/once_a_day",
+  "/once_a_day/"
 ]);
 /** Leftover /ca /contract /holder /holders (Worker 8266782e). Live already 308→/bag.
  * /ca used to fold /which; bag is the contract/holder facts page. Exact /bag stays 200.
@@ -3818,183 +4460,192 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
 ]);
 
 export function potterHome308Dest(path) {
-  // Case-fold: live /Buy /Howto /Studio were html-404 while lowercase siblings 308.
-  // Title-case product pages (/Faucet /Compute /Lobby /Chess /Bag …) were html-404 while
-  // lowercase siblings already 200 — 308 to the same dest (canonical lowercase).
-  // Machine files (/Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Llms-Full.txt) same pattern.
-  // Quiet /fill /jar /fill-the-jar /tip /tip-me /tips /compute/tips /donate /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar /once-a-day|/once_a_day → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana /hosted|/community|/mixture|/compute/hosted|/compute/community|/compute/mixture /hosts|/inferences|/key|/keys|/apikey|/api-key|/api_key|/install|/doctor|/me|/usage|/inference|/gpu|/gpus|/pricing|/providing|/mac-kit|/compute/hosts|/compute/inferences|/compute/key|/compute/keys|/compute/apikey|/compute/api-key|/compute/api_key|/compute/install|/compute/doctor|/compute/me|/compute/usage|/compute/inference|/compute/gpu|/compute/gpus|/compute/pricing|/compute/providing|/compute/mac-kit /fleet|/rent|/capacity|/offer|/offers|/worker|/workers|/node|/nodes|/cluster|/pool|/machines|/benchmark|/queue|/dashboard|/console|/balance|/pay-usdc|/apple-silicon|/macos|/silicon|/local|/edge|/onboard|/setup|/quickstart|/playground|/sandbox|/hello|/example|/examples|/prefer|/preference|/preferences|/compute/fleet|/compute/rent|/compute/capacity|/compute/offer|/compute/offers|/compute/worker|/compute/workers|/compute/node|/compute/nodes|/compute/cluster|/compute/pool|/compute/machines|/compute/benchmark|/compute/queue|/compute/dashboard|/compute/console|/compute/balance|/compute/pay-usdc|/compute/apple-silicon|/compute/macos|/compute/silicon|/compute/local|/compute/edge|/compute/onboard|/compute/setup|/compute/quickstart|/compute/playground|/compute/sandbox|/compute/hello|/compute/example|/compute/examples|/compute/prefer|/compute/preference|/compute/preferences /settlement|/settlements|/invoice|/invoices|/credit|/refill|/kits|/try|/getting-started|/get-started|/getstarted|/mac_kit|/compute/settlement|/compute/settlements|/compute/invoice|/compute/invoices|/compute/credit|/compute/refill|/compute/kits|/compute/try|/compute/getting-started|/compute/get-started|/compute/getstarted|/compute/mac_kit /plan|/plans|/prices|/payout|/payouts|/withdraw|/cashout|/payment|/payments|/checkout|/getting_started|/mac-setup|/mac_setup|/agents|/agent|/mcp|/tools|/tool|/earn|/mac|/kit|/compute/plan|/compute/plans|/compute/prices|/compute/price|/compute/payout|/compute/payouts|/compute/withdraw|/compute/cashout|/compute/payment|/compute/payments|/compute/checkout|/compute/getting_started|/compute/mac-setup|/compute/mac_setup|/compute/agents|/compute/agent|/compute/mcp|/compute/tools|/compute/tool| /compute/earn|/compute/mac|/compute/kit /help|/guide|/tutorial|/support|/docs-help|/getting-help|/contact|/free-credits|/buy-credits|/get-credits|/compute/help|/compute/guide|/compute/tutorial|/compute/support|/compute/contact|/compute/free-credits|/compute/buy-credits|/compute/get-credits|/compute/docs-help|/compute/getting-help|/app|/application|/compute/app|/compute/application /prefermlx|/compute/prefermlx|/m4|/compute/m4|/balances|/compute/balances|/credits/buy|/compute/credits/buy|/prefer-mlx|/prefer_mlx|/mlx|/compute/prefer-mlx|/compute/prefer_mlx|/compute/mlx /provider-kit|/provide-kit|/host-kit|/install-kit|/dasha-kit|/compute-kit|/provider_kit|/provide_kit|/host_kit|/install_kit|/dasha_kit|/compute_kit|/compute/provider-kit|/compute/provide-kit|/compute/host-kit|/compute/install-kit|/compute/dasha-kit|/compute/compute-kit|/compute/provider_kit|/compute/provide_kit|/compute/host_kit|/compute/install_kit|/compute/dasha_kit|/compute/compute_kit /chatgpt|/cursor|/copilot|/vscode|/windsurf|/aider|/continue|/zed|/compute/chatgpt|/compute/cursor|/compute/copilot|/compute/vscode|/compute/windsurf|/compute/aider|/compute/continue|/compute/zed → /compute. Apex /gateway|/compute/gateway|/docs|/endpoint|/endpoints|/sdk|/cli|/compute/endpoint|/compute/endpoints|/compute/sdk|/compute/cli → /compute/api. Exact lowercase product stays null for 200 handlers.
-  // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
-  // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy|/purchase|/orca|/meteora|/pumpfun|/jupiter|/phoenix|/lifinity|/openbook|/drift|/serum|/pump|/pumpswap|/pump-swap|/pump_swap|/jup → /how-to-buy.
-  // Leftover /photon|/bullx|/axiom|/trojan|/gmgn|/defined|/solanafm|/solana-fm|/solana_fm + peers /dexscreener|/solscan + dest slash /listings/ → /listings (Worker 66440d1c). Exact /listings stays 200.
-  // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
-  // Privacy synonyms: /privacy stays 200 (null). /help now folds via COMPUTE_TAB → /compute
-  // (not /privacy). Still skip /terms /tos /legal /faq — do not invent a privacy dest.
-  const raw = String(path || '');
+  const raw = String(path || "");
   const p = raw.toLowerCase();
-  // Leftover /play /game (+slash / Title-case) → /lobby. /arcade /games stay 404
-  // (Arcade is draft PR #44 only; this worker does not own arcade).
-  if (p === '/play' || p === '/play/' || p === '/game' || p === '/game/') {
-    return 'https://www.getdasha.com/lobby';
+  if (POTTER_HOWTO_308_PATHS.has(p)) return "https://www.getdasha.com/how-to-buy";
+  if (POTTER_HOME_308_PATHS.has(p)) return "https://www.getdasha.com/";
+  if (POTTER_LOGIN_308_PATHS.has(p)) return "https://www.getdasha.com/login#grok";
+  if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return "https://www.getdasha.com/login";
+  if (POTTER_WHICH_308_PATHS.has(p)) return "https://www.getdasha.com/which";
+  if (POTTER_LISTINGS_308_PATHS.has(p)) return "https://www.getdasha.com/listings";
+  if (p === "/bounty" || p === "/bounty/") return "https://www.getdasha.com/bounties";
+  if (p === "/play" || p === "/play/" || p === "/game" || p === "/game/") {
+    return "https://www.getdasha.com/lobby";
   }
-  // Leftover /socials /social (+slash / Title-case) → /lobby (community room).
-  // Keep /community → /compute unchanged. Skip /discord.
-  if (POTTER_LOBBY_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/lobby';
-  // Nested /lobby/play /lobby/game /lobby/chess (+slash / Title-case) → /lobby.
-  // /lobby/forum /lobby/chat stay OUT of potterHome308Dest (use isForumChatAliasPath + forumToLobbyRedirect).
-  // Do not fold /lobby /lobby/ /lobby/feed.xml /lobby/tape /lobby/ws /lobby/card/*.
-  if (
-    p === '/lobby/play' || p === '/lobby/play/' ||
-    p === '/lobby/game' || p === '/lobby/game/' ||
-    p === '/lobby/chess' || p === '/lobby/chess/'
-  ) {
-    return 'https://www.getdasha.com/lobby';
+  if (p === "/socials" || p === "/socials/" || p === "/social" || p === "/social/") {
+    return "https://www.getdasha.com/lobby";
   }
-  if (POTTER_HOWTO_308_PATHS.has(p)) return 'https://www.getdasha.com/how-to-buy';
-  if (POTTER_HOME_308_PATHS.has(p)) return 'https://www.getdasha.com/';
-  // Leftover /gecko /geckoterminal /gecko-terminal /gecko_terminal /dextools /solscan
-  // (+slash / Title-case) + dest slash /listings/ → /listings (Worker 929dd85a).
-  // Exact /listings stays 200 (null dest). Skip /pump /terminal /jup.
-  if (POTTER_LISTINGS_308_PATHS.has(p)) return 'https://www.getdasha.com/listings';
-  if (POTTER_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login#grok';
-  if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
-  if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
-  // Leftover /photon /bullx /axiom /trojan /gmgn /defined /solanafm /solana-fm
-  // /solana_fm + peers /dexscreener /solscan (+slash / Title-case) + dest slash
-  // /listings/ → /listings (Worker 66440d1c). Exact /listings stays 200.
-  // Skip /explorer /faq /waitlist /terms /blog /careers /hiring /openai /discord
-  // /roadmap /whitepaper /tokenomics /x402 /openrouter /status /health /healthz /v1.
-  if (POTTER_LISTINGS_308_PATHS.has(p)) return 'https://www.getdasha.com/listings';
-  // Leftover /bounty (+slash / Title-case) → /bounties. Exact /bounties stays 200.
-  if (POTTER_BOUNTIES_308_PATHS.has(p)) return 'https://www.getdasha.com/bounties';
-  if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return 'https://www.getdasha.com/faucet';
-  // Leftover /security /security.txt (+slash / Title-case) → /.well-known/security.txt.
-  // Exact /.well-known/security.txt stays null (200 handler). Do not invent /humans.txt /ads.txt /terms /tos.
-  if (POTTER_SECURITY_TXT_308_PATHS.has(p)) return 'https://www.getdasha.com/.well-known/security.txt';
-  // Leftover /llms-full /llms_full (+slash / Title-case) + /.well-known/llms-full.txt → /llms-full.txt.
-  // Existing /llms (+slash / Title-case) + /.well-known/llms.txt → /llms.txt.
-  // Leftover /.well-known/ai.txt (Title-case) → /ai.txt.
-  // Exact /llms-full.txt /llms.txt /ai.txt stay null (200 handlers).
-  // Well-known trailing slash stays out (live 404). Do not invent /llm /humans.txt /ads.txt /terms /tos.
-  if (POTTER_LLMS_FULL_AEO_308_PATHS.has(p)) return 'https://www.getdasha.com/llms-full.txt';
-  if (POTTER_LLMS_AEO_308_PATHS.has(p)) return 'https://www.getdasha.com/llms.txt';
-  if (POTTER_AI_TXT_WELLKNOWN_308_PATHS.has(p)) return 'https://www.getdasha.com/ai.txt';
-  // Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /docs /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /compute/sdk /compute/cli /vision|/tts|/text-to-speech|/text_to_speech|/embeddings|/compute/vision|/compute/tts|/compute/text-to-speech|/compute/text_to_speech|/compute/embeddings (+slash / Title-case) → /compute/api.
-  // Lobby same-host rewrite covers /compute/api dests in potterHome308Response.
-  // Docs face: leftover /readme (+slash / Title-case) → /compute/api. Peer of /docs.
-  // Skip /roadmap. Worker 1d5f3c49.
-  if (p === '/readme' || p === '/readme/') return 'https://www.getdasha.com/compute/api';
-  if (POTTER_COMPUTE_API_DOCS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api';
-  // apex /api/{jobs,status,network,healthz,health} (+ /jobs /job /compute/jobs /compute/job /api/job and
-  // /compute/{status,network,healthz,health}) → /compute/api/{jobs|status|network|healthz}.
-  // Leftover /receipt /receipts /compute/receipt(s) /api/receipt(s) → /compute/api/receipts.
-  // Leftover /api/keys → /compute/api/keys (bare /keys|/compute/keys stay compute-tab).
-  // Bare /status|/network|/healthz|/health stay out. Exact /compute/api/* stay for handlers.
-  // Do not invent /api/sponsors /api/providers. Lobby same-host rewrite covers /compute/api/*.
-  if (POTTER_COMPUTE_API_JOBS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/jobs';
-  if (POTTER_COMPUTE_API_RECEIPTS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/receipts';
-  if (POTTER_COMPUTE_API_KEYS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/keys';
-  if (POTTER_COMPUTE_API_STATUS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/status';
-  if (POTTER_COMPUTE_API_NETWORK_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/network';
-  // Factory JSON synonym: live /compute/factory|/api/factory (+slash / Title-case)
-  // html-404 while /compute/api/factory is 200 JSON (same pattern as status/network).
-  // Bare /factory folds via POTTER_COMPUTE_TAB → /compute (product face). Never fold
-  // exact /compute/api/factory.
-  if (POTTER_COMPUTE_API_FACTORY_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/factory';
-  // Leftover /compute/v1 (+slash / Title-case) html-404 while /compute/api/v1 is 200 JSON
-  // (same pattern as status/network). /compute/v1/models → /compute/api/v1/models
-  // (401 JSON handler). Never fold exact /compute/api/v1* or bare /v1|/v1/models
-  // (stay 404). Lobby same-host rewrite covers /compute/api/* dests.
-  if (POTTER_COMPUTE_API_V1_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/v1';
-  if (POTTER_COMPUTE_API_V1_MODELS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/v1/models';
-  // Live /compute/health + /compute/healthz (+slash / Title-case) → /compute/api/healthz.
-  // Lobby same-host rewrite already covers /compute/api/* dests in potterHome308Response.
-  if (POTTER_COMPUTE_HEALTHZ_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api/healthz';
-  if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) return 'https://www.getdasha.com/compute';
-  // P2-1 COMPUTE-FULL-REVIEW: lowercase HTML /compute/ (+ /compute/index.html) → /compute
-  // same www host (cache/SEO). Exact /compute stays null (200). GET/HEAD only via
-  // potterHome308Response. Do NOT fold /compute/api/... (API trailing-slash parity).
-  if (p === '/compute/' || p === '/compute/index.html') {
-    return 'https://www.getdasha.com/compute';
+  if (p === "/lobby/play" || p === "/lobby/play/" || p === "/lobby/game" || p === "/lobby/game/" || p === "/lobby/chess" || p === "/lobby/chess/") {
+    return "https://www.getdasha.com/lobby";
   }
-  // /Compute/ocm(...) Title-case → lowercase on-domain proxy (keep subpath).
-  if (p === '/compute/ocm' || p.startsWith('/compute/ocm/')) {
-    if (raw !== p) return 'https://www.getdasha.com' + p;
+  if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return "https://www.getdasha.com/faucet";
+  if (p === "/tg" || p === "/tg/" || p === "/telegram" || p === "/telegram/") {
+    return "https://t.me/+xB7S8mIQaKFiZjRh";
+  }
+  if (p === "/quiz" || p === "/quiz/" || p === "/simp-quiz" || p === "/simp-quiz/") {
+    return "https://www.getdasha.com/simp";
+  }
+  if (p === "/grwm" || p === "/grwm/") {
+    return "https://www.getdasha.com/#grwm";
+  }
+  if (p === "/mint" || p === "/mint/" || p === "/token" || p === "/token/" || p === "/tokens" || p === "/tokens/") {
+    return "https://www.getdasha.com/";
+  }
+  if (p === "/ca" || p === "/ca/") {
+    return "https://www.getdasha.com/which";
+  }
+  if (p === "/contract" || p === "/contract/" || p === "/holder" || p === "/holder/" || p === "/holders" || p === "/holders/") {
+    return "https://www.getdasha.com/bag";
+  }
+  if (p === "/chart" || p === "/chart/" || p === "/candles" || p === "/candles/" || p === "/price-chart" || p === "/price-chart/" || p === "/price_chart" || p === "/price_chart/") {
+    return "https://www.getdasha.com/";
+  }
+  if (p === "/swap" || p === "/swap/" || p === "/trade" || p === "/trade/" || p === "/sell" || p === "/sell/") {
+    return "https://www.getdasha.com/how-to-buy";
+  }
+  if (p === "/leaderboard" || p === "/leaderboard/" || p === "/board" || p === "/board/" || p === "/sim" || p === "/sim/") {
+    return "https://www.getdasha.com/simp";
+  }
+  if (p === "/x" || p === "/x/" || p === "/twitter" || p === "/twitter/") {
+    return "https://x.com/dash_eats";
+  }
+  if (p === "/github" || p === "/github/" || p === "/gh" || p === "/gh/") {
+    return "https://github.com/Uuriko/dasha-desk";
+  }
+  if (p === "/.well-known/llms.txt") {
+    return "https://www.getdasha.com/llms.txt";
+  }
+  if (p === "/.well-known/ai.txt") {
+    return "https://www.getdasha.com/ai.txt";
+  }
+  if (p === "/.well-known/llms-full.txt") {
+    return "https://www.getdasha.com/llms-full.txt";
+  }
+  if (p === "/llms" || p === "/llms/") {
+    return "https://www.getdasha.com/llms.txt";
+  }
+  if (p === "/llms-full" || p === "/llms-full/" || p === "/llms_full" || p === "/llms_full/") {
+    return "https://www.getdasha.com/llms-full.txt";
+  }
+  if (p === "/robots" || p === "/robots/") {
+    return "https://www.getdasha.com/robots.txt";
+  }
+  if (p === "/sitemap" || p === "/sitemap/") {
+    return "https://www.getdasha.com/sitemap.xml";
+  }
+  if (p === "/ai" || p === "/ai/") {
+    return "https://www.getdasha.com/ai.txt";
+  }
+  if (p === "/security.txt" || p === "/security.txt/" || p === "/security" || p === "/security/") {
+    return "https://www.getdasha.com/.well-known/security.txt";
+  }
+  if (p === "/privacy-policy" || p === "/privacy-policy/" || p === "/privacypolicy" || p === "/privacypolicy/" || p === "/privacy_policy" || p === "/privacy_policy/") {
+    return "https://www.getdasha.com/privacy";
+  }
+  if (p === "/api" || p === "/api/") return "https://www.getdasha.com/compute/api";
+  if (p === "/docs" || p === "/docs/") return "https://www.getdasha.com/compute/api";
+  if (p === "/documentation" || p === "/documentation/") return "https://www.getdasha.com/compute/api";
+  if (p === "/readme" || p === "/readme/") return "https://www.getdasha.com/compute/api";
+  if (p === "/endpoint" || p === "/endpoint/" || p === "/endpoints" || p === "/endpoints/" || p === "/sdk" || p === "/sdk/" || p === "/sdks" || p === "/sdks/" || p === "/dev" || p === "/dev/" || p === "/developer" || p === "/developer/" || p === "/developers" || p === "/developers/" || p === "/devtools" || p === "/devtools/" || p === "/devtool" || p === "/devtool/" || p === "/developer-docs" || p === "/developer-docs/" || p === "/sdk-docs" || p === "/sdk-docs/" || p === "/cli-docs" || p === "/cli-docs/" || p === "/sdks-docs" || p === "/sdks-docs/" || p === "/api-reference" || p === "/api-reference/" || p === "/sdk-reference" || p === "/sdk-reference/" || p === "/cli-reference" || p === "/cli-reference/" || p === "/developer-api" || p === "/developer-api/" || p === "/dev-api" || p === "/dev-api/" || p === "/cli" || p === "/cli/" || p === "/curl" || p === "/curl/" || p === "/openai-compat" || p === "/openai-compat/" || p === "/completions" || p === "/completions/" || p === "/compat" || p === "/compat/" || p === "/base-url" || p === "/base-url/" || p === "/baseurl" || p === "/baseurl/" || p === "/base_url" || p === "/base_url/" || p === "/chat-completions" || p === "/chat-completions/" || p === "/chatcompletions" || p === "/chatcompletions/" || p === "/chat_completions" || p === "/chat_completions/" || p === "/embeddings" || p === "/embeddings/" || p === "/embedding" || p === "/embedding/" || p === "/responses" || p === "/responses/" || p === "/response" || p === "/response/" || p === "/completion" || p === "/completion/" || p === "/compute/endpoint" || p === "/compute/endpoint/" || p === "/compute/endpoints" || p === "/compute/endpoints/" || p === "/compute/sdk" || p === "/compute/sdk/" || p === "/compute/sdks" || p === "/compute/sdks/" || p === "/compute/dev" || p === "/compute/dev/" || p === "/compute/developer" || p === "/compute/developer/" || p === "/compute/developers" || p === "/compute/developers/" || p === "/compute/devtools" || p === "/compute/devtools/" || p === "/compute/devtool" || p === "/compute/devtool/" || p === "/compute/developer-docs" || p === "/compute/developer-docs/" || p === "/compute/sdk-docs" || p === "/compute/sdk-docs/" || p === "/compute/cli-docs" || p === "/compute/cli-docs/" || p === "/compute/sdks-docs" || p === "/compute/sdks-docs/" || p === "/compute/api-reference" || p === "/compute/api-reference/" || p === "/compute/sdk-reference" || p === "/compute/sdk-reference/" || p === "/compute/cli-reference" || p === "/compute/cli-reference/" || p === "/compute/developer-api" || p === "/compute/developer-api/" || p === "/compute/dev-api" || p === "/compute/dev-api/" || p === "/compute/cli" || p === "/compute/cli/" || p === "/compute/curl" || p === "/compute/curl/" || p === "/compute/openai-compat" || p === "/compute/openai-compat/" || p === "/compute/completions" || p === "/compute/completions/" || p === "/compute/compat" || p === "/compute/compat/" || p === "/compute/base-url" || p === "/compute/base-url/" || p === "/compute/baseurl" || p === "/compute/baseurl/" || p === "/compute/base_url" || p === "/compute/base_url/" || p === "/compute/chat-completions" || p === "/compute/chat-completions/" || p === "/compute/chatcompletions" || p === "/compute/chatcompletions/" || p === "/compute/chat_completions" || p === "/compute/chat_completions/" || p === "/compute/embeddings" || p === "/compute/embeddings/" || p === "/compute/embedding" || p === "/compute/embedding/" || p === "/compute/responses" || p === "/compute/responses/" || p === "/compute/response" || p === "/compute/response/" || p === "/compute/completion" || p === "/compute/completion/" || // Vision/TTS modality peers of /embeddings (live html-404).
+  p === "/vision" || p === "/vision/" || p === "/tts" || p === "/tts/" || p === "/text-to-speech" || p === "/text-to-speech/" || p === "/text_to_speech" || p === "/text_to_speech/" || p === "/compute/vision" || p === "/compute/vision/" || p === "/compute/tts" || p === "/compute/tts/" || p === "/compute/text-to-speech" || p === "/compute/text-to-speech/" || p === "/compute/text_to_speech" || p === "/compute/text_to_speech/") return "https://www.getdasha.com/compute/api";
+  if (p === "/gateway" || p === "/gateway/" || p === "/compute/gateway" || p === "/compute/gateway/") {
+    return "https://www.getdasha.com/compute/api";
+  }
+  if (p === "/openapi" || p === "/openapi/" || p === "/openapi.json" || p === "/openapi.json/" || p === "/swagger" || p === "/swagger/" || p === "/swagger.json" || p === "/swagger.json/" || p === "/swagger-ui" || p === "/swagger-ui/" || p === "/swagger-ui.html" || p === "/swagger-ui.html/" || p === "/swagger_ui" || p === "/swagger_ui/" || p === "/swagger_ui.html" || p === "/swagger_ui.html/" || p === "/compute/docs" || p === "/compute/docs/" || p === "/compute/documentation" || p === "/compute/documentation/" || p === "/compute/openapi" || p === "/compute/openapi/" || p === "/compute/openapi.json" || p === "/compute/openapi.json/" || p === "/compute/swagger" || p === "/compute/swagger/" || p === "/compute/swagger.json" || p === "/compute/swagger.json/" || p === "/compute/swagger-ui" || p === "/compute/swagger-ui/" || p === "/compute/swagger_ui" || p === "/compute/swagger_ui/" || p === "/compute/api-docs" || p === "/compute/api-docs/" || p === "/compute/api_docs" || p === "/compute/api_docs/" || p === "/docs/api" || p === "/docs/api/" || p === "/api/docs" || p === "/api/docs/" || p === "/api-docs" || p === "/api-docs/" || p === "/api_docs" || p === "/api_docs/" || p === "/api/openapi" || p === "/api/openapi/" || p === "/api/openapi.json" || p === "/api/openapi.json/" || p === "/api/swagger" || p === "/api/swagger/" || p === "/api/swagger.json" || p === "/api/swagger.json/") {
+    return "https://www.getdasha.com/compute/api";
+  }
+  if (p === "/jobs" || p === "/jobs/" || p === "/job" || p === "/job/" || p === "/compute/jobs" || p === "/compute/jobs/" || p === "/compute/job" || p === "/compute/job/" || p === "/api/jobs" || p === "/api/jobs/" || p === "/api/job" || p === "/api/job/") {
+    return "https://www.getdasha.com/compute/api/jobs";
+  }
+  if (p === "/receipt" || p === "/receipt/" || p === "/receipts" || p === "/receipts/" || p === "/compute/receipt" || p === "/compute/receipt/" || p === "/compute/receipts" || p === "/compute/receipts/" || p === "/api/receipt" || p === "/api/receipt/" || p === "/api/receipts" || p === "/api/receipts/") {
+    return "https://www.getdasha.com/compute/api/receipts";
+  }
+  if (p === "/api/keys" || p === "/api/keys/") {
+    return "https://www.getdasha.com/compute/api/keys";
+  }
+  if (p === "/compute/status" || p === "/compute/status/" || p === "/api/status" || p === "/api/status/") {
+    return "https://www.getdasha.com/compute/api/status";
+  }
+  if (p === "/compute/network" || p === "/compute/network/" || p === "/api/network" || p === "/api/network/") {
+    return "https://www.getdasha.com/compute/api/network";
+  }
+  if (p === "/compute/factory" || p === "/compute/factory/" || p === "/api/factory" || p === "/api/factory/") {
+    return "https://www.getdasha.com/compute/api/factory";
+  }
+  if (p === "/compute/healthz" || p === "/compute/healthz/" || p === "/compute/health" || p === "/compute/health/" || p === "/api/healthz" || p === "/api/healthz/" || p === "/api/health" || p === "/api/health/") {
+    return "https://www.getdasha.com/compute/api/healthz";
+  }
+  if (p === "/compute/v1" || p === "/compute/v1/") {
+    return "https://www.getdasha.com/compute/api/v1";
+  }
+  if (p === "/compute/v1/models" || p === "/compute/v1/models/") {
+    return "https://www.getdasha.com/compute/api/v1/models";
+  }
+  if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) return "https://www.getdasha.com/compute";
+  if (p === "/compute/" || p === "/compute/index.html") {
+    return "https://www.getdasha.com/compute";
+  }
+  if (p === "/compute/ocm" || p.startsWith("/compute/ocm/")) {
+    if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  // /compute/skill/*.md disk names are PROVIDE.md/USE.md/OCM-HOST.md; live routes are
-  // lowercase. Title-case /Compute/skill/... and /…/PROVIDE.md were html-404.
-  if (p === '/compute/skill' || p.startsWith('/compute/skill/')) {
-    if (raw !== p) return 'https://www.getdasha.com' + p;
+  if (p === "/compute/skill" || p.startsWith("/compute/skill/")) {
+    const skillMdSlash = p.match(/^\/compute\/skill\/(provide|use|ocm-host)\.md\/$/);
+    if (skillMdSlash) return "https://www.getdasha.com/compute/skill/" + skillMdSlash[1] + ".md";
+    if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  // /Compute/api(...) Title-case → lowercase /compute/api prefix. Keep remainder
-  // case (job_/mac_ ids are base64url). Exact lowercase stays for API handlers.
-  if (p === '/compute/api' || p === '/compute/api/') {
-    if (raw !== p) return 'https://www.getdasha.com' + p;
+  if (p === "/compute/api" || p === "/compute/api/") {
+    if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  if (p.startsWith('/compute/api/')) {
+  if (p.startsWith("/compute/api/")) {
     const m = raw.match(/^\/compute\/api\//i);
     if (!m) return null;
-    const canon = '/compute/api/' + raw.slice(m[0].length);
-    if (raw !== canon) return 'https://www.getdasha.com' + canon;
+    const canon = "/compute/api/" + raw.slice(m[0].length);
+    if (raw !== canon) return "https://www.getdasha.com" + canon;
     return null;
   }
-  // /Faucet/fill(+sig) Title-case + /Faucet/fills(+sig). Keep sig case (base58).
-  if (p === '/faucet/fill' || p === '/faucet/fill/' || p === '/faucet/fills' || p === '/faucet/fills/') {
-    if (raw !== p) return 'https://www.getdasha.com' + p;
+  if (p === "/faucet/fill" || p === "/faucet/fill/" || p === "/faucet/fills" || p === "/faucet/fills/") {
+    if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  if (p.startsWith('/faucet/fill/') || p.startsWith('/faucet/fills/')) {
+  if (p.startsWith("/faucet/fill/") || p.startsWith("/faucet/fills/")) {
     const m = raw.match(/^\/faucet\/fills?\//i);
     if (!m) return null;
-    const prefix = p.startsWith('/faucet/fills/') ? '/faucet/fills/' : '/faucet/fill/';
+    const prefix = p.startsWith("/faucet/fills/") ? "/faucet/fills/" : "/faucet/fill/";
     const canon = prefix + raw.slice(m[0].length);
-    if (raw !== canon) return 'https://www.getdasha.com' + canon;
+    if (raw !== canon) return "https://www.getdasha.com" + canon;
     return null;
   }
   if (POTTER_FAUCET_LEAF_CASEFOLD.has(p)) {
-    if (raw !== p) return 'https://www.getdasha.com' + p;
+    if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  // /OAuth/x(...) /OAuth/github(...) Title-case were html-404 while lowercase
-  // siblings already 308→lobby (www) or 200 (lobby). Fold to canonical lowercase;
-  // exact lowercase stays null so www lobby-hop + lobby handlers run.
-  if (
-    p === '/oauth/x' || p.startsWith('/oauth/x/') ||
-    p === '/oauth/github' || p.startsWith('/oauth/github/')
-  ) {
-    if (raw !== p) return 'https://www.getdasha.com' + p;
+  if (p === "/oauth/x" || p.startsWith("/oauth/x/") || p === "/oauth/github" || p.startsWith("/oauth/github/")) {
+    if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  // /Chess/... Title-case subpaths (not bare /Chess — product map) → lowercase
-  // /chess/ prefix; keep remainder case (game/challenge/tournament ids).
-  // Exact lowercase stays null so chess handlers run.
-  if (p.startsWith('/chess/') && p !== '/chess/') {
+  if (p.startsWith("/chess/") && p !== "/chess/") {
     const m = raw.match(/^\/chess\//i);
     if (!m) return null;
-    const canon = '/chess/' + raw.slice(m[0].length);
-    if (raw !== canon) return 'https://www.getdasha.com' + canon;
+    const canon = "/chess/" + raw.slice(m[0].length);
+    if (raw !== canon) return "https://www.getdasha.com" + canon;
     return null;
   }
-  // /Bag/api(...) Title-case → lowercase path on www (mint is query). Exact lowercase null.
-  if (p === '/bag/api' || p === '/bag/api/' || p.startsWith('/bag/api/')) {
-    if (raw !== p) return 'https://www.getdasha.com' + p;
+  if (p === "/bag/api" || p === "/bag/api/" || p.startsWith("/bag/api/")) {
+    if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  // /Digest/pack /Digest/ingest Title-case → lowercase (DO pack/ingest already exist).
-  if (
-    p === '/digest/pack' || p === '/digest/pack/' ||
-    p === '/digest/ingest' || p === '/digest/ingest/'
-  ) {
-    if (raw !== p) return 'https://www.getdasha.com' + p;
+  if (p === "/digest/pack" || p === "/digest/pack/" || p === "/digest/ingest" || p === "/digest/ingest/") {
+    if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  const base = p.endsWith('/') && p.length > 1 ? p.slice(0, -1) : p;
+  const base = p.endsWith("/") && p.length > 1 ? p.slice(0, -1) : p;
   const dest = POTTER_PRODUCT_CASEFOLD_DEST.get(base);
   if (dest) {
     const canon = base;
-    const canonSlash = base + '/';
+    const canonSlash = base + "/";
     if (raw !== canon && raw !== canonSlash) return dest;
   }
   return null;
@@ -10442,6 +11093,29 @@ export default {
       }
       return fillShareApi(request, []);
     }
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings.json') {
+      const body = JSON.stringify(listingsJsonBody());
+      return new Response(request.method === 'HEAD' ? null : body, {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+          'Strict-Transport-Security': 'max-age=31536000',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Dasha-Edge': 'listings-json',
+          Link: LLMS_DESCRIBEDBY,
+        },
+      });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings') {
+      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LISTINGS_HTML), {
+        headers: htmlHeaders({
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+          'X-Dasha-Edge': 'listings',
+          Link: LLMS_DESCRIBEDBY,
+        }),
+      });
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/which') {
       return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(WHICH_HTML), {
         headers: htmlHeaders({
@@ -10451,12 +11125,6 @@ export default {
           Link: LLMS_DESCRIBEDBY,
         }),
       });
-    }
-    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings') {
-      return listingsPageResponse(request);
-    }
-    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings.json') {
-      return listingsJsonResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/bag' || url.pathname === '/bag/')) {
       const rawMint = url.searchParams.get('mint');
