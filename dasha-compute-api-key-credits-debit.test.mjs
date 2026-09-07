@@ -27,7 +27,7 @@ assert.doesNotMatch(html, /plugin\.jup\.ag/);
 
 const useDisk = readFileSync(new URL('./dasha-compute-skills/USE.md', import.meta.url), 'utf8');
 assert.equal(USE_SKILL_MD, useDisk);
-assert.match(USE_SKILL_MD, /API billing: non-self `v1\/chat\/completions` spends prepaid credits \(\$0\.05\/job\)/);
+assert.match(USE_SKILL_MD, /API billing: non-self `v1\/chat\/completions` spends prepaid credits via USDC\/\$dasha \(\$0\.05\/job\)/);
 assert.match(USE_SKILL_MD, /key spend cap is runaway protection — not a free allowance/);
 
 const payments = readFileSync(new URL('./COMPUTE-PAYMENTS-LAYERS-2026-09-04.md', import.meta.url), 'utf8');

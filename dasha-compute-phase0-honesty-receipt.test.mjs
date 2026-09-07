@@ -48,10 +48,11 @@ assert.match(networkSrc, /export function measuredTokPerSecForModel\(/);
 assert.match(networkSrc, /attestation: null/);
 assert.match(networkSrc, /\.\.\.\(receipt \? \{ receipt \} : \{\}\)/);
 assert.doesNotMatch(networkSrc, /Caution-verifiable/);
-assert.doesNotMatch(networkSrc, /dasha-compute-x402/);
+assert.match(networkSrc, /import \{ X402_BILLING_DOCS, x402BillingDocsLine \} from '\.\/dasha-compute-x402\.mjs';/, 'x402 docs-only import');
+assert.doesNotMatch(networkSrc, /dasha-compute-x402(?!\.mjs')/, 'no x402 coupling beyond docs import');
 
 assert.equal(publicPhase0Receipt(null), null);
-const bare = publicPhase0Receipt({ id: "job_a", model: "qwen3-8b", route: "community" });
+const bare = publicPhase0Receipt({ id: "job_a", model: "qwen3-8b", route: "community", status: "complete" });
 assert.equal(bare.attestation, null);
 assert.equal(bare.job_id, "job_a");
 assert.equal(bare.model_id, "qwen3-8b");
@@ -60,27 +61,27 @@ assert.equal("tokens_per_second" in bare, false, "never invent tok/s");
 assert.equal("settled" in bare, false);
 
 const measured = publicPhase0Receipt(
-  { id: "job_b", model: "gemma3-27b", route: "community" },
-  { capacity: [{ model: "gemma3-27b", measured_providers: 1, tokens_per_second: 2.93 }] },
+  { id: "job_b", model: "gemma3-27b", route: "community", status: "complete" },
+  { tokensPerSecond: measuredTokPerSecForModel([{ lastSeenAt: Date.now(), models: ["gemma3-27b"], hardware: { benchmarks: [{ model: "gemma3-27b", tokens_per_second: 2.93 }] } }], "gemma3-27b") },
 );
 assert.equal(measured.tokens_per_second, 2.93);
 assert.equal(measured.attestation, null);
 
 const unmeasured = publicPhase0Receipt(
-  { id: "job_c", model: "qwen3-8b", route: "community" },
-  { capacity: [{ model: "qwen3-8b", measured_providers: 0, tokens_per_second: 42 }] },
+  { id: "job_c", model: "qwen3-8b", route: "community", status: "complete" },
+  { tokensPerSecond: measuredTokPerSecForModel([{ lastSeenAt: Date.now(), models: ["qwen3-8b"], hardware: { benchmarks: [] } }], "qwen3-8b") },
 );
 assert.equal("tokens_per_second" in unmeasured, false, "unmeasured capacity omitted");
 
-assert.equal(measuredTokPerSecForModel([{ model: "qwen3-8b", measured_providers: 1, tokens_per_second: 3.1 }], "qwen3-8b"), 3.1);
-assert.equal(measuredTokPerSecForModel([{ model: "qwen3-8b", measured_providers: 0, tokens_per_second: 42 }], "qwen3-8b"), null);
+assert.equal(measuredTokPerSecForModel([{ lastSeenAt: Date.now(), models: ["qwen3-8b"], hardware: { benchmarks: [{ model: "qwen3-8b", tokens_per_second: 3.1 }] } }], "qwen3-8b"), 3.1);
+assert.equal(measuredTokPerSecForModel([{ lastSeenAt: Date.now(), models: ["qwen3-8b"], hardware: { benchmarks: [{ model: "qwen3-8b", tokens_per_second: 42 }] } }], "qwen3-8b"), 42, "benchmark row counts when provider serves model");
 assert.equal(measuredTokPerSecForModel([], "qwen3-8b"), null);
 
 assert.deepEqual(publicJobSettle({ settle_cents: 6, settle_state: "pending_operator" }), { cents: 6, state: "pending_operator" });
 assert.equal(publicJobSettle({ settle_cents: 6 }), null);
 
 const withSettle = publicPhase0Receipt({
-  id: "job_d", model: "qwen3-8b", route: "mixture",
+  id: "job_d", model: "qwen3-8b", route: "mixture", status: "complete",
   settle_cents: 6, settle_state: "pending_operator",
 });
 assert.deepEqual(withSettle.settled, { cents: 6, state: "pending_operator" });

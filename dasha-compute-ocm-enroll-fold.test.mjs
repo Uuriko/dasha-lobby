@@ -22,9 +22,9 @@ assert.equal(OCM_HOST_SKILL_MD, ocmDisk, "OCM skill embed == disk");
 
 function assertOcmFold(html, label) {
   assert.match(html, /id=["']provide-ocm-fine["']/, `${label} provide-ocm-fine`);
-  assert.match(html, /Community kit here · OCM host uses enroll code · never paste/, `${label} enroll fine copy`);
-  assert.match(html, /never paste <code>ocm_host_<\/code>/, `${label} never paste ocm_host_`);
-  assert.match(html, /id=["']provide-ocm-host["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Host</, `${label} provide-ocm-host`);
+  assert.match(html, /Community kit · one Register → Setup · soft doctor warns only\./, `${label} enroll fine copy`);
+  assert.match(html, /Enroll code · never paste a provider token\./, `${label} enroll never-paste copy`);
+  assert.match(html, /id=["']market-host["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Host</, `${label} market-host`);
   assert.match(html, /id=["']provide-ocm-status["'][^>]*href=["']\/compute\/ocm\/status["']/, `${label} provide-ocm-status`);
   assert.match(html, /title=["']Cold loads on first request · Ready\/Serving ~1s["']/, `${label} Cold status title`);
   assert.doesNotMatch(html, /New provider token/, `${label} no New provider token`);
@@ -73,7 +73,7 @@ if (puppeteer && existsSync(chrome)) {
     await page.evaluate(() => { if (typeof showTf === "function") showTf("provide-reg"); });
     const painted = await page.evaluate(() => {
       const fine = document.getElementById("provide-ocm-fine");
-      const host = document.getElementById("provide-ocm-host");
+      const host = document.getElementById("market-host");
       const status = document.getElementById("provide-ocm-status");
       return {
         fine: (fine?.textContent || "").trim(),
@@ -83,8 +83,8 @@ if (puppeteer && existsSync(chrome)) {
         body: document.body.innerText,
       };
     });
-    assert.match(painted.fine, /Community kit here/);
-    assert.match(painted.fine, /never paste ocm_host_/);
+    assert.match(painted.fine, /Community kit · one Register/);
+    assert.match(painted.fine, /soft doctor warns only/);
     assert.equal(painted.hostHref, "/compute/ocm/provider");
     assert.equal(painted.statusHref, "/compute/ocm/status");
     assert.equal(painted.statusTitle, "Cold loads on first request · Ready/Serving ~1s");

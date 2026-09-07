@@ -430,7 +430,7 @@ export function measuredTokPerSecForModel(providers, model, now = Date.now()) {
   return Math.round(tps * 100) / 100;
 }
 
-function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
+export function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
   if (!job?.id) return null;
   const status = String(job.status || '');
   if (status !== 'complete' && status !== 'failed') return null;
