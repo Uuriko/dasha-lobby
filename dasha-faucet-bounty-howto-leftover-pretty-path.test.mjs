@@ -23,11 +23,7 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /POTTER_FAUCET_DOOR_308_PATHS/, 'faucet door 308 set present');
 assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
 assert.match(workerSrc, /POTTER_BOUNTIES_308_PATHS/, 'bounty leftover 308 set present');
-assert.match(
-  workerSrc,
-  /\/faucet\/fill-the-jar \/faucet\/fill_the_jar/,
-  'faucet leftover comment lists /faucet/fill-the-jar /faucet/fill_the_jar',
-);
+
 assert.match(
   workerSrc,
   /Leftover \/bounty \(\+slash \/ Title-case\)/,

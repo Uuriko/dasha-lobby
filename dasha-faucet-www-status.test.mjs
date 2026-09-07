@@ -241,7 +241,7 @@ async function jsonPair(path) {
   assert.match(slash.headers.get('content-type') || '', /html/, 'lobby /faucet/ HTML');
   assert.equal(slash.headers.get('x-dasha-edge'), 'faucet');
   const html = await slash.text();
-  assertTypeformDoor(html, 'served lobby /faucet/');
+  assertTypeformDoor(html, 'served lobby /faucet/["']);
   assert.doesNotMatch(html, /"error"\s*:\s*"not found"/, 'lobby /faucet/ is not DO JSON 404');
   const slashHits = faucetHits.filter((h) => h.path === '/faucet/' && h.host === 'lobby.getdasha.com');
   assert.equal(slashHits.length, 0, 'lobby /faucet/ does not hit faucet DO');

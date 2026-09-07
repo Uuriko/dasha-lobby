@@ -78,7 +78,7 @@ function keepLiveChrome(src, label) {
   assert.match(src, /id=['"]tournament-name['"]/, `${label} #tournament-name stays`);
   assert.match(src, /function tournamentAction\(/, `${label} tournamentAction stays`);
   assert.match(src, /tournamentAction\('create'/, `${label} tournamentAction create stays`);
-  assert.match(src, /post\('\/chess\/tournaments',\{name:name\}\)/, `${label} create POST stays`);
+  assert.match(src, /post\(["']\/chess\/tournaments',\{name:name\}\)/, `${label} create POST stays`);
   assert.match(src, /function tournamentSubmit\(/, `${label} tournamentSubmit stays`);
   assert.match(src, /function tournamentClick\(/, `${label} tournamentClick stays`);
   assert.match(src, /function shareChallenge\(/, `${label} shareChallenge stays`);
@@ -132,7 +132,7 @@ footer.dasha-foot{padding:1.25rem 0;background:#070608}
 </body></html>`;
 
 assert.match(LIVE, /tournamentAction\(action\)/, "fixture leftover tournamentAction(action) fallthrough paints");
-assert.match(LIVE, /post\('\/chess\/tournament\/'\+tournament\.id,\{action:action\}\)/, "fixture leftover generic POST tail paints");
+assert.match(LIVE, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "fixture leftover generic POST tail paints");
 assert.doesNotMatch(LIVE, /tournamentButton\('Start','start'/, "fixture Start essay button already dropped");
 assert.doesNotMatch(LIVE, /tournamentButton\('Share','share'\)/, "fixture Share essay button already dropped");
 assert.doesNotMatch(LIVE, /\bshareTournament\b/, "fixture shareTournament already dropped");
@@ -141,7 +141,7 @@ assert.match(afterStyleScript(LIVE), /class=["']tournament-form["']/, "fixture .
 
 assert.equal(stripChessLeftoverTournamentActionTailJs(chessDisk), chessDisk, "disk Start essay button still paints so strip no-ops");
 assert.match(chessDisk, /tournamentAction\(action\)/, "chess disk leftover tournamentAction(action) fallthrough (polish drops it)");
-assert.match(chessDisk, /post\('\/chess\/tournament\/'\+tournament\.id,\{action:action\}\)/, "chess disk leftover generic POST tail (polish drops it)");
+assert.match(chessDisk, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "chess disk leftover generic POST tail (polish drops it)");
 assert.match(chessDisk, /tournamentButton\('Start','start'/, "chess disk still emits leftover Start essay button (essay leftover drops it)");
 assert.match(chessDisk, /tournamentButton\('Leave','leave'/, "chess disk leftover Leave essay button");
 assert.match(chessDisk, /tournamentButton\('Join','join'/, "chess disk leftover Join essay button");
@@ -153,12 +153,12 @@ assert.doesNotMatch(essayGone, /tournamentButton\('Leave','leave'/, "essay lefto
 assert.doesNotMatch(essayGone, /tournamentButton\('Join','join'/, "essay leftover drops Join essay button");
 assert.doesNotMatch(essayGone, /tournamentButton\('Cancel','cancel'/, "essay leftover drops Cancel essay button");
 assert.match(essayGone, /tournamentAction\(action\)/, "essay leftover keeps leftover tournamentAction(action) fallthrough");
-assert.match(essayGone, /post\('\/chess\/tournament\/'\+tournament\.id,\{action:action\}\)/, "essay leftover keeps leftover generic POST tail");
+assert.match(essayGone, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "essay leftover keeps leftover generic POST tail");
 
 const shareGone = stripChessLeftoverShareTournamentJs(essayGone);
 assert.doesNotMatch(shareGone, /\bshareTournament\b/, "share leftover drops shareTournament");
 assert.match(shareGone, /tournamentAction\(action\)/, "share leftover keeps leftover tournamentAction(action) fallthrough");
-assert.match(shareGone, /post\('\/chess\/tournament\/'\+tournament\.id,\{action:action\}\)/, "share leftover keeps leftover generic POST tail");
+assert.match(shareGone, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "share leftover keeps leftover generic POST tail");
 
 const gone = stripChessLeftoverTournamentActionTailJs(LIVE);
 noActionTail(gone, "strip");
@@ -181,7 +181,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "tournamentAction tail drop is per-ta
 </body></html>`;
   const out = stripChessLeftoverTournamentActionTailJs(paints);
   assert.match(out, /tournamentAction\(action\)/, "do not strip if Start essay button still paints");
-  assert.match(out, /post\('\/chess\/tournament\/'\+tournament\.id,\{action:action\}\)/, "do not strip generic POST if Start still paints");
+  assert.match(out, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "do not strip generic POST if Start still paints");
 }
 
 {
@@ -204,7 +204,7 @@ assert.doesNotMatch(polished, /\.tournament-meta\{/, "polish does not restore le
 assert.doesNotMatch(polished, /,'tournament-meta'/, "polish still drops leftover classNames");
 
 assert.match(CHESS_PAGE_HTML, /tournamentAction\(action\)/, "bundled chess still emits leftover tournamentAction(action) fallthrough (polish drops it)");
-assert.match(CHESS_PAGE_HTML, /post\('\/chess\/tournament\/'\+tournament\.id,\{action:action\}\)/, "bundled chess leftover generic POST tail (polish drops it)");
+assert.match(CHESS_PAGE_HTML, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "bundled chess leftover generic POST tail (polish drops it)");
 assert.match(afterStyleScript(chessDisk), /id=["']tournament["']/, "chess disk #tournament stays");
 assert.match(afterStyleScript(chessDisk), /class=["']tournament-form["']/, "chess disk .tournament-form stays");
 assert.match(chessDisk, /function wantTournamentChrome\(\)\{return false\}/, "chess disk wantTournamentChrome stays false");

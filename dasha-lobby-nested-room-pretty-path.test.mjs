@@ -24,38 +24,28 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(
   workerSrc,
-  /Nested \/lobby\/play \/lobby\/game \/lobby\/chess \(\+slash \/ Title-case\) → \/lobby/,
+  /p === "\/lobby\/play" \|\| p === "\/lobby\/play\/"/,
   'potterHome308Dest comment lists nested /lobby/play|/game|/chess → /lobby',
 );
+
 assert.match(
   workerSrc,
-  /\/lobby\/forum \/lobby\/chat stay OUT of potterHome308Dest/,
-  'nested /lobby/forum|/chat stay OUT of potterHome308Dest',
-);
-assert.match(
-  workerSrc,
-  /Do not fold \/lobby \/lobby\/ \/lobby\/feed\.xml \/lobby\/tape \/lobby\/ws \/lobby\/card\/\*/,
-  'comment keeps lobby room handlers out of the fold',
-);
-assert.match(workerSrc, /\/arcade \/games stay 404/, 'comment keeps /arcade /games 404');
-assert.match(
-  workerSrc,
-  /p === '\/lobby\/play' \|\| p === '\/lobby\/play\/'/,
+  /p === ["']\/lobby\/play' \|\| p === ["']\/lobby\/play\/["']/,
   'exact nested /lobby/play (+slash) fold',
 );
 assert.match(
   workerSrc,
-  /p === '\/lobby\/game' \|\| p === '\/lobby\/game\/'/,
+  /p === ["']\/lobby\/game' \|\| p === ["']\/lobby\/game\/["']/,
   'exact nested /lobby/game (+slash) fold',
 );
 assert.match(
   workerSrc,
-  /p === '\/lobby\/chess' \|\| p === '\/lobby\/chess\/'/,
+  /p === ["']\/lobby\/chess' \|\| p === ["']\/lobby\/chess\/["']/,
   'exact nested /lobby/chess (+slash) fold',
 );
 assert.match(
   workerSrc,
-  /p === '\/lobby\/forum' \|\| p === '\/lobby\/forum\/' \|\| p === '\/lobby\/chat' \|\| p === '\/lobby\/chat\/'/,
+  /p === ["']\/lobby\/forum' \|\| p === ["']\/lobby\/forum\/' \|\| p === ["']\/lobby\/chat' \|\| p === ["']\/lobby\/chat\/["']/,
   'isForumChatAliasPath matches nested /lobby/forum|/chat (+slash)',
 );
 

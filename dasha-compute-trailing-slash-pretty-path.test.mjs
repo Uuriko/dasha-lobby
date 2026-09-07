@@ -13,7 +13,7 @@ import edgeWorker, { potterHome308Dest, potterHome308Response } from './dasha-lo
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /P2-1 COMPUTE-FULL-REVIEW/, 'trailing-slash fold comment');
+assert.match(workerSrc, /p === "\/compute\/" \|\| p === "\/compute\/index\.html"/, 'trailing-slash fold comment');
 
 const COMPUTE = 'https://www.getdasha.com/compute';
 const FOLD = ['/compute/', '/compute/index.html', '/Compute/', '/COMPUTE/', '/Compute/index.html'];

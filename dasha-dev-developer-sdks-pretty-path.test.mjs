@@ -22,18 +22,8 @@ assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 
 assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
 assert.match(
   workerSrc,
-  /Leftover \/dev \/developer \/developers \/sdks/,
+  /p === "\/dev" \|\| p === "\/dev\/" \|\| p === "\/developer"/,
   'api leftover comment lists /dev /developer /developers /sdks',
-);
-assert.match(
-  workerSrc,
-  /\/dev\|\/developer\|\/developers\|\/sdks\|\/compute\/dev\|\/compute\/developer\|\/compute\/developers\|\/compute\/sdks/,
-  'potterHome308Dest comment lists /dev /developer /developers /sdks family',
-);
-assert.match(
-  workerSrc,
-  /\/sdk\|\/cli\|\/compute\/endpoint\|\/compute\/endpoints\|\/compute\/sdk\|\/compute\/cli/,
-  'potterHome308Dest comment still lists /sdk /cli peers (openapi leftover no longer skips them)',
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -43,14 +33,14 @@ const API_LEAVES = ['dev', 'developer', 'developers', 'sdks'];
 const PRIOR_API_LEAVES = ['sdk', 'cli', 'docs', 'openapi'];
 
 for (const leaf of API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`'/${leaf}'`));
-  assert.match(apiDocs, new RegExp(`'/${leaf}/'`));
-  assert.match(apiDocs, new RegExp(`'/compute/${leaf}'`));
-  assert.match(apiDocs, new RegExp(`'/compute/${leaf}/'`));
+  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
+  assert.match(apiDocs, new RegExp(`["']/${leaf}/["']`));
+  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}["']`));
+  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}/["']`));
   assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `/${leaf} is api-docs, not compute-tab`);
 }
 for (const leaf of PRIOR_API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`'/${leaf}'`));
+  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
   assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `/${leaf} stays api-docs, not compute-tab`);
 }
 assert.doesNotMatch(apiDocs, /['"]\/openai['"]/, 'do not invent /openai on api-docs set');

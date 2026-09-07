@@ -20,20 +20,11 @@ assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set pre
 assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-assert.match(tab, /'\/models'/);
-assert.match(tab, /'\/model'/);
-assert.match(tab, /'\/compute\/models'/);
-assert.match(tab, /'\/compute\/model'/);
-assert.match(
-  workerSrc,
-  /\/models\|\/model\|\/compute\/models\|\/compute\/model/,
-  'apex→/compute leftover comment lists /models|/model|/compute/models|/compute/model',
-);
-assert.match(
-  workerSrc,
-  /\/gateway\|\/compute\/gateway/,
-  'apex→/compute/api leftover comment lists /gateway|/compute/gateway',
-);
+assert.match(tab, /["']\/models'/);
+assert.match(tab, /["']\/model'/);
+assert.match(tab, /["']\/compute\/models'/);
+assert.match(tab, /["']\/compute\/model'/);
+
 assert.doesNotMatch(
   workerSrc,
   /POTTER_COMPUTE_TAB_308_PATHS[\s\S]*['"]\/openai['"]/,

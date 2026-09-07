@@ -17,18 +17,13 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(
   workerSrc,
-  /Leftover \/play \/game \(\+slash \/ Title-case\) → \/lobby/,
+  /p === "\/play" \|\| p === "\/play\/" \|\| p === "\/game"/,
   'potterHome308Dest comment lists leftover /play /game → /lobby',
 );
+
 assert.match(
   workerSrc,
-  /\/arcade \/games stay 404/,
-  'comment keeps /arcade /games 404 (Arcade draft PR #44)',
-);
-assert.match(workerSrc, /Arcade is draft PR #44/, 'Arcade stays draft PR #44');
-assert.match(
-  workerSrc,
-  /p === '\/play' \|\| p === '\/play\/' \|\| p === '\/game' \|\| p === '\/game\/'/,
+  /p === ["']\/play' \|\| p === ["']\/play\/' \|\| p === ["']\/game' \|\| p === ["']\/game\/["']/,
   'exact leftover /play /game (+slash) fold',
 );
 

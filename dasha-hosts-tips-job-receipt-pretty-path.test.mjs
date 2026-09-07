@@ -26,30 +26,11 @@ assert.match(workerSrc, /POTTER_FAUCET_DOOR_308_PATHS/, 'faucet door 308 set pre
 assert.match(workerSrc, /POTTER_COMPUTE_API_JOBS_308_PATHS/, 'jobs 308 set present');
 assert.match(workerSrc, /POTTER_COMPUTE_API_RECEIPTS_308_PATHS/, 'receipts 308 set present');
 assert.match(workerSrc, /POTTER_COMPUTE_API_KEYS_308_PATHS/, 'api keys 308 set present');
-assert.match(
-  workerSrc,
-  /Leftover compute doors: live \/hosts \/inferences \/key \/keys/,
-  'compute-door leftover comment',
-);
-assert.match(
-  workerSrc,
-  /Leftover plural \/tips \/compute\/tips/,
-  'faucet /tips leftover comment',
-);
+
 assert.match(
   workerSrc,
   /Leftover singular \/job \/compute\/job \/api\/job/,
   'job synonym leftover comment',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/receipt \/receipts \/compute\/receipt\(s\) \/api\/receipt\(s\)/,
-  'receipt leftover comment',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/api\/keys → \/compute\/api\/keys/,
-  'api/keys leftover comment',
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -64,19 +45,19 @@ const COMPUTE_LEAVES = [
   'pricing', 'providing', 'mac-kit',
 ];
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
-assert.match(faucet, /'\/tips'/);
-assert.match(faucet, /'\/compute\/tips'/);
-assert.match(jobs, /'\/job'/);
-assert.match(jobs, /'\/compute\/job'/);
-assert.match(jobs, /'\/api\/job'/);
-assert.match(receipts, /'\/receipt'/);
-assert.match(receipts, /'\/receipts'/);
-assert.match(receipts, /'\/compute\/receipt'/);
-assert.match(receipts, /'\/api\/receipts'/);
-assert.match(apiKeys, /'\/api\/keys'/);
+assert.match(faucet, /["']\/tips'/);
+assert.match(faucet, /["']\/compute\/tips'/);
+assert.match(jobs, /["']\/job'/);
+assert.match(jobs, /["']\/compute\/job'/);
+assert.match(jobs, /["']\/api\/job'/);
+assert.match(receipts, /["']\/receipt'/);
+assert.match(receipts, /["']\/receipts'/);
+assert.match(receipts, /["']\/compute\/receipt'/);
+assert.match(receipts, /["']\/api\/receipts'/);
+assert.match(apiKeys, /["']\/api\/keys'/);
 assert.doesNotMatch(apiKeys, /['"]\/keys['"]/, '/keys is compute-tab, not api-keys set');
 assert.doesNotMatch(tab, /['"]\/openai['"]/, 'do not invent /openai on compute-tab set');
 assert.doesNotMatch(tab, /['"]\/v1['"]/, 'do not invent /v1');

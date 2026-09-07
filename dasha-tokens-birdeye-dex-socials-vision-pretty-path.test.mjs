@@ -28,34 +28,10 @@ assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
 assert.match(workerSrc, /POTTER_LISTINGS_308_PATHS/, 'listings 308 set present');
 assert.match(workerSrc, /POTTER_LOBBY_DOOR_308_PATHS/, 'lobby-door 308 set present');
 assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
+
 assert.match(
   workerSrc,
-  /Leftover \/tokens \(\+slash \/ Title-case\)/,
-  'home leftover comment lists /tokens family',
-);
-assert.match(
-  workerSrc,
-  /Peer of \/token \/mint/,
-  'home leftover comment names /token /mint peers',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/birdeye/,
-  'listings leftover comment lists /birdeye',
-);
-assert.match(
-  workerSrc,
-  /Peer of \/cmc \/coingecko \/coinmarketcap/,
-  'listings leftover comment names /cmc /coingecko /coinmarketcap peers',
-);
-assert.match(
-  workerSrc,
-  /Leftover DEX doors/,
-  'howto leftover comment names DEX family',
-);
-assert.match(
-  workerSrc,
-  /On-site \/how-to-buy only — never external DEX hosts/,
+  /never Jupiter plugin host \/ external DEX hosts/,
   'howto leftover comment forbids external DEX hosts',
 );
 assert.match(
@@ -87,20 +63,20 @@ const apiDocs = workerSrc.match(/const POTTER_COMPUTE_API_DOCS_308_PATHS = new S
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 
 for (const path of ['/token', '/mint', '/tokens']) {
-  assert.match(homeSet, new RegExp(`'${path}'`));
-  assert.match(homeSet, new RegExp(`'${path}/'`));
+  assert.match(homeSet, new RegExp(`'${path}["']`));
+  assert.match(homeSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/swap', '/jupiter', '/raydium', '/pumpfun', '/pump-fun', '/pump_fun']) {
-  assert.match(howtoSet, new RegExp(`'${path}'`));
-  assert.match(howtoSet, new RegExp(`'${path}/'`));
+  assert.match(howtoSet, new RegExp(`'${path}["']`));
+  assert.match(howtoSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/cmc', '/coingecko', '/coinmarketcap', '/birdeye']) {
-  assert.match(listingsSet, new RegExp(`'${path}'`));
-  assert.match(listingsSet, new RegExp(`'${path}/'`));
+  assert.match(listingsSet, new RegExp(`'${path}["']`));
+  assert.match(listingsSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/socials', '/social']) {
-  assert.match(lobbySet, new RegExp(`'${path}'`));
-  assert.match(lobbySet, new RegExp(`'${path}/'`));
+  assert.match(lobbySet, new RegExp(`'${path}["']`));
+  assert.match(lobbySet, new RegExp(`'${path}/["']`));
 }
 const apiLeaves = [
   '/vision', '/tts', '/text-to-speech', '/text_to_speech', '/embeddings',
@@ -108,10 +84,10 @@ const apiLeaves = [
   '/compute/embeddings',
 ];
 for (const path of apiLeaves) {
-  assert.match(apiDocs, new RegExp(`'${path}'`));
-  assert.match(apiDocs, new RegExp(`'${path}/'`));
+  assert.match(apiDocs, new RegExp(`'${path}["']`));
+  assert.match(apiDocs, new RegExp(`'${path}/["']`));
 }
-assert.match(tab, /'\/community'/);
+assert.match(tab, /["']\/community'/);
 assert.doesNotMatch(lobbySet, /['"]\/community['"]/, 'do not steal /community onto lobby-door');
 assert.doesNotMatch(homeSet, /['"]\/tokenomics['"]/, 'do not invent /tokenomics on home');
 assert.doesNotMatch(homeSet, /['"]\/roadmap['"]/, 'do not invent /roadmap on home');

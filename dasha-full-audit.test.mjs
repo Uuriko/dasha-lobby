@@ -128,10 +128,10 @@ describe('route contract (worker, offline)', () => {
 
   it('dest-by-path 308s', () => {
     for (const path of destHome) {
-      assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/');
+      assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/["']);
       const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
       assert.equal(res.status, 308);
-      assert.equal(res.headers.get('location'), 'https://www.getdasha.com/');
+      assert.equal(res.headers.get('location'), 'https://www.getdasha.com/["']);
     }
     for (const path of destHowto) {
       assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/how-to-buy');
@@ -178,7 +178,7 @@ describe('route contract (worker, offline)', () => {
     assert.match(crewBody, /<h1>Dasha Crew<\/h1>/);
     const studio = await edgeWorker.fetch(new Request('https://www.getdasha.com/studio'), {});
     assert.equal(studio.status, 308);
-    assert.equal(studio.headers.get('location'), 'https://www.getdasha.com/');
+    assert.equal(studio.headers.get('location'), 'https://www.getdasha.com/["']);
   });
 
   it('www oauth starts 308 to lobby', async () => {
@@ -312,7 +312,7 @@ describe('quiet tape + site manifest', () => {
     const raw = siteManifestJson();
     const body = JSON.parse(raw);
     assert.equal(body.name, '$dasha');
-    assert.equal(body.start_url, '/');
+    assert.equal(body.start_url, '/["']);
     assert.equal(body.description, 'Buy $dasha.');
     assert.doesNotMatch(raw, /make the timeline stranger/);
     assert.equal(SITE_MANIFEST.display, 'standalone');
@@ -352,7 +352,7 @@ describe('quiet tape + site manifest', () => {
       assert.match(res.headers.get('content-type') || '', /manifest\+json|application\/json/);
       const body = await res.json();
       assert.equal(body.name, '$dasha');
-      assert.equal(body.start_url, '/');
+      assert.equal(body.start_url, '/["']);
       assert.equal(body.description, 'Buy $dasha.');
       const raw = JSON.stringify(body);
       assert.doesNotMatch(raw, /make the timeline stranger/);

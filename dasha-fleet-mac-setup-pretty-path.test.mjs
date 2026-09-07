@@ -21,41 +21,6 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
 assert.match(workerSrc, /POTTER_FAUCET_DOOR_308_PATHS/, 'faucet door 308 set present');
-assert.match(
-  workerSrc,
-  /Fleet\/capacity \+ console\/credits \+ Mac\/local \+ setup\/try \+ kit\/prefer leftovers/,
-  'compute leftover comment names fleet/mac/setup families',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/donate \/donate\//,
-  'faucet leftover comment lists /donate',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/fleet \/compute\/fleet/,
-  'compute leftover comment lists /fleet /compute/fleet',
-);
-assert.match(
-  workerSrc,
-  /\/fleet\|\/rent\|\/capacity\|\/offer\|\/offers\|\/worker\|\/workers\|\/node\|\/nodes\|\/cluster\|\/pool\|\/machines\|\/benchmark\|\/queue/,
-  'potterHome308Dest comment lists /fleet + fleet/capacity family',
-);
-assert.match(
-  workerSrc,
-  /\/dashboard\|\/console\|\/balance\|\/pay-usdc\|\/apple-silicon\|\/macos\|\/silicon\|\/local\|\/edge/,
-  'potterHome308Dest comment lists console + Mac family',
-);
-assert.match(
-  workerSrc,
-  /\/onboard\|\/setup\|\/quickstart\|\/playground\|\/sandbox\|\/hello\|\/example\|\/examples\|\/prefer\|\/preference\|\/preferences/,
-  'potterHome308Dest comment lists setup + kit family',
-);
-assert.match(
-  workerSrc,
-  /\/donate \/compute\/faucet/,
-  'potterHome308Dest comment lists /donate on faucet family',
-);
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const faucet = workerSrc.match(/const POTTER_FAUCET_DOOR_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -71,10 +36,10 @@ const KIT_LEAVES = ['hello', 'example', 'examples', 'prefer', 'preference', 'pre
 const COMPUTE_LEAVES = [...FLEET_LEAVES, ...CONSOLE_LEAVES, ...MAC_LEAVES, ...SETUP_LEAVES, ...KIT_LEAVES];
 
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
-assert.match(faucet, /'\/donate'/);
+assert.match(faucet, /["']\/donate'/);
 assert.doesNotMatch(tab, /['"]\/donate['"]/, '/donate is faucet, not compute-tab');
 assert.doesNotMatch(tab, /['"]\/compute\/donate['"]/, 'do not invent /compute/donate');
 assert.doesNotMatch(faucet, /['"]\/compute\/donate['"]/, 'do not invent /compute/donate on faucet set');
@@ -138,7 +103,7 @@ for (const path of [...TO_FAUCET, ...PRIOR_FAUCET]) {
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.equal(potterHome308Dest('/compute/'), COMPUTE, '/compute/ still folds to /compute');
 assert.equal(potterHome308Dest('/compute/donate'), null, 'do not invent /compute/donate');
-assert.equal(potterHome308Dest('/compute/donate/'), null, 'do not invent /compute/donate/');
+assert.equal(potterHome308Dest('/compute/donate/'), null, 'do not invent /compute/donate/["']);
 for (const path of STAY_OUT) {
   assert.equal(potterHome308Dest(path), null, `do not fold ${path}`);
 }

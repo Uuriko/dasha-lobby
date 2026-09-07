@@ -115,10 +115,10 @@ assert.equal(potterHome308Dest('/privacy'), null);
 assert.equal(potterHome308Dest('/privacy/'), null);
 assert.equal(potterHome308Response(new Request('https://www.getdasha.com/privacy'), new URL('https://www.getdasha.com/privacy')), null);
 for (const path of ['/studio', '/verse', '/learn', '/graph', '/index.html']) {
-  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/', path);
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/["'], path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
   assert.equal(res.status, 308, path);
-  assert.equal(res.headers.get('location'), 'https://www.getdasha.com/', path);
+  assert.equal(res.headers.get('location'), 'https://www.getdasha.com/["'], path);
 }
 for (const path of ['/dasha', '/desk']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/how-to-buy', path);
@@ -228,7 +228,7 @@ for (const path of ['/openai', '/openai-api', '/v1', '/resend', '/email', '/heal
   assert.equal(potterHome308Dest(path), null, path);
 }
 for (const path of ['/tokens', '/Tokens', '/token', '/mint']) {
-  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/', path);
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/["'], path);
 }
 for (const path of ['/birdeye', '/Birdeye', '/cmc', '/coingecko', '/coinmarketcap']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/listings', path);
@@ -332,7 +332,7 @@ const env = { LOBBY: mockLobby, ALLOWED_ORIGINS: 'https://www.getdasha.com,https
 for (const path of ['/studio', '/verse', '/learn', '/graph']) {
   const res = await edgeWorker.fetch(new Request(`https://www.getdasha.com${path}`), {});
   assert.equal(res.status, 308, `${path} 308 not 404`);
-  assert.equal(res.headers.get('location'), 'https://www.getdasha.com/', path);
+  assert.equal(res.headers.get('location'), 'https://www.getdasha.com/["'], path);
 }
 
 for (const path of ['/dasha', '/desk']) {

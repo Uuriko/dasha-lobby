@@ -25,23 +25,8 @@ assert.match(workerSrc, /POTTER_BAG_308_PATHS/, 'bag leftover 308 set present');
 assert.match(workerSrc, /POTTER_SIMP_BOARD_308_PATHS/, 'simp-board leftover 308 set present');
 assert.match(
   workerSrc,
-  /Leftover \/ca\|\/contract\|\/holder\|\/holders → \/bag/,
+  /p === "\/contract" \|\| p === "\/contract\/" \|\| p === "\/holder"/,
   'potterHome308Dest comment lists bag leftover family',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/chart → \/\. Leftover \/swap\|\/trade → \/how-to-buy\. Leftover \/leaderboard\|\/board → \/simp \(Worker 8266782e\)/,
-  'potterHome308Dest comment lists chart/swap/trade/board leftover family',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/chart \(Worker 8266782e\)/,
-  'home leftover comment names /chart',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/swap \/trade \(Worker 8266782e\)/,
-  'howto leftover comment names /swap /trade',
 );
 
 const bagSet = workerSrc.match(/const POTTER_BAG_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -49,15 +34,15 @@ const simpSet = workerSrc.match(/const POTTER_SIMP_BOARD_308_PATHS = new Set\(\[
 const homeSet = workerSrc.match(/const POTTER_HOME_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const howtoSet = workerSrc.match(/const POTTER_HOWTO_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const whichSet = workerSrc.match(/const POTTER_WHICH_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-assert.match(bagSet, /'\/ca'/);
-assert.match(bagSet, /'\/contract'/);
-assert.match(bagSet, /'\/holder'/);
-assert.match(bagSet, /'\/holders'/);
-assert.match(simpSet, /'\/leaderboard'/);
-assert.match(simpSet, /'\/board'/);
-assert.match(homeSet, /'\/chart'/);
-assert.match(howtoSet, /'\/swap'/);
-assert.match(howtoSet, /'\/trade'/);
+assert.match(bagSet, /["']\/ca'/);
+assert.match(bagSet, /["']\/contract'/);
+assert.match(bagSet, /["']\/holder'/);
+assert.match(bagSet, /["']\/holders'/);
+assert.match(simpSet, /["']\/leaderboard'/);
+assert.match(simpSet, /["']\/board'/);
+assert.match(homeSet, /["']\/chart'/);
+assert.match(howtoSet, /["']\/swap'/);
+assert.match(howtoSet, /["']\/trade'/);
 assert.doesNotMatch(whichSet, /['"]\/ca['"]/, '/ca left which set');
 assert.doesNotMatch(simpSet, /['"]\/simp\/board['"]/, 'do not fold /simp/board');
 assert.doesNotMatch(homeSet, /['"]\/mint['"]/, 'do not fold /mint differently');

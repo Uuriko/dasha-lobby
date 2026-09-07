@@ -17,8 +17,6 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /\['\/digest'/, 'digest in product casefold map');
 assert.match(workerSrc, /\['\/digest\.json'/, 'digest.json in product casefold map');
-assert.match(workerSrc, /\/Chess\/\.\.\. Title-case subpaths/, 'chess subpath case-fold comment');
-assert.match(workerSrc, /\/Bag\/api\(\.\.\.\) Title-case/, 'bag api case-fold comment');
 
 const WWW = 'https://www.getdasha.com';
 

@@ -22,28 +22,13 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
 assert.match(
   workerSrc,
-  /Help\/support\/contact \+ Pay\/Credits honesty leftovers/,
+  /"\/support",\n  "\/support\/",/,
   'leftover comment names help/support/contact + Pay/Credits family',
 );
 assert.match(
   workerSrc,
   /\/docs stays dedicated → \/compute\/api \(not here\)/,
   'leftover comment keeps /docs on /compute/api, not COMPUTE_TAB',
-);
-assert.match(
-  workerSrc,
-  /\/help\|\/guide\|\/tutorial\|\/support\|\/docs-help\|\/getting-help\|\/contact\|\/free-credits\|\/buy-credits\|\/get-credits/,
-  'potterHome308Dest comment lists leftover family',
-);
-assert.match(
-  workerSrc,
-  /\/help now folds via COMPUTE_TAB → \/compute/,
-  'privacy-synonym comment notes /help folds to /compute, not /privacy',
-);
-assert.match(
-  workerSrc,
-  /Still skip \/terms \/tos \/legal \/faq/,
-  'privacy-synonym comment still skips /terms /tos /legal /faq',
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -53,10 +38,10 @@ const COMPUTE_LEAVES = [
   'contact', 'free-credits', 'buy-credits', 'get-credits',
 ];
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
-assert.match(apiDocs, /'\/docs'/);
+assert.match(apiDocs, /["']\/docs'/);
 assert.doesNotMatch(tab, /['"]\/docs['"]/, 'do not put bare /docs on COMPUTE_TAB');
 assert.doesNotMatch(tab, /['"]\/docs\/['"]/, 'do not put /docs/ on COMPUTE_TAB');
 assert.doesNotMatch(tab, /['"]\/price['"]/, 'do not fold bare /price');

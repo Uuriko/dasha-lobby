@@ -15,9 +15,9 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /Compute\/api\(\.\.\.\) Title-case/, 'compute api case-fold comment');
-assert.match(workerSrc, /job_\/mac_ ids are base64url/, 'api remainder case kept');
-assert.match(workerSrc, /Faucet\/fills\(\+sig\)/, 'fills case-fold comment');
+assert.match(workerSrc, /if \(p === "\/compute\/api" \|\| p === "\/compute\/api\/"\)/, 'compute api case-fold comment');
+assert.match(workerSrc, /p\.startsWith\("\/compute\/api\/"\)/, 'api remainder case kept');
+assert.match(workerSrc, /p\.startsWith\("\/faucet\/fills\/"\)/, 'fills case-fold comment');
 assert.match(workerSrc, /POTTER_FAUCET_LEAF_CASEFOLD/, 'faucet leaf casefold set');
 assert.doesNotMatch(workerSrc, /POTTER_FAUCET_LEAF_CASEFOLD[\s\S]*\/faucet\/jar/, 'do not invent /faucet/jar');
 

@@ -90,7 +90,7 @@ function keepLiveChrome(src, label) {
   assert.match(src, /id=['"]tournament-name['"]/, `${label} #tournament-name stays`);
   assert.match(src, /function tournamentAction\(/, `${label} tournamentAction stays`);
   assert.match(src, /tournamentAction\('create'/, `${label} tournamentAction create stays`);
-  assert.match(src, /post\('\/chess\/tournaments',\{name:name\}\)/, `${label} create POST stays`);
+  assert.match(src, /post\(["']\/chess\/tournaments',\{name:name\}\)/, `${label} create POST stays`);
   assert.match(src, /function tournamentSubmit\(/, `${label} tournamentSubmit stays`);
   assert.match(src, /function tournamentClick\(/, `${label} tournamentClick stays`);
   assert.match(src, /function shareChallenge\(/, `${label} shareChallenge stays`);
@@ -144,9 +144,9 @@ footer.dasha-foot{padding:1.25rem 0;background:#070608}
 </body></html>`;
 
 assert.match(LIVE, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "fixture leftover non-create Promise.resolve recover paints");
-assert.match(LIVE, /post\('\/chess\/tournaments',\{name:name\}\)/, "fixture create POST stays");
+assert.match(LIVE, /post\(["']\/chess\/tournaments',\{name:name\}\)/, "fixture create POST stays");
 assert.doesNotMatch(LIVE, /tournamentAction\(action\)/, "fixture leftover tournamentAction(action) fallthrough already dropped");
-assert.doesNotMatch(LIVE, /post\('\/chess\/tournament\/'\+tournament\.id,\{action:action\}\)/, "fixture leftover generic POST tail already dropped");
+assert.doesNotMatch(LIVE, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "fixture leftover generic POST tail already dropped");
 assert.doesNotMatch(LIVE, /tournamentButton\('Start','start'/, "fixture Start essay button already dropped");
 assert.doesNotMatch(LIVE, /tournamentButton\('Share','share'\)/, "fixture Share essay button already dropped");
 assert.doesNotMatch(LIVE, /\bshareTournament\b/, "fixture shareTournament already dropped");
@@ -165,7 +165,7 @@ assert.equal(stripChessLeftoverTournamentActionRecoverJs(essayGone), essayGone, 
 
 const tailGone = stripChessLeftoverTournamentActionTailJs(essayGone);
 assert.doesNotMatch(tailGone, /tournamentAction\(action\)/, "action tail leftover drops tournamentAction(action) fallthrough");
-assert.doesNotMatch(tailGone, /post\('\/chess\/tournament\/'\+tournament\.id,\{action:action\}\)/, "action tail leftover drops generic POST");
+assert.doesNotMatch(tailGone, /post\(["']\/chess\/tournament\/["']\+tournament\.id,\{action:action\}\)/, "action tail leftover drops generic POST");
 assert.match(tailGone, /var recover=action==='create'\?loadTournaments\(\):Promise\.resolve\(\);/, "action tail leftover keeps leftover non-create recover");
 
 const gone = stripChessLeftoverTournamentActionRecoverJs(LIVE);

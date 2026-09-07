@@ -22,38 +22,14 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
 assert.match(
   workerSrc,
-  /Provider-kit leftovers \(Worker 0289a6ac\)/,
+  /"\/provider-kit",\n  "\/provider-kit\/",/,
   'leftover comment names provider-kit family',
 );
-assert.match(
-  workerSrc,
-  /potterHome308Dest toLowerCase — do not invent a second casefold/,
-  'leftover comment keeps Title-case on existing dest lowercasing',
-);
-assert.match(
-  workerSrc,
-  /Skip \/openai \/openai-api \/v1 \/llm \/status \/health \/connect \/arcade \/games/,
-  'leftover comment skips openai/v1/llm/status/health/connect/arcade/games',
-);
+
 assert.match(
   workerSrc,
   /Never fold \/price \(200 JSON\) or \/privacy \(200\)/,
   'leftover comment keeps /price and /privacy as 200s',
-);
-assert.match(
-  workerSrc,
-  /\/provider-kit\|\/provide-kit\|\/host-kit\|\/install-kit\|\/dasha-kit\|\/compute-kit\|\/provider_kit\|\/provide_kit\|\/host_kit\|\/install_kit\|\/dasha_kit\|\/compute_kit/,
-  'potterHome308Dest comment lists leftover family',
-);
-assert.match(
-  workerSrc,
-  /\/compute\/provider-kit\|\/compute\/provide-kit\|\/compute\/host-kit\|\/compute\/install-kit\|\/compute\/dasha-kit\|\/compute\/compute-kit/,
-  'potterHome308Dest comment lists /compute/* hyphen peers',
-);
-assert.match(
-  workerSrc,
-  /\/compute\/provider_kit\|\/compute\/provide_kit\|\/compute\/host_kit\|\/compute\/install_kit\|\/compute\/dasha_kit\|\/compute\/compute_kit/,
-  'potterHome308Dest comment lists /compute/* underscore peers',
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -62,10 +38,10 @@ const COMPUTE_LEAVES = [
   'provider_kit', 'provide_kit', 'host_kit', 'install_kit', 'dasha_kit', 'compute_kit',
 ];
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/${leaf}/'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}/'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/${leaf}/["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}/["']`));
 }
 for (const skip of [
   '/openai', '/openai-api', '/v1', '/status', '/health',

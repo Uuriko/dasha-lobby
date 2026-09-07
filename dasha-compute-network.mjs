@@ -45,6 +45,7 @@ import {
   sumSettled24h,
 } from './dasha-compute-settled.mjs';
 import { X402_BILLING_DOCS, x402BillingDocsLine } from './dasha-compute-x402.mjs';
+export { X402_BILLING_DOCS, x402BillingDocsLine };
 
 export { HOSTED_ASK_PRICE_CENTS };
 
@@ -395,7 +396,7 @@ function tokenUsage(input) {
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
 }
 
-function normalizeStreamProviderError(raw) {
+export function normalizeStreamProviderError(raw) {
   const msg = String(raw || '').trim().slice(0, 300);
   if (!msg) return '';
   if (/^provider inference failed:/i.test(msg) || /^provider cut$/i.test(msg) || /^empty completion$/i.test(msg)) return msg;
@@ -406,7 +407,7 @@ function normalizeStreamProviderError(raw) {
   return msg;
 }
 
-function isProviderStreamCutError(msg) {
+export function isProviderStreamCutError(msg) {
   return /provider inference failed|provider cut|empty completion|stream ended before completion|URLError/i.test(String(msg || ''));
 }
 
@@ -418,7 +419,7 @@ export function publicJobSettle(job) {
   return { cents, state };
 }
 
-function measuredTokPerSecForModel(providers, model, now = Date.now()) {
+export function measuredTokPerSecForModel(providers, model, now = Date.now()) {
   const id = String(model || '').trim();
   if (!id || !Array.isArray(providers)) return null;
   const serving = providers.filter((provider) => providerServesModel(provider, id, now));

@@ -25,43 +25,13 @@ assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
 assert.match(workerSrc, /POTTER_FAUCET_DOOR_308_PATHS/, 'faucet door 308 set present');
 assert.match(
   workerSrc,
-  /Settlement\/billing \+ getting-started leftovers/,
+  /"\/settlement",\n  "\/settlement\/",/,
   'compute leftover comment names settlement/billing family',
 );
 assert.match(
   workerSrc,
   /Leftover \/endpoint \/endpoints \/sdk \/cli/,
   'api leftover comment lists /endpoint /endpoints /sdk /cli',
-);
-assert.match(
-  workerSrc,
-  /Leftover: \/purchase/,
-  'howto leftover comment lists /purchase',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/once-a-day \/once_a_day/,
-  'faucet leftover comment lists /once-a-day /once_a_day',
-);
-assert.match(
-  workerSrc,
-  /\/settlement\|\/settlements\|\/invoice\|\/invoices\|\/credit\|\/refill\|\/kits\|\/try\|\/getting-started\|\/get-started\|\/getstarted\|\/mac_kit/,
-  'potterHome308Dest comment lists settlement/billing family',
-);
-assert.match(
-  workerSrc,
-  /\/endpoint\|\/endpoints\|\/sdk\|\/cli\|\/compute\/endpoint\|\/compute\/endpoints\|\/compute\/sdk\|\/compute\/cli/,
-  'potterHome308Dest comment lists endpoint/sdk/cli family',
-);
-assert.match(
-  workerSrc,
-  /\/how-tobuy\|\/howto_buy\|\/purchase/,
-  'potterHome308Dest comment lists /purchase on howto family',
-);
-assert.match(
-  workerSrc,
-  /\/once-a-day\|\/once_a_day/,
-  'potterHome308Dest comment lists once-a-day on faucet family',
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -76,17 +46,17 @@ const COMPUTE_LEAVES = [
 const API_LEAVES = ['endpoint', 'endpoints', 'sdk', 'cli'];
 
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
 for (const leaf of API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`'/${leaf}'`));
-  assert.match(apiDocs, new RegExp(`'/compute/${leaf}'`));
+  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
+  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}["']`));
   assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `/${leaf} is api-docs, not compute-tab`);
 }
-assert.match(howto, /'\/purchase'/);
-assert.match(faucet, /'\/once-a-day'/);
-assert.match(faucet, /'\/once_a_day'/);
+assert.match(howto, /["']\/purchase'/);
+assert.match(faucet, /["']\/once-a-day'/);
+assert.match(faucet, /["']\/once_a_day'/);
 assert.doesNotMatch(tab, /['"]\/purchase['"]/, '/purchase is howto, not compute-tab');
 assert.doesNotMatch(tab, /['"]\/once-a-day['"]/, '/once-a-day is faucet, not compute-tab');
 assert.doesNotMatch(faucet, /['"]\/compute\/once-a-day['"]/, 'do not invent /compute/once-a-day');

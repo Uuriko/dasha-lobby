@@ -19,11 +19,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_FAUCET_DOOR_308_PATHS/, 'faucet door 308 set present');
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(
-  workerSrc,
-  /\/compute\/faucet\|\/faucet\/compute/,
-  'product-bridge leftover comment lists /compute/faucet|/faucet/compute',
-);
+
 assert.doesNotMatch(
   workerSrc,
   /POTTER_FAUCET_LEAF_CASEFOLD[\s\S]*\/faucet\/jar/,

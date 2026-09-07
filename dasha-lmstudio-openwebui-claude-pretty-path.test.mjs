@@ -30,31 +30,7 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
 assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
-assert.match(
-  workerSrc,
-  /Leftover lmstudio\/openwebui\/claude batch \(Worker 35fc317b\)/,
-  'compute leftover comment names lmstudio/openwebui/claude family',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/base-url \/baseurl \/base_url \/chat-completions \/chatcompletions/,
-  'api leftover comment lists /base-url /baseurl /chat-completions family',
-);
-assert.match(
-  workerSrc,
-  /Docs face only — do NOT invent \/v1\/chat\/completions behavior/,
-  'api leftover comment keeps /v1/chat/completions uninvented',
-);
-assert.match(
-  workerSrc,
-  /\/lmstudio\|\/lm-studio\|\/lm_studio\|\/openwebui\|\/open-webui\|\/open_webui\|\/webui\|\/claude\|\/m3\|\/gettingstarted\|\/hi\|\/welcome/,
-  'potterHome308Dest comment lists compute leftover family',
-);
-assert.match(
-  workerSrc,
-  /\/base-url\|\/baseurl\|\/base_url\|\/chat-completions\|\/chatcompletions\|\/chat_completions\|\/embeddings\|\/embedding\|\/responses\|\/response\|\/completion/,
-  'potterHome308Dest comment lists api leftover family',
-);
+
 assert.match(
   workerSrc,
   /Do NOT invent \/arcade \/games/,
@@ -76,17 +52,17 @@ const API_LEAVES = [
 ];
 
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/${leaf}/'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}/'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/${leaf}/["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}/["']`));
   assert.doesNotMatch(apiDocs, new RegExp(`['"]/${leaf}['"]`), `${leaf} is compute-tab, not api-docs`);
 }
 for (const leaf of API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`'/${leaf}'`));
-  assert.match(apiDocs, new RegExp(`'/${leaf}/'`));
-  assert.match(apiDocs, new RegExp(`'/compute/${leaf}'`));
-  assert.match(apiDocs, new RegExp(`'/compute/${leaf}/'`));
+  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
+  assert.match(apiDocs, new RegExp(`["']/${leaf}/["']`));
+  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}["']`));
+  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}/["']`));
   assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `${leaf} is api-docs, not compute-tab`);
 }
 

@@ -47,12 +47,12 @@ const COMPUTE_TAB_LEAVES = [
   'early-access', 'earlyaccess',
 ];
 for (const leaf of APEX_LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/${leaf}/'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/${leaf}/["']`));
 }
 for (const leaf of COMPUTE_TAB_LEAVES) {
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}/'`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}/["']`));
 }
 for (const skip of ['/compute/factory', '/llms', '/arcade', '/price']) {
   assert.doesNotMatch(tab, new RegExp(`['"]${skip}['"]`), `${skip} stays out of compute-tab set`);

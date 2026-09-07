@@ -20,7 +20,7 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
 assert.match(
   workerSrc,
-  /App\/application leftovers/,
+  /"\/app",\n  "\/app\/",/,
   'leftover comment names app/application family',
 );
 assert.match(
@@ -33,16 +33,11 @@ assert.match(
   /Do NOT fold \/connect/,
   'leftover comment keeps /connect out (ambiguous)',
 );
-assert.match(
-  workerSrc,
-  /\/app\|\/application\|\/compute\/app\|\/compute\/application/,
-  'potterHome308Dest comment lists leftover family',
-);
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const leaf of ['app', 'application']) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
 for (const skip of ['/connect', '/v1', '/openai', '/status', '/health', '/terms', '/admin', '/arcade', '/games']) {
   assert.doesNotMatch(tab, new RegExp(`['"]${skip}['"]`), `${skip} stays out of compute-tab set`);

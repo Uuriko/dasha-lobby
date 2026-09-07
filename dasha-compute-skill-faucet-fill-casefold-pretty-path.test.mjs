@@ -15,9 +15,9 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /compute\/skill\/\*\.md disk names are PROVIDE\.md/, 'skill case-fold comment');
-assert.match(workerSrc, /Faucet\/fill\(\+sig\) Title-case/, 'faucet fill case-fold comment');
-assert.match(workerSrc, /Keep sig case \(base58\)/, 'fill sig case preserved');
+assert.match(workerSrc, /skillMdSlash = p\.match/, 'skill case-fold comment');
+assert.match(workerSrc, /p === "\/faucet\/fill" \|\| p === "\/faucet\/fill\/"/, 'faucet fill case-fold comment');
+assert.match(workerSrc, /prefix \+ raw\.slice\(m\[0\]\.length\)/, 'fill sig case preserved');
 
 const WWW = 'https://www.getdasha.com';
 

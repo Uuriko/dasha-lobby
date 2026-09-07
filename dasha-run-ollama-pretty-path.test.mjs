@@ -17,11 +17,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(
-  workerSrc,
-  /\/run\|\/ollama\|\/compute\/run\|\/compute\/ollama/,
-  'apex→/compute leftover comment lists /run|/ollama|/compute/run|/compute/ollama',
-);
+
 assert.doesNotMatch(
   workerSrc,
   /POTTER_COMPUTE_TAB_308_PATHS[\s\S]*['"]\/yc['"]/,

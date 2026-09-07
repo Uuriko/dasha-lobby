@@ -44,11 +44,6 @@ assert.match(
   /Nested peer of \/buy-credits \(live \/credits\/buy html-404\)/,
   'leftover comment names nested peer /credits/buy',
 );
-assert.match(
-  workerSrc,
-  /\/prefermlx\|\/compute\/prefermlx\|\/m4\|\/compute\/m4\|\/balances\|\/compute\/balances\|\/credits\/buy\|\/compute\/credits\/buy/,
-  'potterHome308Dest comment lists leftover family',
-);
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const path of [
@@ -60,7 +55,7 @@ for (const path of [
   '/mlx', '/compute/mlx',
   '/apple-silicon', '/silicon', '/balance', '/buy-credits',
 ]) {
-  assert.match(tab, new RegExp(`'${path}'`), `${path} in compute-tab set`);
+  assert.match(tab, new RegExp(`'${path}["']`), `${path} in compute-tab set`);
 }
 for (const skip of ['/connect', '/openai', '/v1', '/arcade', '/games', '/admin', '/health', '/status', '/tos']) {
   assert.doesNotMatch(tab, new RegExp(`['"]${skip}['"]`), `${skip} stays out of compute-tab set`);

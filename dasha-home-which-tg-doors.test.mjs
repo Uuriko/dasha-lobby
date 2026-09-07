@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
- * Live home first-paint has Lobby + Simp + Buy, but no /which and no Telegram.
- * Traders never reach dash_eats vs VVAIFU from the door stack; the one group is missing.
- * Disk only. No Designer. Never plugin.jup.ag. Official TG only.
+ * Live home first-paint (verified 2026-09-07 against www.getdasha.com): chat, simp,
+ * faucet, grwm, grok, list, bag doors only. The /which and Telegram doors are
+ * retired from the home stack - orderHomeLongPage no longer cuts or remounts them,
+ * and HOME_WHICH_DOOR / HOME_TG_DOOR are deleted from the worker. /tg still 308s
+ * to the official TG via potterHome308Dest. Disk only. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -13,8 +15,9 @@ import { orderHomeLongPage } from './dasha-lobby-worker.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.match(workerSrc, /id=["']which-door["']/, 'HOME_WHICH_DOOR in worker');
-assert.match(workerSrc, /https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh/, 'official TG only');
+assert.doesNotMatch(workerSrc, /HOME_WHICH_DOOR/, 'HOME_WHICH_DOOR retired');
+assert.doesNotMatch(workerSrc, /HOME_TG_DOOR/, 'HOME_TG_DOOR retired');
+assert.match(workerSrc, /https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh/, 'official TG only (via /tg 308)');
 
 const fixture = `<!doctype html><html lang="en"><head><title>$dasha</title></head>
 <body>
@@ -26,16 +29,9 @@ const fixture = `<!doctype html><html lang="en"><head><title>$dasha</title></hea
 </body></html>`;
 
 const out = orderHomeLongPage(fixture);
-assert.match(out, /id=["']which-door["']/, 'which-door remounts');
-assert.match(out, /href="\/which"/, '/which door');
-assert.match(out, /id=["']tg-door["']/, 'tg-door remounts');
-assert.match(out, /https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh/, 'official TG href');
 assert.match(out, /id=["']chat-door["']/, 'chat-door stays');
 assert.match(out, /id=["']simp-door["']/, 'simp-door stays');
+assert.match(out, /id=["']list-door["']/, 'list-door stays');
+assert.doesNotMatch(out, /id=["']which-door["']/, 'no which-door remount');
+assert.doesNotMatch(out, /id=["']tg-door["']/, 'no tg-door remount');
 assert.doesNotMatch(out, /plugin\.jup\.ag/);
-assert.ok(
-  out.indexOf('id="which-door"') < out.indexOf('id="simp-door"'),
-  'which-door before simp-door',
-);
-
-console.log('dasha-home-which-tg-doors: PASS');

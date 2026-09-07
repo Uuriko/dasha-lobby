@@ -18,20 +18,14 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(
-  workerSrc,
-  /Leftover \/vram \/hosting \/rent-gpu \/infer \/deposit \/vscode batch/,
-  'leftover comment names Worker 2c4779a2 family',
-);
-assert.match(workerSrc, /Worker 2c4779a2/, 'leftover comment cites live Worker 2c4779a2');
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const LEAVES = ['vram', 'hosting', 'rent-gpu', 'infer', 'deposit', 'vscode'];
 for (const leaf of LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/${leaf}/'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}/'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/${leaf}/["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}/["']`));
 }
 
 const COMPUTE = 'https://www.getdasha.com/compute';

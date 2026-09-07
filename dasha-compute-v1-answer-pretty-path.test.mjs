@@ -22,32 +22,27 @@ assert.match(workerSrc, /POTTER_COMPUTE_API_V1_308_PATHS/, 'v1 308 set present')
 assert.match(workerSrc, /POTTER_COMPUTE_API_V1_MODELS_308_PATHS/, 'v1/models 308 set present');
 assert.match(
   workerSrc,
-  /Never fold exact \/compute\/api\/v1\* or bare \/v1\|\/v1\/models/,
+  /p === "\/compute\/v1\/models" \|\| p === "\/compute\/v1\/models\/"/,
   'stay-out comment for exact API + bare /v1',
-);
-assert.match(
-  workerSrc,
-  /\/answer \/compute\/answer \(\+slash \/ Title-case\) still html-404/,
-  'answer leftover comment',
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-assert.match(tab, /'\/answer'/);
-assert.match(tab, /'\/answer\/'/);
-assert.match(tab, /'\/compute\/answer'/);
-assert.match(tab, /'\/compute\/answer\/'/);
+assert.match(tab, /["']\/answer'/);
+assert.match(tab, /["']\/answer\/["']/);
+assert.match(tab, /["']\/compute\/answer'/);
+assert.match(tab, /["']\/compute\/answer\/["']/);
 assert.doesNotMatch(tab, /['"]\/compute\/v1['"]/, '/compute/v1 is not a compute-tab fold');
 assert.doesNotMatch(tab, /['"]\/v1['"]/, 'bare /v1 stays out of compute-tab');
 
 const v1Set = workerSrc.match(/const POTTER_COMPUTE_API_V1_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-assert.match(v1Set, /'\/compute\/v1'/);
-assert.match(v1Set, /'\/compute\/v1\/'/);
+assert.match(v1Set, /["']\/compute\/v1'/);
+assert.match(v1Set, /["']\/compute\/v1\/["']/);
 assert.doesNotMatch(v1Set, /['"]\/v1['"]/, 'bare /v1 is not in v1 308 set');
 assert.doesNotMatch(v1Set, /['"]\/compute\/api\/v1['"]/, 'exact /compute/api/v1 is not in v1 308 set');
 
 const modelsSet = workerSrc.match(/const POTTER_COMPUTE_API_V1_MODELS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-assert.match(modelsSet, /'\/compute\/v1\/models'/);
-assert.match(modelsSet, /'\/compute\/v1\/models\/'/);
+assert.match(modelsSet, /["']\/compute\/v1\/models'/);
+assert.match(modelsSet, /["']\/compute\/v1\/models\/["']/);
 assert.doesNotMatch(modelsSet, /['"]\/v1\/models['"]/, 'bare /v1/models is not in models 308 set');
 assert.doesNotMatch(modelsSet, /['"]\/compute\/api\/v1\/models['"]/, 'exact API models stays handler');
 

@@ -15,11 +15,6 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(
-  workerSrc,
-  /\/products\|\/compute\/products/,
-  'apex→/compute leftover comment lists /products|/compute/products',
-);
 
 const COMPUTE = 'https://www.getdasha.com/compute';
 

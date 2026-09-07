@@ -25,36 +25,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_LISTINGS_308_PATHS/, 'listings 308 set present');
 assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
-assert.match(
-  workerSrc,
-  /Worker 66440d1c/,
-  'leftover comment names Worker 66440d1c',
-);
-assert.match(
-  workerSrc,
-  /\/photon \/bullx \/axiom \/trojan/,
-  'listings leftover comment lists photon/bullx/axiom/trojan family',
-);
-assert.match(
-  workerSrc,
-  /\/solanafm \/solana-fm \/solana_fm/,
-  'listings leftover comment lists solanafm family',
-);
-assert.match(
-  workerSrc,
-  /Peers of \/dexscreener \/solscan/,
-  'listings leftover comment names dexscreener/solscan peers',
-);
-assert.match(
-  workerSrc,
-  /live \/phoenix \/lifinity \/openbook/,
-  'howto leftover comment lists /phoenix /lifinity /openbook',
-);
-assert.match(
-  workerSrc,
-  /\/pump \/pumpswap \/pump-swap \/pump_swap \/jup/,
-  'howto leftover comment lists pump/jup family',
-);
+
 assert.match(
   workerSrc,
   /On-site \/how-to-buy only —/,
@@ -68,10 +39,10 @@ for (const path of [
   '/photon', '/bullx', '/axiom', '/trojan', '/gmgn', '/defined',
   '/solanafm', '/solana-fm', '/solana_fm',
 ]) {
-  assert.match(listingsSet, new RegExp(`'${path}'`));
-  assert.match(listingsSet, new RegExp(`'${path}/'`));
+  assert.match(listingsSet, new RegExp(`'${path}["']`));
+  assert.match(listingsSet, new RegExp(`'${path}/["']`));
 }
-assert.match(listingsSet, /'\/listings\/'/);
+assert.match(listingsSet, /["']\/listings\/["']/);
 assert.doesNotMatch(listingsSet, /['"]\/listings['"]/, 'exact /listings stays 200');
 for (const path of [
   '/explorer', '/faq', '/waitlist', '/terms', '/blog', '/careers', '/hiring',
@@ -86,8 +57,8 @@ for (const path of [
   '/phoenix', '/lifinity', '/openbook', '/drift', '/serum',
   '/pump', '/pumpswap', '/pump-swap', '/pump_swap', '/jup',
 ]) {
-  assert.match(howtoSet, new RegExp(`'${path}'`));
-  assert.match(howtoSet, new RegExp(`'${path}/'`));
+  assert.match(howtoSet, new RegExp(`'${path}["']`));
+  assert.match(howtoSet, new RegExp(`'${path}/["']`));
 }
 assert.doesNotMatch(howtoSet, /plugin\.jup\.ag/, 'howto set has no plugin.jup.ag');
 

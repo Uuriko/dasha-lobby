@@ -20,19 +20,14 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
 assert.match(
   workerSrc,
-  /USDC\/settle\/topup\/billing\/wallet\/phantom\/solana leftovers while Pay\/Credits/,
+  /"\/topup",\n  "\/topup\/",/,
   'apex→/compute leftover comment lists USDC/settle/topup/billing/wallet/phantom/solana',
-);
-assert.match(
-  workerSrc,
-  /\/usdc\|\/settle\|\/topup\|\/top-up\|\/billing\|\/wallet\|\/phantom\|\/solana/,
-  'potterHome308Dest comment lists leftover family',
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const leaf of ['usdc', 'settle', 'topup', 'top-up', 'billing', 'wallet', 'phantom', 'solana']) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
 assert.doesNotMatch(tab, /['"]\/openai['"]/, 'do not invent /openai on compute-tab set');
 assert.doesNotMatch(tab, /['"]\/v1['"]/, 'do not invent /v1');

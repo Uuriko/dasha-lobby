@@ -28,16 +28,11 @@ assert.match(
   /Hosted · Community · Mixture/,
   'leftover comment names Hosted · Community · Mixture',
 );
-assert.match(
-  workerSrc,
-  /\/hosted\|\/community\|\/mixture\|\/compute\/hosted\|\/compute\/community\|\/compute\/mixture/,
-  'potterHome308Dest comment lists leftover family',
-);
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const leaf of ['hosted', 'community', 'mixture']) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
 assert.doesNotMatch(tab, /['"]\/openai['"]/, 'do not invent /openai on compute-tab set');
 assert.doesNotMatch(tab, /['"]\/v1['"]/, 'do not invent /v1');

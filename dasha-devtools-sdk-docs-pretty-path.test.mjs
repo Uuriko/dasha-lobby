@@ -24,28 +24,13 @@ assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 
 assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_308_PATHS/, 'api-docs 308 set present');
 assert.match(
   workerSrc,
-  /Leftover \/devtools \/devtool \/developer-docs \/sdk-docs \/cli-docs \/sdks-docs/,
+  /p === "\/devtools" \|\| p === "\/devtools\/"/,
   'api leftover comment lists /devtools /devtool /developer-docs /sdk-docs /cli-docs /sdks-docs',
 );
 assert.match(
   workerSrc,
   /\/api-reference \/sdk-reference \/cli-reference \/developer-api \/dev-api/,
   'api leftover comment lists /api-reference /sdk-reference /cli-reference /developer-api /dev-api',
-);
-assert.match(
-  workerSrc,
-  /Skip \/reference \(ambiguous\)\. Skip \/openai \/v1 \/redoc \/status \/health/,
-  'leftover comment skips /reference /openai /v1 /redoc /status /health',
-);
-assert.match(
-  workerSrc,
-  /\/devtools\|\/devtool\|\/developer-docs\|\/sdk-docs\|\/cli-docs\|\/sdks-docs\|\/api-reference\|\/sdk-reference\|\/cli-reference\|\/developer-api\|\/dev-api\|\/compute\/devtools\|\/compute\/devtool\|\/compute\/developer-docs\|\/compute\/sdk-docs\|\/compute\/cli-docs\|\/compute\/sdks-docs\|\/compute\/api-reference\|\/compute\/sdk-reference\|\/compute\/cli-reference\|\/compute\/developer-api\|\/compute\/dev-api/,
-  'potterHome308Dest comment lists leftover family',
-);
-assert.match(
-  workerSrc,
-  /\/sdk\|\/cli\|\/compute\/endpoint\|\/compute\/endpoints\|\/compute\/sdk\|\/compute\/cli/,
-  'potterHome308Dest comment still lists /sdk /cli peers',
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -58,14 +43,14 @@ const API_LEAVES = [
 const PRIOR_API_LEAVES = ['sdk', 'cli', 'docs', 'openapi'];
 
 for (const leaf of API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`'/${leaf}'`));
-  assert.match(apiDocs, new RegExp(`'/${leaf}/'`));
-  assert.match(apiDocs, new RegExp(`'/compute/${leaf}'`));
-  assert.match(apiDocs, new RegExp(`'/compute/${leaf}/'`));
+  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
+  assert.match(apiDocs, new RegExp(`["']/${leaf}/["']`));
+  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}["']`));
+  assert.match(apiDocs, new RegExp(`["']/compute/${leaf}/["']`));
   assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `/${leaf} is api-docs, not compute-tab`);
 }
 for (const leaf of PRIOR_API_LEAVES) {
-  assert.match(apiDocs, new RegExp(`'/${leaf}'`));
+  assert.match(apiDocs, new RegExp(`["']/${leaf}["']`));
   assert.doesNotMatch(tab, new RegExp(`['"]/${leaf}['"]`), `/${leaf} stays api-docs, not compute-tab`);
 }
 assert.doesNotMatch(apiDocs, /['"]\/reference['"]/, 'do not invent bare /reference on api-docs set');

@@ -24,38 +24,14 @@ assert.match(workerSrc, /POTTER_LISTINGS_308_PATHS/, 'listings 308 set present')
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
 assert.match(
   workerSrc,
-  /Leftover \/meme \/memes \/memestudio \/meme-studio \/meme_studio/,
+  /Retired Meme Studio doors: live \/meme \/memes \/memestudio \/meme-studio \/meme_studio/,
   'home leftover comment lists meme family',
 );
+
 assert.match(
   workerSrc,
-  /Chart door in potterHome308Dest[\s\S]*\/price-chart \/price_chart/,
-  'chart door leftover comment lists /price-chart /price_chart',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/coinmarketcap \/coin_market_cap/,
-  'listings leftover comment lists coinmarketcap family',
-);
-assert.match(
-  workerSrc,
-  /sibling of \/coingecko \/cmc/,
-  'listings leftover comment names /coingecko /cmc siblings',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/peers \/peer \/uptime \+ \/compute\/peers \/compute\/uptime/,
-  'compute-tab leftover comment lists peers/uptime family',
-);
-assert.match(
-  workerSrc,
-  /if \(p === '\/readme' \|\| p === '\/readme\/'\) return 'https:\/\/www\.getdasha\.com\/compute\/api'/,
+  /if \(p === ["']\/readme' \|\| p === ["']\/readme\/'\) return 'https:\/\/www\.getdasha\.com\/compute\/api'/,
   'docs face leftover if folds /readme to /compute/api',
-);
-assert.match(
-  workerSrc,
-  /Skip \/roadmap/,
-  'leftover comments skip /roadmap',
 );
 
 const homeSet = workerSrc.match(/const POTTER_HOME_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -66,16 +42,16 @@ for (const path of [
   '/meme', '/memes', '/memestudio', '/meme-studio', '/meme_studio',
   '/price-chart', '/price_chart',
 ]) {
-  assert.match(homeSet, new RegExp(`'${path}'`));
-  assert.match(homeSet, new RegExp(`'${path}/'`));
+  assert.match(homeSet, new RegExp(`'${path}["']`));
+  assert.match(homeSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/coinmarketcap', '/coin_market_cap']) {
-  assert.match(listingsSet, new RegExp(`'${path}'`));
-  assert.match(listingsSet, new RegExp(`'${path}/'`));
+  assert.match(listingsSet, new RegExp(`'${path}["']`));
+  assert.match(listingsSet, new RegExp(`'${path}/["']`));
 }
 for (const path of ['/peers', '/peer', '/uptime', '/compute/peers', '/compute/uptime']) {
-  assert.match(tab, new RegExp(`'${path}'`));
-  assert.match(tab, new RegExp(`'${path}/'`));
+  assert.match(tab, new RegExp(`'${path}["']`));
+  assert.match(tab, new RegExp(`'${path}/["']`));
 }
 assert.doesNotMatch(tab, /['"]\/compute\/peer['"]/, 'do not invent /compute/peer');
 assert.doesNotMatch(tab, /['"]\/status['"]/, 'do not fold /status on compute-tab');

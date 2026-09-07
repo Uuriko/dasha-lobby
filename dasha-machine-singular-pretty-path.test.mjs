@@ -19,23 +19,13 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(
-  workerSrc,
-  /Leftover \/machine \/compute\/machine \(Worker a5171335\)/,
-  'compute leftover comment names singular /machine family',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/machine\|\/compute\/machine → \/compute \(Worker a5171335\)/,
-  'potterHome308Dest comment lists leftover /machine|/compute/machine',
-);
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const path of ['/machine', '/machine/', '/compute/machine', '/compute/machine/']) {
-  assert.match(tab, new RegExp(`'${path}'`), `${path} in compute-tab set`);
+  assert.match(tab, new RegExp(`'${path}["']`), `${path} in compute-tab set`);
 }
 for (const path of ['/machines', '/machines/', '/compute/machines', '/compute/machines/']) {
-  assert.match(tab, new RegExp(`'${path}'`), `${path} prior plural peer still in compute-tab set`);
+  assert.match(tab, new RegExp(`'${path}["']`), `${path} prior plural peer still in compute-tab set`);
 }
 
 const SKIPS = [

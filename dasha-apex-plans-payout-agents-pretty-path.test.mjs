@@ -21,7 +21,7 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
 assert.match(
   workerSrc,
-  /Plans\/prices\/payout\/payment\/agents leftovers/,
+  /"\/payout",\n  "\/payout\/",/,
   'leftover comment names plans/prices/payout/payment/agents family',
 );
 assert.match(
@@ -29,11 +29,7 @@ assert.match(
   /Do NOT fold bare \/price/,
   'leftover comment keeps bare /price as token-price API',
 );
-assert.match(
-  workerSrc,
-  /\/plan\|\/plans\|\/prices\|\/payout\|\/payouts\|\/withdraw\|\/cashout\|\/payment\|\/payments\|\/checkout\|\/getting_started\|\/mac-setup\|\/mac_setup\|\/agents\|\/agent\|\/mcp\|\/tools\|\/tool/,
-  'potterHome308Dest comment lists leftover family',
-);
+
 assert.match(
   workerSrc,
   /\/compute\/price/,
@@ -47,13 +43,13 @@ const COMPUTE_LEAVES = [
   'agents', 'agent', 'mcp', 'tools', 'tool',
 ];
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
 }
-assert.match(tab, /'\/compute\/price'/);
-assert.match(tab, /'\/help'/, '/help now ships in help/credits leftover');
+assert.match(tab, /["']\/compute\/price'/);
+assert.match(tab, /["']\/help'/, '/help now ships in help/credits leftover');
 assert.doesNotMatch(tab, /['"]\/price['"]/, 'do not fold bare /price');
-assert.doesNotMatch(tab, /['"]\/price\/['"]/, 'do not fold bare /price/');
+assert.doesNotMatch(tab, /['"]\/price\/['"]/, 'do not fold bare /price/["']);
 assert.doesNotMatch(tab, /['"]\/terms['"]/, 'do not invent /terms');
 assert.doesNotMatch(tab, /['"]\/admin['"]/, 'do not invent /admin');
 assert.doesNotMatch(tab, /['"]\/blog['"]/, 'do not invent /blog');

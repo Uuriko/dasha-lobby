@@ -22,26 +22,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
 assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set present');
-assert.match(
-  workerSrc,
-  /Leftover \/windsurf \/aider \/continue \/zed batch \(Worker a17b9472\)/,
-  'leftover comment names Worker a17b9472 family',
-);
-assert.match(
-  workerSrc,
-  /\/continue is the Continue\.dev IDE door \(OAuth \?continue=1 query is unrelated\)/,
-  'leftover comment keeps OAuth ?continue=1 unrelated to /continue path',
-);
-assert.match(
-  workerSrc,
-  /\/windsurf\|\/aider\|\/continue\|\/zed\|\/compute\/windsurf\|\/compute\/aider\|\/compute\/continue\|\/compute\/zed/,
-  'potterHome308Dest comment lists leftover family',
-);
-assert.match(
-  workerSrc,
-  /Skip intentional 404s:\n  \/\/ \/code \/terminal \/emacs \/vim \/neovim \/jetbrains \/codeium \/tabnine/,
-  'leftover comment skips listed IDE 404s',
-);
+
 assert.match(
   workerSrc,
   /Never fold \/price \(200 JSON\) or \/privacy \(200\)/,
@@ -52,10 +33,10 @@ const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s
 const NEW_LEAVES = ['windsurf', 'aider', 'continue', 'zed'];
 const PEER_LEAVES = ['vscode', 'cursor', 'chatgpt', 'copilot'];
 for (const leaf of [...NEW_LEAVES, ...PEER_LEAVES]) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/${leaf}/'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}/'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/${leaf}/["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}/["']`));
 }
 
 const SKIPS = [

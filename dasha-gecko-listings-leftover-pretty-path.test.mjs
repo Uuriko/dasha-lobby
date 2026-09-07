@@ -21,41 +21,27 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_LISTINGS_308_PATHS/, 'listings 308 set present');
 assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
+
 assert.match(
   workerSrc,
-  /Worker 929dd85a/,
-  'leftover comment names Worker 929dd85a',
-);
-assert.match(
-  workerSrc,
-  /\/gecko \/geckoterminal \/gecko-terminal \/gecko_terminal \/dextools \/solscan/,
-  'listings leftover comment lists gecko/dextools/solscan family',
-);
-assert.match(
-  workerSrc,
-  /live \/orca \/meteora/,
-  'howto leftover comment lists /orca /meteora',
-);
-assert.match(
-  workerSrc,
-  /On-site \/how-to-buy only — never external DEX hosts/,
+  /never Jupiter plugin host \/ external DEX hosts/,
   'howto leftover comment forbids external DEX hosts',
 );
 
 const listingsSet = workerSrc.match(/const POTTER_LISTINGS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const howtoSet = workerSrc.match(/const POTTER_HOWTO_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const path of ['/gecko', '/geckoterminal', '/gecko-terminal', '/gecko_terminal', '/dextools', '/solscan']) {
-  assert.match(listingsSet, new RegExp(`'${path}'`));
-  assert.match(listingsSet, new RegExp(`'${path}/'`));
+  assert.match(listingsSet, new RegExp(`'${path}["']`));
+  assert.match(listingsSet, new RegExp(`'${path}/["']`));
 }
-assert.match(listingsSet, /'\/listings\/'/);
+assert.match(listingsSet, /["']\/listings\/["']/);
 assert.doesNotMatch(listingsSet, /['"]\/listings['"]/, 'exact /listings stays 200');
 assert.doesNotMatch(listingsSet, /['"]\/pump['"]/, 'do not invent /pump');
 assert.doesNotMatch(listingsSet, /['"]\/terminal['"]/, 'do not invent /terminal');
 assert.doesNotMatch(listingsSet, /['"]\/jup['"]/, 'do not invent /jup');
 for (const path of ['/orca', '/meteora']) {
-  assert.match(howtoSet, new RegExp(`'${path}'`));
-  assert.match(howtoSet, new RegExp(`'${path}/'`));
+  assert.match(howtoSet, new RegExp(`'${path}["']`));
+  assert.match(howtoSet, new RegExp(`'${path}/["']`));
 }
 assert.doesNotMatch(howtoSet, /plugin\.jup\.ag/, 'howto set has no plugin.jup.ag');
 

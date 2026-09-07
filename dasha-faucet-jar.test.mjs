@@ -79,7 +79,7 @@ assert.match(worker, /function pinFaucetScript/);
 assert.doesNotMatch(worker, /KThkiViv/);
 assert.match(worker, /solLamports/);
 assert.match(worker, /getBalance/);
-assert.match(worker, /path === '\/faucet\/withdraw'/);
+assert.match(worker, /path === ["']\/faucet\/withdraw'/);
 assert.match(worker, /FAUCET_WITHDRAW_DEST/);
 assert.doesNotMatch(worker, /plugin\.jup\.ag/);
 assert.doesNotMatch(FAUCET_CLIENT_JS, /plugin\.jup\.ag/);

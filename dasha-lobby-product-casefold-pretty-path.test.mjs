@@ -16,7 +16,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_PRODUCT_CASEFOLD_DEST/, 'product casefold map');
-assert.match(workerSrc, /Title-case product pages \(\/Faucet \/Compute \/Lobby/, 'product case-fold comment');
+assert.match(workerSrc, /\['\/faucet', 'https:\/\/www\.getdasha\.com\/faucet'\]/, 'product case-fold comment');
 
 const PRODUCTS = [
   ['lobby', 'lobby-page'],

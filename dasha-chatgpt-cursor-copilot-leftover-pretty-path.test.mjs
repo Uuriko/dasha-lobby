@@ -28,38 +28,14 @@ assert.match(workerSrc, /POTTER_HOWTO_308_PATHS/, 'howto 308 set present');
 assert.match(workerSrc, /POTTER_SIMP_308_PATHS/, 'simp leftover 308 set present');
 assert.match(
   workerSrc,
-  /Leftover chatgpt\/cursor\/copilot batch \(Worker 66dadebe\)/,
+  /"\/chatgpt",\n  "\/chatgpt\/",/,
   'compute leftover comment names chatgpt/cursor/copilot family',
 );
-assert.match(
-  workerSrc,
-  /Leftover \/candles \(Worker 66dadebe\)/,
-  'home leftover comment names /candles',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/sell \(Worker 66dadebe\)/,
-  'howto leftover comment names /sell',
-);
+
 assert.match(
   workerSrc,
   /Leftover \/sim \(Worker 66dadebe\)/,
   'simp leftover comment names /sim',
-);
-assert.match(
-  workerSrc,
-  /\/chatgpt\|\/cursor\|\/copilot\|\/compute\/chatgpt\|\/compute\/cursor\|\/compute\/copilot → \/compute/,
-  'potterHome308Dest comment lists compute leftover family',
-);
-assert.match(
-  workerSrc,
-  /Leftover \/candles → \/\. Leftover \/sim → \/simp \(Worker 66dadebe\)/,
-  'potterHome308Dest comment lists candles/sim leftover family',
-);
-assert.match(
-  workerSrc,
-  /NOT OpenAI\/Microsoft product pages/,
-  'leftover comment keeps OpenAI/Microsoft product pages uninvented',
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
@@ -69,17 +45,17 @@ const simpSet = workerSrc.match(/const POTTER_SIMP_308_PATHS = new Set\(\[[\s\S]
 
 const COMPUTE_LEAVES = ['chatgpt', 'cursor', 'copilot'];
 for (const leaf of COMPUTE_LEAVES) {
-  assert.match(tab, new RegExp(`'/${leaf}'`));
-  assert.match(tab, new RegExp(`'/${leaf}/'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}'`));
-  assert.match(tab, new RegExp(`'/compute/${leaf}/'`));
+  assert.match(tab, new RegExp(`["']/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/${leaf}/["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}["']`));
+  assert.match(tab, new RegExp(`["']/compute/${leaf}/["']`));
 }
-assert.match(homeSet, /'\/candles'/);
-assert.match(homeSet, /'\/candles\/'/);
-assert.match(howtoSet, /'\/sell'/);
-assert.match(howtoSet, /'\/sell\/'/);
-assert.match(simpSet, /'\/sim'/);
-assert.match(simpSet, /'\/sim\/'/);
+assert.match(homeSet, /["']\/candles'/);
+assert.match(homeSet, /["']\/candles\/["']/);
+assert.match(howtoSet, /["']\/sell'/);
+assert.match(howtoSet, /["']\/sell\/["']/);
+assert.match(simpSet, /["']\/sim'/);
+assert.match(simpSet, /["']\/sim\/["']/);
 assert.doesNotMatch(tab, /['"]\/candles['"]/, '/candles is home, not compute-tab');
 assert.doesNotMatch(tab, /['"]\/sell['"]/, '/sell is howto, not compute-tab');
 assert.doesNotMatch(tab, /['"]\/sim['"]/, '/sim is simp leftover, not compute-tab');

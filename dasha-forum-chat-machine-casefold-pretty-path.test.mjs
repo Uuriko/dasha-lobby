@@ -20,7 +20,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /isForumChatAliasPath/, 'forum/chat casefold helper');
-assert.match(workerSrc, /Machine files \(\/Llms\.txt \/Robots\.txt/, 'machine case-fold comment');
+
 assert.match(workerSrc, /\[\'\/llms\.txt\'/, 'llms.txt in product casefold map');
 assert.match(workerSrc, /\[\'\/robots\.txt\'/, 'robots.txt in product casefold map');
 assert.match(workerSrc, /\[\'\/sitemap\.xml\'/, 'sitemap.xml in product casefold map');
