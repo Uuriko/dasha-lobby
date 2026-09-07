@@ -35,6 +35,7 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 | `/dasha-crew.tar.gz` | 200 | Worker ASSETS | no | Crew kit. |
 | `/bounties` | 200 | Worker | optional | Quiet. In sitemap. GitHub contribute required. Quiet optional Connect X `#bb-x` → `/oauth/x/start?continue=1` (site-hunt X-connect; `x-connect.js` alone does not count). Leftover `.cta` CSS dropped on the empty inventory after the CTA node was already DOM-stripped — humans still saw the rule in view-source. Funded listings keep `.cta`. Product skip-link stays. Contribute `.cta` stays. |
 | `/which` | 200 | Worker | yes | Quiet leftover identity. dash_eats vs VVAIFU. Share card `Which $dasha? dash_eats` / `dash_eats. Buy $dasha.` No form. Not on first paint. In sitemap. |
+| `/listings` `/listings.json` | 200 | Worker | dest | First-party Dasha List. Exact `/listings` 200 (`x-dasha-edge: listings`). `/listings.json` schema `dasha.listings.v0`. Leftover `/gecko` `/geckoterminal` `/gecko-terminal` `/gecko_terminal` `/dextools` `/solscan` + dest slash `/listings/` 308 here (Worker 929dd85a). Title-case `/Listings` product-casefolds. Sitemap omits leftover 308s. Never plugin.jup.ag. |
 | `/sitemap.xml` `/robots.txt` | 200 | Worker | — | Has `/privacy` `/which` `/crew` `/digest` `/compute` `/bag` `/llms.txt` `/llms-full.txt` `/contribute` `/bounties`. lastmod 2026-08-30 on indexable 200s; `/forum` lastmod 2026-08-25 (308). No `/studio` `/dasha` `/desk` `/login` `/index.html`. No leftover 308s (`/siwg`, `/compute/use` `/provide` `/night` `/build` `/sponsor`). No `lobby?t=`. No retired rooms. `/robots.txt` is rules only (User-agent / Allow / Sitemap + one identity line). Leftover Webflow-SEO / 2026-08-08-outage / 2020-e-commerce lecture comments dropped — crawlers still saw them. |
 | `/llms.txt` `/llms-full.txt` `/ai.txt` | 200 | Worker | yes | |
 | `/oauth/x/start` on www | 308 | Worker | — | → `https://lobby.getdasha.com/oauth/x/start` |
@@ -48,7 +49,8 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 
 | Path | Status | Dest |
 | --- | --- | --- |
-| `/dasha` `/desk` `/howto` `/howtobuy` `/buy` `/purchase` | 308 | `https://www.getdasha.com/how-to-buy` |
+| `/dasha` `/desk` `/howto` `/howtobuy` `/buy` `/purchase` `/orca` `/meteora` | 308 | `https://www.getdasha.com/how-to-buy` |
+| `/gecko` `/geckoterminal` `/gecko-terminal` `/gecko_terminal` `/dextools` `/solscan` `/listings/` | 308 | `https://www.getdasha.com/listings` |
 | `/verify` `/ca` | 308 | `https://www.getdasha.com/which` |
 | `/studio` `/verse` `/learn` `/graph` `/index.html` | 308 | `https://www.getdasha.com/` |
 | `/grok` `/siwg` | 308 | `https://www.getdasha.com/login#grok` |
@@ -82,6 +84,7 @@ Faucet share (`dasha-faucet-share.test.mjs`): `/faucet` OG `Fill the jar` / `Cla
 Sitemap: `/forum` `/privacy` `/bag` `/which` `/crew` `/digest` `/compute` `/contribute` `/bounties`; never `/studio` `/dasha` `/desk` `/login` or `lobby?`. `/compute` and `/crew` are live at the URL, not first-paint.
 Stab: `/chess` API host, www `/chess/me` JSON, `/privacy` 200, `/compute` 200 edge=compute, `/crew` 200 edge=crew, dest-by-path 308s (`/siwg` → login#grok), www `/oauth/x/start` 308 lobby, sitemap no `/dasha`.
 SIWG leftover (`dasha-siwg-compute-leftover.test.mjs`): `/siwg` GET+HEAD 308 `login#grok` (same as `/grok`); compute tab leftovers GET+HEAD 308 `/compute` no hash; `/compute` 200; `/compute/api` JSON; `/compute/api/healthz` 200; sitemap omits leftover 308s; no plugin.jup.ag.
+Gecko/listings leftover (`dasha-gecko-listings-leftover-pretty-path.test.mjs`): `/gecko` `/geckoterminal` `/gecko-terminal` `/gecko_terminal` `/dextools` `/solscan` + dest slash `/listings/` GET+HEAD 308 `/listings`; `/orca` `/meteora` GET+HEAD 308 `/how-to-buy`; Title-case; `/listings` `/listings.json` `/how-to-buy` 200; sitemap omits leftover 308s; no plugin.jup.ag.
 Home tape (`dasha-digest-home.test.mjs`): `#dasha-digest` after `#grwm` / `#grok-door`; first paint has no tape section; HEAD remount `dasha-digest-remount` + `/digest.json` + `pack.tick` row 1 + quiet `/crew` line; `/digest` 200 full list; empty items no-op.
 Live tick (`dasha-digest-tick.test.mjs`): Worker Dexscreener pair/token tick; remount never hits Dexscreener; failed tick keeps seed.
 Canary contract (`dasha-canary-contract.test.mjs`): rollback fixture (home chess-door, privacy 308, dasha/desk dest `/`, graph 404, oauth 404, chess/me HTML, sitemap `/dasha`) fails; ship-src passes. SIWG stays.
