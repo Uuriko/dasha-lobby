@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Leftover pretty path: live /ca /CA html-404 (x-dasha-edge: html-404) while /verify
- * already 308 → /which. Traders search CA and should land dash_eats vs VVAIFU.
+ * Leftover pretty path: /verify (+slash / Title-case) 308 → /which.
+ * /ca moved to /bag on live Worker 8266782e (see dasha-bag-chart-trade-board-pretty-path).
  * Dest-by-path GET+HEAD on www + lobby. Keep /which 200. Sitemap omits leftover 308.
  * Disk only. No Designer. Never plugin.jup.ag.
  */
@@ -17,10 +17,10 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
 
 const WHICH = 'https://www.getdasha.com/which';
+const BAG = 'https://www.getdasha.com/bag';
 const PATHS = [
-  '/ca', '/ca/',
-  '/CA', '/Ca', '/CA/',
   '/verify', '/verify/',
+  '/Verify', '/VERIFY', '/Verify/',
 ];
 
 for (const path of PATHS) {
@@ -28,10 +28,12 @@ for (const path of PATHS) {
 }
 assert.equal(potterHome308Dest('/which'), null, '/which stays 200');
 assert.equal(potterHome308Dest('/auth/grok/verify'), null, 'SIWG verify stays JSON');
+assert.equal(potterHome308Dest('/ca'), BAG, '/ca now folds /bag (Worker 8266782e)');
+assert.equal(potterHome308Dest('/CA'), BAG, '/CA now folds /bag');
 
 const env = {};
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
-  for (const path of ['/ca', '/ca/', '/CA', '/verify']) {
+  for (const path of ['/verify', '/verify/', '/Verify']) {
     for (const method of ['GET', 'HEAD']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
       assert.equal(res.status, 308, `${host} ${path} ${method}`);
@@ -52,4 +54,4 @@ assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/which<\/loc>/);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/ca</);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/verify</);
 
-console.log('dasha-ca-which-pretty-path: PASS (/ca+/verify family 308 /which www+lobby GET+HEAD, /which 200, sitemap omits leftover)');
+console.log('dasha-ca-which-pretty-path: PASS (/verify family 308 /which www+lobby GET+HEAD, /ca now /bag, /which 200, sitemap omits leftover)');
