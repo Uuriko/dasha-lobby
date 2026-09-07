@@ -35,7 +35,8 @@ assert.ok(landing.includes('jup.ag'), 'home surfaces Jupiter');
 assert.ok(!/wrong one|never trust|fakes exist|old coin|not the dev/i.test(landing), 'home keeps coin copy affirmative');
 assert.ok(!/buy-guide|self-custody wallet|Confirm the mint/.test(landing), 'home must not regrow a tutorial wall');
 assert.ok(landing.includes('href="/how-to-buy"') && !landing.includes('href="/rally"'), 'home links the buy guide and keeps retired Rally absent');
-assert.ok(landing.includes('/dasha') && landing.includes('/studio'), 'home loops desk + studio');
+assert.ok(landing.includes('href="/lobby"') && landing.includes('href="/simp"'), 'home loops lobby + simp');
+assert.ok(!landing.includes('href="/dasha"') && !landing.includes('href="/studio"'), 'home keeps retired desk + studio absent');
 assert.ok(!landing.includes('t.me/dashacommunity'));
 assert.ok(!/thesis card|conviction receipt/i.test(landing), 'home stays culture product');
 
@@ -68,7 +69,7 @@ assert.ok(H.BUY.includes(MINT) && /jup\.ag/.test(H.BUY), 'howto buy route lost e
 // desk body links the live buy guide + exact-mint Jupiter handoff
 const body = read('dasha-desk/src/body.html');
 assert.ok(body.includes('/how-to-buy'), 'desk links live How to buy guide');
-assert.ok(/Match this full mint/i.test(body), 'desk mint card pushes full-mint verify');
+assert.ok(/mint against independent explorers/i.test(body), 'desk mint card pushes independent-explorer verify');
 assert.ok(body.includes('jup.ag/swap') && body.includes(MINT), 'desk has Jupiter buy with exact mint');
 
 console.log('Dasha growth gate: PASS (neutral desk + culture home + howto convert)');

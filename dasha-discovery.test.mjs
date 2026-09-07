@@ -213,8 +213,9 @@ if (local) {
      and still be dead. This is the check that says so — recompute the hash, compare it to the pin. */
   for (const route of KILLED_ROUTES) {
     const retired = await get(`${ORIGIN}${route}`, { redirect: 'manual' });
-    check(retired?.status === 308, `${route}: expected 308 home, got HTTP ${retired?.status}`);
-    check((retired?.headers.get('location') || '') === `${ORIGIN}/`,
+    check(retired?.status === 308, `${route}: expected 308, got HTTP ${retired?.status}`);
+    const dest = route === '/dasha' ? `${ORIGIN}/how-to-buy` : `${ORIGIN}/`;
+    check((retired?.headers.get('location') || '') === dest,
       `${route}: 308 location is ${retired?.headers.get('location')}`);
   }
 
