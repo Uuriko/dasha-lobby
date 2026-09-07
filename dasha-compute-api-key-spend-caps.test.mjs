@@ -165,7 +165,7 @@ assert.match(html, /id=["']api-key-limit["']/, 'html #api-key-limit');
 assert.match(html, /Credits · Cap \$5 \/ month/, 'html default cap hint');
 assert.match(html, /limit_cents/, 'html posts limit_cents');
 assert.match(page, /api-key-limit/, 'page #api-key-limit');
-assert.match(page, /Credits · Cap \$5 \/ month/, 'page default cap hint');
+assert.match(page, /Credits (?:·|\\u00b7) Cap \$5 \/ month/, 'page default cap hint');
 assert.match(page, /limit_cents/, 'page posts limit_cents');
 
 console.log('dasha-compute-api-key-spend-caps: PASS');

@@ -130,7 +130,7 @@ function assertAskFirstCore(html, label) {
   // Provide Done → Ask, never gate
   assert.match(
     html,
-    /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{cameFromHow=false;cameFromGate=false;setEngine\(['"]hosted['"],true\)/,
+    /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?cameFromHow=false;cameFromGate=false;setEngine\(['"]hosted['"],true\)/,
     `${label} Provide Done → hosted Ask`
   );
   assert.doesNotMatch(
