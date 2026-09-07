@@ -68,7 +68,7 @@ assert.equal(tickFromDex(null), null);
   assert.equal(pack.items[0].title, fromPairs.title);
   assert.equal(pack.items[0].kind, 'tape');
   assert.ok(pack.items.length >= 2, 'news stays under the tick');
-  assert.notEqual(pack.items[1].kind, 'tape');
+  assert.equal(pack.items[1].href, DEFAULT.items[1].href, 'seed order preserved under the tick (seed row 2 is a tape-kind tweet today)');
 }
 
 {

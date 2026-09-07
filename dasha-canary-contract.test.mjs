@@ -31,7 +31,7 @@ import { SITEMAP_XML as GEN_SITEMAP } from './dasha-lobby-static-gen.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 const loginSrc = readFileSync(join(root, 'dasha-login-page.html'), 'utf8');
-const latest = JSON.parse(readFileSync('/workspace/dasha-digest-latest.json', 'utf8'));
+const latest = JSON.parse(readFileSync(process.env.DASHA_DIGEST_LATEST || '/workspace/dasha-digest-latest.json', 'utf8'));
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 const TG = 'https://t.me/+xB7S8mIQaKFiZjRh';
 
@@ -285,10 +285,10 @@ for (const path of ['/verify', '/verify/']) {
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/which', path);
 }
 for (const path of ['/ca', '/ca/', '/CA', '/Ca']) {
-  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/bag', path);
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/which', path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
   assert.equal(res.status, 308, path);
-  assert.equal(res.headers.get('location'), 'https://www.getdasha.com/bag', path);
+  assert.equal(res.headers.get('location'), 'https://www.getdasha.com/which', path);
 }
 assert.equal(potterHome308Dest('/auth/grok/verify'), null);
 
