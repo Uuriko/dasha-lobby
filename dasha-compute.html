@@ -2413,7 +2413,7 @@ $('answer-credits')?.addEventListener('click',()=>{
 });
 $('ask-again').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};showTf('ask');$('prompt').focus()});
 $('answer-retry')?.addEventListener('click',()=>{const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};clearAnswerMoney();const run=$('run-demo'); if(run&&!run.disabled)run.click(); else showTf('ask');});
-$('tf-done').addEventListener('click',()=>{clearAnswerMoney();cameFromHow=false;cameFromGate=false;showTf('ask');const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};});
+$('tf-done').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};cameFromHow=false;cameFromGate=false;showTf('ask');});
 $('provide-done-gate').addEventListener('click',()=>{cameFromHow=false;cameFromGate=false;setEngine('hosted',true);});
 document.querySelectorAll('[data-back]').forEach(btn=>{
   btn.addEventListener('click',()=>{

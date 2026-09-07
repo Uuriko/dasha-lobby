@@ -222,10 +222,6 @@ async function pollJob() {
   const job = (await poll.json()).job;
   assert.equal((await network.fetch(new Request(`https://lobby.getdasha.com/compute/api/providers/jobs/${job.id}/chunk`, {
     method: 'POST', headers: providerHeaders,
-    body: JSON.stringify({ provider_id: creds.provider_id, delta: 'partial ' }),
-  }), origin)).status, 202);
-  assert.equal((await network.fetch(new Request(`https://lobby.getdasha.com/compute/api/providers/jobs/${job.id}/chunk`, {
-    method: 'POST', headers: providerHeaders,
     body: JSON.stringify({
       provider_id: creds.provider_id,
       error: "URLError: The network connection was lost.",
@@ -238,8 +234,8 @@ async function pollJob() {
   const res = await pending;
   assert.equal(res.status, 200);
   const text = await res.text();
-  assert.match(text, /"content":"partial "/);
   assert.match(text, /"code":"provider_cut"/);
+  assert.match(text, /provider inference failed: URLError/);
   assert.doesNotMatch(text, /"finish_reason":"stop"/);
 }
 

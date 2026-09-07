@@ -140,7 +140,7 @@ function assertAskFirstCore(html, label) {
   );
   assert.match(
     html,
-    /tf-done['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearAnswerMoney\(\);)?cameFromHow=false;cameFromGate=false;showTf\(['"]ask['"]\)/,
+    /tf-done['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearAnswerMoney\(\);)?(?:const retry=\$\(['"]answer-retry['"]\); if\(retry\)\{retry\.hidden=true;retry\.setAttribute\(['"]hidden['"],['"]['"]\)\};)?cameFromHow=false;cameFromGate=false;showTf\(['"]ask['"]\)/,
     `${label} Answer Done → Ask`
   );
 
