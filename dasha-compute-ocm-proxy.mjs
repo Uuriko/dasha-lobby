@@ -105,10 +105,8 @@ function maybeHead(request, res) {
   return new Response(null, { status: res.status, statusText: res.statusText, headers: res.headers });
 }
 
-/** Paths where upstream speaks GET JSON but not HEAD (healthz confirmed live). */
 function ocmForceGetUpstream(pathname) {
-  const up = ocmUpstreamPath(pathname);
-  return up === '/healthz';
+  return isComputeOcmPath(pathname);
 }
 
 /**

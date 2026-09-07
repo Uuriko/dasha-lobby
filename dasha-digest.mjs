@@ -26,98 +26,98 @@ const SOLANA_SLOT = {
 
 /** 5:27 PM PT 2026-09-04 scrape, curated. $dasha tick first. Real hrefs only. */
 export const DEFAULT = {
-  "at": "2026-09-05T00:35:46+00:00",
+  "at": "2026-09-07T15:41:01+00:00",
   "items": [
     {
       "source": "Dexscreener",
       "kind": "tape",
-      "title": "$dasha $0.0003211 · -23.0% 24h · liq $68437.33",
+      "title": "$dasha $0.0002945 \xB7 -10.5% 24h \xB7 liq $66431.07",
       "href": "https://dexscreener.com/solana/9kkdpvuqrqxjiuymfcy1cwqrxlwdcggur2cap2qt7bu7",
-      "at": "2026-09-05T00:35:46+00:00"
-    },
-    {
-      "source": "@dash_eats",
-      "kind": "tape",
-      "title": "She's faking it",
-      "href": "https://x.com/dash_eats/status/2095951530197135398",
-      "at": "2026-09-04T19:06:00Z"
+      "at": "2026-09-07T15:41:01+00:00"
     },
     {
       "source": "@dash_eats",
       "kind": "tape",
       "title": "$dasha",
-      "href": "https://x.com/dash_eats/status/2095926255942009032",
-      "at": "2026-09-04T17:25:34Z"
+      "href": "https://x.com/dash_eats/status/2096985186718167062",
+      "at": "2026-09-07T15:33:23Z"
     },
     {
-      "source": "Cointelegraph",
-      "kind": "news",
-      "title": "BTC slips under 80K",
-      "href": "https://cointelegraph.com/markets/surprise-labor-market-print-sends-bitcoin-back-below-80k",
-      "at": "2026-09-04T20:30:47Z"
+      "source": "@dash_eats",
+      "kind": "tape",
+      "title": "Who up tryna argue about CLANCY",
+      "href": "https://x.com/dash_eats/status/2096495980984037383",
+      "at": "2026-09-06T07:09:27Z"
     },
     {
-      "source": "Decrypt",
+      "source": "CoinDesk",
       "kind": "news",
-      "title": "Polymarket launches perps",
-      "href": "https://decrypt.co/377483/polymarket-crypto-perpetual-futures",
-      "at": "2026-09-04T20:31:03Z"
+      "title": "Solana triples tx size",
+      "href": "https://www.coindesk.com/tech/2026/09/07/solana-to-triple-transaction-size-as-apps-get-room-for-more-complex-trades",
+      "at": "2026-09-07T12:08:11Z"
     },
     {
       "source": "The Block",
       "kind": "news",
-      "title": "Trump wants Hyperliquid in US",
-      "href": "https://www.theblock.co/news/regulation/2026-09-04-trump-wants-hyperliquid-enter-us-how-it-could-happen-413594",
-      "at": "2026-09-04T18:35:21Z"
-    },
-    {
-      "source": "Decrypt",
-      "kind": "news",
-      "title": "ByteDance $30B AI loan",
-      "href": "https://decrypt.co/377489/tiktok-bytedance-loan-ai",
-      "at": "2026-09-04T21:46:03Z"
-    },
-    {
-      "source": "CoinDesk",
-      "kind": "news",
-      "title": "Robinhood holds stock tokens",
-      "href": "https://www.coindesk.com/business/2026/09/04/amc-ceo-tells-robinhood-to-stop-issuing-stock-token-as-industry-executives-weigh-in",
-      "at": "2026-09-04T14:56:00Z"
-    },
-    {
-      "source": "The Block",
-      "kind": "news",
-      "title": "Zcash tops $1k",
-      "href": "https://www.theblock.co/news/markets/2026-09-04-zcash-tops-1000-etf-inflows-ramp-up-miners-pile-in-413580",
-      "at": "2026-09-04T16:59:34Z"
-    },
-    {
-      "source": "Decrypt",
-      "kind": "news",
-      "title": "G7 flags quantum threat",
-      "href": "https://decrypt.co/377486/g7-warns-quantum-threat-crypto-fixes",
-      "at": "2026-09-04T21:16:04Z"
+      "title": "BTC holds near $80k",
+      "href": "https://www.theblock.co/news/markets/2026-09-07-bitcoin-holds-near-80000-despite-renewed-fed-rate-hike-fears-as-cpi-test-looms-413692",
+      "at": "2026-09-07T13:41:02Z"
     },
     {
       "source": "Cointelegraph",
       "kind": "news",
-      "title": "FinCEN ties $13B scam compounds",
-      "href": "https://cointelegraph.com/news/fincen-crypto-overseas-scam-centers-analysis",
-      "at": "2026-09-04T19:22:26Z"
+      "title": "Zcash tops $20B",
+      "href": "https://cointelegraph.com/markets/zcash-highest-price-market-cap-20-billion",
+      "at": "2026-09-07T12:31:23Z"
+    },
+    {
+      "source": "The Block",
+      "kind": "news",
+      "title": "Liquid attacker returns BTC",
+      "href": "https://www.theblock.co/news/defi/2026-09-07-liquid-network-attacker-says-they-will-return-most-of-4000-btc-after-bug-fix-413673",
+      "at": "2026-09-07T10:20:16Z"
+    },
+    {
+      "source": "Decrypt",
+      "kind": "news",
+      "title": "Irish gangs vault crypto keys",
+      "href": "https://decrypt.co/377546/irish-gangs-are-renting-private-vaults-to-hide-crypto-keys",
+      "at": "2026-09-07T12:43:50Z"
     },
     {
       "source": "CoinDesk",
       "kind": "news",
-      "title": "UK platform opens crypto ETNs",
-      "href": "https://www.coindesk.com/business/2026/09/04/from-warning-to-listing-uk-s-largest-wealth-platform-opens-access-to-crypto-etns",
-      "at": "2026-09-04T14:23:11Z"
+      "title": "Eth gas without ETH",
+      "href": "https://www.coindesk.com/tech/2026/09/07/ethereum-commits-to-letting-users-pay-gas-fees-without-having-to-hold-eth",
+      "at": "2026-09-07T13:54:07Z"
+    },
+    {
+      "source": "The Block",
+      "kind": "news",
+      "title": "DBS Citi weekend tokenized USD",
+      "href": "https://www.theblock.co/news/business/2026-09-07-dbs-citi-say-they-completed-first-weekend-usd-payment-between-singapore-and-us-via-tokenized-deposits-413689",
+      "at": "2026-09-07T13:00:40Z"
+    },
+    {
+      "source": "Decrypt",
+      "kind": "news",
+      "title": "Coldcard hacker moves $7.7M",
+      "href": "https://decrypt.co/377537/coldcard-hacker-moves-7-7m-nearly-half-of-third-wave-bitcoin-haul",
+      "at": "2026-09-07T11:09:27Z"
     },
     {
       "source": "CoinDesk",
       "kind": "news",
-      "title": "Sheriffs go neutral on Clarity",
-      "href": "https://www.coindesk.com/policy/2026/09/04/u-s-sheriff-s-association-shifts-opposition-stance-to-clarity-act-to-neutral",
-      "at": "2026-09-04T14:12:34Z"
+      "title": "Stablecoin wallets vs banks",
+      "href": "https://www.coindesk.com/business/2026/09/07/stablecoin-wallets-challenge-traditional-bank-accounts-as-main-consumer-money-hub",
+      "at": "2026-09-07T14:12:15Z"
+    },
+    {
+      "source": "The Block",
+      "kind": "news",
+      "title": "Capital B buys $29M BTC",
+      "href": "https://www.theblock.co/news/business/2026-09-07-capital-b-buys-29-million-worth-bitcoin-413667",
+      "at": "2026-09-07T08:42:02Z"
     }
   ]
 };

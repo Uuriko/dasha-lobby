@@ -974,17 +974,17 @@ export const FAUCET_PAGE_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fill the jar</title>
+<title>Once a day.</title>
 <meta name="description" content="Claim. Fill. Buy.">
 <link rel="canonical" href="https://www.getdasha.com/faucet">
 <meta name="theme-color" content="#070608">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.getdasha.com/faucet">
-<meta property="og:title" content="Fill the jar">
+<meta property="og:title" content="Once a day.">
 <meta property="og:description" content="Claim. Fill. Buy.">
 <meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Fill the jar">
+<meta name="twitter:title" content="Once a day.">
 <meta name="twitter:description" content="Claim. Fill. Buy.">
 <meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
 <style>:root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81;--line:rgba(244,237,219,.32)}
@@ -1005,7 +1005,12 @@ main{display:block;width:min(36rem,calc(100% - 32px));margin:0 auto;padding:28px
 </head>
 <body>
 <header class="bar"><a class="word" href="https://www.getdasha.com/">$<b>dasha</b></a><a class="buy" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">Buy</a></header>
-<main id="dasha-faucet" data-faucet-api="https://lobby.getdasha.com"></main>
+<main id="dasha-faucet" data-faucet-api="https://lobby.getdasha.com">
+  <div id="dasha-faucet-static">
+    <h1>Once a day.</h1>
+    <p>Get 100 $DASHA free — look without a wallet.</p>
+  </div>
+</main>
 <script>
 (function(){
   if(typeof location!=='undefined'&&!/\\/faucet\\/?$/.test(location.pathname))return;

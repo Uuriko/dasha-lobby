@@ -1,1 +1,2706 @@
-export const COMPUTE_PAGE_HTML = "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>Dasha Compute — ask the Macs</title>\n<meta name=\"description\" content=\"Start. Ask. Provide. Pay. Credits.\">\n<link rel=\"canonical\" href=\"https://www.getdasha.com/compute\">\n<link rel=\"icon\" type=\"image/png\" href=\"https://cdn.prod.website-files.com/5f1458122ba25e70a3ff2bd0/6a767a48e1dd29d210f01235_dasha-icon-32.png\">\n<meta name=\"theme-color\" content=\"#08070a\">\n<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:url\" content=\"https://www.getdasha.com/compute\">\n<meta property=\"og:title\" content=\"Dasha Compute\">\n<meta property=\"og:description\" content=\"Start. Ask. Provide. Pay. Credits.\">\n<meta property=\"og:image\" content=\"https://lobby.getdasha.com/og/dasha-social-card.png\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"twitter:title\" content=\"Dasha Compute\">\n<meta name=\"twitter:description\" content=\"Start. Ask. Provide. Pay. Credits.\">\n<meta name=\"twitter:image\" content=\"https://lobby.getdasha.com/og/dasha-social-card.png\">\n<style>\n:root{--ink:#08070a;--panel:#121015;--paper:#f5eedb;--muted:#aaa1b2;--paper-muted:#d4cce0;--line:#3d3743;--acid:#dcff00;--hot:#ff3b81;--violet:#b388ff}\n*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--ink)}body{margin:0;color:var(--paper);font:16px/1.5 Arial,Helvetica,sans-serif;background:radial-gradient(circle at 82% 0,#2a1730 0,transparent 26rem),var(--ink)}\nbutton,input,select,textarea{font:inherit}\n.shell{width:min(640px,calc(100% - 28px));margin:auto;padding:18px 0 56px}\n.skip{position:absolute;left:-9999px}.skip:focus{left:14px;top:14px;z-index:9;background:var(--acid);color:var(--ink);padding:10px}\n.topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.topbar .brand{justify-self:start}.topbar .state{justify-self:center;min-width:0}.topbar .home{justify-self:end;color:var(--paper-muted);font-weight:700}\n.brand,.home{color:inherit;text-decoration:none}.brand span,.acid{color:var(--acid)}.topbar .home:hover{color:var(--paper)}\n.state{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;font-weight:700;min-height:14px}\n#top-state{min-width:0;max-width:16rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}\n.dot{width:6px;height:6px;border-radius:50%;background:var(--hot);box-shadow:0 0 0 1px color-mix(in srgb,var(--hot) 35%,transparent);opacity:.7;flex:0 0 auto}.dot.live{background:var(--acid);box-shadow:0 0 0 1px color-mix(in srgb,var(--acid) 40%,transparent);opacity:1}\n.tf-step{padding:52px 0 28px;animation:tf-in .28s ease}\n.tf-q{margin:0 0 32px;font:900 clamp(36px,8vw,64px)/1.1 \"Arial Black\",Helvetica,Arial,sans-serif;letter-spacing:-.04em;text-transform:none;max-width:18ch}\n.tf-choices{display:grid;gap:12px}\n.tf-choice,.primary,.secondary{min-height:60px;border:1px solid var(--paper);border-radius:12px;padding:0 20px;font-weight:900;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:100%;background:transparent;color:var(--paper);font-size:20px;letter-spacing:.02em}\n.tf-choice.primary,.primary{background:var(--acid);border-color:var(--acid);color:var(--ink)}\n.tf-choice[aria-pressed=true]{background:var(--acid);border-color:var(--acid);color:var(--ink)}\n.tf-choice.secondary,.secondary{border-color:var(--line);color:var(--paper);font-size:17px;font-weight:800}\n.tf-choice.is-dim{border-color:var(--line);color:var(--muted);cursor:pointer}\n.tf-choice.is-dim:hover,.tf-choice.is-dim:focus-visible{color:var(--paper);border-color:color-mix(in srgb,var(--paper) 45%,var(--line))}\n.tf-choice.is-dim:disabled{cursor:not-allowed;opacity:1;color:var(--muted)}\n.tf-back{border:0;background:transparent;color:var(--paper-muted);font:700 14px/1 Arial,Helvetica,sans-serif;cursor:pointer;padding:0 0 20px;display:inline-flex}\n.tf-back:hover{color:var(--paper)}\n.tf-progress{display:flex;justify-content:center;align-items:center;gap:6px;padding:12px 0 0;min-height:18px}\n.tf-progress[hidden]{display:none!important}\n.tf-progress .tf-dot{width:6px;height:6px;border-radius:50%;background:var(--line);display:inline-block}\n.tf-progress .tf-dot.on{background:var(--muted)}\n.tf-progress .tf-dot.now{background:var(--acid);box-shadow:none}\n.tf-progress .tf-frac{margin-left:4px;color:var(--muted);font:700 11px/1 Arial,Helvetica,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.02em;user-select:none}\n#ask-hint{display:none!important}\n#provide-next-line{display:none!important}\n#night-offer-copy{display:none!important}\n#provide-beat.waiting,#provide-beat.acid{min-height:1.2em}\n#provide-beat.waiting::before,#provide-beat.acid::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;animation:beat-pulse 1.4s ease-in-out infinite}\n#provide-beat.waiting::before{background:var(--muted);box-shadow:0 0 8px var(--muted);margin-right:0}\n#provide-beat.acid{color:var(--acid);font-weight:800;letter-spacing:.02em}\n#provide-beat.acid::before{background:var(--acid);box-shadow:0 0 10px var(--acid);margin-right:.45em}\n@keyframes beat-pulse{0%,100%{opacity:.35}50%{opacity:1}}\n@media(prefers-reduced-motion:reduce){#provide-beat.waiting::before,#provide-beat.acid::before{animation:none}}\n#ask-starters{margin:0 0 10px;display:flex;flex-wrap:wrap;gap:0 14px}#ask-starters .tf-quiet{padding:6px 0}\n.tf-quiet{border:0;background:transparent;color:var(--paper-muted);font:400 13px/1.35 Arial,Helvetica,sans-serif;cursor:pointer;padding:10px 0;text-decoration:none;display:inline-flex}\n.tf-quiet:hover{color:var(--paper)}\n/* Gate / Pay / Credits: quiet under choices share one top gap */\n#step-gate>.tf-quiet,#step-pay>.fine,#step-pay-buy>.fine,#step-sponsor>.fine,#step-sponsor-buy>.fine,#step-sponsor-buy>.field,#step-credits>.fine,#step-you>.fine,#step-earn>.fine,#step-pay-send>.tf-quiet,#step-sponsor-send>.fine{margin-top:14px}\n.tf-choices+.tf-choices{margin-top:12px}\n.ask-links{display:flex;flex-wrap:wrap;gap:0 14px;margin-top:4px}#step-gate>.ask-links{margin-top:14px}\n.ask-links .tf-quiet{padding:6px 0}\n.ask-doors{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:2px;margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}\n.ask-doors .tf-quiet{padding:4px 0;font-size:12px}\n.ask-doors .ask-door-sep{color:var(--line);font-size:12px;user-select:none;line-height:1;padding:0 2px}\n#prompt{display:block;width:100%;min-height:9rem;max-height:42vh;font-size:clamp(24px,4.5vw,36px);line-height:1.28;font-weight:500;background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:16px 0 14px;caret-color:var(--acid);color:var(--paper);resize:vertical;margin:0 0 18px}\n#prompt:focus{border-bottom-color:var(--paper);outline:none}\n#prompt::placeholder{color:var(--muted);opacity:.7;font-weight:400}\n#step-ask .actions{gap:10px;margin-top:6px}\n#step-ask .primary:disabled{background:transparent;border-color:var(--line);color:var(--muted);opacity:1}\n#run-demo[hidden],#run-demo[hidden]:disabled{display:none!important}\n#provider-name{display:block;width:100%;font-size:clamp(24px,5vw,40px);background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:12px 0;color:var(--paper);margin:0 0 22px;caret-color:var(--acid)}\n#provider-name:focus{border-bottom-color:var(--paper);outline:none}\nbutton:disabled{opacity:.5;cursor:not-allowed}\n#answer{margin:0 0 22px;padding:0;border:0;background:transparent;color:#d8cfe0;font:16px/1.55 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.5em}\n#night-offer{margin:0}\n#night-offer[hidden]{display:none!important}\n#step-night .tf-q{margin-bottom:28px}\n.panel{margin-top:12px}\n.panel[hidden],[hidden]{display:none!important}\n#answer-receipt:not([hidden]){display:block!important}\n.field{display:grid;gap:7px;margin-top:16px;font-size:12px;font-weight:900;text-transform:uppercase}\n.field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);background:#09080b;color:var(--paper)}\npre.setup,pre#code,pre#api-key-output,pre#check-result{overflow-x:auto;overflow-y:auto;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0 0;padding:14px;border:1px solid var(--line);background:#09080b;color:#d8cfe0;font:13px/1.55 ui-monospace,monospace;-webkit-overflow-scrolling:touch}\n.models .model{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-top:1px solid var(--line)}\n.models .model span,.models .model small{display:block}.models .model small{color:var(--muted)}\ndetails.build{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}\ndetails.build>summary{cursor:pointer;font:800 12px/1 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);list-style:none}\ndetails.build>summary::-webkit-details-marker{display:none}\ndetails.build[open]>summary{color:var(--acid)}\n.actions{display:grid;gap:12px;margin-top:8px}\n.actions.row{display:flex;flex-wrap:wrap;gap:10px}\n.actions.row .primary,.actions.row .secondary,.actions.row .tf-choice{width:auto;flex:1 1 140px}\n.fine{color:var(--muted);font-size:13px;margin:10px 0 0;line-height:1.45}\nfooter{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-top:40px;color:var(--paper-muted);font-size:12px}\nfooter a{color:var(--acid)}\nfooter a:hover{color:var(--paper)}\n:focus-visible{outline:2px solid var(--acid);outline-offset:2px}\n.tf-choice.primary:focus-visible,.primary:focus-visible,.tf-choice[aria-pressed=true]:focus-visible{outline-width:2px;outline-offset:2px;outline-color:color-mix(in srgb,var(--acid) 65%,var(--ink))}\n@keyframes tf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}\n@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.tf-step{animation:none!important}}\n@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:\"brand home\" \"state state\";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:7rem}#ask-starters{gap:0 12px;margin-bottom:8px}.ask-doors{column-gap:4px;row-gap:4px;margin-top:6px;padding-top:6px}.ask-doors .tf-quiet{padding:6px 4px 6px 0}.ask-links{gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}}\n.honesty-panel{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.45}\n.honesty-panel[hidden]{display:none!important}\n.honesty-panel .honesty-ok{color:var(--acid)}\n.honesty-panel .honesty-sep{color:var(--line);user-select:none}\n</style>\n<link rel=\"describedby\" href=\"/llms.txt\" type=\"text/plain\"><link rel=\"describedby\" href=\"/llms-full.txt\" type=\"text/plain\"></head>\n<body data-step=\"gate\">\n<main class=\"shell\">\n<a class=\"skip\" href=\"#prompt\">Skip to ask</a>\n<header class=\"topbar\">\n  <a class=\"brand\" href=\"/\"><span>$dasha</span> compute</a>\n  <div class=\"state\"><i class=\"dot\" id=\"live-dot\"></i><span id=\"top-state\">·</span></div>\n  <a class=\"home\" href=\"/\">getdasha.com</a>\n</header>\n<nav class=\"tf-progress\" id=\"tf-progress\" aria-label=\"Progress\" hidden></nav>\n\n<section class=\"tf-step\" id=\"step-gate\" data-tf=\"gate\">\n  <h1 class=\"tf-q\">Start.</h1>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Start.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"pick-ask\" title=\"Run a prompt\">Ask</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"pick-provide\" title=\"Join with a Mac\">Provide</button>\n  </div>\n  <div class=\"ask-links\" role=\"group\" aria-label=\"Money.\">\n    <button type=\"button\" class=\"tf-quiet\" id=\"pick-pay\" title=\"Top up or sponsor\">Pay</button>\n    <button type=\"button\" class=\"tf-quiet\" id=\"pick-credits\" title=\"Use prepaid\">Credits</button>\n  </div>\n  <a id=\"gate-signin\" class=\"tf-quiet\" href=\"/login?return=/compute\">Sign in</a>\n  <button type=\"button\" id=\"gate-you\" class=\"tf-quiet\" hidden>You</button>\n</section>\n\n<section class=\"tf-step\" id=\"step-how\" data-tf=\"how\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"ask\">← Back</button>\n  <h1 class=\"tf-q\">How?</h1>\n  <div class=\"tf-choices engines\" role=\"group\" aria-label=\"Engine\">\n    <button type=\"button\" class=\"tf-choice\" id=\"eng-hosted\" data-engine=\"hosted\" aria-pressed=\"false\">Hosted</button>\n    <button type=\"button\" class=\"tf-choice\" id=\"eng-community\" data-engine=\"community\" aria-pressed=\"false\">Community</button>\n    <button type=\"button\" class=\"tf-choice\" id=\"eng-mixture\" data-engine=\"mixture\" aria-pressed=\"false\">Mixture</button>\n    <button type=\"button\" class=\"tf-choice\" id=\"eng-self\" data-engine=\"self\" aria-pressed=\"false\" hidden>My Mac · free</button>\n  </div>\n  <select id=\"engine\" hidden aria-hidden=\"true\"><option value=\"hosted\" selected>Hosted</option><option value=\"community\">Community</option><option value=\"mixture\">Mixture</option><option value=\"self\">My Mac · free</option></select>\n  <p class=\"fine\" id=\"how-floor-fine\">Local Macs + Hosted floor.</p>\n</section>\n\n<section class=\"tf-step\" id=\"step-model\" data-tf=\"model\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"how\">← Back</button>\n  <h1 class=\"tf-q\">Which model?</h1>\n  <div class=\"tf-choices\" id=\"model-choices\" role=\"group\" aria-label=\"Model\"></div>\n  <div class=\"model-row\" id=\"model-row\" hidden>\n    <label for=\"model\">Model</label>\n    <select id=\"model\">\n      <option value=\"qwen3-8b\" selected>Qwen 3 8B · 5.2 GB · fast chat</option>\n      <option value=\"gemma3-12b\">Gemma 3 12B · 8.1 GB · vision + chat</option>\n      <option value=\"gpt-oss-20b\">GPT-OSS 20B · 14 GB · reasoning + tools</option>\n      <option value=\"qwen3-30b-a3b\">Qwen 3 30B A3B · 19 GB · efficient MoE</option>\n      <option value=\"gemma3-27b\">Gemma 3 27B · 17 GB · large multimodal</option>\n    </select>\n    <span class=\"chip\" id=\"mixture-chip\" hidden>sub-24GB specialists · live default qwen3-8b</span>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-ask\" data-tf=\"ask\" hidden>\n  <button type=\"button\" class=\"tf-back\" id=\"back-ask\" data-back=\"\" hidden>← Back</button>\n  <h1 class=\"tf-q\">Ask.</h1>\n  <label class=\"field\" style=\"font-size:0;margin:0;gap:0\">Prompt<textarea id=\"prompt\" maxlength=\"2000\" placeholder=\"Write a short welcome for a new teammate.\" aria-label=\"Prompt\" title=\"Enter to run · Esc back\"></textarea></label>\n  <p class=\"fine\" id=\"ask-hint\" hidden aria-hidden=\"true\"></p>\n  <div class=\"ask-starters\" id=\"ask-starters\" role=\"group\" aria-label=\"Starter prompts\">\n    <button type=\"button\" class=\"tf-quiet\" id=\"ask-starter\" data-prompt=\"Write a short welcome for a new teammate.\">Welcome note</button>\n    <button type=\"button\" class=\"tf-quiet\" id=\"ask-starter-2\" data-prompt=\"Summarize this in three short bullets:\">Summarize this</button>\n    <button type=\"button\" class=\"tf-quiet\" id=\"ask-starter-3\" data-prompt=\"Draft a curl that POSTs JSON to an HTTPS API.\">Draft a curl</button>\n  </div>\n  <p class=\"fine\" id=\"ask-free-fine\">3 free / 10 min · then credits.</p>\n  <div class=\"actions\">\n    <button class=\"primary\" id=\"run-demo\" type=\"button\" hidden disabled>Run</button>\n    <a class=\"primary\" id=\"login\" href=\"/login?return=/compute%23ask\">Sign in</a>\n    <div class=\"ask-links\">\n      <button class=\"tf-quiet\" id=\"copy-skill-use\" type=\"button\">Copy AI skill</button>\n      <button class=\"tf-quiet\" id=\"change-engine\" type=\"button\" title=\"Change engine\" aria-label=\"Change engine\">Hosted</button>\n      <button class=\"tf-quiet\" id=\"clear-chat\" type=\"button\" hidden disabled>Clear</button>\n    </div>\n    <div class=\"ask-doors\" id=\"ask-doors\">\n      <button type=\"button\" class=\"tf-quiet\" id=\"ask-mymac\" title=\"Run on your Mac · free\" aria-label=\"My Mac · free\" hidden>My Mac · free</button>\n      <span class=\"ask-door-sep\" id=\"ask-mymac-sep\" aria-hidden=\"true\" hidden>·</span>\n      <button type=\"button\" class=\"tf-quiet\" id=\"ask-community\" title=\"Community Mac online\" aria-label=\"Community\" hidden>Community</button>\n      <span class=\"ask-door-sep\" id=\"ask-community-sep\" aria-hidden=\"true\" hidden>·</span>\n      <button type=\"button\" class=\"tf-quiet\" id=\"ask-provide\" title=\"Join with a Mac\" aria-label=\"Provide · Join with a Mac\">Provide</button>\n      <span class=\"ask-door-sep\" aria-hidden=\"true\">·</span>\n      <button type=\"button\" class=\"tf-quiet\" id=\"ask-ocm\" title=\"OCM console\" aria-label=\"Marketplace · OCM console\">Marketplace</button>\n      <span class=\"ask-door-sep\" aria-hidden=\"true\">·</span>\n      <button type=\"button\" class=\"tf-quiet\" id=\"ask-host\" title=\"OCM host\" aria-label=\"Host · OCM host\">Host</button>\n      <span class=\"ask-door-sep\" id=\"ask-credits-sep\" aria-hidden=\"true\" hidden>·</span>\n      <button type=\"button\" class=\"tf-quiet\" id=\"ask-credits\" title=\"Credits\" aria-label=\"Credits\" hidden></button>\n    </div>\n  </div>\n</section>\n\n\n<section class=\"tf-step\" id=\"step-market\" data-tf=\"market\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"ask\">← Back</button>\n  <h1 class=\"tf-q\" title=\"OCM console\">Marketplace.</h1>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Marketplace\">\n    <a class=\"tf-choice primary\" id=\"market-open\" href=\"/compute/ocm\">Console</a>\n    <a class=\"tf-choice secondary\" id=\"market-host\" href=\"/compute/ocm/provider\">Host</a>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-host\" data-tf=\"host\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"ask\">← Back</button>\n  <h1 class=\"tf-q\" title=\"OCM host\">Host.</h1>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Host\">\n    <a class=\"tf-choice primary\" id=\"host-run\" href=\"/compute/ocm/provider\">Open</a>\n  </div>\n</section>\n\n\n\n<section class=\"tf-step\" id=\"step-pay\" data-tf=\"pay\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"gate\">← Back</button>\n  <h1 class=\"tf-q\">Pay.</h1>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Pay.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"pay-topup\" title=\"Add credits\">Top up</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"pay-sponsor\" title=\"Keep a Mac warm\">Sponsor</button>\n  </div>\n  <p class=\"fine\" id=\"pay-topup-fine\">Goes to credits.</p>\n  <p class=\"fine\" id=\"pay-sponsor-fine\" hidden>Tip the network.</p>\n</section>\n\n<section class=\"tf-step\" id=\"step-pay-buy\" data-tf=\"pay-buy\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"pay\">← Back</button>\n  <h1 class=\"tf-q\">Buy.</h1>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Amount.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"pack-5\" data-pack=\"5\" aria-pressed=\"true\">$5</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"pack-20\" data-pack=\"20\" aria-pressed=\"false\">$20</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"pack-50\" data-pack=\"50\" aria-pressed=\"false\">$50</button>\n  </div>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Pay with.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"pay-usdc\" data-method=\"usdc\">USDC · $4.85</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"pay-dasha\" data-method=\"dasha\">$dasha · $4.75</button>\n    <a class=\"tf-choice secondary\" id=\"pay-method-login\" href=\"/login?return=/compute%23pay\" hidden>Sign in</a>\n  </div>\n  <p class=\"fine\" id=\"pay-method-err\" hidden></p>\n  <p class=\"fine\" id=\"pay-buy-fine\">$5 credits · crypto discount · no card yet.</p>\n</section>\n\n<section class=\"tf-step\" id=\"step-pay-send\" data-tf=\"pay-send\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"pay-buy\">← Back</button>\n  <h1 class=\"tf-q\">Send.</h1>\n  <p class=\"fine\" id=\"pay-send-line\">·</p>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Send.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"pay-copy\">Copy</button>\n    <a class=\"tf-choice secondary\" id=\"pay-open\" target=\"_blank\" rel=\"noopener noreferrer\">Open Phantom</a>\n  </div>\n  <p class=\"fine\" id=\"pay-wait\" role=\"status\" aria-live=\"polite\"></p>\n  <p class=\"fine\" id=\"pay-send-err\" hidden></p>\n  <a class=\"tf-quiet\" id=\"pay-send-login\" href=\"/login?return=/compute%23pay\" hidden>Sign in</a>\n</section>\n\n<section class=\"tf-step\" id=\"step-pay-done\" data-tf=\"pay-done\" hidden>\n  <h1 class=\"tf-q\">Done.</h1>\n  <p class=\"fine\" id=\"pay-done-line\">Credits added.</p>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Done.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"pay-done-credits\">Credits</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"pay-done-ask\">Ask</button>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-sponsor\" data-tf=\"sponsor\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"pay\">← Back</button>\n  <h1 class=\"tf-q\">Sponsor.</h1>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Sponsor.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"sponsor-network\" data-sponsor-target=\"network\">Network</button>\n  </div>\n  <div class=\"tf-choices\" id=\"sponsor-macs\" role=\"group\" aria-label=\"Mac.\" hidden></div>\n  <p class=\"fine\" id=\"sponsor-raised\">$0 raised</p>\n  <p class=\"fine\" id=\"sponsor-credit\" hidden></p>\n  <p class=\"fine\" id=\"sponsor-fine\">Tip face · USDC or $dasha · wallet OK without login · name on board when signed in.</p>\n</section>\n\n<section class=\"tf-step\" id=\"step-sponsor-buy\" data-tf=\"sponsor-buy\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"sponsor\">← Back</button>\n  <h1 class=\"tf-q\">Amount.</h1>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Amount.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"sponsor-pack-5\" data-sponsor-pack=\"5\" aria-pressed=\"true\">$5</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"sponsor-pack-20\" data-sponsor-pack=\"20\" aria-pressed=\"false\">$20</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"sponsor-pack-50\" data-sponsor-pack=\"50\" aria-pressed=\"false\">$50</button>\n  </div>\n  <label class=\"field\" id=\"sponsor-custom-wrap\"><span class=\"fine\">Custom</span><input id=\"sponsor-custom\" type=\"number\" min=\"1\" max=\"1000\" step=\"1\" inputmode=\"numeric\" autocomplete=\"off\" aria-label=\"Custom dollars\" placeholder=\"$\"></label>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Pay with.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"sponsor-usdc\" data-sponsor-method=\"usdc\">USDC · $5</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"sponsor-dasha\" data-sponsor-method=\"dasha\">$dasha · $5</button>\n    <a class=\"tf-choice secondary\" id=\"sponsor-method-login\" href=\"/login?return=/compute%23sponsor\" hidden>Sign in</a>\n  </div>\n  <p class=\"fine\" id=\"sponsor-method-err\" hidden></p>\n  <p class=\"fine\" id=\"sponsor-buy-fine\">$5 tip · face · no crypto discount.</p>\n</section>\n\n<section class=\"tf-step\" id=\"step-sponsor-send\" data-tf=\"sponsor-send\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"sponsor-buy\">← Back</button>\n  <h1 class=\"tf-q\">Send.</h1>\n  <p class=\"fine\" id=\"sponsor-send-line\">·</p>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Send.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"sponsor-copy\">Copy</button>\n    <a class=\"tf-choice secondary\" id=\"sponsor-open\" target=\"_blank\" rel=\"noopener noreferrer\">Open Phantom</a>\n  </div>\n  <p class=\"fine\" id=\"sponsor-wait\" role=\"status\" aria-live=\"polite\"></p>\n  <p class=\"fine\" id=\"sponsor-send-err\" hidden></p>\n</section>\n\n<section class=\"tf-step\" id=\"step-sponsor-done\" data-tf=\"sponsor-done\" hidden>\n  <h1 class=\"tf-q\">Thanks.</h1>\n  <p class=\"fine\" id=\"sponsor-done-line\">Tip received.</p>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Done.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"sponsor-done-pay\">Pay</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"sponsor-done-ask\">Ask</button>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-credits\" data-tf=\"credits\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"gate\">← Back</button>\n  <h1 class=\"tf-q\">Credits.</h1>\n  <p class=\"fine\" id=\"credits-balance\" hidden></p>\n  <p class=\"fine\" id=\"credits-fine\">Pack credits · crypto discount · no card yet.</p>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Credits.\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"credits-use\">Use credits</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"credits-topup\">Top up</button>\n    <a class=\"tf-choice secondary\" id=\"credits-login\" href=\"/login?return=/compute%23credits\" hidden>Sign in</a>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-you\" data-tf=\"you\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"gate\">← Back</button>\n  <h1 class=\"tf-q\">You.</h1>\n  <p class=\"fine\" id=\"you-id\" hidden></p>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"You.\">\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"you-macs\">Macs</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"you-earn\">Earnings</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"you-credits\">Credits</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"you-api\">API</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"you-logout\">Log out</button>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-earn\" data-tf=\"earn\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"you\">← Back</button>\n  <h1 class=\"tf-q\">Earn.</h1>\n  <p class=\"fine\" id=\"earn-rates\">$0.05/job + $0.01/1k completion · min $1 · pending operator settle</p>\n  <p class=\"fine\" id=\"earn-balance\" hidden></p>\n  <p class=\"fine\" id=\"earn-jobs\" hidden></p>\n  <div class=\"tf-choices\" role=\"group\" aria-label=\"Payout.\" id=\"earn-methods\" hidden>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"earn-usdc\" data-earn-method=\"usdc\">USDC</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"earn-dasha\" data-earn-method=\"dasha\">$dasha · +10%</button>\n  </div>\n  <p class=\"fine\" id=\"earn-compare\" hidden></p>\n  <label class=\"field\" id=\"earn-wallet-wrap\" hidden>Wallet<input id=\"earn-wallet\" type=\"text\" maxlength=\"64\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Solana wallet\" placeholder=\"Solana address\"></label>\n  <div class=\"actions\" id=\"earn-actions\" hidden>\n    <button class=\"primary\" id=\"earn-payout\" type=\"button\" hidden disabled title=\"Queues for operator settle · not auto\" aria-label=\"Request payout · operator settles · not auto\">Request payout</button>\n  </div>\n  <p class=\"fine\" id=\"earn-status\" role=\"status\" aria-live=\"polite\" hidden></p>\n  <p class=\"fine\" id=\"earn-pending\" hidden></p>\n  <a class=\"tf-quiet\" id=\"earn-login\" href=\"/login?return=/compute%23earn\" hidden>Sign in</a>\n</section>\n\n<section class=\"tf-step\" id=\"step-answer\" data-tf=\"answer\" hidden>\n  <h1 class=\"tf-q\" id=\"answer-title\">Answer.</h1>\n  <button class=\"tf-quiet\" id=\"cancel-job\" type=\"button\" hidden>Cancel</button>\n  <pre class=\"answer\" id=\"answer\" aria-live=\"polite\"></pre>\n  <p class=\"fine\" id=\"answer-receipt\" hidden aria-live=\"polite\"></p>\n  <div class=\"tf-choices\" id=\"after-answer\">\n    <button type=\"button\" class=\"tf-choice primary\" id=\"ask-again\">Ask again</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"pick-provide-after\">Provide</button>\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"tf-done\">Done</button>\n    <a class=\"tf-quiet\" id=\"answer-api\" href=\"/login?return=/compute%23build\" hidden>API key</a>\n    <button type=\"button\" class=\"tf-quiet\" id=\"answer-credits\" hidden>Credits</button>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-night\" data-tf=\"night\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"how\">← Back</button>\n  <h1 class=\"tf-q\" id=\"night-q\">No Mac online.</h1>\n  <div id=\"night-offer\" hidden role=\"status\" aria-live=\"polite\">\n    <p class=\"fine\" id=\"night-offer-copy\" hidden aria-hidden=\"true\"></p>\n    <div class=\"tf-choices\" id=\"night-choices\">\n      <button type=\"button\" class=\"tf-choice primary\" id=\"night-use-hosted\">Hosted</button>\n      <button type=\"button\" class=\"tf-choice secondary\" id=\"night-use-community\" hidden>Community</button>\n      <button type=\"button\" class=\"tf-choice secondary\" id=\"queue-night\">Queue</button>\n      <a class=\"tf-choice secondary\" id=\"queue-night-login\" href=\"/login?return=/compute%23night\">Sign in</a>\n    </div>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-provide-name\" data-tf=\"provide-name\" hidden>\n  <button type=\"button\" class=\"tf-back\" id=\"provide-name-back\" data-back=\"ask\">← Back</button>\n  <h1 class=\"tf-q\">Name this Mac.</h1>\n  <p class=\"fine\" id=\"provide-name-fine\" hidden>Join with a Mac · keeps capacity warm.</p>\n  <input id=\"provider-name\" maxlength=\"64\" value=\"My Mac\" required aria-label=\"Mac name\">\n  <div class=\"actions\">\n    <button class=\"primary\" id=\"provide-next\" type=\"button\">Next</button>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-provide-reg\" data-tf=\"provide-reg\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"provide-name\">← Back</button>\n  <h1 class=\"tf-q\">Register.</h1>\n  <p class=\"fine\" id=\"provide-next-line\" hidden aria-hidden=\"true\"></p>\n  <div class=\"actions\" id=\"provide\">\n    <button class=\"primary\" id=\"register-provider\" type=\"button\" hidden disabled>Register</button>\n    <a class=\"primary\" id=\"provider-login\" href=\"/login?return=/compute%23provide\">Sign in to register</a>\n    <button class=\"tf-quiet\" id=\"copy-skill-provide-reg\" type=\"button\">Copy AI skill</button>\n  </div>\n  <p class=\"fine\" id=\"provider-status\" role=\"status\" aria-live=\"polite\"></p>\n</section>\n\n<section class=\"tf-step\" id=\"step-provide-done\" data-tf=\"provide-done\" hidden>\n  <h1 class=\"tf-q\">Setup.</h1>\n  <p class=\"fine\" id=\"provide-tto\">About 15–30 min to online.</p>\n  <p class=\"fine\" id=\"provide-prefer-mlx\">Prefer MLX when you can · Ollama ≥0.33.1 · models on internal SSD.</p>\n  <p class=\"fine\" id=\"provide-earn-fine\">$0.05/job + $0.01/1k completion · min $1 · pending operator settle</p>\n  <pre class=\"setup\" id=\"setup\" aria-live=\"polite\">curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\nollama pull qwen3:8b\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>\n  <p class=\"fine\" id=\"provide-beat\" role=\"status\" aria-live=\"polite\" hidden></p>\n  <div class=\"actions row\">\n    <button class=\"tf-quiet\" id=\"copy-skill-provide-done\" type=\"button\">Copy AI skill</button>\n    <a class=\"secondary\" href=\"/dasha-compute-open-alpha.tar.gz\" download>Download kit</a>\n    <a class=\"tf-quiet\" href=\"https://ollama.com/download\" target=\"_blank\" rel=\"noopener noreferrer\">Get Ollama ↗</a>\n  </div>\n  <details class=\"build\" id=\"provider-macs\" hidden>\n    <summary id=\"provider-macs-sum\">Your Macs · 0</summary>\n    <div class=\"models\" id=\"provider-list\"></div>\n    <button class=\"tf-quiet\" id=\"refresh-providers\" type=\"button\" hidden disabled>Refresh</button>\n  </details>\n  <div class=\"tf-choices\" style=\"margin-top:28px\">\n    <button type=\"button\" class=\"tf-choice secondary\" id=\"provide-done-gate\">Done</button>\n    <button type=\"button\" class=\"tf-quiet\" id=\"provide-done-earn\">Earnings</button>\n  </div>\n</section>\n\n<section class=\"tf-step\" id=\"step-build\" data-tf=\"build\" hidden>\n  <button type=\"button\" class=\"tf-back\" data-back=\"answer\">← Back</button>\n  <h1 class=\"tf-q\">API.</h1>\n  <details class=\"build\" id=\"build\" open>\n    <summary>API · one base URL</summary>\n    <p class=\"fine\" id=\"api-usage-fine\">Usage on stream · v1 + Hosted stop · jobs/:id when stored.</p>\n    <label class=\"field\">HTTPS gateway URL<input id=\"gateway\" type=\"url\" value=\"https://lobby.getdasha.com/compute/api/v1\"></label>\n    <pre id=\"code\">curl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'</pre>\n    <div class=\"actions row\">\n      <button class=\"copy secondary\" data-copy=\"code\" type=\"button\">Copy curl</button>\n      <a class=\"secondary\" id=\"key-login\" href=\"/login?return=/compute%23build\">Sign in</a>\n      <button class=\"primary\" id=\"create-api-key\" type=\"button\" hidden disabled>Create API key</button>\n      <button class=\"secondary\" id=\"check\" type=\"button\">Run check</button>\n    </div>\n    <p class=\"fine\" id=\"api-key-cap-hint\">Credits · Cap $5 / month</p>\n    <label class=\"field\" id=\"api-key-limit-wrap\" hidden>Spend cap (USD / month)<input id=\"api-key-limit\" type=\"number\" min=\"1\" max=\"1000\" step=\"1\" value=\"5\" inputmode=\"decimal\" placeholder=\"5\"></label>\n    <pre id=\"api-key-output\" aria-live=\"polite\">Sign in to create a developer key.</pre>\n    <div class=\"models\" id=\"api-key-list\"><p class=\"fine\">Sign in to create a developer key.</p></div>\n    <pre id=\"check-result\">Lobby v1 URL is set. Run check.</pre>\n  </details>\n</section>\n\n<aside id=\"honesty-panel\" class=\"fine honesty-panel\" hidden\n  aria-live=\"polite\" data-honesty=\"live\">\n  <span id=\"honesty-hosted\" class=\"honesty-ok\">Hosted · live</span>\n  <span class=\"honesty-sep\" aria-hidden=\"true\">·</span>\n  <span id=\"honesty-macs\">No Mac online</span>\n  <span class=\"honesty-sep\" aria-hidden=\"true\">·</span>\n  <span id=\"honesty-settled\" title=\"Settled paid-inference · last 24h\">0 tok · 24h</span>\n</aside>\n\n<footer>\n  <span>$dasha compute · v0.3 open alpha</span>\n  <span id=\"settled-24h\" title=\"Settled paid-inference · last 24h\">0 tok · 24h</span>\n  <a href=\"https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump\">53ux…pump</a>\n  <a href=\"/privacy\">Privacy</a>\n  <span>local-first</span>\n</footer>\n</main>\n<script>\nconst $=id=>document.getElementById(id);\nconst MODELS=[\n  ['qwen3-8b','qwen3:8b','Qwen 3 8B','5.2 GB',8,'fast chat'],\n  ['gemma3-12b','gemma3:12b','Gemma 3 12B','8.1 GB',16,'vision + chat'],\n  ['gpt-oss-20b','gpt-oss:20b','GPT-OSS 20B','14 GB',16,'reasoning + tools'],\n  ['qwen3-30b-a3b','qwen3:30b','Qwen 3 30B A3B','19 GB',24,'efficient MoE'],\n  ['gemma3-27b','gemma3:27b','Gemma 3 27B','17 GB',24,'large multimodal']\n];\nconst SUB24=new Set(['qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b']);\nconst PROVIDE_SKILL=\"# Skill: Join Dasha Compute as a Provider (Mac)\\n\\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\\n\\n## Goal\\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\\n\\n## Facts (do not invent others)\\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\\n- Coordinator: https://lobby.getdasha.com/compute/api\\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\n- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)\\n- Token goes in `.dasha-provider-key` mode 0600 \\u2014 never put the provider key on argv or shell history\\n- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh\\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending operator settle · not auto · $dasha payout +10% · never invent balances\\n\\n## Steps for the AI to run with the human\\n1. Open https://www.getdasha.com/compute \\u2192 Provide (quiet link) \\u2192 name the Mac \\u2192 Sign in (X) if needed \\u2192 Register.\\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once \\u2014 refresh loses it. Prefer that block over this template.\\n3. On the Mac, run the Setup command \\u2014 or this template with the pasted values:\\n\\n```bash\\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\ntar -xzf dasha-compute-open-alpha.tar.gz\\ncd dasha-compute-open-alpha\\n# install Ollama from https://ollama.com/download if missing\\nollama pull qwen3:8b\\numask 077\\ncat > .dasha-provider-key <<'TOKEN'\\nPASTE_ONE_TIME_TOKEN_HERE\\nTOKEN\\nchmod 0600 .dasha-provider-key\\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\\\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\\\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b \\\\\\n./install.sh\\n```\\n\\n4. Verify after install (`install.sh` already ran doctor and moved the key):\\n\\n```bash\\ndasha-compute doctor\\ndasha-compute status\\n```\\n\\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\\n\\n## Prefer MLX (Apple Silicon, optional)\\n- Prefer MLX when you can \\u2014 often faster on Apple Silicon; Ollama still works.\\n- Recommend Ollama \\u22650.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\\n- Keep models on internal SSD \\u2014 slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\\n- Official Ollama path (live docs): Ollama \\u22650.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\\n- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks \\u2014 never invent.\\n- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.\\n\\n## Keep-alive (sub-24GB)\\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service \\u2014 a shell export alone is not enough for the macOS app).\\n- Do not pin 27B on a 16\\u201324GB Air for interactive chat; use 8B/12B.\\n- `dasha-compute doctor` soft-hints when a mapped model looks \\u226527B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.\\n\\n## Success\\n- dasha-compute doctor exits 0\\n- Heartbeats succeed\\n- A Community Run from another session can complete on this Mac\\n\\n## If stuck\\n- Re-register for a fresh token\\n- Check dasha-compute logs\\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\\n\";\nconst USE_SKILL=\"# Skill: Use Dasha Compute (ask the network)\\n\\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute — Hosted demo or community Macs — without becoming a provider.\\n\\n## Goal\\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\\n\\n## Facts\\n- URL: https://www.getdasha.com/compute\\n- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login). Credits → balance + Use credits / Top up. No card yet.\\n- Login with X is required to Run or queue\\n- Hosted model: gpt-oss-20b · 3 free / 10 min · then credits\\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\\n- API billing: non-self `v1/chat/completions` spends prepaid credits ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits.\\n- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.\\n- Marketplace: https://www.getdasha.com/compute/ocm\\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\\n- Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.\\n- Ask top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.\\n- When Macs are online, Ask shows a quiet Community · N door (measured tok/s in the title) — Hosted stays the default; Change engine still opens How.\\n\\n## Steps for the AI to guide\\n1. Open https://www.getdasha.com/compute\\n2. Cold boot shows Start. — Ask → Hosted Ask. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Ask · Top up → Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Community or Mixture; quiet Provide / Marketplace / Host links\\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\\n4. Sign in if prompted\\n5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back\\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available\\n\\n## Optional API\\n\\n```bash\\nexport DASHA_API_KEY='your-key'\\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\\\\n  -H \\\"Authorization: Bearer $DASHA_API_KEY\\\" \\\\\\n  -H \\\"Content-Type: application/json\\\" \\\\\\n  -d '{\\\"model\\\":\\\"qwen3-8b\\\",\\\"messages\\\":[{\\\"role\\\":\\\"user\\\",\\\"content\\\":\\\"hello\\\"}],\\\"stream\\\":true}'\\n```\\n\\n## Success\\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\\n- On stream, read `usage` from the final stop chunk (not earlier deltas)\\n\\n## If stuck\\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\\n\";\nconst API='https://lobby.getdasha.com';\nlet conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacModels=new Set(),ownMacTps=0,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask';\n\nfunction pendingMessages(){\n  const content=$('prompt').value.trim()||'…',kept=[];\n  let budget=6000-content.length;\n  for(let index=conversation.length-1;index>=0&&kept.length<10;index--){\n    const message=conversation[index];\n    if(message.content.length>budget)break;\n    kept.unshift(message);budget-=message.content.length;\n  }\n  if(kept[0]?.role==='assistant')kept.shift();\n  return[...kept,{role:'user',content}];\n}\nfunction mixtureFraming(messages){\n  const tip='You are Dasha Mixture · sub-24GB. Prefer a hot small specialist on the selected model. Be short, fun, useful.';\n  return[{role:'system',content:tip},...messages];\n}\nfunction modelIdentityFraming(messages,modelId){\n  const id=String(modelId||'').trim();\n  if(!id)return messages;\n  const tip='You are model '+id+' on Dasha Compute. If asked your name/model, answer with exactly that id.';\n  if(messages.some(m=>m?.role==='system'&&typeof m.content==='string'&&m.content.includes('on Dasha Compute')&&m.content.includes('answer with exactly that id')))return messages;\n  return[{role:'system',content:tip},...messages];\n}\nfunction paintRequest(){/* character chrome cut from typeform flow */}\nfunction renderConversation(){\n  const answer=$('answer');\n  answer.textContent=conversation.length?conversation.map(message=>`${message.role==='user'?'You':'Assistant'}:\\n${message.content}`).join('\\n\\n'):'';\n  $('clear-chat').disabled=!conversation.length;\n  document.body.classList.toggle('has-chat',conversation.length>0);\n}\nfunction hasSuccessfulAnswer(){return sent>=1||conversation.some(m=>m.role==='assistant')}\nfunction paintAnswerApi(){\n  const el=$('answer-api');\n  if(!el)return;\n  // Progressive: quiet door only after first successful Answer; stay quiet if keys exist.\n  // Night/queue failures never increment sent / add assistant — stay hidden.\n  if(!hasSuccessfulAnswer()||(loggedIn&&apiKeyCount>0)){\n    el.hidden=true;\n    return;\n  }\n  el.hidden=false;\n  if(loggedIn){\n    el.textContent='API key';\n    el.setAttribute('href','#');\n    el.setAttribute('role','button');\n  }else{\n    el.textContent='Sign in';\n    el.setAttribute('href','/login?return=/compute%23build');\n    el.removeAttribute('role');\n  }\n}\nfunction paintAnswerMoney(){\n  const el=$('answer-credits');\n  if(!el)return;\n  // Quiet Pay/Credits nudge only after rate-limit / credits 402 — never on happy Answer.\n  if(lastAskFailKind!=='rate'&&lastAskFailKind!=='credits'){\n    el.hidden=true;\n    el.textContent='';\n    paintAnswerReceipt();\n    return;\n  }\n  el.hidden=false;\n  el.textContent=lastAskFailKind==='credits'?'Top up':'Credits';\n  paintAnswerReceipt();\n}\nfunction clearAnswerMoney(){lastAskFailKind=null;lastPaidReceipt=null;paintAnswerMoney();paintAnswerReceipt()}\nfunction clearConversation(){conversation=[];renderConversation();paintRequest();hideNightOffer();clearAnswerMoney();paintAnswerApi()}\n$('prompt').addEventListener('input',()=>{paintRequest();updateRun();});\n$('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const run=$('run-demo');if(run&&!run.hidden){run.click();return}const login=$('login');if(login&&!login.hidden)login.click()}});\n$('clear-chat').addEventListener('click',clearConversation);\n\nasync function api(path,options={}){\n  const response=await fetch(API+path,{credentials:'include',cache:'no-store',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});\n  const data=response.status===204?null:await response.json();\n  if(!response.ok)throw Error(data?.error||'Request failed');\n  return data;\n}\nfunction preferOnlineModel(select,preferSub24){\n  if(!networkModels.size)return;\n  if(networkModels.has(select.value))return;\n  const pool=preferSub24?MODELS.filter(m=>SUB24.has(m[0])):MODELS;\n  const hit=pool.find(item=>networkModels.has(item[0]))||MODELS.find(item=>networkModels.has(item[0]));\n  if(hit)select.value=hit[0];\n}\nfunction fleetCapacityRow(){\n  if(!(providersOnline>=1))return null;\n  const eng=$('engine')?.value||'hosted';\n  const communityIntent=eng==='community'||eng==='mixture'||eng==='self';\n  const want=communityIntent?($('model')?.value||''):'';\n  const row=(networkCapacity||[]).find(item=>item&&item.model===want)||(networkCapacity||[])[0]||null;\n  return row||null;\n}\nfunction fleetMeasuredLabel(){\n  const row=fleetCapacityRow();\n  if(!row)return {model:'',tpsLabel:''};\n  const model=String(row.model||[...networkModels][0]||'');\n  const mp=Number(row.measured_providers||0);\n  const tps=Number(row.tokens_per_second);\n  const tpsLabel=(mp>=1&&Number.isFinite(tps)&&tps>0)?formatTokPerSec(tps):'';\n  return {model,tpsLabel};\n}\nfunction paintSplit(){\n  const top=$('top-state');\n  const n=Number.isInteger(providersOnline)?providersOnline:0;\n  const eng=$('engine')?.value||'hosted';\n  const communityIntent=eng==='community'||eng==='mixture'||eng==='self';\n  let modelName='';\n  let measuredTps=0;\n  if(n>=1){\n    const want=communityIntent?$('model').value:'';\n    const row=(networkCapacity||[]).find(item=>item.model===want)||(networkCapacity||[])[0];\n    modelName=row?.model||want||[...networkModels][0]||'';\n    const mp=Number(row?.measured_providers||0);\n    const tps=Number(row?.tokens_per_second);\n    if(mp>=1&&Number.isFinite(tps)&&tps>0)measuredTps=tps;\n  }\n  if(top){\n    // Gate: never Community boast on Start. — quiet chrome; count only past gate.\n    // Measured tok/s only when capacity.measured_providers≥1 — never invent.\n    if(tfStep==='gate'){top.textContent=!window.__dashaAuthReady?'·':'';}\n    else if(n>=1){\n      const tpsLabel=formatTokPerSec(measuredTps);\n      if(modelName&&tpsLabel)top.textContent=`${n} · ${modelName} · ${tpsLabel} tok/s`;\n      else if(modelName)top.textContent=`${n} · ${modelName}`;\n      else top.textContent=`${n}`;\n    }\n    else if(!window.__dashaAuthReady)top.textContent='·';\n    else top.textContent='';\n  }\n  // Quiet Ask Marketplace plain (no · N). Count lives on peek Console · N only.\n  const askOcm=$('ask-ocm');\n  if(askOcm){\n    askOcm.textContent='Marketplace';\n    askOcm.removeAttribute('aria-description');\n  }\n  const open=$('market-open');\n  if(open){\n    open.textContent=(ocmHosts!=null&&ocmHosts>0)?`Console · ${ocmHosts}`:'Console';\n    open.removeAttribute('aria-description');\n  }\n  const hostOpen=$('host-run');\n  if(hostOpen){\n    hostOpen.textContent=(ocmHosts!=null&&ocmHosts>0)?`Open · ${ocmHosts}`:'Open';\n    hostOpen.removeAttribute('aria-description');\n  }\n  paintProvideBeat();\n  paintHonestyPanel();\n}\nfunction shortModelHint(hint){\n  const h=String(hint||'');\n  if(/fast/i.test(h))return 'fast';\n  if(/vision/i.test(h))return 'vision';\n  if(/reason/i.test(h))return 'reason';\n  if(/MoE/i.test(h))return 'MoE';\n  if(/large|multi/i.test(h))return 'large';\n  return (h.split(/\\s+/)[0]||'').trim();\n}\nfunction paintModelChoices(){\n  const box=$('model-choices');\n  if(!box)return;\n  const eng=$('engine').value;\n  const mixture=eng==='mixture';\n  const pool=mixture?MODELS.filter(m=>SUB24.has(m[0])):MODELS;\n  box.replaceChildren();\n  pool.forEach(([id,,label,size,,hint])=>{\n    const b=document.createElement('button');\n    b.type='button';\n    b.className='tf-choice';\n    b.dataset.model=id;\n    b.setAttribute('aria-pressed',$('model').value===id?'true':'false');\n    const cap=shortModelHint(hint);\n    b.textContent=cap?`${label} · ${size} · ${cap}`:`${label} · ${size}`;\n    const offline=networkModels.size>0&&!networkModels.has(id);\n    // Offline: is-dim (no opacity crush) + disabled — avoid silent swap to another model on Ask.\n    if(offline){\n      b.classList.add('is-dim');\n      b.disabled=true;\n      b.setAttribute('aria-disabled','true');\n      b.title=(hint?hint+' · ':'')+'Offline · not on network';\n    }else{\n      b.title=hint||'';\n    }\n    b.addEventListener('click',()=>{\n      if(offline||b.disabled)return;\n      $('model').value=id;\n      showTf('ask');\n      updateRun();\n    });\n    box.append(b);\n  });\n  $('mixture-chip').hidden=!mixture;\n}\nfunction fleetEmpty(eng){\n  if(eng==='self')return ownMacOnline<1;\n  if(providersOnline===0)return true;\n  if(!networkModels.size)return true;\n  if(eng==='mixture')return ![...networkModels].some(m=>SUB24.has(m));\n  return false;\n}\nfunction setEngine(value,advance=true){\n  const eng=value==='mixture'||value==='community'||value==='hosted'||value==='self'?value:'hosted';\n  $('engine').value=eng;\n  document.querySelectorAll('.engines [data-engine]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.engine===eng?'true':'false'));\n  updateRun();\n  if(!advance)return;\n  if(eng==='hosted'){\n    nightQueueIntent=false;\n    $('model').value='gpt-oss-20b';\n    showTf('ask');\n  }else if(eng==='self'&&fleetEmpty(eng)){\n    // Honest: no Night / Hosted silent steal when My Mac offline.\n    nightQueueIntent=false;\n    showTf('ask');\n  }else if(fleetEmpty(eng)){\n    preferOnlineModel($('model'),eng==='mixture');\n    if(eng==='mixture'&&!SUB24.has($('model').value))$('model').value='qwen3-8b';\n    showNightEmpty();\n  }else{\n    nightQueueIntent=false;\n    preferOnlineModel($('model'),eng==='mixture');\n    if(eng==='mixture'&&!SUB24.has($('model').value))$('model').value='qwen3-8b';\n    paintModelChoices();\n    showTf('model');\n  }\n}\nfunction paintProgress(step){\n  const bar=$('tf-progress');\n  if(!bar)return;\n  if(step==='gate'||step==='credits'||step==='you'||step==='earn'){bar.hidden=true;bar.replaceChildren();return}\n  const eng=$('engine')?.value||'hosted';\n  let path;\n  if(step.startsWith('provide'))path=['provide-name','provide-reg','provide-done'];\n  else if(step==='market')path=['ask','market'];\n  else if(step==='host')path=['ask','host'];\n  else if(step==='pay'||step==='pay-buy'||step==='pay-send'||step==='pay-done')path=['pay','pay-buy','pay-send','pay-done'];\n  else if(step==='sponsor'||step==='sponsor-buy'||step==='sponsor-send'||step==='sponsor-done')path=['sponsor','sponsor-buy','sponsor-send','sponsor-done'];\n  else if(step==='night')path=['how','night'];\n  else if(step==='how')path=['how','ask'];\n  else if(step==='build')path=eng==='hosted'?['ask','answer','build']:['how','model','ask','answer','build'];\n  else if(eng==='hosted')path=['ask','answer'];\n  else if(fleetEmpty(eng))path=['how','night'];\n  else path=['how','model','ask','answer'];\n  let idx=path.indexOf(step);if(idx<0)idx=0;\n  bar.hidden=false;bar.replaceChildren();\n  path.forEach((_,i)=>{const d=document.createElement('i');d.className='tf-dot'+(i<=idx?' on':'')+(i===idx?' now':'');bar.append(d)});\n  const progressLabel=document.createElement('span');\n  progressLabel.className='tf-frac';\n  progressLabel.id='tf-progress-label';\n  progressLabel.setAttribute('aria-hidden','true');\n  progressLabel.textContent=(idx+1)+' / '+path.length;\n  bar.append(progressLabel);\n  bar.setAttribute('aria-valuenow',String(idx+1));\n  bar.setAttribute('aria-valuemax',String(path.length));\n  bar.setAttribute('aria-valuetext',(idx+1)+' / '+path.length);\n}\nfunction paintProvideBeat(){\n  const beat=$('provide-beat'),tto=$('provide-tto'),mlx=$('provide-prefer-mlx');\n  if(!beat)return;\n  if(tfStep!=='provide-done'){beat.hidden=true;return}\n  beat.hidden=false;\n  if(providersOnline>=1){\n    beat.textContent=providersOnline===1?'Online':`${providersOnline} online`;\n    beat.classList.add('acid');\n    beat.classList.remove('waiting');\n    beat.setAttribute('aria-label',beat.textContent);\n    if(tto)tto.hidden=true;\n    if(mlx)mlx.hidden=true;\n  }else{\n    beat.textContent='';\n    beat.classList.remove('acid');\n    beat.classList.add('waiting');\n    beat.setAttribute('aria-label','Waiting');\n    if(tto)tto.hidden=false;\n    if(mlx)mlx.hidden=false;\n  }\n}\nfunction clearProvideBeatPoll(){if(provideBeatTimer){clearInterval(provideBeatTimer);provideBeatTimer=null}}\nfunction startProvideBeatPoll(){\n  clearProvideBeatPoll();\n  provideBeatTimer=setInterval(()=>{\n    if(tfStep!=='provide-done'){clearProvideBeatPoll();return}\n    refreshProvideDone();\n  },15000);\n}\nasync function refreshProvideDone(){\n  try{\n    const network=await api('/compute/api/network');\n    networkModels=new Set(network?.models_available||[]);\n    providersOnline=Number.isInteger(network?.providers_online)?network.providers_online:0;\n    networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];\n    $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);\n    paintSplit();\n    paintCode();\n  }catch{}\n  paintProvideBeat();\n  if(loggedIn){\n    const refresh=$('refresh-providers');\n    if(refresh){refresh.hidden=false;refresh.disabled=false}\n    await loadProviders();\n  }\n}\nfunction paintAskBack(){\n  const back=$('back-ask');\n  if(!back)return;\n  const eng=$('engine')?.value||'hosted';\n  back.hidden=eng==='hosted'&&!cameFromHow&&!cameFromGate;\n}\nfunction clearPaySponsorFine(){\n  const sf=$('pay-sponsor-fine');\n  if(sf)sf.hidden=true;\n}\nfunction showTf(step){\n  tfStep=step;\n  document.body.dataset.step=step;\n  document.querySelectorAll('[data-tf]').forEach(node=>{\n    node.hidden=node.dataset.tf!==step;\n  });\n  paintProgress(step);\n  if(step==='gate'){clearHonestyPoll();paintHonestyPanel()} else{paintHonestyPanel();startHonestyPoll()}\n  if(step==='pay'||step==='gate'||step==='ask'||step==='pay-buy'||step==='sponsor'||step==='sponsor-buy')clearPaySponsorFine();\n  const login=$('login');\n  if(login){\n    const ret=step.startsWith('provide')?'%23provide':step==='build'?'%23build':step==='ask'?'%23ask':step==='night'?'%23night':step==='earn'?'%23earn':'';\n    login.href='/login?return=/compute'+ret;\n  }\n  if(step==='ask'){\n    paintAskBack();\n    updateRun();\n    const hint=$('ask-hint');\n    if(hint){hint.hidden=true;hint.textContent='';hint.setAttribute('aria-hidden','true')}\n    const prompt=$('prompt');\n    const backHidden=!!$('back-ask')?.hidden;\n    if(prompt){\n      if(nightQueueIntent)prompt.title=backHidden?'Enter to queue':'Enter to queue · Esc back';\n      else prompt.title=backHidden?'Enter to run':'Enter to run · Esc back';\n    }\n    setTimeout(()=>$('prompt')?.focus(),40);\n  }else if(step==='provide-name'){\n    const back=$('provide-name-back')||document.querySelector('#step-provide-name .tf-back');\n    const dest=(provideBack==='gate'||provideBack==='pay'||provideBack==='ask')?provideBack:'ask';\n    if(back)back.setAttribute('data-back',dest);\n    const fine=$('provide-name-fine');\n    if(fine)fine.hidden=provideBack!=='pay';\n    setTimeout(()=>$('provider-name')?.focus(),40);\n  }else if(step==='gate'||step==='how'||step==='model'||step==='night'||step==='answer'||step==='provide-done'||step==='market'||step==='host'||step==='pay'||step==='pay-buy'||step==='pay-send'||step==='pay-done'||step==='sponsor'||step==='sponsor-buy'||step==='sponsor-send'||step==='sponsor-done'||step==='credits'||step==='you'||step==='earn'){\n    setTimeout(()=>{\n      const section=document.querySelector('[data-tf=\"'+step+'\"]');\n      if(!section||section.hidden)return;\n      const active=document.activeElement;\n      if(active&&section.contains(active))return;\n      // Guest Buy: Sign in is the only money CTA — prefer it over pack chips.\n      if(step==='pay-buy'&&!loggedIn){\n        const payLogin=$('pay-method-login');\n        if(payLogin&&!payLogin.hidden&&payLogin.offsetParent!==null){payLogin.focus();return}\n      }\n      if(step==='sponsor-buy'&&!loggedIn){\n        const spLogin=$('sponsor-method-login');\n        if(spLogin&&!spLogin.hidden&&spLogin.offsetParent!==null){spLogin.focus();return}\n      }\n      const first=[...section.querySelectorAll('button.tf-choice, a.tf-choice')].find(el=>!el.hidden&&el.offsetParent!==null);\n      if(first)first.focus();\n    },40);\n  }\n  if(step==='model')paintModelChoices();\n  if(step==='provide-reg')updateProvideAuth();\n  if(step==='build'){$('build').open=true;paintCode()}\n  if(step==='night')paintNightAuth();\n  if(step==='gate'||step==='you')paintGateAuth();\n  if(step==='gate'||step==='how'||step==='ask'||step==='night'||step==='market'||step==='host'){paintSplit();if(step==='gate'||step==='ask'||step==='market'||step==='host')loadOcmHosts()}\n  if(step==='ask'){paintAskCredits();if(loggedIn)loadCreditsBalance()}\n  if(step==='answer'){paintAnswerApi();paintAnswerMoney()}\n  if(step==='provide-done'){\n    updateProvideAuth();\n    paintProvideBeat();\n    refreshProvideDone();\n    startProvideBeatPoll();\n  }else clearProvideBeatPoll();\n  if(step==='pay-buy'){if(!creditPack)creditPack='5';paintPayBuy();}\n  if(step==='sponsor'){paintSponsorTargets();}\n  if(step==='sponsor-buy'){if(!sponsorPack&&sponsorCustomCents==null)sponsorPack='5';paintSponsorBuy();}\n  if(step==='sponsor-send'){\n    paintSponsorSend();\n  }\n  if(step==='credits'){paintCreditsBalance();loadCreditsBalance().finally(()=>paintCreditsBalance())}\n  if(step==='earn'){paintEarn();loadEarn().finally(()=>paintEarn())}\n  if(step==='pay-send'){\n    if(!loggedIn){\n      const wait=$('pay-wait'),line=$('pay-send-line');\n      if(wait)wait.textContent='';\n      if(line)line.textContent='·';\n      creditOrder=null;clearCreditPoll();\n      paintPayBuy();showTf('pay-buy');return\n    }\n  }\n  else clearCreditPoll();\n  window.scrollTo({top:0,behavior:'smooth'});\n}\nfunction setStep(step){\n  if(step==='provide')showTf('provide-name');\n  else if(step==='build')showTf('build');\n  else if(step==='use'||step==='ask'){cameFromHow=false;cameFromGate=true;setComputeIntent('ask');setEngine('hosted',true)}\n  else showTf('gate');\n}\nfunction updateProvideAuth(){\n  $('login').hidden=loggedIn;\n  $('provider-login').hidden=loggedIn;\n  $('register-provider').hidden=!loggedIn;\n  $('register-provider').disabled=!loggedIn;\n  const refresh=$('refresh-providers');\n  if(refresh){\n    const show=loggedIn&&tfStep==='provide-done';\n    refresh.hidden=!show;\n    refresh.disabled=!loggedIn;\n  }\n  const macs=$('provider-macs');\n  if(macs)macs.hidden=!(loggedIn&&tfStep==='provide-done');\n  if(loggedIn&&tfStep==='provide-done')paintProviderMacsSum();\n  $('key-login').hidden=loggedIn;\n  $('create-api-key').hidden=!loggedIn;\n  $('create-api-key').disabled=!loggedIn;\n  const limWrap=$('api-key-limit-wrap');if(limWrap)limWrap.hidden=!loggedIn;\n  paintGateAuth();\n}\nfunction sessionLabelFrom(session){\n  if(!session||session.loggedIn!==true)return '';\n  const x=session.x;\n  if(x&&x.handle)return '@'+String(x.handle).replace(/^@/,'');\n  if(x&&x.display)return String(x.display);\n  if(session.wallet&&session.wallet.display)return String(session.wallet.display);\n  if(session.grok&&session.grok.display)return String(session.grok.display);\n  return 'You';\n}\nfunction paintGateAuth(){\n  const signin=$('gate-signin'),you=$('gate-you'),id=$('you-id');\n  if(signin)signin.hidden=!!loggedIn;\n  if(you){\n    you.hidden=!loggedIn;\n    you.textContent=loggedIn?(sessionLabel||'You'):'You';\n  }\n  if(id){\n    if(loggedIn&&sessionLabel){id.hidden=false;id.textContent=sessionLabel}\n    else if(loggedIn){id.hidden=false;id.textContent='You'}\n    else{id.hidden=true;id.textContent=''}\n  }\n}\nfunction paintAskCommunity(){\n  const chip=$('ask-community'),sep=$('ask-community-sep');\n  const show=providersOnline>=1;\n  if(chip)chip.hidden=!show;\n  if(sep)sep.hidden=!show;\n  if(!chip)return;\n  if(!show){\n    chip.textContent='Community';\n    chip.title='Community Mac online';\n    chip.setAttribute('aria-label','Community');\n    return;\n  }\n  const {model,tpsLabel}=fleetMeasuredLabel();\n  chip.textContent=`Community · ${providersOnline}`;\n  const title=tpsLabel?(model?`${model} · ${tpsLabel} tok/s measured`:`${tpsLabel} tok/s measured`):(model?`${model} · online`:'Community Mac online');\n  chip.title=title;\n  chip.setAttribute('aria-label',tpsLabel?(`Community · ${providersOnline} · ${tpsLabel} tok/s`):(`Community · ${providersOnline}`));\n}\nfunction paintHowFloorFine(){\n  const el=$('how-floor-fine');\n  if(!el)return;\n  if(!(providersOnline>=1)){el.textContent='Local Macs + Hosted floor.';return}\n  const {model,tpsLabel}=fleetMeasuredLabel();\n  const n=providersOnline;\n  if(model&&tpsLabel)el.textContent=`${n} · ${model} · ${tpsLabel} tok/s · Hosted floor.`;\n  else if(model)el.textContent=`${n} · ${model} · Hosted floor.`;\n  else el.textContent=`${n} online · Hosted floor.`;\n}\nfunction paintAskFreeFine(){\n  const el=$('ask-free-fine');\n  if(!el)return;\n  const eng=$('engine')?.value||'hosted';\n  // Hosted floor only — Community / Mixture / self are not the 3-free Hosted path.\n  el.hidden=eng!=='hosted';\n}\nfunction paintAskEngine(){\n  const btn=$('change-engine');\n  if(!btn)return;\n  const eng=$('engine')?.value||'hosted';\n  if(eng==='community')btn.textContent=providersOnline>=1?`Community · ${providersOnline}`:'Community';\n  else if(eng==='mixture')btn.textContent='Mixture';\n  else if(eng==='self')btn.textContent='My Mac · free';\n  else btn.textContent='Hosted';\n  btn.setAttribute('aria-label','Change engine');\n  if(providersOnline>=1&&(eng==='hosted'||(eng==='mixture'&&fleetEmpty('mixture')))){\n    const {model,tpsLabel}=fleetMeasuredLabel();\n    const bits=['Community',String(providersOnline)];\n    if(model)bits.push(model);\n    if(tpsLabel)bits.push(tpsLabel+' tok/s');\n    btn.title='Change engine · '+bits.join(' · ')+' available';\n  }else btn.title='Change engine';\n}\nfunction paintAskMyMac(){\n  const chip=$('ask-mymac'),sep=$('ask-mymac-sep'),engSelf=$('eng-self');\n  const show=!!loggedIn&&ownMacOnline>=1;\n  if(chip)chip.hidden=!show;\n  if(sep)sep.hidden=!show;\n  if(engSelf)engSelf.hidden=!show;\n  const tpsLabel=formatTokPerSec(ownMacTps);\n  const title=tpsLabel?('My Mac · free · '+tpsLabel+' tok/s measured'):'Run on your Mac · free';\n  if(chip){chip.title=title;chip.setAttribute('aria-label',tpsLabel?('My Mac · free · '+tpsLabel+' tok/s'):'My Mac · free')}\n  if(engSelf){engSelf.title=tpsLabel?('My Mac · '+tpsLabel+' tok/s measured'):'My Mac · free'}\n  if(!show&&$('engine')?.value==='self')setEngine('hosted',false);\n}\n\nconst ASK_DRAFT_KEY='dasha-compute-ask-draft';\nconst ASK_RESUME_KEY='dasha-compute-ask-resume';\nconst ASK_ENGINE_KEY='dasha-compute-ask-engine';\nlet pendingAskResumeEngine=null;\nfunction saveAskDraftForLogin(){\n  try{\n    const text=($('prompt')?.value||'').trim();\n    if(text)sessionStorage.setItem(ASK_DRAFT_KEY,text.slice(0,2000));\n    else sessionStorage.removeItem(ASK_DRAFT_KEY);\n    sessionStorage.setItem(ASK_RESUME_KEY,'1');\n    // Guest Community/Mixture Sign in must resume that engine when Mac still up — not silent Hosted steal.\n    const eng=$('engine')?.value||'hosted';\n    if(eng==='community'||eng==='mixture'||eng==='self'||eng==='hosted')sessionStorage.setItem(ASK_ENGINE_KEY,eng);\n    else sessionStorage.removeItem(ASK_ENGINE_KEY);\n  }catch{}\n}\nfunction takeAskResume(){\n  try{\n    if(sessionStorage.getItem(ASK_RESUME_KEY)!=='1')return null;\n    sessionStorage.removeItem(ASK_RESUME_KEY);\n    const text=String(sessionStorage.getItem(ASK_DRAFT_KEY)||'').slice(0,2000);\n    sessionStorage.removeItem(ASK_DRAFT_KEY);\n    const engine=sessionStorage.getItem(ASK_ENGINE_KEY)||'hosted';\n    sessionStorage.removeItem(ASK_ENGINE_KEY);\n    return {text,engine};\n  }catch{return null}\n}\nfunction takeAskResumeDraft(){\n  const pack=takeAskResume();\n  if(!pack)return '';\n  pendingAskResumeEngine=pack.engine||'hosted';\n  return pack.text||'';\n}\nfunction applyAskResumeEngine(){\n  const eng=pendingAskResumeEngine;\n  pendingAskResumeEngine=null;\n  if(!eng)return;\n  let want='hosted';\n  if(eng==='community'&&providersOnline>=1)want='community';\n  else if(eng==='mixture'&&!fleetEmpty('mixture'))want='mixture';\n  else if(eng==='self'&&ownMacOnline>=1)want='self';\n  else if(eng==='hosted')want='hosted';\n  // else Mac/self gone while signing in → honest Hosted floor (keep draft).\n  if(want==='hosted'){cameFromGate=true;cameFromHow=false}\n  else {cameFromHow=true;cameFromGate=false}\n  setEngine(want,false);\n  showTf('ask');\n}\nfunction updateRun(){\n  const model=$('model'),eng=$('engine').value;\n  const community=eng==='community'||eng==='mixture'||eng==='self';\n  const mixture=eng==='mixture';\n  const selfRoute=eng==='self';\n  $('model-row').hidden=true;\n  $('mixture-chip').hidden=!mixture;\n  if(community){\n    if(mixture){\n      if(!SUB24.has(model.value)||model.value==='gpt-oss-20b'&&!networkModels.has(model.value)){\n        if(networkModels.has('qwen3-8b'))model.value='qwen3-8b';\n        else if(networkModels.has('gemma3-12b'))model.value='gemma3-12b';\n        else preferOnlineModel(model,true);\n        if(!SUB24.has(model.value))model.value='qwen3-8b';\n      }else preferOnlineModel(model,true);\n    }else{\n      preferOnlineModel(model,false);\n      if(networkModels.size&&!networkModels.has(model.value)){\n        if(networkModels.has('gemma3-27b'))model.value='gemma3-27b';\n        else preferOnlineModel(model,false);\n      }\n    }\n  }else model.value='gpt-oss-20b';\n  model.disabled=!community;\n  const available=selfRoute?ownMacModels.has(model.value):community?networkModels.has(model.value):hostedLive;\n  const noMac=community&&!available;\n  const communityOption=[...$('engine').options].find(option=>option.value==='community');\n  if(communityOption){communityOption.hidden=false;communityOption.text=providersOnline>=1?`Community · ${providersOnline}`:'Community'}\n  $('run-demo').textContent='Run';\n  // Guest + Mac/hosted available: hide Run so Sign in is the only primary (no dual CTA muddle).\n  // Guest + noMac: one primary Run (opens Night); hide Ask #login — Night already has Sign in for Queue. Hosted still on Night.\n  // Logged-in: Run on, Sign in off.\n  const run=$('run-demo'),loginBtn=$('login');\n  if(loggedIn){\n    run.hidden=false;run.removeAttribute('hidden');run.style.display='';\n    run.disabled=community?!available:!hostedLive;\n    if(loginBtn)loginBtn.hidden=true;\n  }else if(noMac){\n    run.hidden=false;run.removeAttribute('hidden');run.style.display='';\n    run.disabled=false;\n    if(loginBtn)loginBtn.hidden=true;\n  }else{\n    run.hidden=true;run.setAttribute('hidden','');run.style.display='none';run.disabled=true;\n    if(loginBtn){\n      loginBtn.hidden=false;\n      // Guest with a filled prompt (starter chip or typed): name the next step — not bare Sign in.\n      loginBtn.textContent=($('prompt')?.value||'').trim()?'Sign in to run':'Sign in';\n    }\n  }\n  const engHost=$('eng-hosted'),engCom=$('eng-community'),engMix=$('eng-mixture'),engSelf=$('eng-self');\n  if(engHost)engHost.textContent='Hosted';\n  if(engSelf)engSelf.textContent='My Mac · free';\n  if(engCom){\n    engCom.textContent=providersOnline>=1?`Community · ${providersOnline}`:'Community';\n    engCom.classList.toggle('is-dim',providersOnline===0);\n    if(providersOnline===0){\n      engCom.title='No Mac · opens Night';\n      engCom.setAttribute('aria-label','Community · offline · opens Night');\n    }else{\n      const {model,tpsLabel}=fleetMeasuredLabel();\n      engCom.title=tpsLabel?(model?`${model} · ${tpsLabel} tok/s measured`:`${tpsLabel} tok/s measured`):(model?`${model} · online`:'Community Mac online');\n      engCom.setAttribute('aria-label',tpsLabel?(`Community · ${providersOnline} · ${tpsLabel} tok/s`):(`Community · ${providersOnline}`));\n    }\n  }\n  if(engMix){\n    engMix.textContent='Mixture';\n    const mixEmpty=fleetEmpty('mixture');\n    engMix.classList.toggle('is-dim',mixEmpty);\n    if(mixEmpty){\n      if(providersOnline>=1){\n        engMix.title=`No Mixture Mac · Community · ${providersOnline} online`;\n        engMix.setAttribute('aria-label',`Mixture · no sub-24GB · Community · ${providersOnline} online`);\n      }else{\n        engMix.title='No Mixture Mac · opens Night';\n        engMix.setAttribute('aria-label','Mixture · no sub-24GB Mac online');\n      }\n    }else{\n      engMix.removeAttribute('title');\n      engMix.setAttribute('aria-label','Mixture');\n    }\n  }\n  if(nightQueueIntent)$('run-demo').textContent='Queue';\n  if(!noMac&&tfStep!=='night')hideNightOffer();\n  paintAskEngine();paintAskMyMac();paintAskCommunity();paintHowFloorFine();paintAskFreeFine();\n  paintRequest();paintSplit();\n}\nasync function auth(){\n  let status=null,session=null,network=null,authErr=false;\n  const settled=await Promise.allSettled([api('/compute/api/status'),api('/auth/status'),api('/compute/api/network')]);\n  if(settled[0].status==='fulfilled')status=settled[0].value; else authErr=true;\n  if(settled[1].status==='fulfilled')session=settled[1].value; else authErr=true;\n  if(settled[2].status==='fulfilled')network=settled[2].value; else authErr=true;\n  hostedLive=status?.live===true;\n  loggedIn=session?.loggedIn===true;\n  sessionLabel=loggedIn?sessionLabelFrom(session):'';\n  networkModels=new Set(network?.models_available||[]);\n  providersOnline=Number.isInteger(network?.providers_online)?network.providers_online:0;\n  networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];\n  $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);\n  window.__dashaAuthReady=true;\n  updateProvideAuth();\n  if(pendingAskResumeEngine)applyAskResumeEngine();\n  else updateRun();\n  if(loggedIn){loadProviders();loadApiKeys();loadCreditsBalance()}\n  else {creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;ownMacOnline=0;ownMacModels=new Set();ownMacTps=0;paintCreditsBalance();paintEarn();paintAnswerApi();paintAskMyMac()}\n  paintPayMethod();\n  paintGateAuth();\n  paintSettled24h();\n  paintCode();\n  loadSettled24h();\n  loadOcmHosts();\n}\nasync function loadOcmHosts(){\n  try{\n    const res=await fetch('/compute/ocm/healthz',{cache:'no-store'});\n    if(!res.ok)throw Error('ocm');\n    const data=await res.json();\n    ocmHosts=Number.isInteger(data.hosts)?data.hosts:null;\n  }catch{ocmHosts=null}\n  paintSplit();\n}\nfunction clearRunTick(){if(runTickTimer){clearInterval(runTickTimer);runTickTimer=null}}\nfunction startRunTick(waiting){\n  clearRunTick();\n  runStartedAt=Date.now();\n  const label=waiting?'Waiting for a Mac':'Thinking';\n  const tick=()=>{const s=Math.floor((Date.now()-runStartedAt)/1000);$('answer-title').textContent=label+' · '+s+'s'};\n  tick();\n  runTickTimer=setInterval(tick,1000);\n}\nfunction onFirstToken(){clearRunTick();$('answer-title').textContent='Answer.';paintSplit()}\nfunction hideNightOffer(){\n  const offer=$('night-offer');\n  if(offer)offer.hidden=true;\n}\nfunction paintNightAuth(reason){\n  const offer=$('night-offer'),copy=$('night-offer-copy'),queue=$('queue-night'),login=$('queue-night-login');\n  if(!offer)return;\n  if(copy){copy.hidden=true;copy.textContent='';copy.setAttribute('aria-hidden','true')}\n  if(queue){queue.hidden=!loggedIn;queue.disabled=!loggedIn;queue.textContent='Queue'}\n  if(login){login.hidden=loggedIn;login.textContent='Sign in'}\n  const hosted=$('night-use-hosted');\n  if(hosted)hosted.textContent='Hosted';\n  // Honest capacity: Mixture (or wrong-model) Night still offers live Community Macs.\n  const com=$('night-use-community');\n  if(com){\n    const show=providersOnline>=1;\n    com.hidden=!show;\n    if(show){\n      const {model,tpsLabel}=fleetMeasuredLabel();\n      com.textContent=`Community · ${providersOnline}`;\n      const title=tpsLabel?(model?`${model} · ${tpsLabel} tok/s measured`:`${tpsLabel} tok/s measured`):(model?`${model} · online`:'Community Mac online');\n      com.title=title;\n      com.setAttribute('aria-label',tpsLabel?(`Community · ${providersOnline} · ${tpsLabel} tok/s`):(`Community · ${providersOnline}`));\n    }else{\n      com.textContent='Community';\n      com.removeAttribute('title');\n      com.setAttribute('aria-label','Community');\n    }\n  }\n  offer.hidden=false;\n}\nfunction paintNightH1(){\n  const h1=$('night-q')||document.querySelector('#step-night .tf-q');\n  if(!h1)return;\n  const eng=$('engine')?.value||'';\n  if(providersOnline===0)h1.textContent='No Mac online.';\n  else if(eng==='mixture')h1.textContent='No Mixture Mac.';\n  else h1.textContent='No chat Mac.';\n}\nfunction showNightEmpty(reason){\n  paintNightH1();\n  paintNightAuth(reason);\n  showTf('night');\n}\nfunction showNightOffer(reason){\n  showNightEmpty(reason||'Queue this prompt for when a Mac is up.');\n}\nasync function queueForMac(){\n  const prompt=$('prompt').value.trim();\n  const model=$('model').value||'qwen3-8b';\n  const eng=$('engine').value;\n  if(!prompt){\n    nightQueueIntent=true;\n    showTf('ask');\n    return;\n  }\n  if(prompt.length>2000){$('answer').textContent='Keep the prompt under 2,000 characters.';showTf('ask');return}\n  if(!loggedIn){showNightOffer();return}\n  const queue=$('queue-night'),run=$('run-demo');\n  if(queue){queue.disabled=true;queue.textContent='Queuing…'}\n  if(run){run.disabled=true;run.textContent='Queuing…'}\n  $('answer').textContent='Queued';\n  $('answer-title').textContent='Night.';\n  showTf('answer');\n  try{\n    const title=(prompt.slice(0,72)+(prompt.length>72?'…':'')).trim()||'Queued ask';\n    const body={title,prompt:eng==='mixture'?('Mixture · sub-24GB\\n\\n'+prompt):prompt,model,template:'custom',repeat:'none'};\n    const data=await api('/compute/api/night',{method:'POST',body:JSON.stringify(body)});\n    const status=data?.task?.status||'scheduled';\n    $('answer').textContent=status==='running'?'Running':'Queued';\n    nightQueueIntent=false;\n    hideNightOffer();\n    if(queue)queue.textContent='Queued';\n  }catch(error){\n    $('answer').textContent=error.message==='login required'?'Sign in.':error.message;\n    showNightOffer();\n  }finally{\n    updateRun();\n    if(queue&&loggedIn){queue.disabled=false;queue.textContent='Queue'}\n  }\n}\nasync function readSse(response){\n  if(!response.ok){\n    const ct=response.headers.get('content-type')||'';\n    if(ct.includes('application/json')){const err=await response.json().catch(()=>({}));throw Error(err?.error?.message||err?.error||'Request failed')}\n    throw Error('Request failed');\n  }\n  const reader=response.body.getReader(),decoder=new TextDecoder();\n  let buf='',out='',saw=false;const node=$('answer');\n  lastSseUsage=null;lastSseSettle=null;\n  while(true){\n    const {done,value}=await reader.read();\n    if(done||jobCancelled)break;\n    buf+=decoder.decode(value,{stream:true});\n    const parts=buf.split(/\\n\\n/);buf=parts.pop()||'';\n    for(const part of parts){\n      for(const line of part.split(/\\n/)){\n        if(!line.startsWith('data:'))continue;\n        const raw=line.slice(5).trimStart();\n        if(raw==='[DONE]')return out;\n        let payload;try{payload=JSON.parse(raw)}catch{continue}\n        if(payload?.error)throw Error(payload.error.message||payload.error||'stream error');\n        if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;if(payload?.settle&&typeof payload.settle==='object')lastSseSettle=payload.settle;\n        const delta=typeof payload?.choices?.[0]?.delta?.content==='string'?payload.choices[0].delta.content:typeof payload?.choices?.[0]?.delta==='string'?payload.choices[0].delta:typeof payload?.response==='string'?payload.response:typeof payload?.delta==='string'?payload.delta:'';\n        if(delta){if(!saw){saw=true;onFirstToken()}out+=delta;node.textContent=out}\n      }\n    }\n  }\n  if(jobCancelled)throw Error('Request cancelled. Prompt deleted.');\n  return out;\n}\n$('queue-night').addEventListener('click',()=>queueForMac());\n$('night-use-hosted')?.addEventListener('click',()=>{nightQueueIntent=false;setEngine('hosted',true)});\n$('night-use-community')?.addEventListener('click',()=>{if(providersOnline<1)return;nightQueueIntent=false;cameFromHow=true;cameFromGate=false;preferOnlineModel($('model'),false);setEngine('community',false);showTf('ask');});\n$('run-demo').addEventListener('click',async()=>{\n  if(nightQueueIntent){queueForMac();return}\n  const prompt=$('prompt').value.trim();\n  let messages=pendingMessages();\n  const button=$('run-demo'),eng=$('engine').value,community=eng==='community'||eng==='mixture'||eng==='self',mixture=eng==='mixture',selfRoute=eng==='self';\n  if(mixture)messages=mixtureFraming(messages);\n  if(community)messages=modelIdentityFraming(messages,$('model').value);\n  if(!prompt){$('answer').textContent='Write a prompt first.';return}\n  if(prompt.length>2000){$('answer').textContent='Keep the prompt under 2,000 characters.';return}\n  if(selfRoute&&!ownMacModels.has($('model').value)){\n    $('answer').textContent='Your Mac is offline.';\n    return;\n  }\n  if(community&&!selfRoute&&!networkModels.has($('model').value)){\n    showNightOffer();\n    return;\n  }\n  hideNightOffer();\n  if(!loggedIn){$('answer').textContent='Sign in.';$('answer-title').textContent='Ask.';showTf('answer');return}\n  button.disabled=true;$('clear-chat').disabled=true;\n  button.textContent=community?'Waiting for Mac…':'Running…';\n  $('answer').textContent=community?'Waiting for a Mac…':'Thinking…';\n  showTf('answer');\n  $('after-answer').hidden=true;\n  jobCancelled=false;\n  if(runAbort){try{runAbort.abort()}catch{}}\n  runAbort=new AbortController();\n  $('cancel-job').hidden=false;$('cancel-job').disabled=false;\n  startRunTick(!!community);\n  try{\n    let answer='';\n    if(community){\n      lastPaidReceipt=null;\n      const body={messages,model:$('model').value,stream:true};\n      if(mixture)body.route='mixture';\n      else if(selfRoute)body.route='self';\n      const res=await fetch(API+'/compute/api/jobs',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:runAbort.signal});\n      const ct=res.headers.get('content-type')||'';\n      if(ct.includes('event-stream')){\n        activeJob=res.headers.get('X-Dasha-Job')||'';\n        $('cancel-job').hidden=false;\n        answer=await readSse(res);\n        {\n          const u=lastSseUsage;\n          const tot=Number(u?.total_tokens);\n          const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));\n          const eng=mixture?'mixture':selfRoute?'self':'community';\n          // settle only from final SSE settle object or follow-up job JSON — never invent cents.\n          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||''),model:String($('model').value||''),...settleFieldsFrom(lastSseSettle)};\n          if(activeJob&&!(lastPaidReceipt.settle_cents>0)){\n            try{\n              const j=await api('/compute/api/jobs/'+activeJob);\n              if(j?.settle)lastPaidReceipt={...lastPaidReceipt,...settleFieldsFrom(j.settle)};\n            }catch{}\n          }\n        }\n      }\n      else{\n        if(!res.ok){\n          const err=await res.json().catch(()=>({}));\n          const msg=err?.error||'Request failed';\n          if(/No Mac is online/i.test(msg)||res.status===503){\n            $('answer').textContent='';\n            showNightOffer();\n            return;\n          }\n          throw Error(msg);\n        }\n        const job=await res.json();activeJob=job.id;$('cancel-job').hidden=false;\n        let data;\n        for(let attempt=0;attempt<900&&!jobCancelled;attempt++){\n          await new Promise(resolve=>setTimeout(resolve,400));\n          if(jobCancelled)break;\n          data=await api('/compute/api/jobs/'+job.id);\n          if(data.answer){$('answer').textContent=data.answer;onFirstToken()}\n          else if(data.status==='leased')$('answer').textContent='A Mac is generating…';\n          else $('answer').textContent=data.queue_position?`Queued · ${data.queue_position}`:'Queued';\n          if(data.status==='complete')break;\n          if(data.status==='failed')throw Error(data.error||'Provider failed');\n        }\n        if(jobCancelled)throw Error('Request cancelled. Prompt deleted.');\n        if(data?.status!=='complete')throw Error('Community request timed out. Try again.');\n        answer=String(data.answer||'');\n        {\n          const u=data?.usage&&typeof data.usage==='object'?data.usage:null;\n          const tot=Number(u?.total_tokens);\n          const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));\n          const eng=mixture?'mixture':selfRoute?'self':'community';\n          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String($('model').value||''),...settleFieldsFrom(data?.settle)};\n        }\n      }\n    }else{\n      const res=await fetch(API+'/compute/api/chat',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,stream:true}),signal:runAbort.signal});\n      const balHdr=res.headers.get('X-Dasha-Balance-Cents');\n      const hostedPaid=balHdr!=null&&Number.isFinite(Number(balHdr));\n      if(hostedPaid){creditBalanceCents=Math.max(0,Math.floor(Number(balHdr)));paintAskCredits()}\n      const ct=res.headers.get('content-type')||'';\n      let hostedUsage=null;\n      if(ct.includes('event-stream')){answer=await readSse(res);hostedUsage=lastSseUsage}\n      else{\n        if(!res.ok){const err=await res.json().catch(()=>({}));throw Error(err?.error||'Request failed')}\n        const data=await res.json();answer=String(data.answer||'');onFirstToken();$('answer').textContent=answer;\n        if(Number.isFinite(Number(data?.balance_cents))){creditBalanceCents=Math.max(0,Math.floor(Number(data.balance_cents)));paintAskCredits()}\n        if(data?.usage&&typeof data.usage==='object')hostedUsage=data.usage;\n      }\n      if(hostedPaid){\n        const tot=Number(hostedUsage?.total_tokens);\n        const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(hostedUsage?.prompt_tokens)||0)+(Number(hostedUsage?.completion_tokens)||0))));\n        lastPaidReceipt={tokens:tok,cents:5,engine:'hosted',settle_cents:5,settle_state:'settled'};\n      }else{lastPaidReceipt=null}\n    }\n    if(!String(answer||'').trim()){\n      // Empty completion — never paint settle success on empty/fail. USDC/$dasha cents only on real complete.\n      $('answer-title').textContent='Answer.';\n      $('answer').textContent='No reply.';\n      clearAnswerMoney();\n      lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();\n    }else{\n      conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);\n      renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();\n    }\n  }catch(error){\n    const emptyFail=/empty completion/i.test(String(error?.message||error||''));\n    if(jobCancelled||error?.name==='AbortError'){clearAnswerMoney();$('answer').textContent='Request cancelled. Prompt deleted.';$('answer-title').textContent='Answer.';}\n    else if(emptyFail){\n      // Worker/provider empty stream fail — clear money; no settle face.\n      $('answer-title').textContent='Answer.';\n      $('answer').textContent='No reply.';\n      clearAnswerMoney();\n      lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();\n    }\n    else if(error.message==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}\n    else if(/top up|credits|insufficient/i.test(String(error.message||''))){\n      // Past free floor / 402 — stay on Answer; one quiet Top up nudge (no yank mid-read).\n      lastAskFailKind='credits';\n      $('answer').textContent='Top up credits.';\n      $('answer-title').textContent='Answer.';\n      loadCreditsBalance();\n    }\n    else if(/rate.?limit|limit reached|try again shortly/i.test(String(error.message||''))){\n      lastAskFailKind='rate';\n      $('answer').textContent=error.message;\n      $('answer-title').textContent='Answer.';\n    }\n    else {clearAnswerMoney();$('answer').textContent=error.message;}\n  }\n  finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();$('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}\n});\ndocument.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>setEngine(b.dataset.engine,true)));\n$('model').addEventListener('change',updateRun);\n\nlet registeredSetup='';\nfunction defaultSetup(){\n  return `curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\ntar -xzf dasha-compute-open-alpha.tar.gz\\ncd dasha-compute-open-alpha\\nollama pull qwen3:8b\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor`;\n}\n$('provide-next').addEventListener('click',()=>{\n  const name=$('provider-name').value.trim();\n  if(!name){$('provider-name').focus();return}\n  showTf('provide-reg');\n});\n$('register-provider').addEventListener('click',async()=>{\n  const button=$('register-provider'),name=$('provider-name').value.trim();\n  const models=MODELS.filter(m=>SUB24.has(m[0])||m[0]==='gemma3-27b').map(m=>m[0]);\n  const best=MODELS.find(m=>m[0]==='qwen3-8b');\n  if(!name){$('provider-status').textContent='Name this Mac first.';showTf('provide-name');$('provider-name').focus();return}\n  button.disabled=true;button.textContent='Registering…';$('provider-status').textContent='';\n  try{\n    const credentials=await api('/compute/api/providers/register',{method:'POST',body:JSON.stringify({name,models})});\n    registeredSetup='curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\ntar -xzf dasha-compute-open-alpha.tar.gz\\ncd dasha-compute-open-alpha\\nollama pull '+best[1]+'\\numask 077\\ncat > .dasha-provider-key <<\\'EOF\\'\\n'+credentials.provider_token+'\\nEOF\\nchmod 0600 .dasha-provider-key\\nDASHA_COORDINATOR_URL='+credentials.coordinator_url+' \\\\\\nDASHA_PROVIDER_ID='+credentials.provider_id+' \\\\\\nDASHA_MODEL_MAP='+best[0]+'='+best[1]+' \\\\\\n./install.sh\\n\\nhttps://t.me/+xB7S8mIQaKFiZjRh';\n    $('setup').textContent=registeredSetup;\n    $('provider-status').textContent='';\n    button.textContent='Register another Mac';\n    showTf('provide-done');await auth();\n  }catch(error){$('provider-status').textContent=error.message;button.textContent=registeredSetup?'Register another Mac':'Register';button.disabled=!loggedIn}\n});\nfunction paintProviderMacsSum(n){\n  const sum=$('provider-macs-sum');\n  if(!sum)return;\n  if(Number.isInteger(n))sum.textContent='Your Macs · '+n;\n}\nasync function loadProviders(){\n  if(!loggedIn){ownMacOnline=0;ownMacModels=new Set();ownMacTps=0;paintAskMyMac();return}\n  try{\n    const data=await api('/compute/api/providers'),list=$('provider-list');\n    list.replaceChildren();\n    const macs=$('provider-macs');\n    if(macs)macs.hidden=tfStep!=='provide-done';\n    const providers=Array.isArray(data.providers)?data.providers:[];\n    const onlineMine=providers.filter(p=>p&&p.online);\n    ownMacOnline=onlineMine.length;\n    ownMacModels=new Set(onlineMine.flatMap(p=>Array.isArray(p.models)?p.models:[]));\n    const measuredMine=onlineMine.flatMap(p=>Array.isArray(p.hardware?.benchmarks)?p.hardware.benchmarks:[]).map(b=>Number(b?.tokens_per_second)).filter(v=>Number.isFinite(v)&&v>0);\n    ownMacTps=measuredMine.length?measuredMine.reduce((a,b)=>a+b,0)/measuredMine.length:0;\n    paintProviderMacsSum(providers.length);\n    paintAskMyMac();\n    if(!providers.length)return;\n    data.providers.forEach(provider=>{\n      const row=document.createElement('div'),label=document.createElement('span'),name=document.createElement('strong'),detail=document.createElement('small'),remove=document.createElement('button');\n      const state=provider.online?'online':provider.last_seen_at?'offline · last seen '+new Date(provider.last_seen_at).toLocaleString():'waiting for first heartbeat';\n      const benches=Array.isArray(provider.hardware?.benchmarks)?provider.hardware.benchmarks:[];\n      const tpsVals=benches.map(b=>Number(b?.tokens_per_second)).filter(v=>Number.isFinite(v)&&v>0);\n      const tpsLabel=tpsVals.length?formatTokPerSec(tpsVals.reduce((a,b)=>a+b,0)/tpsVals.length):'';\n      row.className='model';name.textContent=provider.name;\n      detail.textContent=[state,provider.models.length+' model'+(provider.models.length===1?'':'s'),tpsLabel?tpsLabel+' tok/s':''].filter(Boolean).join(' · ');\n      label.append(name,detail);remove.className='secondary';remove.type='button';remove.dataset.revoke=provider.id;remove.textContent='Revoke';\n      row.append(label,remove);list.append(row);\n    });\n  }catch{const list=$('provider-list');if(list)list.textContent='Could not load registered Macs.';paintProviderMacsSum(0)}\n}\n$('refresh-providers').addEventListener('click',auth);\n$('provider-list').addEventListener('click',async event=>{\n  const id=event.target.dataset.revoke;\n  if(!id||!confirm('Revoke this provider token? The agent will disconnect.'))return;\n  event.target.disabled=true;\n  try{await api('/compute/api/providers/'+id,{method:'DELETE'});await auth()}catch(error){alert(error.message);event.target.disabled=false}\n});\n$('cancel-job').addEventListener('click',async()=>{\n  if(!activeJob&&!runAbort)return;$('cancel-job').disabled=true;\n  jobCancelled=true;\n  try{\n    if(activeJob)await api('/compute/api/jobs/'+activeJob,{method:'DELETE'});\n    if(runAbort){try{runAbort.abort()}catch{}}\n    clearRunTick();$('answer-title').textContent='Answer.';$('answer').textContent='Request cancelled. Prompt deleted.';\n  }catch(error){$('answer').textContent=error.message}\n  finally{$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney()}\n});\nasync function loadApiKeys(){\n  if(!loggedIn){apiKeyCount=0;paintAnswerApi();return}\n  try{\n    const data=await api('/compute/api/keys'),list=$('api-key-list');\n    list.replaceChildren();\n    apiKeyCount=Array.isArray(data.keys)?data.keys.length:0;\n    if(!apiKeyCount){list.textContent='No developer keys yet.';paintAnswerApi();return}\n    data.keys.forEach(key=>{\n      const row=document.createElement('div'),label=document.createElement('span'),name=document.createElement('strong'),detail=document.createElement('small'),remove=document.createElement('button');\n      row.className='model';name.textContent=key.name;\n      const lim=key.limit_cents==null?'uncapped':('$'+((Number(key.limit_cents)||0)/100).toFixed((Number(key.limit_cents)||0)%100?2:0));\n      const rem=key.limit_cents==null?'':(' · $'+((Number(key.limit_remaining_cents)||0)/100).toFixed(2)+' left');\n      const reset=key.limit_reset&&key.limit_reset!=='none'?' / '+key.limit_reset:'';\n      detail.textContent=key.prefix+'… · '+lim+reset+rem+' · '+(key.last_used_at?'last used '+new Date(key.last_used_at).toLocaleString():'never used');\n      label.append(name,detail);remove.className='secondary';remove.type='button';remove.dataset.key=key.id;remove.textContent='Revoke';\n      row.append(label,remove);list.append(row);\n    });\n  }catch{apiKeyCount=0;$('api-key-list').textContent='Could not load API keys.'}\n  paintAnswerApi();\n}\n$('create-api-key').addEventListener('click',async()=>{\n  const button=$('create-api-key');button.disabled=true;\n  try{\n    const dollars=Number($('api-key-limit')?.value);\n    const limit_cents=Number.isFinite(dollars)&&dollars>0?Math.round(dollars*100):500;\n    const key=await api('/compute/api/keys',{method:'POST',body:JSON.stringify({name:'Developer key',limit_cents,limit_reset:'monthly'})});\n    const cap=key.limit_cents==null?'uncapped':('$'+((key.limit_cents)/100).toFixed(key.limit_cents%100?2:0)+' / '+(key.limit_reset||'month'));\n    $('api-key-output').textContent=\"export DASHA_API_KEY='\"+key.api_key+\"'\\n\\nCopy this now. Dasha stores only its hash.\\nSpend cap: \"+cap+\".\";\n    await loadApiKeys();\n  }catch(error){$('api-key-output').textContent=error.message}\n  finally{button.disabled=!loggedIn}\n});\n\n$('api-key-list').addEventListener('click',async event=>{\n  const id=event.target.dataset.key;\n  if(!id||!confirm('Revoke this developer key?'))return;\n  event.target.disabled=true;\n  try{await api('/compute/api/keys/'+id,{method:'DELETE'});await loadApiKeys()}\n  catch(error){$('api-key-output').textContent=error.message;event.target.disabled=false}\n});\nfunction paintCode(){\n  const base=$('gateway').value.replace(/\\/$/,'');\n  // Soft-prefer live online catalog model when fleet known and qwen3-8b offline (example id still OK).\n  let model='qwen3-8b';\n  if(networkModels.size&&!networkModels.has(model)){\n    const hit=MODELS.find(item=>networkModels.has(item[0]));\n    if(hit)model=hit[0];\n  }\n  $('code').textContent=`curl ${base}/chat/completions \\\\\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\\\\n  -H \"Content-Type: application/json\" \\\\\\n  -d '${JSON.stringify({model,messages:[{role:'user',content:'hello'}],stream:true})}'`;\n}\n$('gateway').addEventListener('input',paintCode);\nfunction paintApiKeyCapHint(){\n  const el=$('api-key-cap-hint'),input=$('api-key-limit');\n  if(!el)return;\n  const dollars=Number(input?.value);\n  const n=Number.isFinite(dollars)&&dollars>0?dollars:5;\n  el.textContent='Cap $'+n+' / month';\n}\n$('api-key-limit')?.addEventListener('input',paintApiKeyCapHint);\n\nfunction copy(text,button){\n  const old=button.textContent;\n  const done=()=>{button.textContent='Copied';setTimeout(()=>button.textContent=old,1400)};\n  const select=()=>{\n    const node=$('code');\n    if(node&&text===node.textContent){\n      const range=document.createRange();range.selectNodeContents(node);const sel=getSelection();sel.removeAllRanges();sel.addRange(range);button.textContent='Select text';return;\n    }\n    const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.focus();ta.select();button.textContent='Select text';\n  };\n  const legacy=()=>{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch{}ta.remove();return ok};\n  const timed=p=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Error('copy')),600))]);\n  if(navigator.clipboard&&navigator.clipboard.writeText){timed(navigator.clipboard.writeText(text)).then(done).catch(()=>{legacy()?done():select()})}\n  else if(legacy())done();else select();\n}\ndocument.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>copy($('code').textContent,b)));\n$('copy-skill-use')?.addEventListener('click',()=>copy(USE_SKILL,$('copy-skill-use')));\n$('copy-skill-provide-reg')?.addEventListener('click',()=>copy(PROVIDE_SKILL,$('copy-skill-provide-reg')));\n$('copy-skill-provide-done')?.addEventListener('click',()=>copy(PROVIDE_SKILL,$('copy-skill-provide-done')));\n$('check').addEventListener('click',async()=>{\n  const button=$('check'),base=$('gateway').value.replace(/\\/v1\\/?$/,'');\n  button.disabled=true;$('check-result').textContent='Checking…';\n  try{\n    const [health,network]=await Promise.all([fetch(base+'/healthz',{cache:'no-store'}),fetch(base+'/v1/network',{cache:'no-store'})]);\n    if(!health.ok||!network.ok)throw Error('Gateway returned an error');\n    $('check-result').textContent=JSON.stringify({health:await health.json(),network:await network.json()},null,2);\n  }catch(error){\n    $('check-result').textContent=JSON.stringify({offline:true,detail:'Could not reach this gateway from the browser.',next:'Run curl '+base+'/healthz'},null,2);\n  }finally{button.disabled=false}\n});\n\nfunction setComputeIntent(intent){\n  try{localStorage.setItem('dasha-compute-intent',intent)}catch{}\n  document.body.dataset.intent=intent||'';\n}\nfunction goAskFromGate(intent){\n  cameFromHow=false;cameFromGate=true;setComputeIntent(intent);setEngine('hosted',true);\n}\nfunction shortDest(addr){const s=String(addr||'');return s.length>12?s.slice(0,4)+'…'+s.slice(-4):s}\nconst CREDIT_DISCOUNTS={usdc:0.03,dasha:0.05};\nconst CREDIT_PACK_CENTS={5:500,20:2000,50:5000};\nfunction priceFor(method,pack){\n  const face=CREDIT_PACK_CENTS[String(pack||'')];\n  const d=CREDIT_DISCOUNTS[String(method||'').toLowerCase()];\n  if(!face||!(d>=0))return null;\n  return Math.round(face*(1-d));\n}\nfunction formatChargeDollars(cents){\n  const n=Math.max(0,Math.floor(Number(cents)||0));\n  return '$'+(n/100).toFixed(2);\n}\nfunction formatCredits(cents){\n  const n=Math.max(0,Math.floor(Number(cents)||0));\n  const dollars=(n/100).toFixed(n%100?2:0);\n  return '$'+dollars;\n}\nfunction paintPayMethodAuth(){\n  const login=$('pay-method-login'), usdc=$('pay-usdc'), dasha=$('pay-dasha');\n  if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23pay'}\n  // Guest: only Sign in — no payable method buttons to click through.\n  if(usdc)usdc.hidden=!loggedIn;\n  if(dasha)dasha.hidden=!loggedIn;\n}\nfunction paintPayBuyFine(){\n  const el=$('pay-buy-fine');\n  if(!el)return;\n  const pack=creditPack||'5';\n  const face=CREDIT_PACK_CENTS[String(pack)];\n  if(!(face>0)){el.textContent='Pack credits · crypto discount · no card yet.';return}\n  el.textContent=formatCredits(face)+' credits · crypto discount · no card yet.';\n}\nfunction paintPayMethodPrices(){\n  const pack=creditPack||'5';\n  const usdc=$('pay-usdc'),dasha=$('pay-dasha');\n  const u=priceFor('usdc',pack),d=priceFor('dasha',pack);\n  if(usdc&&u!=null)usdc.textContent='USDC · '+formatChargeDollars(u);\n  if(dasha&&d!=null)dasha.textContent='$dasha · '+formatChargeDollars(d);\n  paintPayBuyFine();\n}\nfunction paintPayPacks(){\n  const pack=creditPack||'5';\n  document.querySelectorAll('[data-pack]').forEach(btn=>{\n    const on=btn.getAttribute('data-pack')===String(pack);\n    btn.setAttribute('aria-pressed',on?'true':'false');\n    btn.classList.toggle('primary',on);\n    btn.classList.toggle('secondary',!on);\n  });\n}\nfunction paintPayBuy(){\n  paintPayPacks();\n  paintPayMethodAuth();\n  paintPayMethodPrices();\n  const err=$('pay-method-err');\n  if(err&&loggedIn){err.hidden=true;err.textContent=''}\n}\nfunction paintPayMethod(){paintPayBuy()}\nfunction paintAskCredits(){\n  const el=$('ask-credits'), sep=$('ask-credits-sep');\n  if(!el)return;\n  if(!loggedIn||creditBalanceCents==null){\n    el.hidden=true;el.textContent='';\n    if(sep)sep.hidden=true;\n    return;\n  }\n  el.hidden=false;\n  el.textContent=formatCredits(creditBalanceCents);\n  el.title='Credits';\n  el.setAttribute('aria-label','Credits');\n  if(sep)sep.hidden=false;\n}\n\nfunction formatUsdCents(cents){\n  const n=Math.max(0,Math.floor(Number(cents)||0));\n  return '$'+(n/100).toFixed(2);\n}\n\nfunction paintHonestyPanel(){\n  const panel=$('honesty-panel');\n  if(!panel)return;\n  const onGate=tfStep==='gate';\n  panel.hidden=onGate;\n  if(onGate)return;\n  const hosted=$('honesty-hosted');\n  if(hosted){\n    if(!window.__dashaAuthReady){\n      hosted.textContent='Hosted · live';\n      hosted.className='honesty-ok';\n    }else if(hostedLive){\n      hosted.textContent='Hosted · live';\n      hosted.className='honesty-ok';\n    }else{\n      hosted.textContent='Hosted · —';\n      hosted.className='';\n    }\n  }\n  const macs=$('honesty-macs');\n  if(macs){\n    const n=Number.isInteger(providersOnline)?providersOnline:0;\n    let tpsLabel='';\n    let model='';\n    if(n>=1){\n      const row=(networkCapacity||[])[0];\n      const tps=Number(row?.tokens_per_second);\n      const mp=Number(row?.measured_providers||0);\n      model=row?.model?String(row.model):'';\n      // Advertising only (providers_online) — never pad enrolled OCM hosts.\n      if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';\n      // Live measured only — stamp capacity[].tokens_per_second; never invent/pad.\n      if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';\n    }\n    if(n===0)macs.textContent='No Mac online';\n    else{\n      // Quiet presence: N online · model id · ~tok/s — only fields live network has.\n      const bits=[n+' online'];\n      if(model)bits.push(model);\n      if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');\n      macs.textContent=bits.join(' · ');\n    }\n    let title='';\n    if(n>=1&&(model||tpsLabel)){\n      const tbits=[];\n      if(model)tbits.push(model);\n      if(tpsLabel)tbits.push(tpsLabel+' tok/s measured');\n      title=tbits.join(' · ');\n    }\n    if(title){macs.title=title;macs.setAttribute('aria-label',title)}\n    else{macs.removeAttribute('title');macs.removeAttribute('aria-label')}\n  }\n  const settled=$('honesty-settled');\n  if(settled){\n    // Visible acts: factory settled_24h tokens/jobs/cents only — never invent.\n    settled.textContent=formatSettledLine();\n  }\n}\nfunction clearHonestyPoll(){if(honestyPollTimer){clearInterval(honestyPollTimer);honestyPollTimer=null}}\nfunction startHonestyPoll(){\n  clearHonestyPoll();\n  honestyPollTimer=setInterval(()=>{\n    if(tfStep==='gate'){clearHonestyPoll();return}\n    refreshHonesty();\n  },15000);\n}\nasync function refreshHonesty(){\n  if(tfStep==='gate')return;\n  try{\n    const network=await api('/compute/api/network');\n    networkModels=new Set(network?.models_available||[]);\n    providersOnline=Number.isInteger(network?.providers_online)?network.providers_online:0;\n    networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];\n    $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);\n    paintSplit();\n    paintAskCommunity();\n  }catch{}\n  try{\n    const status=await api('/compute/api/status');\n    hostedLive=status?.live===true;\n    $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);\n  }catch{}\n  await loadSettled24h();\n  paintHonestyPanel();\n}\nfunction formatTokPerSec(n){const v=Number(n);if(!Number.isFinite(v)||v<=0)return '';if(v>=100)return String(Math.round(v));if(v>=10)return String(Math.round(v*10)/10);return String(Math.round(v*100)/100)}\nfunction formatSettledTok(n){\n  const v=Math.max(0,Math.floor(Number(n)||0));\n  if(v>=1_000_000)return (Math.round(v/100_000)/10)+'M';\n  if(v>=10_000)return Math.round(v/1000)+'k';\n  if(v>=1000)return (Math.round(v/100)/10)+'k';\n  return String(v);\n}\nfunction formatSettledLine(){\n  const tok=Math.max(0,Math.floor(Number(settled24h?.tokens)||0));\n  const jobs=Math.max(0,Math.floor(Number(settled24h?.jobs)||0));\n  const cents=Math.max(0,Math.floor(Number(settled24h?.cents)||0));\n  // Honest zero stays finished; non-zero shows last settled / jobs (+¢ when present).\n  if(tok===0&&jobs===0&&cents===0)return '0 tok · 24h';\n  const bits=[formatSettledTok(tok)+' tok'];\n  if(jobs>0)bits.push(jobs===1?'1 job':(jobs+' jobs'));\n  if(cents>0)bits.push(cents+'¢');\n  bits.push('24h');\n  return bits.join(' · ');\n}\nfunction paintSettled24h(){\n  const el=$('settled-24h');\n  if(!el)return;\n  // Quiet footer — honest zero, never invent volume.\n  el.textContent=formatSettledLine();\n  paintHonestyPanel();\n}\nfunction settleFieldsFrom(src){\n  const cents=Math.max(0,Math.floor(Number(src?.cents ?? src?.settle_cents)||0));\n  const state=String(src?.state ?? src?.settle_state ?? '').trim();\n  if(!(cents>0)||!state)return {};\n  return {settle_cents:cents,settle_state:state};\n}\nfunction paintAnswerReceipt(){\n  const el=$('answer-receipt');\n  if(!el)return;\n  const hide=()=>{el.hidden=true;el.setAttribute('hidden','');el.textContent='';};\n  const show=(text)=>{\n    // Keep Answer step open so receipt is actually visible (not only textContent under a hidden step).\n    if(tfStep!=='answer')showTf('answer');\n    else{\n      const step=$('step-answer');\n      if(step){step.hidden=false;step.removeAttribute('hidden')}\n    }\n    el.hidden=false;el.removeAttribute('hidden');\n    el.textContent=text;\n  };\n  const r=lastPaidReceipt;\n  if(!r){hide();return}\n  const tok=Math.max(0,Math.floor(Number(r.tokens)||0));\n  const cents=Math.max(0,Math.floor(Number(r.cents)||0));\n  const eng=String(r.engine||'');\n  // selected/routed model id from client/job only (never trust answer self-description); receipt or live select.\n  const model=String(r.model||$('model')?.value||'').trim();\n  const job=String(r.job_id||'').trim();\n  const shortJob=job?(job.length>18?job.slice(0,14)+'\\u2026':job):'';\n  // Community / Mixture / self — job receipt; never show provider-earn cents as user $.\n  // Quiet settle face only when job/usage JSON provided settle_cents + settle_state (fail closed).\n  if(eng==='community'||eng==='mixture'||eng==='self'){\n    const label=eng==='mixture'?'Mixture':eng==='self'?'Your Mac':'Community';\n    const parts=[label];\n    if(model)parts.push(model);\n    if(tok>0)parts.push(formatSettledTok(tok)+' tok');\n    if(shortJob)parts.push(shortJob);\n    const settleCents=Math.max(0,Math.floor(Number(r.settle_cents)||0));\n    const settleState=String(r.settle_state||'').trim();\n    if(settleCents>0&&settleState){\n      parts.push(settleCents+'\\u00a2 USDC');\n      parts.push(settleState==='settled'||settleState==='paid'?'settled':'pending operator settle');\n    }\n    if(parts.length<2){hide();return}\n    show(parts.join(' · '));\n    return;\n  }\n  // Hosted paid settle only (user charged). Free floor stays quiet.\n  if(!(tok>0||cents>0)){hide();return}\n  show(cents>0\n    ?('Settled · '+formatSettledTok(tok)+' tok · '+formatUsdCents(cents)+' credits')\n    :('Settled · '+formatSettledTok(tok)+' tok'));\n}\nasync function loadSettled24h(){\n  try{\n    const data=await api('/compute/api/factory');\n    const s=data?.settled_24h&&typeof data.settled_24h==='object'?data.settled_24h:null;\n    settled24h={\n      tokens:Math.max(0,Math.floor(Number(s?.tokens)||0)),\n      jobs:Math.max(0,Math.floor(Number(s?.jobs)||0)),\n      cents:Math.max(0,Math.floor(Number(s?.cents)||0)),\n    };\n  }catch{\n    // Keep prior / zero — never invent.\n    if(!settled24h)settled24h={tokens:0,jobs:0,cents:0};\n  }\n  paintSettled24h();\n}\nfunction formatEarnRatesLine(rates){\n  const job=Math.max(0,Math.floor(Number(rates?.job_cents)));\n  const tok=Math.max(0,Math.floor(Number(rates?.token_cents_per_1k)));\n  const min=Math.max(0,Math.floor(Number(rates?.min_payout_cents)));\n  // Fall back to published schedule constants when rates missing — never invent balances.\n  const j=Number.isFinite(job)&&job>0?job:5;\n  const t=Number.isFinite(tok)&&tok>=0?tok:1;\n  const m=Number.isFinite(min)&&min>0?min:100;\n  const jobUsd='$'+(j/100).toFixed(2).replace(/\\.00$/,'');\n  const tokUsd='$'+(t/100).toFixed(2).replace(/\\.00$/,'');\n  const minUsd='$'+(m/100).toFixed(2).replace(/\\.00$/,'');\n  return jobUsd+'/job + '+tokUsd+'/1k completion · min '+minUsd+' · pending operator settle';\n}\nfunction paintEarnRates(rates){\n  const el=$('earn-rates');\n  if(el)el.textContent=formatEarnRatesLine(rates||null);\n  const pe=$('provide-earn-fine');\n  if(pe)pe.textContent=formatEarnRatesLine(rates||null);\n}\nfunction paintEarn(){\n  const bal=$('earn-balance'),jobs=$('earn-jobs'),methods=$('earn-methods'),wrap=$('earn-wallet-wrap');\n  const actions=$('earn-actions'),btn=$('earn-payout'),status=$('earn-status'),login=$('earn-login');\n  const compare=$('earn-compare'),pending=$('earn-pending');\n  const usdc=$('earn-usdc'),dasha=$('earn-dasha');\n  if(login){login.hidden=loggedIn;login.textContent='Sign in'}\n  paintEarnRates(earnRates);\n  // Guest: Sign in only — never invent $0.\n  if(!loggedIn){\n    earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;\n    if(bal){bal.hidden=true;bal.textContent=''}\n    if(jobs){jobs.hidden=true;jobs.textContent=''}\n    if(methods)methods.hidden=true;\n    if(wrap)wrap.hidden=true;\n    if(actions)actions.hidden=true;\n    if(btn){btn.hidden=true;btn.disabled=true}\n    if(compare){compare.hidden=true;compare.textContent=''}\n    if(pending){pending.hidden=true;pending.textContent=''}\n    if(status){status.hidden=true;status.textContent=''}\n    return;\n  }\n  if(!earnLoaded||earnTotalUsdc==null){\n    if(bal){bal.hidden=true;bal.textContent=''}\n    if(jobs){jobs.hidden=true;jobs.textContent=''}\n    if(methods)methods.hidden=true;\n    if(wrap)wrap.hidden=true;\n    if(actions)actions.hidden=true;\n    if(btn){btn.hidden=true;btn.disabled=true}\n    if(compare){compare.hidden=true;compare.textContent=''}\n    if(pending){pending.hidden=true;pending.textContent=''}\n    return;\n  }\n  const face=Math.max(0,Math.floor(Number(earnTotalUsdc)||0));\n  const dashaCents=Math.floor(face*1.1);\n  if(bal){bal.hidden=false;bal.textContent=formatUsdCents(face)+' owed · USDC face'}\n  if(jobs){jobs.hidden=false;const tpsLabel=formatTokPerSec(ownMacTps);jobs.textContent=(earnTotalJobs===1?'1 job':earnTotalJobs+' jobs')+' completed'+(tpsLabel?' · '+tpsLabel+' tok/s':'')}\n  if(methods)methods.hidden=false;\n  if(wrap)wrap.hidden=false;\n  if(actions)actions.hidden=false;\n  if(usdc){usdc.className='tf-choice '+(earnMethod==='usdc'?'primary':'secondary');usdc.setAttribute('aria-pressed',earnMethod==='usdc'?'true':'false')}\n  if(dasha){dasha.className='tf-choice '+(earnMethod==='dasha'?'primary':'secondary');dasha.setAttribute('aria-pressed',earnMethod==='dasha'?'true':'false')}\n  if(compare){\n    compare.hidden=false;\n    compare.textContent=earnMethod==='dasha'\n      ?('Payout '+formatUsdCents(dashaCents)+' in $dasha · face '+formatUsdCents(face)+' USDC')\n      :('Payout '+formatUsdCents(face)+' USDC · $dasha would be '+formatUsdCents(dashaCents));\n  }\n  const canPay=face>=100;\n  if(btn){\n    btn.hidden=!canPay;\n    btn.disabled=!canPay;\n    btn.textContent='Request payout';btn.title='Queues for operator settle · not auto';btn.setAttribute('aria-label','Request payout · operator settles · not auto');\n  }\n  if(pending){\n    const rows=(earnPending||[]);\n    pending.replaceChildren();\n    if(!rows.length){pending.hidden=true;return}\n    pending.hidden=false;\n    rows.forEach((row,i)=>{\n      if(i)pending.append(document.createTextNode(' · '));\n      const st=String(row.status||'pending');\n      const amt=formatUsdCents(row.payout_cents!=null?row.payout_cents:row.usdc_cents);\n      const meth=row.method==='dasha'?' $dasha':' USDC';\n      if(st==='paid'&&row.signature){\n        pending.append(document.createTextNode('Paid '+amt+meth+' '));\n        const a=document.createElement('a');\n        a.className='tf-quiet';\n        a.href=row.solscan||('https://solscan.io/tx/'+encodeURIComponent(row.signature));\n        a.target='_blank';\n        a.rel='noopener noreferrer';\n        a.textContent='Solscan';\n        a.style.display='inline';\n        a.style.padding='0';\n        pending.append(a);\n      }else{\n        pending.append(document.createTextNode((st==='pending'?'Pending · operator settles':'Paid')+' '+amt+meth));\n      }\n    });\n  }\n}\nasync function loadEarn(){\n  if(!loggedIn){earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;paintEarn();return}\n  try{\n    const data=await api('/compute/api/provider/earnings');\n    earnTotalUsdc=Number.isFinite(Number(data?.total_usdc_cents))?Math.max(0,Math.floor(Number(data.total_usdc_cents))):0;\n    earnTotalJobs=Number.isFinite(Number(data?.total_jobs))?Math.max(0,Math.floor(Number(data.total_jobs))):0;\n    earnPending=Array.isArray(data?.pending)?data.pending:[];\n    earnPref=data?.pref||null;\n    if(data?.rates&&typeof data.rates==='object')earnRates=data.rates;\n    if(earnPref?.method==='dasha'||earnPref?.method==='usdc')earnMethod=earnPref.method;\n    const wallet=$('earn-wallet');\n    if(wallet&&earnPref?.wallet&&!wallet.value)wallet.value=earnPref.wallet;\n    earnLoaded=true;\n  }catch{\n    earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;\n  }\n  paintEarn();\n}\nasync function saveEarnPref(){\n  const wallet=String($('earn-wallet')?.value||'').trim();\n  const data=await api('/compute/api/provider/payout-pref',{method:'POST',body:JSON.stringify({method:earnMethod,wallet})});\n  earnPref={method:data.method,wallet:data.wallet};\n  return data;\n}\nasync function requestEarnPayout(){\n  const status=$('earn-status');\n  if(status){status.hidden=false;status.textContent='·'}\n  try{\n    await saveEarnPref();\n    const data=await api('/compute/api/provider/payout',{method:'POST',body:JSON.stringify({method:earnMethod,wallet:String($('earn-wallet')?.value||'').trim()})});\n    if(status){status.hidden=false;status.textContent='Pending · operator settles · '+formatUsdCents(data.payout_cents||data.usdc_cents)+(data.method==='dasha'?' $dasha':' USDC')+' · not auto';status.title='Operator settles · not auto'}\n    await loadEarn();\n  }catch(e){\n    if(status){status.hidden=false;status.textContent=e?.message||'Request failed'}\n  }\n}\n\nfunction paintCreditsBalance(){\n  const el=$('credits-balance');\n  const login=$('credits-login');\n  const use=$('credits-use'), topup=$('credits-topup');\n  if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23credits'}\n  // Guest: Sign in only — no $0 balance, no Use/Top up pretending a session.\n  if(use)use.hidden=!loggedIn;\n  if(topup)topup.hidden=!loggedIn;\n  if(!el){paintAskCredits();return}\n  if(!loggedIn){el.hidden=true;el.textContent='';paintAskCredits();return}\n  if(creditBalanceCents==null){el.hidden=true;el.textContent='';paintAskCredits();return}\n  el.hidden=false;\n  el.textContent=formatCredits(creditBalanceCents)+' credits';\n  paintAskCredits();\n}\nasync function loadCreditsBalance(){\n  if(!loggedIn){creditBalanceCents=null;paintCreditsBalance();return}\n  try{\n    const data=await api('/compute/api/credits');\n    creditBalanceCents=Number.isFinite(Number(data?.balance_cents))?Math.max(0,Math.floor(Number(data.balance_cents))):0;\n  }catch{creditBalanceCents=null}\n  paintCreditsBalance();\n}\nfunction clearCreditPoll(){if(creditPollTimer){clearInterval(creditPollTimer);creditPollTimer=null}}\nfunction paintPaySend(){\n  const line=$('pay-send-line'),wait=$('pay-wait'),err=$('pay-send-err'),open=$('pay-open'),login=$('pay-send-login');\n  if(err){err.hidden=true;err.textContent=''}\n  if(login){login.hidden=true;login.href='/login?return=/compute%23pay'}\n  if(!loggedIn||!creditOrder){\n    if(line)line.textContent='·';\n    if(wait)wait.textContent='';\n    if(open){open.removeAttribute('href')}\n    return;\n  }\n  const meth=creditOrder.method==='dasha'?'$dasha':'USDC';\n  const credits=formatCredits(creditOrder.credits_cents||creditOrder.face_cents||CREDIT_PACK_CENTS[String(creditPack||'5')]||0);\n  if(line)line.textContent=creditOrder.amount+' '+meth+' · +'+credits+' credits → '+shortDest(creditOrder.dest);\n  if(open&&creditOrder.pay_url){\n    open.href=creditOrder.pay_url;\n    open.setAttribute('href',creditOrder.pay_url);\n  }\n  if(wait)wait.textContent='Waiting…';\n}\nasync function createCreditOrder(){\n  const methodErr=$('pay-method-err');\n  // Auth gate: never paint payable Send / never POST orders until session exists (Ask Run pattern).\n  if(!loggedIn){\n    creditOrder=null;\n    clearCreditPoll();\n    paintPayMethod();\n    showTf('pay-buy');\n    return;\n  }\n  try{\n    if(methodErr){methodErr.hidden=true;methodErr.textContent=''}\n    const data=await api('/compute/api/credits/orders',{method:'POST',body:JSON.stringify({pack:creditPack,method:creditMethod})});\n    // Never open pay-send unless loggedIn AND order created.\n    if(!loggedIn||!data?.id){\n      creditOrder=null;clearCreditPoll();paintPayMethod();showTf('pay-buy');return;\n    }\n    creditOrder=data;\n    paintPaySend();\n    showTf('pay-send');\n    startCreditPoll();\n  }catch(e){\n    creditOrder=null;\n    clearCreditPoll();\n    paintPayMethod();\n    showTf('pay-buy');\n    if(methodErr){methodErr.hidden=false;methodErr.textContent=e.message||'Could not create order'}\n  }\n}\nasync function pollCreditOrder(){\n  if(!creditOrder?.id||!loggedIn)return;\n  try{\n    const data=await api('/compute/api/credits/orders/'+creditOrder.id+'/confirm',{method:'POST',body:JSON.stringify({})});\n    if(data?.status==='paid'){\n      clearCreditPoll();\n      creditBalanceCents=Number.isFinite(Number(data.balance_cents))?Math.floor(Number(data.balance_cents)):creditBalanceCents;\n      const done=$('pay-done-line');\n      if(done)done.textContent=formatCredits(data.credits_cents||creditOrder.credits_cents)+' added · '+formatCredits(creditBalanceCents)+' total';\n      showTf('pay-done');\n      return;\n    }\n    const wait=$('pay-wait');\n    if(wait&&data?.status==='pending')wait.textContent='Waiting…';\n  }catch(e){\n    if(e.message==='order expired'){\n      clearCreditPoll();\n      const wait=$('pay-wait');if(wait)wait.textContent='Expired. Start again.';\n    }\n  }\n}\nfunction startCreditPoll(){\n  clearCreditPoll();\n  pollCreditOrder();\n  creditPollTimer=setInterval(pollCreditOrder,4000);\n}\n\nfunction clearSponsorPoll(){if(sponsorPollTimer){clearInterval(sponsorPollTimer);sponsorPollTimer=null}}\nfunction sponsorFaceCents(){\n  if(sponsorCustomCents!=null&&sponsorCustomCents>=100)return sponsorCustomCents;\n  const pack=sponsorPack||'5';\n  if(pack==='20')return 2000;\n  if(pack==='50')return 5000;\n  return 500;\n}\nfunction formatSponsorTip(cents){\n  const n=Math.max(0,Math.floor(Number(cents)||0));\n  if(!(n>0))return '$0 tip';\n  return formatCredits(n)+' tip';\n}\nfunction paintSponsorBuyFine(){\n  const el=$('sponsor-buy-fine');\n  if(!el)return;\n  const face=sponsorFaceCents();\n  if(!(face>0)){el.textContent='Tip face · no crypto discount.';return}\n  el.textContent=formatSponsorTip(face)+' · face · no crypto discount.';\n}\nfunction formatSponsorRaised(cents){\n  const n=Math.max(0,Math.floor(Number(cents)||0));\n  const dollars=n%100? (n/100).toFixed(2) : String(n/100);\n  return '$'+dollars+' raised';\n}\nfunction paintSponsorRaised(data){\n  const el=$('sponsor-raised');\n  if(!el)return;\n  // Honesty: tip pledge cents only — never catalog machine.usd / goal.\n  const cents=data&&data.raised_cents!=null?data.raised_cents:(data&&data.raised_usd!=null?Math.round(Number(data.raised_usd)*100):0);\n  el.textContent=formatSponsorRaised(cents);\n  el.hidden=false;\n  paintSponsorCredit(data);\n}\nfunction paintSponsorCredit(data){\n  const el=$('sponsor-credit');\n  if(!el)return;\n  // Quiet named tip credits only — anonymous tips stay nameless (no invented Mac names).\n  const rows=Array.isArray(data&&data.credit)?data.credit.filter(r=>r&&String(r.name||'').trim()):[];\n  if(!rows.length){el.textContent='';el.hidden=true;return}\n  el.textContent=rows.slice(0,6).map(r=>{\n    const raw=String(r.handle||'').trim()||String(r.name||'').trim();\n    const label=r.handle?('@'+String(r.handle).replace(/^@+/,'')):raw;\n    return label+' · '+formatCredits(r.cents);\n  }).join(' · ');\n  el.hidden=false;\n}\nfunction paintSponsorTargets(){\n  const wrap=$('sponsor-macs');\n  if(!wrap)return;\n  wrap.replaceChildren();\n  // Quiet Mac chips from board (open/named); Network stays primary above.\n  api('/compute/api/sponsors').then(data=>{\n    if(tfStep!=='sponsor')return;\n    paintSponsorRaised(data);\n    const machines=Array.isArray(data?.machines)?data.machines:[];\n    wrap.replaceChildren();\n    let n=0;\n    for(const m of machines){\n      if(!m||m.status==='funded')continue;\n      if(n>=4)break;\n      const btn=document.createElement('button');\n      btn.type='button';\n      btn.className='tf-choice secondary';\n      btn.dataset.sponsorTarget=m.id;\n      btn.textContent=m.name||m.id;\n      btn.title=m.role||'Mac';\n      btn.addEventListener('click',()=>{sponsorTarget=m.id;sponsorPack=sponsorPack||'5';sponsorMethod='';sponsorOrder=null;showTf('sponsor-buy');});\n      wrap.append(btn);\n      n++;\n    }\n    wrap.hidden=n===0;\n  }).catch(()=>{wrap.hidden=true});\n}\nfunction paintSponsorBuy(){\n  const pack=sponsorCustomCents!=null?'':(sponsorPack||'5');\n  document.querySelectorAll('[data-sponsor-pack]').forEach(btn=>{\n    const on=sponsorCustomCents==null&&btn.getAttribute('data-sponsor-pack')===String(pack);\n    btn.setAttribute('aria-pressed',on?'true':'false');\n    btn.classList.toggle('primary',on);\n    btn.classList.toggle('secondary',!on);\n  });\n  const login=$('sponsor-method-login'), usdc=$('sponsor-usdc'), dasha=$('sponsor-dasha');\n  // Wallet tip works without login; Sign in stays optional for name on board.\n  if(login){login.hidden=loggedIn;login.textContent='Sign in for name';login.href='/login?return=/compute%23sponsor'}\n  if(usdc)usdc.hidden=false;\n  if(dasha)dasha.hidden=false;\n  const face=sponsorFaceCents();\n  const faceLabel=face>0?formatCredits(face):'$5';\n  if(usdc)usdc.textContent='USDC · '+faceLabel;\n  if(dasha)dasha.textContent='$dasha · '+faceLabel;\n  const err=$('sponsor-method-err');\n  if(err){err.hidden=true;err.textContent=''}\n  const custom=$('sponsor-custom');\n  if(custom&&sponsorCustomCents!=null)custom.value=String(Math.round(sponsorCustomCents/100));\n  paintSponsorBuyFine();\n}\nfunction paintSponsorSend(){\n  const line=$('sponsor-send-line'),wait=$('sponsor-wait'),err=$('sponsor-send-err'),open=$('sponsor-open');\n  if(err){err.hidden=true;err.textContent=''}\n  if(!sponsorOrder){\n    if(line)line.textContent='·';\n    if(wait)wait.textContent='';\n    if(open){open.removeAttribute('href')}\n    return;\n  }\n  const meth=sponsorOrder.method==='dasha'?'$dasha':'USDC';\n  const tip=formatSponsorTip(sponsorOrder.face_cents||sponsorOrder.charge_cents||sponsorFaceCents());\n  if(line)line.textContent=sponsorOrder.amount+' '+meth+' · '+tip+' → '+shortDest(sponsorOrder.dest);\n  if(open&&sponsorOrder.pay_url){\n    open.href=sponsorOrder.pay_url;\n    open.setAttribute('href',sponsorOrder.pay_url);\n  }\n  if(wait)wait.textContent='Waiting…';\n}\nasync function createSponsorOrder(){\n  const methodErr=$('sponsor-method-err');\n  try{\n    if(methodErr){methodErr.hidden=true;methodErr.textContent=''}\n    const body={method:sponsorMethod,machine:sponsorTarget||'network'};\n    if(sponsorCustomCents!=null)body.cents=sponsorCustomCents;\n    else body.pack=sponsorPack||'5';\n    const data=await api('/compute/api/sponsors/orders',{method:'POST',body:JSON.stringify(body)});\n    if(!data?.id){\n      sponsorOrder=null;clearSponsorPoll();paintSponsorBuy();showTf('sponsor-buy');return;\n    }\n    sponsorOrder=data;\n    paintSponsorSend();\n    showTf('sponsor-send');\n    startSponsorPoll();\n  }catch(e){\n    sponsorOrder=null;clearSponsorPoll();paintSponsorBuy();showTf('sponsor-buy');\n    if(methodErr){methodErr.hidden=false;methodErr.textContent=e.message||'Could not create tip'}\n  }\n}\nasync function pollSponsorOrder(){\n  if(!sponsorOrder?.id)return;\n  try{\n    const data=await api('/compute/api/sponsors/orders/'+sponsorOrder.id+'/confirm',{method:'POST',body:JSON.stringify({})});\n    if(data?.status==='funded'||data?.status==='paid'){\n      clearSponsorPoll();\n      const done=$('sponsor-done-line');\n      const dollars=formatCredits(data.face_cents||sponsorOrder.face_cents||sponsorFaceCents());\n      const who=data.name||sponsorOrder.name||'';\n      if(done)done.textContent=who?('Thanks '+who+' · '+dollars):('Thanks · '+dollars);\n      showTf('sponsor-done');\n      return;\n    }\n    const wait=$('sponsor-wait');\n    if(wait&&data?.status==='pending')wait.textContent='Waiting…';\n  }catch(e){\n    if(e.message==='order expired'){\n      clearSponsorPoll();\n      const wait=$('sponsor-wait');if(wait)wait.textContent='Expired. Start again.';\n    }\n  }\n}\nfunction startSponsorPoll(){\n  clearSponsorPoll();\n  pollSponsorOrder();\n  sponsorPollTimer=setInterval(pollSponsorOrder,4000);\n}\n$('sponsor-network')?.addEventListener('click',()=>{sponsorTarget='network';sponsorPack=sponsorPack||'5';sponsorMethod='';sponsorOrder=null;showTf('sponsor-buy');});\ndocument.querySelectorAll('[data-sponsor-pack]').forEach(btn=>{\n  btn.addEventListener('click',()=>{\n    sponsorPack=btn.getAttribute('data-sponsor-pack')||'5';\n    sponsorCustomCents=null;\n    const custom=$('sponsor-custom');if(custom)custom.value='';\n    paintSponsorBuy();\n  });\n});\n$('sponsor-custom')?.addEventListener('change',()=>{\n  const raw=Number($('sponsor-custom')?.value);\n  if(!Number.isFinite(raw)||raw<1){sponsorCustomCents=null;paintSponsorBuy();return}\n  const cents=Math.round(raw*100);\n  if(cents<100||cents>100000){sponsorCustomCents=null;paintSponsorBuy();return}\n  sponsorCustomCents=cents;sponsorPack='';paintSponsorBuy();\n});\n$('sponsor-usdc')?.addEventListener('click',()=>{\n  sponsorMethod='usdc';createSponsorOrder();\n});\n$('sponsor-dasha')?.addEventListener('click',()=>{\n  sponsorMethod='dasha';createSponsorOrder();\n});\n$('sponsor-copy')?.addEventListener('click',async()=>{\n  if(!sponsorOrder)return;\n  const text=sponsorOrder.pay_url||(sponsorOrder.amount+' to '+sponsorOrder.dest);\n  try{await navigator.clipboard.writeText(text)}catch{}\n});\n$('sponsor-done-pay')?.addEventListener('click',()=>{clearSponsorPoll();sponsorOrder=null;showTf('pay');});\n$('sponsor-done-ask')?.addEventListener('click',()=>{clearSponsorPoll();sponsorOrder=null;cameFromHow=false;cameFromGate=true;setComputeIntent('ask');setEngine('hosted',true);});\n\n$('gate-you')?.addEventListener('click',()=>showTf('you'));\n$('you-macs')?.addEventListener('click',async()=>{\n  if(!loggedIn){provideBack='ask';clearPaySponsorFine();showTf('provide-name');return}\n  try{\n    const data=await api('/compute/api/providers');\n    if(Array.isArray(data?.providers)&&data.providers.length){showTf('provide-done');return}\n  }catch{}\n  provideBack='ask';clearPaySponsorFine();showTf('provide-name');\n});\n$('you-credits')?.addEventListener('click',()=>{setComputeIntent('credits');showTf('credits');});\n$('you-earn')?.addEventListener('click',()=>showTf('earn'));\n$('provide-done-earn')?.addEventListener('click',()=>showTf('earn'));\n$('earn-usdc')?.addEventListener('click',()=>{earnMethod='usdc';paintEarn();});\n$('earn-dasha')?.addEventListener('click',()=>{earnMethod='dasha';paintEarn();});\n$('earn-payout')?.addEventListener('click',()=>{requestEarnPayout();});\n$('earn-wallet')?.addEventListener('change',()=>{/* pref saved on payout */});\n$('you-api')?.addEventListener('click',()=>showTf('build'));\n$('you-logout')?.addEventListener('click',async()=>{\n  try{await api('/auth/logout',{method:'POST',body:'{}'})}catch{}\n  loggedIn=false;sessionLabel='';creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;sponsorOrder=null;clearSponsorPoll();\n  paintGateAuth();paintCreditsBalance();paintEarn();paintAnswerApi();paintPayMethod();updateProvideAuth();updateRun();\n  try{await auth()}catch{}\n  showTf('gate');\n});\n$('pick-ask').addEventListener('click',()=>goAskFromGate('ask'));\n$('pick-pay').addEventListener('click',()=>{setComputeIntent('pay');showTf('pay');});\n$('pick-credits').addEventListener('click',()=>{setComputeIntent('credits');showTf('credits');});\n$('pay-topup')?.addEventListener('click',()=>{setComputeIntent('pay');creditPack='5';creditMethod='';creditOrder=null;showTf('pay-buy');});\n$('pay-sponsor')?.addEventListener('click',()=>{setComputeIntent('pay');sponsorTarget='network';sponsorPack='5';sponsorMethod='';sponsorOrder=null;sponsorCustomCents=null;clearPaySponsorFine();showTf('sponsor');});\n$('credits-use')?.addEventListener('click',()=>{cameFromHow=false;cameFromGate=true;setComputeIntent('credits');setEngine('hosted',true);});\n$('credits-topup')?.addEventListener('click',()=>{setComputeIntent('pay');creditPack='5';creditMethod='';creditOrder=null;showTf('pay-buy');});\ndocument.querySelectorAll('[data-pack]').forEach(btn=>btn.addEventListener('click',()=>{creditPack=btn.getAttribute('data-pack')||'5';paintPayBuy();}));\n$('pay-usdc')?.addEventListener('click',()=>{\n  creditMethod='usdc';\n  if(!creditPack)creditPack='5';\n  paintPayBuy();\n  if(!loggedIn){showTf('pay-buy');return}\n  createCreditOrder();\n});\n$('pay-dasha')?.addEventListener('click',()=>{\n  creditMethod='dasha';\n  if(!creditPack)creditPack='5';\n  paintPayBuy();\n  if(!loggedIn){showTf('pay-buy');return}\n  createCreditOrder();\n});\n$('pay-copy')?.addEventListener('click',()=>{\n  if(!creditOrder)return;\n  const text=creditOrder.pay_url||(creditOrder.amount+' to '+creditOrder.dest);\n  copy(text,$('pay-copy'));\n});\n$('pay-done-credits')?.addEventListener('click',()=>{setComputeIntent('credits');showTf('credits');});\n$('pay-done-ask')?.addEventListener('click',()=>{cameFromHow=false;cameFromGate=true;setComputeIntent('pay');setEngine('hosted',true);});\ndocument.querySelectorAll('#ask-starters [data-prompt]').forEach(btn=>btn.addEventListener('click',()=>{$('prompt').value=btn.getAttribute('data-prompt')||'';$('prompt').focus();updateRun();try{const t=($('prompt').value||'').trim();if(t)sessionStorage.setItem(ASK_DRAFT_KEY,t.slice(0,2000))}catch{}}));\n$('login')?.addEventListener('click',()=>{if(!loggedIn)saveAskDraftForLogin();});\n\n$('change-engine')?.addEventListener('click',()=>{cameFromHow=true;cameFromGate=false;showTf('how');});\n$('ask-mymac')?.addEventListener('click',()=>{if(ownMacOnline<1)return;cameFromHow=true;cameFromGate=false;setEngine('self');});\n$('ask-community')?.addEventListener('click',()=>{if(providersOnline<1)return;cameFromHow=true;cameFromGate=false;setEngine('community',true);});\n$('ask-provide')?.addEventListener('click',()=>{provideBack='ask';clearPaySponsorFine();showTf('provide-name');});\n$('ask-ocm')?.addEventListener('click',()=>showTf('market'));\n$('ask-host')?.addEventListener('click',()=>showTf('host'));\n$('ask-credits')?.addEventListener('click',()=>{setComputeIntent('credits');showTf('credits');});\n$('pick-provide').addEventListener('click',()=>{setComputeIntent('provide');provideBack='gate';clearPaySponsorFine();showTf('provide-name');});\n$('pick-provide-after').addEventListener('click',()=>{clearAnswerMoney();provideBack='ask';clearPaySponsorFine();showTf('provide-name')});\n$('answer-api')?.addEventListener('click',event=>{\n  if(!loggedIn)return; // <a> → login return=/compute%23build\n  event.preventDefault();\n  showTf('build');\n  setTimeout(()=>{\n    const btn=$('create-api-key');\n    if(btn&&!btn.hidden)btn.focus();\n  },40);\n});\n$('answer-credits')?.addEventListener('click',()=>{\n  if(lastAskFailKind==='credits'){\n    setComputeIntent('pay');creditPack='';creditMethod='';creditOrder=null;showTf('pay-buy');\n  }else{\n    setComputeIntent('credits');showTf('credits');\n  }\n});\n$('ask-again').addEventListener('click',()=>{clearAnswerMoney();showTf('ask');$('prompt').focus()});\n$('tf-done').addEventListener('click',()=>{clearAnswerMoney();cameFromHow=false;cameFromGate=false;showTf('ask');});\n$('provide-done-gate').addEventListener('click',()=>{cameFromHow=false;cameFromGate=false;setEngine('hosted',true);});\ndocument.querySelectorAll('[data-back]').forEach(btn=>{\n  btn.addEventListener('click',()=>{\n    const dest=btn.getAttribute('data-back');\n    if(btn.id==='back-ask'){\n      const eng=$('engine').value;\n      if(nightQueueIntent||(eng!=='hosted'&&fleetEmpty(eng))){nightQueueIntent=false;showNightEmpty();return}\n      if(eng==='hosted'){\n        if(cameFromHow){showTf('how');return}\n        if(cameFromGate){showTf('gate');return}\n        return;\n      }\n      showTf('model');\n      return;\n    }\n    if(dest)showTf(dest);\n  });\n});\n\n\ndocument.addEventListener('keydown',event=>{\n  const tag=(document.activeElement&&document.activeElement.tagName||'').toLowerCase();\n  const typing=tag==='input'||tag==='textarea'||tag==='select'||!!(document.activeElement&&document.activeElement.isContentEditable);\n  if(event.key==='Escape'){\n    const step=document.querySelector('[data-tf]:not([hidden])');\n    const back=step&&(step.querySelector('.tf-back')||step.querySelector('#back-ask'));\n    if(back&&!back.hidden){event.preventDefault();back.click()}\n    return;\n  }\n  if(typing)return;\n  if(event.key==='1'||event.key==='2'||event.key==='3'||event.key==='4'){\n    const step=document.querySelector('[data-tf]:not([hidden])');\n    if(!step)return;\n    const choices=[...step.querySelectorAll('.tf-choices .tf-choice, .tf-choices button.tf-choice, .tf-choices a.tf-choice')].filter(el=>!el.hidden&&el.offsetParent);\n    const idx=Number(event.key)-1;\n    if(choices[idx]){event.preventDefault();choices[idx].click()}\n  }\n});\nfunction bootHash(){\n  const id=location.hash.replace(/^#/,'').toLowerCase();\n  if(id==='provide'){provideBack='gate';clearPaySponsorFine();showTf('provide-name');}\n  else if(id==='build')showTf('build');\n  else if(id==='market'||id==='ocm')showTf('market');\n  else if(id==='host')showTf('host');\n  else if(id==='you'||id==='account')showTf('you');\n  else if(id==='earn'||id==='earnings')showTf('earn');\n  else if(id==='credits')showTf('credits');\n  else if(id==='pay')showTf('pay');\n  else if(id==='sponsor'){clearPaySponsorFine();showTf('sponsor');}\n  else if(id==='night'){cameFromHow=true;showNightEmpty();}\n  else if(id==='ask'){cameFromHow=false;cameFromGate=true;setComputeIntent('ask');setEngine('hosted',true)}\n  else showTf('gate');\n}\nwindow.addEventListener('hashchange',bootHash);\nwindow.addEventListener('focus',()=>setTimeout(auth,250));\nbootHash();\n(function resumeAskAfterLogin(){\n  const pack=takeAskResume();\n  if(!pack)return;\n  pendingAskResumeEngine=pack.engine||'hosted';\n  const prompt=$('prompt');\n  if(prompt&&pack.text&&!(prompt.value||'').trim())prompt.value=pack.text;\n  cameFromGate=true;cameFromHow=false;\n  setComputeIntent('ask');\n  // Stay on Ask with draft; applyAskResumeEngine after auth knows fleet (Community when Mac still up).\n  showTf('ask');\n})();\npaintRequest();paintCode();updateRun();auth();\n</script>\n</body>\n</html>\n";
+export const COMPUTE_PAGE_HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dasha Compute \u2014 ask the Macs</title>
+<meta name="description" content="Start. Ask. Provide. Pay. Credits.">
+<link rel="canonical" href="https://www.getdasha.com/compute">
+<link rel="icon" type="image/png" href="https://cdn.prod.website-files.com/5f1458122ba25e70a3ff2bd0/6a767a48e1dd29d210f01235_dasha-icon-32.png">
+<meta name="theme-color" content="#08070a">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.getdasha.com/compute">
+<meta property="og:title" content="Dasha Compute">
+<meta property="og:description" content="Start. Ask. Provide. Pay. Credits.">
+<meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dasha Compute">
+<meta name="twitter:description" content="Start. Ask. Provide. Pay. Credits.">
+<meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+<style>
+:root{--ink:#08070a;--panel:#121015;--paper:#f5eedb;--muted:#aaa1b2;--paper-muted:#d4cce0;--line:#3d3743;--acid:#dcff00;--hot:#ff3b81;--violet:#b388ff}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--ink)}body{margin:0;color:var(--paper);font:16px/1.5 Arial,Helvetica,sans-serif;background:radial-gradient(circle at 82% 0,#2a1730 0,transparent 26rem),var(--ink)}
+button,input,select,textarea{font:inherit}
+.shell{width:min(640px,calc(100% - 28px));margin:auto;padding:18px 0 56px}
+.skip{position:absolute;left:-9999px}.skip:focus{left:14px;top:14px;z-index:9;background:var(--acid);color:var(--ink);padding:10px}
+.topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.topbar .brand{justify-self:start}.topbar .state{justify-self:center;min-width:0}.topbar .home{justify-self:end;color:var(--paper-muted);font-weight:700}
+.brand,.home{color:inherit;text-decoration:none}.brand span,.acid{color:var(--acid)}.topbar .home:hover{color:var(--paper)}
+.state{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;font-weight:700;min-height:14px}
+#top-state{min-width:0;max-width:16rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--hot);box-shadow:0 0 0 1px color-mix(in srgb,var(--hot) 35%,transparent);opacity:.7;flex:0 0 auto}.dot.live{background:var(--acid);box-shadow:0 0 0 1px color-mix(in srgb,var(--acid) 40%,transparent);opacity:1}
+.tf-step{padding:52px 0 28px;animation:tf-in .28s ease}
+.tf-q{margin:0 0 32px;font:900 clamp(36px,8vw,64px)/1.1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.04em;text-transform:none;max-width:18ch}
+.tf-choices{display:grid;gap:12px}
+.tf-choice,.primary,.secondary{min-height:60px;border:1px solid var(--paper);border-radius:12px;padding:0 20px;font-weight:900;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:100%;background:transparent;color:var(--paper);font-size:20px;letter-spacing:.02em}
+.tf-choice.primary,.primary{background:var(--acid);border-color:var(--acid);color:var(--ink)}
+.tf-choice[aria-pressed=true]{background:var(--acid);border-color:var(--acid);color:var(--ink)}
+.tf-choice.secondary,.secondary{border-color:var(--line);color:var(--paper);font-size:17px;font-weight:800}
+.tf-choice.is-dim{border-color:var(--line);color:var(--muted);cursor:pointer}
+.tf-choice.is-dim:hover,.tf-choice.is-dim:focus-visible{color:var(--paper);border-color:color-mix(in srgb,var(--paper) 45%,var(--line))}
+.tf-choice.is-dim:disabled{cursor:not-allowed;opacity:1;color:var(--muted)}
+.tf-back{border:0;background:transparent;color:var(--paper-muted);font:700 14px/1 Arial,Helvetica,sans-serif;cursor:pointer;padding:0 0 20px;display:inline-flex}
+.tf-back:hover{color:var(--paper)}
+.tf-progress{display:flex;justify-content:center;align-items:center;gap:6px;padding:12px 0 0;min-height:18px}
+.tf-progress[hidden]{display:none!important}
+.tf-progress .tf-dot{width:6px;height:6px;border-radius:50%;background:var(--line);display:inline-block}
+.tf-progress .tf-dot.on{background:var(--muted)}
+.tf-progress .tf-dot.now{background:var(--acid);box-shadow:none}
+.tf-progress .tf-frac{margin-left:4px;color:var(--muted);font:700 11px/1 Arial,Helvetica,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.02em;user-select:none}
+#ask-hint{display:none!important}
+#provide-next-line{display:none!important}
+#night-offer-copy{display:none!important}
+#provide-beat.waiting,#provide-beat.acid{min-height:1.2em}
+#provide-beat.waiting::before,#provide-beat.acid::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;animation:beat-pulse 1.4s ease-in-out infinite}
+#provide-beat.waiting::before{background:var(--muted);box-shadow:0 0 8px var(--muted);margin-right:0}
+#provide-beat.acid{color:var(--acid);font-weight:800;letter-spacing:.02em}
+#provide-beat.acid::before{background:var(--acid);box-shadow:0 0 10px var(--acid);margin-right:.45em}
+@keyframes beat-pulse{0%,100%{opacity:.35}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){#provide-beat.waiting::before,#provide-beat.acid::before{animation:none}}
+#ask-starters{margin:0 0 10px;display:flex;flex-wrap:wrap;gap:0 14px}#ask-starters .tf-quiet{padding:6px 0}
+.tf-quiet{border:0;background:transparent;color:var(--paper-muted);font:400 13px/1.35 Arial,Helvetica,sans-serif;cursor:pointer;padding:10px 0;text-decoration:none;display:inline-flex}
+.tf-quiet:hover{color:var(--paper)}
+/* Gate / Pay / Credits: quiet under choices share one top gap */
+#step-gate>.tf-quiet,#step-pay>.fine,#step-pay-buy>.fine,#step-sponsor>.fine,#step-sponsor-buy>.fine,#step-sponsor-buy>.field,#step-credits>.fine,#step-you>.fine,#step-earn>.fine,#step-pay-send>.tf-quiet,#step-sponsor-send>.fine{margin-top:14px}
+.tf-choices+.tf-choices{margin-top:12px}
+.ask-links{display:flex;flex-wrap:wrap;gap:0 14px;margin-top:4px}#step-gate>.ask-links{margin-top:14px}
+.tf-door{display:grid;gap:8px}
+.tf-door>.tf-choice{width:100%}
+.tf-door-hint{margin:0;padding:0 2px;color:var(--muted);font:400 13px/1.35 Arial,Helvetica,sans-serif}
+.tf-money{display:grid;gap:2px;justify-items:start}
+.tf-micro{color:var(--muted);font:400 12px/1.3 Arial,Helvetica,sans-serif}
+#step-gate>.ask-links .tf-quiet{font-size:14px;color:var(--paper-muted)}
+.ask-links .tf-quiet{padding:6px 0}
+.ask-doors{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:2px;margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.ask-doors .tf-quiet{padding:4px 0;font-size:12px}
+.ask-doors .ask-door-sep{color:var(--line);font-size:12px;user-select:none;line-height:1;padding:0 2px}
+#prompt{display:block;width:100%;min-height:9rem;max-height:42vh;font-size:clamp(24px,4.5vw,36px);line-height:1.28;font-weight:500;background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:16px 0 14px;caret-color:var(--acid);color:var(--paper);resize:vertical;margin:0 0 18px}
+#prompt:focus{border-bottom-color:var(--paper);outline:none}
+#prompt::placeholder{color:var(--muted);opacity:.7;font-weight:400}
+#step-ask .actions{gap:10px;margin-top:6px}
+#step-ask .primary:disabled{background:transparent;border-color:var(--line);color:var(--muted);opacity:1}
+#run-demo[hidden],#run-demo[hidden]:disabled{display:none!important}
+#provider-name{display:block;width:100%;font-size:clamp(24px,5vw,40px);background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:12px 0;color:var(--paper);margin:0 0 22px;caret-color:var(--acid)}
+#provider-name:focus{border-bottom-color:var(--paper);outline:none}
+button:disabled{opacity:.5;cursor:not-allowed}
+#answer{margin:0 0 22px;padding:0;border:0;background:transparent;color:#d8cfe0;font:16px/1.55 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.5em}
+#night-offer{margin:0}
+#night-offer[hidden]{display:none!important}
+#step-night .tf-q{margin-bottom:28px}
+.panel{margin-top:12px}
+.panel[hidden],[hidden]{display:none!important}
+#answer-receipt:not([hidden]){display:block!important}#answer-receipt-note:not([hidden]){display:block!important}
+.field{display:grid;gap:7px;margin-top:16px;font-size:12px;font-weight:900;text-transform:uppercase}
+.field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);background:#09080b;color:var(--paper)}
+pre.setup,pre#code,pre#api-key-output,pre#check-result{overflow-x:auto;overflow-y:auto;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0 0;padding:14px;border:1px solid var(--line);background:#09080b;color:#d8cfe0;font:13px/1.55 ui-monospace,monospace;-webkit-overflow-scrolling:touch}
+.models .model{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-top:1px solid var(--line)}
+.models .model span,.models .model small{display:block}.models .model small{color:var(--muted)}
+details.build{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+details.build>summary{cursor:pointer;font:800 12px/1 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);list-style:none}
+details.build>summary::-webkit-details-marker{display:none}
+details.build[open]>summary{color:var(--acid)}
+.actions{display:grid;gap:12px;margin-top:8px}
+.actions.row{display:flex;flex-wrap:wrap;gap:10px}
+.actions.row .primary,.actions.row .secondary,.actions.row .tf-choice{width:auto;flex:1 1 140px}
+.fine{color:var(--muted);font-size:13px;margin:10px 0 0;line-height:1.45}
+footer{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-top:40px;color:var(--paper-muted);font-size:12px}
+footer a{color:var(--acid)}
+footer a:hover{color:var(--paper)}
+:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.tf-choice.primary:focus-visible,.primary:focus-visible,.tf-choice[aria-pressed=true]:focus-visible{outline-width:2px;outline-offset:2px;outline-color:color-mix(in srgb,var(--acid) 65%,var(--ink))}
+@keyframes tf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.tf-step{animation:none!important}}
+@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:7rem}#ask-starters{gap:0 12px;margin-bottom:8px}.ask-doors{column-gap:4px;row-gap:4px;margin-top:6px;padding-top:6px}.ask-doors .tf-quiet{padding:6px 4px 6px 0}.ask-links{gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}}
+
+.honesty-panel{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+.honesty-panel[hidden]{display:none!important}
+.honesty-panel .honesty-ok{color:var(--acid)}
+.honesty-panel .honesty-sep{color:var(--line);user-select:none}
+.honesty-panel #presence-strip,.honesty-panel #act-tape{display:inline}
+.presence-act-boot{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+.presence-act-boot[hidden]{display:none!important}
+.presence-act-boot .honesty-sep{color:var(--line);user-select:none}
+</style>
+</head>
+<body data-step="gate">
+<main class="shell">
+<a class="skip" href="#prompt">Skip to ask</a>
+<header class="topbar">
+  <a class="brand" href="/"><span>$dasha</span> compute</a>
+  <div class="state"><i class="dot" id="live-dot"></i><span id="top-state">\xB7</span></div>
+  <a class="home" href="/">getdasha.com</a>
+</header>
+<nav class="tf-progress" id="tf-progress" aria-label="Progress" hidden></nav>
+
+<section class="tf-step" id="step-gate" data-tf="gate">
+  <h1 class="tf-q">Start.</h1>
+  <div class="tf-choices" role="group" aria-label="Start.">
+    <div class="tf-door">
+      <button type="button" class="tf-choice primary" id="pick-ask" title="Run a prompt">Ask</button>
+      <p class="tf-door-hint">Run a prompt.</p>
+    </div>
+    <div class="tf-door">
+      <button type="button" class="tf-choice secondary" id="pick-provide" title="Join with a Mac">Provide</button>
+      <p class="tf-door-hint">Join a Mac.</p>
+    </div>
+  </div>
+  <div class="ask-links" role="group" aria-label="Money.">
+    <div class="tf-money">
+      <button type="button" class="tf-quiet" id="pick-pay" title="Top up or sponsor">Pay</button>
+      <span class="tf-micro">Top up</span>
+    </div>
+    <div class="tf-money">
+      <button type="button" class="tf-quiet" id="pick-credits" title="Use prepaid">Credits</button>
+      <span class="tf-micro">Balance</span>
+    </div>
+  </div>
+  <a id="gate-signin" class="tf-quiet" href="/login?return=/compute">Sign in</a>
+  <button type="button" id="gate-you" class="tf-quiet" hidden>You</button>
+</section>
+
+<section class="tf-step" id="step-how" data-tf="how" hidden>
+  <button type="button" class="tf-back" data-back="ask">\u2190 Back</button>
+  <h1 class="tf-q">How?</h1>
+  <div class="tf-choices engines" role="group" aria-label="Engine">
+    <button type="button" class="tf-choice" id="eng-hosted" data-engine="hosted" aria-pressed="false">Hosted</button>
+    <button type="button" class="tf-choice" id="eng-community" data-engine="community" aria-pressed="false">Community</button>
+    <button type="button" class="tf-choice" id="eng-mixture" data-engine="mixture" aria-pressed="false">Mixture</button>
+    <button type="button" class="tf-choice" id="eng-self" data-engine="self" aria-pressed="false" hidden>My Mac \xB7 free</button>
+  </div>
+  <select id="engine" hidden aria-hidden="true"><option value="hosted" selected>Hosted</option><option value="community">Community</option><option value="mixture">Mixture</option><option value="self">My Mac \xB7 free</option></select>
+  <p class="fine" id="how-floor-fine">Local Macs + Hosted floor.</p>
+</section>
+
+<section class="tf-step" id="step-model" data-tf="model" hidden>
+  <button type="button" class="tf-back" data-back="how">\u2190 Back</button>
+  <h1 class="tf-q">Which model?</h1>
+  <div class="tf-choices" id="model-choices" role="group" aria-label="Model"></div>
+  <div class="model-row" id="model-row" hidden>
+    <label for="model">Model</label>
+    <select id="model">
+      <option value="qwen3-8b" selected>Qwen 3 8B \xB7 5.2 GB \xB7 fast chat</option>
+      <option value="gemma3-12b">Gemma 3 12B \xB7 8.1 GB \xB7 vision + chat</option>
+      <option value="gpt-oss-20b">GPT-OSS 20B \xB7 14 GB \xB7 reasoning + tools</option>
+      <option value="qwen3-30b-a3b">Qwen 3 30B A3B \xB7 19 GB \xB7 efficient MoE</option>
+      <option value="gemma3-27b">Gemma 3 27B \xB7 17 GB \xB7 large multimodal</option>
+    </select>
+    <span class="chip" id="mixture-chip" hidden>sub-24GB specialists \xB7 live default qwen3-8b</span>
+  </div>
+</section>
+
+<section class="tf-step" id="step-ask" data-tf="ask" hidden>
+  <button type="button" class="tf-back" id="back-ask" data-back="" hidden>\u2190 Back</button>
+  <h1 class="tf-q">Ask.</h1>
+  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Write a short welcome for a new teammate." aria-label="Prompt" title="Enter to run \xB7 Esc back"></textarea></label>
+  <p class="fine" id="ask-hint" hidden aria-hidden="true"></p>
+  <div class="ask-starters" id="ask-starters" role="group" aria-label="Starter prompts">
+    <button type="button" class="tf-quiet" id="ask-starter" data-prompt="Write a short welcome for a new teammate.">Welcome note</button>
+    <button type="button" class="tf-quiet" id="ask-starter-2" data-prompt="Summarize this in three short bullets:">Summarize this</button>
+    <button type="button" class="tf-quiet" id="ask-starter-3" data-prompt="Draft a curl that POSTs JSON to an HTTPS API.">Draft a curl</button>
+  </div>
+  <p class="fine" id="ask-free-fine">3 free / 10 min \xB7 then credits.</p>
+  <div class="actions">
+    <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
+    <a class="primary" id="login" href="/login?return=/compute%23ask">Sign in</a>
+    <div class="ask-links">
+      <button class="tf-quiet" id="copy-skill-use" type="button">Copy AI skill</button>
+      <button class="tf-quiet" id="change-engine" type="button" title="Change engine" aria-label="Change engine">Hosted</button>
+      <button class="tf-quiet" id="clear-chat" type="button" hidden disabled>Clear</button>
+    </div>
+    <div class="ask-doors" id="ask-doors">
+      <button type="button" class="tf-quiet" id="ask-mymac" title="Run on your Mac \xB7 free" aria-label="My Mac \xB7 free" hidden>My Mac \xB7 free</button>
+      <span class="ask-door-sep" id="ask-mymac-sep" aria-hidden="true" hidden>\xB7</span>
+      <button type="button" class="tf-quiet" id="ask-community" title="Community Mac online" aria-label="Community" hidden>Community</button>
+      <span class="ask-door-sep" id="ask-community-sep" aria-hidden="true" hidden>\xB7</span>
+      <button type="button" class="tf-quiet" id="ask-provide" title="Join with a Mac" aria-label="Provide \xB7 Join with a Mac">Provide</button>
+      <span class="ask-door-sep" aria-hidden="true">\xB7</span>
+      <button type="button" class="tf-quiet" id="ask-ocm" title="OCM console" aria-label="Marketplace \xB7 OCM console">Marketplace</button>
+      <span class="ask-door-sep" aria-hidden="true">\xB7</span>
+      <button type="button" class="tf-quiet" id="ask-host" title="OCM host \xB7 enroll" aria-label="Host \xB7 OCM enroll">Host</button>
+      <span class="ask-door-sep" id="ask-credits-sep" aria-hidden="true" hidden>\xB7</span>
+      <button type="button" class="tf-quiet" id="ask-credits" title="Credits" aria-label="Credits" hidden></button>
+    </div>
+  </div>
+</section>
+
+
+<section class="tf-step" id="step-market" data-tf="market" hidden>
+  <button type="button" class="tf-back" data-back="ask">\u2190 Back</button>
+  <h1 class="tf-q" title="OCM console">Marketplace.</h1>
+  <p class="fine" id="market-enroll-fine">Enroll a Mac \xB7 status on console.</p>
+  <div class="tf-choices" role="group" aria-label="Marketplace">
+    <a class="tf-choice primary" id="market-open" href="/compute/ocm">Console</a>
+    <a class="tf-choice secondary" id="market-host" href="/compute/ocm/provider">Host</a>
+    <a class="tf-quiet" id="market-status" href="/compute/ocm/status" title="Cold loads on first request \xB7 Ready/Serving ~1s">Status</a>
+  </div>
+</section>
+
+<section class="tf-step" id="step-host" data-tf="host" hidden>
+  <button type="button" class="tf-back" data-back="ask">\u2190 Back</button>
+  <h1 class="tf-q" title="OCM host \xB7 enroll">Host.</h1>
+  <p class="fine" id="host-enroll-fine">Enroll code \xB7 never paste a provider token.</p>
+  <div class="tf-choices" role="group" aria-label="Host">
+    <a class="tf-choice primary" id="host-run" href="/compute/ocm/provider">Open</a>
+    <a class="tf-choice secondary" id="host-status" href="/compute/ocm/status" title="Cold loads on first request \xB7 Ready/Serving ~1s">Status</a>
+  </div>
+</section>
+
+
+
+<section class="tf-step" id="step-pay" data-tf="pay" hidden>
+  <button type="button" class="tf-back" data-back="gate">\u2190 Back</button>
+  <h1 class="tf-q">Pay.</h1>
+  <div class="tf-choices" role="group" aria-label="Pay.">
+    <button type="button" class="tf-choice primary" id="pay-topup" title="Add credits">Top up</button>
+    <button type="button" class="tf-choice secondary" id="pay-sponsor" title="Keep a Mac warm">Sponsor</button>
+  </div>
+  <p class="fine" id="pay-topup-fine">Goes to credits.</p>
+  <p class="fine" id="pay-sponsor-fine" hidden>Tip the network.</p>
+</section>
+
+<section class="tf-step" id="step-pay-buy" data-tf="pay-buy" hidden>
+  <button type="button" class="tf-back" data-back="pay">\u2190 Back</button>
+  <h1 class="tf-q">Buy.</h1>
+  <div class="tf-choices" role="group" aria-label="Amount.">
+    <button type="button" class="tf-choice primary" id="pack-5" data-pack="5" aria-pressed="true">$5</button>
+    <button type="button" class="tf-choice secondary" id="pack-20" data-pack="20" aria-pressed="false">$20</button>
+    <button type="button" class="tf-choice secondary" id="pack-50" data-pack="50" aria-pressed="false">$50</button>
+  </div>
+  <div class="tf-choices" role="group" aria-label="Pay with.">
+    <button type="button" class="tf-choice primary" id="pay-usdc" data-method="usdc">USDC \xB7 $4.85</button>
+    <button type="button" class="tf-choice secondary" id="pay-dasha" data-method="dasha">$dasha \xB7 $4.75</button>
+    <a class="tf-choice secondary" id="pay-method-login" href="/login?return=/compute%23pay" hidden>Sign in</a>
+  </div>
+  <p class="fine" id="pay-method-err" hidden></p>
+  <p class="fine" id="pay-buy-fine">$5 credits \xB7 crypto discount \xB7 no card yet.</p>
+</section>
+
+<section class="tf-step" id="step-pay-send" data-tf="pay-send" hidden>
+  <button type="button" class="tf-back" data-back="pay-buy">\u2190 Back</button>
+  <h1 class="tf-q">Send.</h1>
+  <p class="fine" id="pay-send-line">\xB7</p>
+  <div class="tf-choices" role="group" aria-label="Send.">
+    <button type="button" class="tf-choice primary" id="pay-copy">Copy</button>
+    <a class="tf-choice secondary" id="pay-open" target="_blank" rel="noopener noreferrer">Open Phantom</a>
+  </div>
+  <p class="fine" id="pay-wait" role="status" aria-live="polite"></p>
+  <p class="fine" id="pay-send-err" hidden></p>
+  <a class="tf-quiet" id="pay-send-login" href="/login?return=/compute%23pay" hidden>Sign in</a>
+</section>
+
+<section class="tf-step" id="step-pay-done" data-tf="pay-done" hidden>
+  <h1 class="tf-q">Done.</h1>
+  <p class="fine" id="pay-done-line">Credits added.</p>
+  <div class="tf-choices" role="group" aria-label="Done.">
+    <button type="button" class="tf-choice primary" id="pay-done-credits">Credits</button>
+    <button type="button" class="tf-choice secondary" id="pay-done-ask">Ask</button>
+  </div>
+</section>
+
+<section class="tf-step" id="step-sponsor" data-tf="sponsor" hidden>
+  <button type="button" class="tf-back" data-back="pay">\u2190 Back</button>
+  <h1 class="tf-q">Sponsor.</h1>
+  <div class="tf-choices" role="group" aria-label="Sponsor.">
+    <button type="button" class="tf-choice primary" id="sponsor-network" data-sponsor-target="network">Network</button>
+  </div>
+  <div class="tf-choices" id="sponsor-macs" role="group" aria-label="Mac." hidden></div>
+  <p class="fine" id="sponsor-raised">$0 raised</p>
+  <p class="fine" id="sponsor-credit" hidden></p>
+  <p class="fine" id="sponsor-fine">Tip face \xB7 USDC or $dasha \xB7 wallet OK without login \xB7 name on board when signed in.</p>
+</section>
+
+<section class="tf-step" id="step-sponsor-buy" data-tf="sponsor-buy" hidden>
+  <button type="button" class="tf-back" data-back="sponsor">\u2190 Back</button>
+  <h1 class="tf-q">Amount.</h1>
+  <div class="tf-choices" role="group" aria-label="Amount.">
+    <button type="button" class="tf-choice primary" id="sponsor-pack-5" data-sponsor-pack="5" aria-pressed="true">$5</button>
+    <button type="button" class="tf-choice secondary" id="sponsor-pack-20" data-sponsor-pack="20" aria-pressed="false">$20</button>
+    <button type="button" class="tf-choice secondary" id="sponsor-pack-50" data-sponsor-pack="50" aria-pressed="false">$50</button>
+  </div>
+  <label class="field" id="sponsor-custom-wrap"><span class="fine">Custom</span><input id="sponsor-custom" type="number" min="1" max="1000" step="1" inputmode="numeric" autocomplete="off" aria-label="Custom dollars" placeholder="$"></label>
+  <div class="tf-choices" role="group" aria-label="Pay with.">
+    <button type="button" class="tf-choice primary" id="sponsor-usdc" data-sponsor-method="usdc">USDC \xB7 $5</button>
+    <button type="button" class="tf-choice secondary" id="sponsor-dasha" data-sponsor-method="dasha">$dasha \xB7 $5</button>
+    <a class="tf-choice secondary" id="sponsor-method-login" href="/login?return=/compute%23sponsor" hidden>Sign in</a>
+  </div>
+  <p class="fine" id="sponsor-method-err" hidden></p>
+  <p class="fine" id="sponsor-buy-fine">$5 tip \xB7 face \xB7 no crypto discount.</p>
+</section>
+
+<section class="tf-step" id="step-sponsor-send" data-tf="sponsor-send" hidden>
+  <button type="button" class="tf-back" data-back="sponsor-buy">\u2190 Back</button>
+  <h1 class="tf-q">Send.</h1>
+  <p class="fine" id="sponsor-send-line">\xB7</p>
+  <div class="tf-choices" role="group" aria-label="Send.">
+    <button type="button" class="tf-choice primary" id="sponsor-copy">Copy</button>
+    <a class="tf-choice secondary" id="sponsor-open" target="_blank" rel="noopener noreferrer">Open Phantom</a>
+  </div>
+  <p class="fine" id="sponsor-wait" role="status" aria-live="polite"></p>
+  <p class="fine" id="sponsor-send-err" hidden></p>
+</section>
+
+<section class="tf-step" id="step-sponsor-done" data-tf="sponsor-done" hidden>
+  <h1 class="tf-q">Thanks.</h1>
+  <p class="fine" id="sponsor-done-line">Tip received.</p>
+  <div class="tf-choices" role="group" aria-label="Done.">
+    <button type="button" class="tf-choice primary" id="sponsor-done-pay">Pay</button>
+    <button type="button" class="tf-choice secondary" id="sponsor-done-ask">Ask</button>
+  </div>
+</section>
+
+<section class="tf-step" id="step-credits" data-tf="credits" hidden>
+  <button type="button" class="tf-back" data-back="gate">\u2190 Back</button>
+  <h1 class="tf-q">Credits.</h1>
+  <p class="fine" id="credits-balance" hidden></p>
+  <p class="fine" id="credits-fine">Pack credits \xB7 crypto discount \xB7 no card yet.</p>
+  <div class="tf-choices" role="group" aria-label="Credits.">
+    <button type="button" class="tf-choice primary" id="credits-use">Use credits</button>
+    <button type="button" class="tf-choice secondary" id="credits-topup">Top up</button>
+    <a class="tf-choice secondary" id="credits-login" href="/login?return=/compute%23credits" hidden>Sign in</a>
+  </div>
+</section>
+
+<section class="tf-step" id="step-you" data-tf="you" hidden>
+  <button type="button" class="tf-back" data-back="gate">\u2190 Back</button>
+  <h1 class="tf-q">You.</h1>
+  <p class="fine" id="you-id" hidden></p>
+  <div class="tf-choices" role="group" aria-label="You.">
+    <button type="button" class="tf-choice secondary" id="you-macs">Macs</button>
+    <button type="button" class="tf-choice secondary" id="you-earn">Earnings</button>
+    <button type="button" class="tf-choice secondary" id="you-credits">Credits</button>
+    <button type="button" class="tf-choice secondary" id="you-api">API</button>
+    <button type="button" class="tf-choice secondary" id="you-logout">Log out</button>
+  </div>
+</section>
+
+<section class="tf-step" id="step-earn" data-tf="earn" hidden>
+  <button type="button" class="tf-back" data-back="you">\u2190 Back</button>
+  <h1 class="tf-q">Earn.</h1>
+  <p class="fine" id="earn-rates">$0.05/job + $0.01/1k completion \xB7 min $1 \xB7 pending operator settle</p>
+  <p class="fine" id="earn-balance" hidden></p>
+  <p class="fine" id="earn-jobs" hidden></p>
+  <div class="tf-choices" role="group" aria-label="Payout." id="earn-methods" hidden>
+    <button type="button" class="tf-choice secondary" id="earn-usdc" data-earn-method="usdc">USDC</button>
+    <button type="button" class="tf-choice secondary" id="earn-dasha" data-earn-method="dasha">$dasha \xB7 +10%</button>
+  </div>
+  <p class="fine" id="earn-compare" hidden></p>
+  <label class="field" id="earn-wallet-wrap" hidden>Wallet<input id="earn-wallet" type="text" maxlength="64" autocomplete="off" spellcheck="false" aria-label="Solana wallet" placeholder="Solana address"></label>
+  <div class="actions" id="earn-actions" hidden>
+    <button class="primary" id="earn-payout" type="button" hidden disabled title="Queues for operator settle \xB7 not auto" aria-label="Request payout \xB7 operator settles \xB7 not auto">Request payout</button>
+  </div>
+  <p class="fine" id="earn-status" role="status" aria-live="polite" hidden></p>
+  <p class="fine" id="earn-pending" hidden></p>
+  <a class="tf-quiet" id="earn-login" href="/login?return=/compute%23earn" hidden>Sign in</a>
+</section>
+
+<section class="tf-step" id="step-answer" data-tf="answer" hidden>
+  <h1 class="tf-q" id="answer-title">Answer.</h1>
+  <button class="tf-quiet" id="cancel-job" type="button" hidden>Cancel</button>
+  <pre class="answer" id="answer" aria-live="polite"></pre>
+  <p class="fine" id="answer-receipt" hidden aria-live="polite"></p>
+  <p class="fine" id="answer-receipt-note" hidden aria-live="polite"></p>
+  <div class="tf-choices" id="after-answer">
+    <button type="button" class="tf-choice primary" id="ask-again">Ask again</button>
+    <button type="button" class="tf-choice secondary" id="pick-provide-after">Provide</button>
+    <button type="button" class="tf-choice secondary" id="tf-done">Done</button>
+    <a class="tf-quiet" id="answer-api" href="/login?return=/compute%23build" hidden>API key</a>
+    <button type="button" class="tf-quiet" id="answer-credits" hidden>Credits</button>
+    <!-- midstream-fail-honesty:2026-09-07 -->
+    <!-- usdc-settle-honesty:2026-09-07 -->
+    <button type="button" class="tf-quiet" id="answer-retry" hidden data-midstream-fail="1">Retry</button>
+  </div>
+</section>
+
+<section class="tf-step" id="step-night" data-tf="night" hidden>
+  <button type="button" class="tf-back" data-back="how">\u2190 Back</button>
+  <h1 class="tf-q" id="night-q">No Mac online.</h1>
+  <div id="night-offer" hidden role="status" aria-live="polite">
+    <p class="fine" id="night-offer-copy" hidden aria-hidden="true"></p>
+    <div class="tf-choices" id="night-choices">
+      <button type="button" class="tf-choice primary" id="night-use-hosted">Hosted</button>
+      <button type="button" class="tf-choice secondary" id="night-use-community" hidden>Community</button>
+      <button type="button" class="tf-choice secondary" id="queue-night">Queue</button>
+      <a class="tf-choice secondary" id="queue-night-login" href="/login?return=/compute%23night">Sign in</a>
+    </div>
+  </div>
+</section>
+
+<section class="tf-step" id="step-provide-name" data-tf="provide-name" hidden>
+  <button type="button" class="tf-back" id="provide-name-back" data-back="ask">\u2190 Back</button>
+  <h1 class="tf-q">Name this Mac.</h1>
+  <p class="fine" id="provide-name-fine" hidden>Join with a Mac \xB7 keeps capacity warm.</p>
+  <input id="provider-name" maxlength="64" value="My Mac" required aria-label="Mac name">
+  <div class="actions">
+    <button class="primary" id="provide-next" type="button">Next</button>
+  </div>
+</section>
+
+<section class="tf-step" id="step-provide-reg" data-tf="provide-reg" hidden>
+  <button type="button" class="tf-back" data-back="provide-name">\u2190 Back</button>
+  <h1 class="tf-q">Register.</h1>
+  <p class="fine" id="provide-next-line" hidden aria-hidden="true"></p>
+  <p class="fine" id="provide-ocm-fine">Community kit \xB7 one Register \u2192 Setup \xB7 soft doctor warns only.</p>
+  <div class="tf-choices" role="group" aria-label="Provide status" style="margin:0 0 18px">
+    <a class="tf-quiet" id="provide-ocm-status" href="/compute/ocm/status" title="Cold loads on first request \xB7 Ready/Serving ~1s">Status</a>
+  </div>
+  <div class="actions" id="provide">
+    <button class="primary" id="register-provider" type="button" hidden disabled>Register</button>
+    <a class="primary" id="provider-login" href="/login?return=/compute%23provide">Sign in to register</a>
+    <button class="tf-quiet" id="copy-skill-provide-reg" type="button">Copy AI skill</button>
+  </div>
+  <p class="fine" id="provider-status" role="status" aria-live="polite"></p>
+</section>
+
+<section class="tf-step" id="step-provide-done" data-tf="provide-done" hidden>
+  <h1 class="tf-q">Setup.</h1>
+  <p class="fine" id="provide-tto">About 15\u201330 min to online.</p>
+  <p class="fine" id="provide-prefer-mlx">Prefer MLX when you can \xB7 Ollama \u22650.33.1 \xB7 models on internal SSD.</p>
+  <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion \xB7 min $1 \xB7 pending operator settle</p>
+  <pre class="setup" id="setup" aria-live="polite">curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
+tar -xzf dasha-compute-open-alpha.tar.gz
+cd dasha-compute-open-alpha
+ollama pull qwen3:8b
+DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
+  <p class="fine" id="provide-beat" role="status" aria-live="polite" hidden></p>
+  <div class="actions row">
+    <button class="tf-quiet" id="copy-skill-provide-done" type="button">Copy AI skill</button>
+    <a class="secondary" href="/dasha-compute-open-alpha.tar.gz" download>Download kit</a>
+    <a class="tf-quiet" href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Get Ollama \u2197</a>
+  </div>
+  <details class="build" id="provider-macs" hidden>
+    <summary id="provider-macs-sum">Your Macs \xB7 0</summary>
+    <div class="models" id="provider-list"></div>
+    <button class="tf-quiet" id="refresh-providers" type="button" hidden disabled>Refresh</button>
+  </details>
+  <div class="tf-choices" style="margin-top:28px">
+    <button type="button" class="tf-choice secondary" id="provide-done-gate">Done</button>
+    <button type="button" class="tf-quiet" id="provide-done-earn">Earnings</button>
+  </div>
+</section>
+
+<section class="tf-step" id="step-build" data-tf="build" hidden>
+  <button type="button" class="tf-back" data-back="answer">\u2190 Back</button>
+  <h1 class="tf-q">API.</h1>
+  <details class="build" id="build" open>
+    <summary>API \xB7 one base URL</summary>
+    <p class="fine" id="api-usage-fine">Usage on stream \xB7 v1 + Hosted stop \xB7 jobs/:id when stored.</p>
+    <label class="field">HTTPS gateway URL<input id="gateway" type="url" value="https://lobby.getdasha.com/compute/api/v1"></label>
+    <pre id="code">curl https://lobby.getdasha.com/compute/api/v1/chat/completions \\
+  -H "Authorization: Bearer $DASHA_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"qwen3-8b","messages":[{"role":"user","content":"hello"}],"stream":true}'</pre>
+    <div class="actions row">
+      <button class="copy secondary" data-copy="code" type="button">Copy curl</button>
+      <a class="secondary" id="key-login" href="/login?return=/compute%23build">Sign in</a>
+      <button class="primary" id="create-api-key" type="button" hidden disabled>Create API key</button>
+      <button class="secondary" id="check" type="button">Run check</button>
+    </div>
+    <p class="fine" id="api-key-cap-hint">Credits \xB7 Cap $5 / month</p>
+    <label class="field" id="api-key-limit-wrap" hidden>Spend cap (USD / month)<input id="api-key-limit" type="number" min="1" max="1000" step="1" value="5" inputmode="decimal" placeholder="5"></label>
+    <pre id="api-key-output" aria-live="polite">Sign in to create a developer key.</pre>
+    <div class="models" id="api-key-list"><p class="fine">Sign in to create a developer key.</p></div>
+    <pre id="check-result">Lobby v1 URL is set. Run check.</pre>
+  </details>
+</section>
+
+<aside id="presence-act-boot" class="fine presence-act-boot" aria-live="polite" data-presence-act="boot">
+  <span id="presence-strip-boot" data-presence="live" title="Community advertising \u2260 OCM enrolled">
+    <span id="presence-community">No Mac advertising</span>
+    <span class="honesty-sep" id="presence-enrolled-boot-sep" aria-hidden="true" hidden>\xB7</span>
+    <span id="presence-enrolled-boot" hidden></span>
+  </span>
+  <span class="honesty-sep" aria-hidden="true">\xB7</span>
+  <span id="act-tape-boot" data-act="settled" title="Visible acts \xB7 settled paid-inference \xB7 24h">0 tok \xB7 24h</span>
+</aside>
+
+<aside id="honesty-panel" class="fine honesty-panel" hidden
+  aria-live="polite" data-honesty="live">
+  <span id="honesty-hosted" class="honesty-ok">Hosted \xB7 live</span>
+  <span class="honesty-sep" aria-hidden="true">\xB7</span>
+  <span id="presence-strip" data-presence="live" title="Community advertising \u2260 OCM enrolled">
+    <span id="honesty-macs">No Mac online</span>
+    <span class="honesty-sep" id="honesty-enrolled-sep" aria-hidden="true" hidden>\xB7</span>
+    <span id="honesty-enrolled" hidden></span>
+  </span>
+  <span class="honesty-sep" aria-hidden="true">\xB7</span>
+  <span id="act-tape" data-act="settled" title="Visible acts \xB7 settled paid-inference \xB7 24h">
+    <span id="honesty-settled" title="Settled paid-inference \xB7 last 24h">0 tok \xB7 24h</span>
+  </span>
+</aside>
+
+<footer>
+  <span>$dasha compute \xB7 v0.3 open alpha</span>
+  <span id="settled-24h" title="Settled paid-inference \xB7 last 24h">0 tok \xB7 24h</span>
+  <a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">53ux\u2026pump</a>
+  <a href="/privacy">Privacy</a>
+  <span>local-first</span>
+</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const MODELS=[
+  ['qwen3-8b','qwen3:8b','Qwen 3 8B','5.2 GB',8,'fast chat'],
+  ['gemma3-12b','gemma3:12b','Gemma 3 12B','8.1 GB',16,'vision + chat'],
+  ['gpt-oss-20b','gpt-oss:20b','GPT-OSS 20B','14 GB',16,'reasoning + tools'],
+  ['qwen3-30b-a3b','qwen3:30b','Qwen 3 30B A3B','19 GB',24,'efficient MoE'],
+  ['gemma3-27b','gemma3:27b','Gemma 3 27B','17 GB',24,'large multimodal']
+];
+const SUB24=new Set(['qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b']);
+const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\\n\\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\\n\\n## Goal\\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\\n\\n## Facts (do not invent others)\\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\\n- Coordinator: https://lobby.getdasha.com/compute/api\\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\n- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)\\n- Token goes in \`.dasha-provider-key\` mode 0600 \\u2014 never put the provider key on argv or shell history\\n- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh\\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens \\u00b7 min $1 payout \\u00b7 pending operator settle \\u00b7 not auto \\u00b7 $dasha payout +10% \\u00b7 never invent balances\\n\\n## Steps for the AI to run with the human\\n1. Open https://www.getdasha.com/compute \\u2192 Provide (quiet link) \\u2192 name the Mac \\u2192 Sign in (X) if needed \\u2192 Register.\\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once \\u2014 refresh loses it. Prefer that block over this template.\\n3. On the Mac, run the Setup command \\u2014 or this template with the pasted values:\\n\\n\`\`\`bash\\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\ntar -xzf dasha-compute-open-alpha.tar.gz\\ncd dasha-compute-open-alpha\\n# install Ollama from https://ollama.com/download if missing\\nollama pull qwen3:8b\\numask 077\\ncat > .dasha-provider-key <<'TOKEN'\\nPASTE_ONE_TIME_TOKEN_HERE\\nTOKEN\\nchmod 0600 .dasha-provider-key\\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\\\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\\\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b \\\\\\n./install.sh\\n\`\`\`\\n\\n4. Verify after install (\`install.sh\` already ran doctor and moved the key):\\n\\n\`\`\`bash\\ndasha-compute doctor\\ndasha-compute status\\n\`\`\`\\n\\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\\n\\n## Prefer MLX (Apple Silicon, optional)\\n- Prefer MLX when you can \\u2014 often faster on Apple Silicon; Ollama still works.\\n- Recommend Ollama \\u22650.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\\n- Keep models on internal SSD \\u2014 slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\\n- Official Ollama path (live docs): Ollama \\u22650.33.1 + models tagged \`*-mlx\` (example: \`gemma4:12b-mlx\`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\\n- Else quiet note: for speed, LM Studio MLX server or \`mlx_lm\`; keep mapped Ollama chat models so Dasha heartbeats still work.\\n- \`dasha-compute doctor\` prints a soft \`mlx\` hint when detectable; never fails solely for missing MLX.\\n- After install, \`dasha-compute benchmark\` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks \\u2014 never invent.\\n- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.\\n\\n## Keep-alive (sub-24GB)\\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service \\u2014 a shell export alone is not enough for the macOS app).\\n- Do not pin 27B on a 16\\u201324GB Air for interactive chat; use 8B/12B.\\n- \`dasha-compute doctor\` soft-hints when a mapped model looks \\u226527B, and when mapped chat is cold in Ollama \`/api/ps\` (keep-alive). Never fails solely for size or keep-alive.\\n\\n## Success\\n- dasha-compute doctor exits 0\\n- Heartbeats succeed\\n- A Community Run from another session can complete on this Mac\\n\\n## If stuck\\n- Re-register for a fresh token\\n- Check dasha-compute logs\\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\\n";
+const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\\n\\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute \\u2014 Hosted demo or community Macs \\u2014 without becoming a provider.\\n\\n## Goal\\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\\n\\n## Facts\\n- URL: https://www.getdasha.com/compute\\n- Flow is Typeform-style: cold boot \\u2192 Start. (Ask / Provide / Pay / Credits). Ask \\u2192 Hosted Ask \\u00b7 quiet Provide / Marketplace / Host \\u00b7 Change engine for Community/Mixture \\u00b7 model if community \\u2192 Run. Pay \\u2192 Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login \xB7 quiet named tip credits when signed in). Credits \\u2192 balance + Use credits / Top up. No card yet.\\n- Login with X is required to Run or queue\\n- Hosted model: gpt-oss-20b \\u00b7 3 free / 10 min \\u00b7 then credits\\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\\n- API billing: non-self \`v1/chat/completions\` spends prepaid credits ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection \\u2014 not a free allowance. Top up via Pay / Credits.\\n- API usage: OpenAI-style \`usage\` on non-stream JSON and on the SSE final \`finish_reason=stop\` chunk (v1 chat/completions + Hosted Ask). \`GET /compute/api/jobs/:id\` returns stored \`usage\` (+ \`route\`) when present \\u2014 never invent tokens. See \`GET /compute/api/v1\` \\u2192 \`usage\`.\\n- Marketplace: https://www.getdasha.com/compute/ocm\\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\\n- Community Macs: Prefer MLX when you can (providers) \\u00b7 Ollama \\u22650.33.1 \\u00b7 models on internal SSD; Ollama still works.\\n- Ask top-state shows measured tok/s only when network capacity has benchmarks \\u2014 never invent speed.\\n- When Macs are online, Ask shows a quiet Community \\u00b7 N door (measured tok/s in the title) \\u2014 Hosted stays the default; Change engine still opens How.\\n\\n## Steps for the AI to guide\\n1. Open https://www.getdasha.com/compute\\n2. Cold boot shows Start. \\u2014 Ask \\u2192 Hosted Ask. Pay \\u2192 Pay. (Top up \\u2192 Buy (amount+method) \\u2192 Send \\u00b7 Sponsor \\u2192 Amount \\u2192 Send). Credits \\u2192 Credits. (Use credits \\u2192 Ask \\u00b7 Top up \\u2192 Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Community or Mixture; quiet Provide / Marketplace / Host links\\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\\n4. Sign in if prompted\\n5. Type a prompt \\u2192 Run (Enter). Keyboard: 1\\u20134 choices \\u00b7 Esc Back\\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community \\u00b7 N (honest capacity) \\u2014 Hosted stays available\\n\\n## Optional API\\n\\n\`\`\`bash\\nexport DASHA_API_KEY='your-key'\\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\\\\n  -H \\"Authorization: Bearer $DASHA_API_KEY\\" \\\\\\n  -H \\"Content-Type: application/json\\" \\\\\\n  -d '{\\"model\\":\\"qwen3-8b\\",\\"messages\\":[{\\"role\\":\\"user\\",\\"content\\":\\"hello\\"}],\\"stream\\":true}'\\n\`\`\`\\n\\n## Success\\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\\n- On stream, read \`usage\` from the final stop chunk (not earlier deltas)\\n\\n## If stuck\\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\\n";
+const API='https://lobby.getdasha.com';
+let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacModels=new Set(),ownMacTps=0,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask';
+
+function pendingMessages(){
+  const content=$('prompt').value.trim()||'\u2026',kept=[];
+  let budget=6000-content.length;
+  for(let index=conversation.length-1;index>=0&&kept.length<10;index--){
+    const message=conversation[index];
+    if(message.content.length>budget)break;
+    kept.unshift(message);budget-=message.content.length;
+  }
+  if(kept[0]?.role==='assistant')kept.shift();
+  return[...kept,{role:'user',content}];
+}
+function mixtureFraming(messages){
+  const tip='You are Dasha Mixture \xB7 sub-24GB. Prefer a hot small specialist on the selected model. Be short, fun, useful.';
+  return[{role:'system',content:tip},...messages];
+}
+function modelIdentityFraming(messages,modelId){
+  const id=String(modelId||'').trim();
+  if(!id)return messages;
+  const tip='You are model '+id+' on Dasha Compute. If asked your name/model, answer with exactly that id.';
+  if(messages.some(m=>m?.role==='system'&&typeof m.content==='string'&&m.content.includes('on Dasha Compute')&&m.content.includes('answer with exactly that id')))return messages;
+  return[{role:'system',content:tip},...messages];
+}
+function paintRequest(){/* character chrome cut from typeform flow */}
+function renderConversation(){
+  const answer=$('answer');
+  answer.textContent=conversation.length?conversation.map(message=>\`\${message.role==='user'?'You':'Assistant'}:\\n\${message.content}\`).join('\\n\\n'):'';
+  $('clear-chat').disabled=!conversation.length;
+  document.body.classList.toggle('has-chat',conversation.length>0);
+}
+function hasSuccessfulAnswer(){return sent>=1||conversation.some(m=>m.role==='assistant')}
+function paintAnswerApi(){
+  const el=$('answer-api');
+  if(!el)return;
+  // Progressive: quiet door only after first successful Answer; stay quiet if keys exist.
+  // Night/queue failures never increment sent / add assistant \u2014 stay hidden.
+  if(!hasSuccessfulAnswer()||(loggedIn&&apiKeyCount>0)){
+    el.hidden=true;
+    return;
+  }
+  el.hidden=false;
+  if(loggedIn){
+    el.textContent='API key';
+    el.setAttribute('href','#');
+    el.setAttribute('role','button');
+  }else{
+    el.textContent='Sign in';
+    el.setAttribute('href','/login?return=/compute%23build');
+    el.removeAttribute('role');
+  }
+}
+function paintAnswerMoney(){
+  const el=$('answer-credits');
+  if(!el)return;
+  // Quiet Pay/Credits nudge only after rate-limit / credits 402 \u2014 never on happy Answer.
+  if(lastAskFailKind!=='rate'&&lastAskFailKind!=='credits'){
+    el.hidden=true;
+    el.textContent='';
+    paintAnswerReceipt();
+    return;
+  }
+  el.hidden=false;
+  el.textContent=lastAskFailKind==='credits'?'Top up':'Credits';
+  paintAnswerReceipt();
+}
+function clearAnswerMoney(){lastAskFailKind=null;lastPaidReceipt=null;paintAnswerMoney();paintAnswerReceipt()}
+function clearConversation(){conversation=[];renderConversation();paintRequest();hideNightOffer();clearAnswerMoney();paintAnswerApi()}
+$('prompt').addEventListener('input',()=>{paintRequest();updateRun();});
+$('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const run=$('run-demo');if(run&&!run.hidden){run.click();return}const login=$('login');if(login&&!login.hidden)login.click()}});
+$('clear-chat').addEventListener('click',clearConversation);
+
+async function api(path,options={}){
+  const response=await fetch(API+path,{credentials:'include',cache:'no-store',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
+  const data=response.status===204?null:await response.json();
+  if(!response.ok)throw Error(data?.error||'Request failed');
+  return data;
+}
+function preferOnlineModel(select,preferSub24){
+  if(!networkModels.size)return;
+  if(networkModels.has(select.value))return;
+  const pool=preferSub24?MODELS.filter(m=>SUB24.has(m[0])):MODELS;
+  const hit=pool.find(item=>networkModels.has(item[0]))||MODELS.find(item=>networkModels.has(item[0]));
+  if(hit)select.value=hit[0];
+}
+function fleetCapacityRow(){
+  if(!(providersOnline>=1))return null;
+  const eng=$('engine')?.value||'hosted';
+  const communityIntent=eng==='community'||eng==='mixture'||eng==='self';
+  const want=communityIntent?($('model')?.value||''):'';
+  const row=(networkCapacity||[]).find(item=>item&&item.model===want)||(networkCapacity||[])[0]||null;
+  return row||null;
+}
+function fleetMeasuredLabel(){
+  const row=fleetCapacityRow();
+  if(!row)return {model:'',tpsLabel:''};
+  const model=String(row.model||[...networkModels][0]||'');
+  const mp=Number(row.measured_providers||0);
+  const tps=Number(row.tokens_per_second);
+  const tpsLabel=(mp>=1&&Number.isFinite(tps)&&tps>0)?formatTokPerSec(tps):'';
+  return {model,tpsLabel};
+}
+function paintSplit(){
+  const top=$('top-state');
+  const n=Number.isInteger(providersOnline)?providersOnline:0;
+  const eng=$('engine')?.value||'hosted';
+  const communityIntent=eng==='community'||eng==='mixture'||eng==='self';
+  let modelName='';
+  let measuredTps=0;
+  if(n>=1){
+    const want=communityIntent?$('model').value:'';
+    const row=(networkCapacity||[]).find(item=>item.model===want)||(networkCapacity||[])[0];
+    modelName=row?.model||want||[...networkModels][0]||'';
+    const mp=Number(row?.measured_providers||0);
+    const tps=Number(row?.tokens_per_second);
+    if(mp>=1&&Number.isFinite(tps)&&tps>0)measuredTps=tps;
+  }
+  if(top){
+    // Gate: never Community boast on Start. \u2014 quiet chrome; count only past gate.
+    // Measured tok/s only when capacity.measured_providers\u22651 \u2014 never invent.
+    if(tfStep==='gate'){top.textContent=!window.__dashaAuthReady?'\xB7':'';}
+    else if(n>=1){
+      const tpsLabel=formatTokPerSec(measuredTps);
+      if(modelName&&tpsLabel)top.textContent=\`\${n} \xB7 \${modelName} \xB7 \${tpsLabel} tok/s\`;
+      else if(modelName)top.textContent=\`\${n} \xB7 \${modelName}\`;
+      else top.textContent=\`\${n}\`;
+    }
+    else if(!window.__dashaAuthReady)top.textContent='\xB7';
+    else top.textContent='';
+  }
+  // Quiet Ask Marketplace plain (no \xB7 N). Count lives on peek Console \xB7 N only.
+  const askOcm=$('ask-ocm');
+  if(askOcm){
+    askOcm.textContent='Marketplace';
+    askOcm.removeAttribute('aria-description');
+  }
+  const open=$('market-open');
+  if(open){
+    open.textContent=(ocmHosts!=null&&ocmHosts>0)?\`Console \xB7 \${ocmHosts}\`:'Console';
+    open.removeAttribute('aria-description');
+  }
+  const hostOpen=$('host-run');
+  if(hostOpen){
+    hostOpen.textContent=(ocmHosts!=null&&ocmHosts>0)?\`Open \xB7 \${ocmHosts}\`:'Open';
+    hostOpen.removeAttribute('aria-description');
+  }
+  paintProvideBeat();
+  paintHonestyPanel();
+}
+function shortModelHint(hint){
+  const h=String(hint||'');
+  if(/fast/i.test(h))return 'fast';
+  if(/vision/i.test(h))return 'vision';
+  if(/reason/i.test(h))return 'reason';
+  if(/MoE/i.test(h))return 'MoE';
+  if(/large|multi/i.test(h))return 'large';
+  return (h.split(/\\s+/)[0]||'').trim();
+}
+function paintModelChoices(){
+  const box=$('model-choices');
+  if(!box)return;
+  const eng=$('engine').value;
+  const mixture=eng==='mixture';
+  let pool=mixture?MODELS.filter(m=>SUB24.has(m[0])):MODELS;
+  // Fleet known: only list models in models_available \u2014 every chip is selectable (no dead fake-clickable offline rows).
+  if(networkModels.size>0)pool=pool.filter(m=>networkModels.has(m[0]));
+  box.replaceChildren();
+  pool.forEach(([id,,label,size,,hint])=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='tf-choice';
+    b.dataset.model=id;
+    b.setAttribute('aria-pressed',$('model').value===id?'true':'false');
+    const cap=shortModelHint(hint);
+    b.textContent=cap?\`\${label} \xB7 \${size} \xB7 \${cap}\`:\`\${label} \xB7 \${size}\`;
+    b.title=hint||'';
+    b.addEventListener('click',()=>{
+      $('model').value=id;
+      showTf('ask');
+      updateRun();
+    });
+    box.append(b);
+  });
+  $('mixture-chip').hidden=!mixture;
+}
+function fleetEmpty(eng){
+  if(eng==='self')return ownMacOnline<1;
+  if(providersOnline===0)return true;
+  if(!networkModels.size)return true;
+  if(eng==='mixture')return ![...networkModels].some(m=>SUB24.has(m));
+  return false;
+}
+function setEngine(value,advance=true){
+  const eng=value==='mixture'||value==='community'||value==='hosted'||value==='self'?value:'hosted';
+  $('engine').value=eng;
+  document.querySelectorAll('.engines [data-engine]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.engine===eng?'true':'false'));
+  updateRun();
+  if(!advance)return;
+  if(eng==='hosted'){
+    nightQueueIntent=false;
+    $('model').value='gpt-oss-20b';
+    showTf('ask');
+  }else if(eng==='self'&&fleetEmpty(eng)){
+    // Honest: no Night / Hosted silent steal when My Mac offline.
+    nightQueueIntent=false;
+    showTf('ask');
+  }else if(fleetEmpty(eng)){
+    preferOnlineModel($('model'),eng==='mixture');
+    if(eng==='mixture'&&!SUB24.has($('model').value))$('model').value='qwen3-8b';
+    showNightEmpty();
+  }else{
+    nightQueueIntent=false;
+    preferOnlineModel($('model'),eng==='mixture');
+    if(eng==='mixture'&&!SUB24.has($('model').value))$('model').value='qwen3-8b';
+    paintModelChoices();
+    showTf('model');
+  }
+}
+function paintProgress(step){
+  const bar=$('tf-progress');
+  if(!bar)return;
+  if(step==='gate'||step==='credits'||step==='you'||step==='earn'){bar.hidden=true;bar.replaceChildren();return}
+  const eng=$('engine')?.value||'hosted';
+  let path;
+  if(step.startsWith('provide'))path=['provide-name','provide-reg','provide-done'];
+  else if(step==='market')path=['ask','market'];
+  else if(step==='host')path=['ask','host'];
+  else if(step==='pay'||step==='pay-buy'||step==='pay-send'||step==='pay-done')path=['pay','pay-buy','pay-send','pay-done'];
+  else if(step==='sponsor'||step==='sponsor-buy'||step==='sponsor-send'||step==='sponsor-done')path=['sponsor','sponsor-buy','sponsor-send','sponsor-done'];
+  else if(step==='night')path=['how','night'];
+  else if(step==='how')path=['how','ask'];
+  else if(step==='build')path=eng==='hosted'?['ask','answer','build']:['how','model','ask','answer','build'];
+  else if(eng==='hosted')path=['ask','answer'];
+  else if(fleetEmpty(eng))path=['how','night'];
+  else path=['how','model','ask','answer'];
+  let idx=path.indexOf(step);if(idx<0)idx=0;
+  bar.hidden=false;bar.replaceChildren();
+  path.forEach((_,i)=>{const d=document.createElement('i');d.className='tf-dot'+(i<=idx?' on':'')+(i===idx?' now':'');bar.append(d)});
+  const progressLabel=document.createElement('span');
+  progressLabel.className='tf-frac';
+  progressLabel.id='tf-progress-label';
+  progressLabel.setAttribute('aria-hidden','true');
+  progressLabel.textContent=(idx+1)+' / '+path.length;
+  bar.append(progressLabel);
+  bar.setAttribute('aria-valuenow',String(idx+1));
+  bar.setAttribute('aria-valuemax',String(path.length));
+  bar.setAttribute('aria-valuetext',(idx+1)+' / '+path.length);
+}
+function paintProvideBeat(){
+  const beat=$('provide-beat'),tto=$('provide-tto'),mlx=$('provide-prefer-mlx');
+  if(!beat)return;
+  if(tfStep!=='provide-done'){beat.hidden=true;return}
+  beat.hidden=false;
+  if(providersOnline>=1){
+    beat.textContent=providersOnline===1?'Online':\`\${providersOnline} online\`;
+    beat.classList.add('acid');
+    beat.classList.remove('waiting');
+    beat.setAttribute('aria-label',beat.textContent);
+    if(tto)tto.hidden=true;
+    if(mlx)mlx.hidden=true;
+  }else{
+    beat.textContent='';
+    beat.classList.remove('acid');
+    beat.classList.add('waiting');
+    beat.setAttribute('aria-label','Waiting');
+    if(tto)tto.hidden=false;
+    if(mlx)mlx.hidden=false;
+  }
+}
+function clearProvideBeatPoll(){if(provideBeatTimer){clearInterval(provideBeatTimer);provideBeatTimer=null}}
+function startProvideBeatPoll(){
+  clearProvideBeatPoll();
+  provideBeatTimer=setInterval(()=>{
+    if(tfStep!=='provide-done'){clearProvideBeatPoll();return}
+    refreshProvideDone();
+  },15000);
+}
+async function refreshProvideDone(){
+  try{
+    const network=await api('/compute/api/network');
+    networkModels=new Set(network?.models_available||[]);
+    providersOnline=Number.isInteger(network?.providers_online)?network.providers_online:0;
+    networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];
+    $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
+    paintSplit();
+    paintCode();
+  }catch{}
+  paintProvideBeat();
+  if(loggedIn){
+    const refresh=$('refresh-providers');
+    if(refresh){refresh.hidden=false;refresh.disabled=false}
+    await loadProviders();
+  }
+}
+function paintAskBack(){
+  const back=$('back-ask');
+  if(!back)return;
+  const eng=$('engine')?.value||'hosted';
+  back.hidden=eng==='hosted'&&!cameFromHow&&!cameFromGate;
+}
+function clearPaySponsorFine(){
+  const sf=$('pay-sponsor-fine');
+  if(sf)sf.hidden=true;
+}
+function showTf(step){
+  tfStep=step;
+  document.body.dataset.step=step;
+  document.querySelectorAll('[data-tf]').forEach(node=>{
+    node.hidden=node.dataset.tf!==step;
+  });
+  paintProgress(step);
+  paintHonestyPanel();startHonestyPoll()
+  if(step==='pay'||step==='gate'||step==='ask'||step==='pay-buy'||step==='sponsor'||step==='sponsor-buy')clearPaySponsorFine();
+  const login=$('login');
+  if(login){
+    const ret=step.startsWith('provide')?'%23provide':step==='build'?'%23build':step==='ask'?'%23ask':step==='night'?'%23night':step==='earn'?'%23earn':'';
+    login.href='/login?return=/compute'+ret;
+  }
+  if(step==='ask'){
+    paintAskBack();
+    updateRun();
+    const hint=$('ask-hint');
+    if(hint){hint.hidden=true;hint.textContent='';hint.setAttribute('aria-hidden','true')}
+    const prompt=$('prompt');
+    const backHidden=!!$('back-ask')?.hidden;
+    if(prompt){
+      if(nightQueueIntent)prompt.title=backHidden?'Enter to queue':'Enter to queue \xB7 Esc back';
+      else prompt.title=backHidden?'Enter to run':'Enter to run \xB7 Esc back';
+    }
+    setTimeout(()=>$('prompt')?.focus(),40);
+  }else if(step==='provide-name'){
+    const back=$('provide-name-back')||document.querySelector('#step-provide-name .tf-back');
+    const dest=(provideBack==='gate'||provideBack==='pay'||provideBack==='ask')?provideBack:'ask';
+    if(back)back.setAttribute('data-back',dest);
+    const fine=$('provide-name-fine');
+    if(fine)fine.hidden=provideBack!=='pay';
+    setTimeout(()=>$('provider-name')?.focus(),40);
+  }else if(step==='gate'||step==='how'||step==='model'||step==='night'||step==='answer'||step==='provide-done'||step==='market'||step==='host'||step==='pay'||step==='pay-buy'||step==='pay-send'||step==='pay-done'||step==='sponsor'||step==='sponsor-buy'||step==='sponsor-send'||step==='sponsor-done'||step==='credits'||step==='you'||step==='earn'){
+    setTimeout(()=>{
+      const section=document.querySelector('[data-tf="'+step+'"]');
+      if(!section||section.hidden)return;
+      const active=document.activeElement;
+      if(active&&section.contains(active))return;
+      // Guest Buy: Sign in is the only money CTA \u2014 prefer it over pack chips.
+      if(step==='pay-buy'&&!loggedIn){
+        const payLogin=$('pay-method-login');
+        if(payLogin&&!payLogin.hidden&&payLogin.offsetParent!==null){payLogin.focus();return}
+      }
+      if(step==='sponsor-buy'&&!loggedIn){
+        const spLogin=$('sponsor-method-login');
+        if(spLogin&&!spLogin.hidden&&spLogin.offsetParent!==null){spLogin.focus();return}
+      }
+      const first=[...section.querySelectorAll('button.tf-choice, a.tf-choice')].find(el=>!el.hidden&&el.offsetParent!==null);
+      if(first)first.focus();
+    },40);
+  }
+  if(step==='model')paintModelChoices();
+  if(step==='provide-reg')updateProvideAuth();
+  if(step==='build'){$('build').open=true;paintCode()}
+  if(step==='night')paintNightAuth();
+  if(step==='gate'||step==='you')paintGateAuth();
+  if(step==='gate'||step==='how'||step==='ask'||step==='night'||step==='market'||step==='host'){paintSplit();if(step==='gate'||step==='ask'||step==='market'||step==='host')loadOcmHosts()}
+  if(step==='ask'){paintAskCredits();if(loggedIn)loadCreditsBalance()}
+  if(step==='answer'){paintAnswerApi();paintAnswerMoney()}
+  if(step==='provide-done'){
+    updateProvideAuth();
+    paintProvideBeat();
+    refreshProvideDone();
+    startProvideBeatPoll();
+  }else clearProvideBeatPoll();
+  if(step==='pay-buy'){if(!creditPack)creditPack='5';paintPayBuy();}
+  if(step==='sponsor'){paintSponsorTargets();}
+  if(step==='sponsor-buy'){if(!sponsorPack&&sponsorCustomCents==null)sponsorPack='5';paintSponsorBuy();}
+  if(step==='sponsor-send'){
+    paintSponsorSend();
+  }
+  if(step==='credits'){paintCreditsBalance();loadCreditsBalance().finally(()=>paintCreditsBalance())}
+  if(step==='earn'){paintEarn();loadEarn().finally(()=>paintEarn())}
+  if(step==='pay-send'){
+    if(!loggedIn){
+      const wait=$('pay-wait'),line=$('pay-send-line');
+      if(wait)wait.textContent='';
+      if(line)line.textContent='\xB7';
+      creditOrder=null;clearCreditPoll();
+      paintPayBuy();showTf('pay-buy');return
+    }
+  }
+  else clearCreditPoll();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setStep(step){
+  if(step==='provide')showTf('provide-name');
+  else if(step==='build')showTf('build');
+  else if(step==='use'||step==='ask'){cameFromHow=false;cameFromGate=true;setComputeIntent('ask');setEngine('hosted',true)}
+  else showTf('gate');
+}
+function updateProvideAuth(){
+  $('login').hidden=loggedIn;
+  $('provider-login').hidden=loggedIn;
+  $('register-provider').hidden=!loggedIn;
+  $('register-provider').disabled=!loggedIn;
+  const refresh=$('refresh-providers');
+  if(refresh){
+    const show=loggedIn&&tfStep==='provide-done';
+    refresh.hidden=!show;
+    refresh.disabled=!loggedIn;
+  }
+  const macs=$('provider-macs');
+  if(macs)macs.hidden=!(loggedIn&&tfStep==='provide-done');
+  if(loggedIn&&tfStep==='provide-done')paintProviderMacsSum();
+  $('key-login').hidden=loggedIn;
+  $('create-api-key').hidden=!loggedIn;
+  $('create-api-key').disabled=!loggedIn;
+  const limWrap=$('api-key-limit-wrap');if(limWrap)limWrap.hidden=!loggedIn;
+  paintGateAuth();
+}
+function sessionLabelFrom(session){
+  if(!session||session.loggedIn!==true)return '';
+  const x=session.x;
+  if(x&&x.handle)return '@'+String(x.handle).replace(/^@/,'');
+  if(x&&x.display)return String(x.display);
+  if(session.wallet&&session.wallet.display)return String(session.wallet.display);
+  if(session.grok&&session.grok.display)return String(session.grok.display);
+  return 'You';
+}
+function paintGateAuth(){
+  const signin=$('gate-signin'),you=$('gate-you'),id=$('you-id');
+  if(signin)signin.hidden=!!loggedIn;
+  if(you){
+    you.hidden=!loggedIn;
+    you.textContent=loggedIn?(sessionLabel||'You'):'You';
+  }
+  if(id){
+    if(loggedIn&&sessionLabel){id.hidden=false;id.textContent=sessionLabel}
+    else if(loggedIn){id.hidden=false;id.textContent='You'}
+    else{id.hidden=true;id.textContent=''}
+  }
+}
+function paintAskCommunity(){
+  const chip=$('ask-community'),sep=$('ask-community-sep');
+  const show=providersOnline>=1;
+  if(chip)chip.hidden=!show;
+  if(sep)sep.hidden=!show;
+  if(!chip)return;
+  if(!show){
+    chip.textContent='Community';
+    chip.title='Community Mac online';
+    chip.setAttribute('aria-label','Community');
+    return;
+  }
+  const {model,tpsLabel}=fleetMeasuredLabel();
+  chip.textContent=\`Community \xB7 \${providersOnline}\`;
+  const title=tpsLabel?(model?\`\${model} \xB7 \${tpsLabel} tok/s measured\`:\`\${tpsLabel} tok/s measured\`):(model?\`\${model} \xB7 online\`:'Community Mac online');
+  chip.title=title;
+  chip.setAttribute('aria-label',tpsLabel?(\`Community \xB7 \${providersOnline} \xB7 \${tpsLabel} tok/s\`):(\`Community \xB7 \${providersOnline}\`));
+}
+function paintHowFloorFine(){
+  const el=$('how-floor-fine');
+  if(!el)return;
+  if(!(providersOnline>=1)){el.textContent='Local Macs + Hosted floor.';return}
+  const {model,tpsLabel}=fleetMeasuredLabel();
+  const n=providersOnline;
+  if(model&&tpsLabel)el.textContent=\`\${n} \xB7 \${model} \xB7 \${tpsLabel} tok/s \xB7 Hosted floor.\`;
+  else if(model)el.textContent=\`\${n} \xB7 \${model} \xB7 Hosted floor.\`;
+  else el.textContent=\`\${n} online \xB7 Hosted floor.\`;
+}
+function paintAskFreeFine(){
+  const el=$('ask-free-fine');
+  if(!el)return;
+  const eng=$('engine')?.value||'hosted';
+  // Hosted floor only \u2014 Community / Mixture / self are not the 3-free Hosted path.
+  el.hidden=eng!=='hosted';
+}
+function paintAskEngine(){
+  const btn=$('change-engine');
+  if(!btn)return;
+  const eng=$('engine')?.value||'hosted';
+  if(eng==='community')btn.textContent=providersOnline>=1?\`Community \xB7 \${providersOnline}\`:'Community';
+  else if(eng==='mixture')btn.textContent='Mixture';
+  else if(eng==='self')btn.textContent='My Mac \xB7 free';
+  else btn.textContent='Hosted';
+  btn.setAttribute('aria-label','Change engine');
+  if(providersOnline>=1&&(eng==='hosted'||(eng==='mixture'&&fleetEmpty('mixture')))){
+    const {model,tpsLabel}=fleetMeasuredLabel();
+    const bits=['Community',String(providersOnline)];
+    if(model)bits.push(model);
+    if(tpsLabel)bits.push(tpsLabel+' tok/s');
+    btn.title='Change engine \xB7 '+bits.join(' \xB7 ')+' available';
+  }else btn.title='Change engine';
+}
+function paintAskMyMac(){
+  const chip=$('ask-mymac'),sep=$('ask-mymac-sep'),engSelf=$('eng-self');
+  const show=!!loggedIn&&ownMacOnline>=1;
+  if(chip)chip.hidden=!show;
+  if(sep)sep.hidden=!show;
+  if(engSelf)engSelf.hidden=!show;
+  const tpsLabel=formatTokPerSec(ownMacTps);
+  const title=tpsLabel?('My Mac \xB7 free \xB7 '+tpsLabel+' tok/s measured'):'Run on your Mac \xB7 free';
+  if(chip){chip.title=title;chip.setAttribute('aria-label',tpsLabel?('My Mac \xB7 free \xB7 '+tpsLabel+' tok/s'):'My Mac \xB7 free')}
+  if(engSelf){engSelf.title=tpsLabel?('My Mac \xB7 '+tpsLabel+' tok/s measured'):'My Mac \xB7 free'}
+  if(!show&&$('engine')?.value==='self')setEngine('hosted',false);
+}
+
+const ASK_DRAFT_KEY='dasha-compute-ask-draft';
+const ASK_RESUME_KEY='dasha-compute-ask-resume';
+const ASK_ENGINE_KEY='dasha-compute-ask-engine';
+let pendingAskResumeEngine=null;
+function saveAskDraftForLogin(){
+  try{
+    const text=($('prompt')?.value||'').trim();
+    if(text)sessionStorage.setItem(ASK_DRAFT_KEY,text.slice(0,2000));
+    else sessionStorage.removeItem(ASK_DRAFT_KEY);
+    sessionStorage.setItem(ASK_RESUME_KEY,'1');
+    // Guest Community/Mixture Sign in must resume that engine when Mac still up \u2014 not silent Hosted steal.
+    const eng=$('engine')?.value||'hosted';
+    if(eng==='community'||eng==='mixture'||eng==='self'||eng==='hosted')sessionStorage.setItem(ASK_ENGINE_KEY,eng);
+    else sessionStorage.removeItem(ASK_ENGINE_KEY);
+  }catch{}
+}
+function takeAskResume(){
+  try{
+    if(sessionStorage.getItem(ASK_RESUME_KEY)!=='1')return null;
+    sessionStorage.removeItem(ASK_RESUME_KEY);
+    const text=String(sessionStorage.getItem(ASK_DRAFT_KEY)||'').slice(0,2000);
+    sessionStorage.removeItem(ASK_DRAFT_KEY);
+    const engine=sessionStorage.getItem(ASK_ENGINE_KEY)||'hosted';
+    sessionStorage.removeItem(ASK_ENGINE_KEY);
+    return {text,engine};
+  }catch{return null}
+}
+function takeAskResumeDraft(){
+  const pack=takeAskResume();
+  if(!pack)return '';
+  pendingAskResumeEngine=pack.engine||'hosted';
+  return pack.text||'';
+}
+function applyAskResumeEngine(){
+  const eng=pendingAskResumeEngine;
+  pendingAskResumeEngine=null;
+  if(!eng)return;
+  let want='hosted';
+  if(eng==='community'&&providersOnline>=1)want='community';
+  else if(eng==='mixture'&&!fleetEmpty('mixture'))want='mixture';
+  else if(eng==='self'&&ownMacOnline>=1)want='self';
+  else if(eng==='hosted')want='hosted';
+  // else Mac/self gone while signing in \u2192 honest Hosted floor (keep draft).
+  if(want==='hosted'){cameFromGate=true;cameFromHow=false}
+  else {cameFromHow=true;cameFromGate=false}
+  setEngine(want,false);
+  showTf('ask');
+}
+function updateRun(){
+  const model=$('model'),eng=$('engine').value;
+  const community=eng==='community'||eng==='mixture'||eng==='self';
+  const mixture=eng==='mixture';
+  const selfRoute=eng==='self';
+  $('model-row').hidden=true;
+  $('mixture-chip').hidden=!mixture;
+  if(community){
+    if(mixture){
+      if(!SUB24.has(model.value)||model.value==='gpt-oss-20b'&&!networkModels.has(model.value)){
+        if(networkModels.has('qwen3-8b'))model.value='qwen3-8b';
+        else if(networkModels.has('gemma3-12b'))model.value='gemma3-12b';
+        else preferOnlineModel(model,true);
+        if(!SUB24.has(model.value))model.value='qwen3-8b';
+      }else preferOnlineModel(model,true);
+    }else{
+      preferOnlineModel(model,false);
+      if(networkModels.size&&!networkModels.has(model.value)){
+        if(networkModels.has('gemma3-27b'))model.value='gemma3-27b';
+        else preferOnlineModel(model,false);
+      }
+    }
+  }else model.value='gpt-oss-20b';
+  model.disabled=!community;
+  const available=selfRoute?ownMacModels.has(model.value):community?networkModels.has(model.value):hostedLive;
+  const noMac=community&&!available;
+  const communityOption=[...$('engine').options].find(option=>option.value==='community');
+  if(communityOption){communityOption.hidden=false;communityOption.text=providersOnline>=1?\`Community \xB7 \${providersOnline}\`:'Community'}
+  $('run-demo').textContent='Run';
+  // Guest + Mac/hosted available: hide Run so Sign in is the only primary (no dual CTA muddle).
+  // Guest + noMac: one primary Run (opens Night); hide Ask #login \u2014 Night already has Sign in for Queue. Hosted still on Night.
+  // Logged-in: Run on, Sign in off.
+  const run=$('run-demo'),loginBtn=$('login');
+  if(loggedIn){
+    run.hidden=false;run.removeAttribute('hidden');run.style.display='';
+    run.disabled=community?!available:!hostedLive;
+    if(loginBtn)loginBtn.hidden=true;
+  }else if(noMac){
+    run.hidden=false;run.removeAttribute('hidden');run.style.display='';
+    run.disabled=false;
+    if(loginBtn)loginBtn.hidden=true;
+  }else{
+    run.hidden=true;run.setAttribute('hidden','');run.style.display='none';run.disabled=true;
+    if(loginBtn){
+      loginBtn.hidden=false;
+      // Guest with a filled prompt (starter chip or typed): name the next step \u2014 not bare Sign in.
+      loginBtn.textContent=($('prompt')?.value||'').trim()?'Sign in to run':'Sign in';
+    }
+  }
+  const engHost=$('eng-hosted'),engCom=$('eng-community'),engMix=$('eng-mixture'),engSelf=$('eng-self');
+  if(engHost)engHost.textContent='Hosted';
+  if(engSelf)engSelf.textContent='My Mac \xB7 free';
+  if(engCom){
+    engCom.textContent=providersOnline>=1?\`Community \xB7 \${providersOnline}\`:'Community';
+    engCom.classList.toggle('is-dim',providersOnline===0);
+    if(providersOnline===0){
+      engCom.title='No Mac \xB7 opens Night';
+      engCom.setAttribute('aria-label','Community \xB7 offline \xB7 opens Night');
+    }else{
+      const {model,tpsLabel}=fleetMeasuredLabel();
+      engCom.title=tpsLabel?(model?\`\${model} \xB7 \${tpsLabel} tok/s measured\`:\`\${tpsLabel} tok/s measured\`):(model?\`\${model} \xB7 online\`:'Community Mac online');
+      engCom.setAttribute('aria-label',tpsLabel?(\`Community \xB7 \${providersOnline} \xB7 \${tpsLabel} tok/s\`):(\`Community \xB7 \${providersOnline}\`));
+    }
+  }
+  if(engMix){
+    engMix.textContent='Mixture';
+    const mixEmpty=fleetEmpty('mixture');
+    engMix.classList.toggle('is-dim',mixEmpty);
+    if(mixEmpty){
+      if(providersOnline>=1){
+        engMix.title=\`No Mixture Mac \xB7 Community \xB7 \${providersOnline} online\`;
+        engMix.setAttribute('aria-label',\`Mixture \xB7 no sub-24GB \xB7 Community \xB7 \${providersOnline} online\`);
+      }else{
+        engMix.title='No Mixture Mac \xB7 opens Night';
+        engMix.setAttribute('aria-label','Mixture \xB7 no sub-24GB Mac online');
+      }
+    }else{
+      engMix.removeAttribute('title');
+      engMix.setAttribute('aria-label','Mixture');
+    }
+  }
+  if(nightQueueIntent)$('run-demo').textContent='Queue';
+  if(!noMac&&tfStep!=='night')hideNightOffer();
+  paintAskEngine();paintAskMyMac();paintAskCommunity();paintHowFloorFine();paintAskFreeFine();
+  paintRequest();paintSplit();
+}
+async function auth(){
+  let status=null,session=null,network=null,authErr=false;
+  const settled=await Promise.allSettled([api('/compute/api/status'),api('/auth/status'),api('/compute/api/network')]);
+  if(settled[0].status==='fulfilled')status=settled[0].value; else authErr=true;
+  if(settled[1].status==='fulfilled')session=settled[1].value; else authErr=true;
+  if(settled[2].status==='fulfilled')network=settled[2].value; else authErr=true;
+  hostedLive=status?.live===true;
+  loggedIn=session?.loggedIn===true;
+  sessionLabel=loggedIn?sessionLabelFrom(session):'';
+  networkModels=new Set(network?.models_available||[]);
+  providersOnline=Number.isInteger(network?.providers_online)?network.providers_online:0;
+  networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];
+  $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
+  window.__dashaAuthReady=true;
+  updateProvideAuth();
+  if(pendingAskResumeEngine)applyAskResumeEngine();
+  else updateRun();
+  if(loggedIn){loadProviders();loadApiKeys();loadCreditsBalance()}
+  else {creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;ownMacOnline=0;ownMacModels=new Set();ownMacTps=0;paintCreditsBalance();paintEarn();paintAnswerApi();paintAskMyMac()}
+  paintPayMethod();
+  paintGateAuth();
+  paintSettled24h();
+  paintCode();
+  loadSettled24h();
+  loadOcmHosts();
+  refreshHonesty();
+}
+async function loadOcmHosts(){
+  try{
+    const res=await fetch('/compute/ocm/healthz',{cache:'no-store'});
+    if(!res.ok)throw Error('ocm');
+    const data=await res.json();
+    ocmHosts=Number.isInteger(data.hosts)?data.hosts:null;
+  }catch{ocmHosts=null}
+  paintSplit();
+}
+function clearRunTick(){if(runTickTimer){clearInterval(runTickTimer);runTickTimer=null}}
+function startRunTick(waiting){
+  clearRunTick();
+  runStartedAt=Date.now();
+  const label=waiting?'Waiting for a Mac':'Thinking';
+  const tick=()=>{const s=Math.floor((Date.now()-runStartedAt)/1000);$('answer-title').textContent=label+' \xB7 '+s+'s'};
+  tick();
+  runTickTimer=setInterval(tick,1000);
+}
+function onFirstToken(){clearRunTick();$('answer-title').textContent='Answer.';paintSplit()}
+function hideNightOffer(){
+  const offer=$('night-offer');
+  if(offer)offer.hidden=true;
+}
+function paintNightAuth(reason){
+  const offer=$('night-offer'),copy=$('night-offer-copy'),queue=$('queue-night'),login=$('queue-night-login');
+  if(!offer)return;
+  if(copy){copy.hidden=true;copy.textContent='';copy.setAttribute('aria-hidden','true')}
+  if(queue){queue.hidden=!loggedIn;queue.disabled=!loggedIn;queue.textContent='Queue'}
+  if(login){login.hidden=loggedIn;login.textContent='Sign in'}
+  const hosted=$('night-use-hosted');
+  if(hosted)hosted.textContent='Hosted';
+  // Honest capacity: Mixture (or wrong-model) Night still offers live Community Macs.
+  const com=$('night-use-community');
+  if(com){
+    const show=providersOnline>=1;
+    com.hidden=!show;
+    if(show){
+      const {model,tpsLabel}=fleetMeasuredLabel();
+      com.textContent=\`Community \xB7 \${providersOnline}\`;
+      const title=tpsLabel?(model?\`\${model} \xB7 \${tpsLabel} tok/s measured\`:\`\${tpsLabel} tok/s measured\`):(model?\`\${model} \xB7 online\`:'Community Mac online');
+      com.title=title;
+      com.setAttribute('aria-label',tpsLabel?(\`Community \xB7 \${providersOnline} \xB7 \${tpsLabel} tok/s\`):(\`Community \xB7 \${providersOnline}\`));
+    }else{
+      com.textContent='Community';
+      com.removeAttribute('title');
+      com.setAttribute('aria-label','Community');
+    }
+  }
+  offer.hidden=false;
+}
+function paintNightH1(){
+  const h1=$('night-q')||document.querySelector('#step-night .tf-q');
+  if(!h1)return;
+  const eng=$('engine')?.value||'';
+  if(providersOnline===0)h1.textContent='No Mac online.';
+  else if(eng==='mixture')h1.textContent='No Mixture Mac.';
+  else h1.textContent='No chat Mac.';
+}
+function showNightEmpty(reason){
+  paintNightH1();
+  paintNightAuth(reason);
+  showTf('night');
+}
+function showNightOffer(reason){
+  showNightEmpty(reason||'Queue this prompt for when a Mac is up.');
+}
+async function queueForMac(){
+  const prompt=$('prompt').value.trim();
+  const model=$('model').value||'qwen3-8b';
+  const eng=$('engine').value;
+  if(!prompt){
+    nightQueueIntent=true;
+    showTf('ask');
+    return;
+  }
+  if(prompt.length>2000){$('answer').textContent='Keep the prompt under 2,000 characters.';showTf('ask');return}
+  if(!loggedIn){showNightOffer();return}
+  const queue=$('queue-night'),run=$('run-demo');
+  if(queue){queue.disabled=true;queue.textContent='Queuing\u2026'}
+  if(run){run.disabled=true;run.textContent='Queuing\u2026'}
+  $('answer').textContent='Queued';
+  $('answer-title').textContent='Night.';
+  showTf('answer');
+  try{
+    const title=(prompt.slice(0,72)+(prompt.length>72?'\u2026':'')).trim()||'Queued ask';
+    const body={title,prompt:eng==='mixture'?('Mixture \xB7 sub-24GB\\n\\n'+prompt):prompt,model,template:'custom',repeat:'none'};
+    const data=await api('/compute/api/night',{method:'POST',body:JSON.stringify(body)});
+    const status=data?.task?.status||'scheduled';
+    $('answer').textContent=status==='running'?'Running':'Queued';
+    nightQueueIntent=false;
+    hideNightOffer();
+    if(queue)queue.textContent='Queued';
+  }catch(error){
+    $('answer').textContent=error.message==='login required'?'Sign in.':error.message;
+    showNightOffer();
+  }finally{
+    updateRun();
+    if(queue&&loggedIn){queue.disabled=false;queue.textContent='Queue'}
+  }
+}
+async function readSse(response){
+  if(!response.ok){
+    const ct=response.headers.get('content-type')||'';
+    if(ct.includes('application/json')){const err=await response.json().catch(()=>({}));throw Error(err?.error?.message||err?.error||'Request failed')}
+    throw Error('Request failed');
+  }
+  const reader=response.body.getReader(),decoder=new TextDecoder();
+  let buf='',out='',saw=false;const node=$('answer');
+  lastSseUsage=null;lastSseSettle=null;lastSseReceipt=null;
+  while(true){
+    const {done,value}=await reader.read();
+    if(done||jobCancelled)break;
+    buf+=decoder.decode(value,{stream:true});
+    const parts=buf.split(/\\n\\n/);buf=parts.pop()||'';
+    for(const part of parts){
+      for(const line of part.split(/\\n/)){
+        if(!line.startsWith('data:'))continue;
+        const raw=line.slice(5).trimStart();
+        if(raw==='[DONE]')return out;
+        let payload;try{payload=JSON.parse(raw)}catch{continue}
+        if(payload?.error){const e=Error(payload.error.message||payload.error||'stream error');e.code=payload.error.code||null;throw e;}
+        if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;if(payload?.settle&&typeof payload.settle==='object')lastSseSettle=payload.settle;if(payload?.receipt&&typeof payload.receipt==='object')lastSseReceipt=payload.receipt;
+        const delta=typeof payload?.choices?.[0]?.delta?.content==='string'?payload.choices[0].delta.content:typeof payload?.choices?.[0]?.delta==='string'?payload.choices[0].delta:typeof payload?.response==='string'?payload.response:typeof payload?.delta==='string'?payload.delta:'';
+        if(delta){if(!saw){saw=true;onFirstToken()}out+=delta;node.textContent=out}
+      }
+    }
+  }
+  if(jobCancelled)throw Error('Request cancelled. Prompt deleted.');
+  return out;
+}
+$('queue-night').addEventListener('click',()=>queueForMac());
+$('night-use-hosted')?.addEventListener('click',()=>{nightQueueIntent=false;setEngine('hosted',true)});
+$('night-use-community')?.addEventListener('click',()=>{if(providersOnline<1)return;nightQueueIntent=false;cameFromHow=true;cameFromGate=false;preferOnlineModel($('model'),false);setEngine('community',false);showTf('ask');});
+$('run-demo').addEventListener('click',async()=>{
+  if(nightQueueIntent){queueForMac();return}
+  const prompt=$('prompt').value.trim();
+  let messages=pendingMessages();
+  const button=$('run-demo'),eng=$('engine').value,community=eng==='community'||eng==='mixture'||eng==='self',mixture=eng==='mixture',selfRoute=eng==='self';
+  if(mixture)messages=mixtureFraming(messages);
+  if(community)messages=modelIdentityFraming(messages,$('model').value);
+  if(!prompt){$('answer').textContent='Write a prompt first.';return}
+  if(prompt.length>2000){$('answer').textContent='Keep the prompt under 2,000 characters.';return}
+  if(selfRoute&&!ownMacModels.has($('model').value)){
+    $('answer').textContent='Your Mac is offline.';
+    return;
+  }
+  if(community&&!selfRoute&&!networkModels.has($('model').value)){
+    showNightOffer();
+    return;
+  }
+  hideNightOffer();
+  if(!loggedIn){$('answer').textContent='Sign in.';$('answer-title').textContent='Ask.';showTf('answer');return}
+  button.disabled=true;$('clear-chat').disabled=true;
+  button.textContent=community?'Waiting for Mac\u2026':'Running\u2026';
+  $('answer').textContent=community?'Waiting for a Mac\u2026':'Thinking\u2026';
+  showTf('answer');
+  $('after-answer').hidden=true;
+  {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
+  jobCancelled=false;
+  if(runAbort){try{runAbort.abort()}catch{}}
+  runAbort=new AbortController();
+  $('cancel-job').hidden=false;$('cancel-job').disabled=false;
+  startRunTick(!!community);
+  try{
+    let answer='';
+    if(community){
+      lastPaidReceipt=null;
+      const body={messages,model:$('model').value,stream:true};
+      if(mixture)body.route='mixture';
+      else if(selfRoute)body.route='self';
+      const res=await fetch(API+'/compute/api/jobs',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:runAbort.signal});
+      const ct=res.headers.get('content-type')||'';
+      if(ct.includes('event-stream')){
+        activeJob=res.headers.get('X-Dasha-Job')||'';
+        $('cancel-job').hidden=false;
+        answer=await readSse(res);
+        {
+          const u=lastSseUsage;
+          const tot=Number(u?.total_tokens);
+          const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
+          const eng=mixture?'mixture':selfRoute?'self':'community';
+          // settle only from final SSE settle object or follow-up job JSON \u2014 never invent cents.
+          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||''),model:String($('model').value||''),...settleFieldsFrom(lastSseSettle),...honestyFieldsFrom(lastSseReceipt)};
+          if(activeJob&&(!(lastPaidReceipt.settle_cents>0)||!lastPaidReceipt.route)){
+            try{
+              const j=await api('/compute/api/jobs/'+activeJob);
+              if(j?.settle)lastPaidReceipt={...lastPaidReceipt,...settleFieldsFrom(j.settle)};
+              if(j?.route==='self'||j?.route==='community'||j?.route==='mixture')lastPaidReceipt={...lastPaidReceipt,route:j.route};
+              if(j?.receipt&&typeof j.receipt==='object')lastPaidReceipt={...lastPaidReceipt,...honestyFieldsFrom(j.receipt)};
+            }catch{}
+          }
+        }
+      }
+      else{
+        if(!res.ok){
+          const err=await res.json().catch(()=>({}));
+          const msg=err?.error||'Request failed';
+          if(/No Mac is online/i.test(msg)||res.status===503){
+            $('answer').textContent='';
+            showNightOffer();
+            return;
+          }
+          throw Error(msg);
+        }
+        const job=await res.json();activeJob=job.id;$('cancel-job').hidden=false;
+        let data;
+        for(let attempt=0;attempt<900&&!jobCancelled;attempt++){
+          await new Promise(resolve=>setTimeout(resolve,400));
+          if(jobCancelled)break;
+          data=await api('/compute/api/jobs/'+job.id);
+          if(data.answer){$('answer').textContent=data.answer;onFirstToken()}
+          else if(data.status==='leased')$('answer').textContent='A Mac is generating\u2026';
+          else $('answer').textContent=data.queue_position?\`Queued \xB7 \${data.queue_position}\`:'Queued';
+          if(data.status==='complete')break;
+          if(data.status==='failed')throw Error(data.error||'Provider failed');
+        }
+        if(jobCancelled)throw Error('Request cancelled. Prompt deleted.');
+        if(data?.status!=='complete')throw Error('Community request timed out. Try again.');
+        answer=String(data.answer||'');
+        {
+          const u=data?.usage&&typeof data.usage==='object'?data.usage:null;
+          const tot=Number(u?.total_tokens);
+          const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
+          const eng=mixture?'mixture':selfRoute?'self':'community';
+          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String($('model').value||''),...settleFieldsFrom(data?.settle),...((data?.route==='self'||data?.route==='community'||data?.route==='mixture')?{route:data.route}:{}),...honestyFieldsFrom(data?.receipt)};
+        }
+      }
+    }else{
+      const res=await fetch(API+'/compute/api/chat',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,stream:true}),signal:runAbort.signal});
+      const balHdr=res.headers.get('X-Dasha-Balance-Cents');
+      const hostedPaid=balHdr!=null&&Number.isFinite(Number(balHdr));
+      if(hostedPaid){creditBalanceCents=Math.max(0,Math.floor(Number(balHdr)));paintAskCredits()}
+      const ct=res.headers.get('content-type')||'';
+      let hostedUsage=null;
+      if(ct.includes('event-stream')){answer=await readSse(res);hostedUsage=lastSseUsage}
+      else{
+        if(!res.ok){const err=await res.json().catch(()=>({}));throw Error(err?.error||'Request failed')}
+        const data=await res.json();answer=String(data.answer||'');onFirstToken();$('answer').textContent=answer;
+        if(Number.isFinite(Number(data?.balance_cents))){creditBalanceCents=Math.max(0,Math.floor(Number(data.balance_cents)));paintAskCredits()}
+        if(data?.usage&&typeof data.usage==='object')hostedUsage=data.usage;
+      }
+      if(hostedPaid){
+        const tot=Number(hostedUsage?.total_tokens);
+        const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(hostedUsage?.prompt_tokens)||0)+(Number(hostedUsage?.completion_tokens)||0))));
+        lastPaidReceipt={tokens:tok,cents:5,engine:'hosted',provider_class:'hosted',settle_cents:5,settle_state:'settled',attestation:null};
+      }else{lastPaidReceipt=null}
+    }
+    if(!String(answer||'').trim()){
+      // Empty completion \u2014 explicit error face, not blank success Assistant.
+      const job=String(activeJob||lastPaidReceipt?.job_id||'').trim();
+      const shortJob=job?(job.length>18?job.slice(0,14)+'\\u2026':job):'';
+      $('answer-title').textContent='Answer.';
+      $('answer').textContent=shortJob?('No reply.\\n'+shortJob):'No reply.';
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      // Keep prompt for quiet Retry. Do not push empty assistant / do not count sent.
+      // Never paint settle success on empty/fail \u2014 USDC/$dasha cents only on real complete.
+      clearAnswerMoney();
+      lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+      // One automatic retry on empty community/hosted completion (intermittent Mac/stream).
+      if(!window.__dashaEmptyRetryOnce){
+        window.__dashaEmptyRetryOnce=true;
+        queueMicrotask(()=>{const run=$('run-demo'); if(run&&!run.disabled)run.click();});
+      }else{window.__dashaEmptyRetryOnce=false}
+    }else{
+      window.__dashaEmptyRetryOnce=false;
+      const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}
+      conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
+      renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+    }
+  }catch(error){
+    const msg=String(error?.message||error||'');
+    const emptyFail=/empty completion/i.test(msg);
+    // Mid-stream provider die (URLError / provider_cut) \u2014 fail loud + Retry; never settle/success face.
+    const providerCut=error?.code==='provider_cut'||/provider inference failed|provider cut|URLError|stream ended before completion/i.test(msg);
+    if(jobCancelled||error?.name==='AbortError'){
+      // Keep partial tokens already painted; only replace waiting placeholders.
+      const cur=String($('answer')?.textContent||'');
+      const waiting=/^(Waiting for a Mac\u2026|Waiting for Mac\u2026|Thinking\u2026|A Mac is generating\u2026|Queued)/.test(cur);
+      if(waiting||!cur.trim()){$('answer').textContent='Request cancelled. Prompt deleted.';}
+      $('answer-title').textContent='Answer.';
+      clearAnswerMoney();
+      {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
+    }else if(emptyFail){
+      // Worker/provider empty stream fail \u2014 same No reply. + Retry face (prompt kept).
+      const job=String(activeJob||lastPaidReceipt?.job_id||'').trim();
+      const shortJob=job?(job.length>18?job.slice(0,14)+'\\u2026':job):'';
+      $('answer-title').textContent='Answer.';
+      $('answer').textContent=shortJob?('No reply.\\n'+shortJob):'No reply.';
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      clearAnswerMoney();
+      lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
+      if(!window.__dashaEmptyRetryOnce){
+        window.__dashaEmptyRetryOnce=true;
+        queueMicrotask(()=>{const run=$('run-demo'); if(run&&!run.disabled)run.click();});
+      }else{window.__dashaEmptyRetryOnce=false}
+    }else if(providerCut){
+      clearAnswerMoney();
+      lastAskFailKind='provider_cut';
+      $('answer-title').textContent='Answer.';
+      // Dasha tone: short fail + Retry. Optional one-liner when advertise stayed up.
+      const note=providersOnline>0?'\\nStill listed online.':'';
+      $('answer').textContent='Mac cut out.'+note;
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      paintAnswerMoney();paintAnswerReceipt();
+    }else{
+      {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
+      if(msg==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}
+      else if(/top up|credits|insufficient/i.test(msg)){
+        // Past free floor / 402 \u2014 stay on Answer; one quiet Top up nudge (no yank mid-read).
+        lastAskFailKind='credits';
+        $('answer').textContent='Top up credits.';
+        $('answer-title').textContent='Answer.';
+        loadCreditsBalance();
+      }
+      else if(/rate.?limit|limit reached|try again shortly/i.test(msg)){
+        lastAskFailKind='rate';
+        $('answer').textContent=msg;
+        $('answer-title').textContent='Answer.';
+      }
+      else {clearAnswerMoney();$('answer').textContent=msg||'Request failed';}
+    }
+  }
+  finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();$('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
+});
+document.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>setEngine(b.dataset.engine,true)));
+$('model').addEventListener('change',updateRun);
+
+let registeredSetup='';
+function defaultSetup(){
+  return \`curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\ntar -xzf dasha-compute-open-alpha.tar.gz\\ncd dasha-compute-open-alpha\\nollama pull qwen3:8b\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor\`;
+}
+$('provide-next').addEventListener('click',()=>{
+  const name=$('provider-name').value.trim();
+  if(!name){$('provider-name').focus();return}
+  showTf('provide-reg');
+});
+$('register-provider').addEventListener('click',async()=>{
+  const button=$('register-provider'),name=$('provider-name').value.trim();
+  const models=MODELS.filter(m=>SUB24.has(m[0])||m[0]==='gemma3-27b').map(m=>m[0]);
+  const best=MODELS.find(m=>m[0]==='qwen3-8b');
+  if(!name){$('provider-status').textContent='Name this Mac first.';showTf('provide-name');$('provider-name').focus();return}
+  button.disabled=true;button.textContent='Registering\u2026';$('provider-status').textContent='';
+  try{
+    const credentials=await api('/compute/api/providers/register',{method:'POST',body:JSON.stringify({name,models})});
+    registeredSetup='curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\\ntar -xzf dasha-compute-open-alpha.tar.gz\\ncd dasha-compute-open-alpha\\nollama pull '+best[1]+'\\numask 077\\ncat > .dasha-provider-key <<\\'EOF\\'\\n'+credentials.provider_token+'\\nEOF\\nchmod 0600 .dasha-provider-key\\nDASHA_COORDINATOR_URL='+credentials.coordinator_url+' \\\\\\nDASHA_PROVIDER_ID='+credentials.provider_id+' \\\\\\nDASHA_MODEL_MAP='+best[0]+'='+best[1]+' \\\\\\n./install.sh\\n\\nhttps://t.me/+xB7S8mIQaKFiZjRh';
+    $('setup').textContent=registeredSetup;
+    $('provider-status').textContent='';
+    button.textContent='Register another Mac';
+    showTf('provide-done');await auth();
+  }catch(error){$('provider-status').textContent=error.message;button.textContent=registeredSetup?'Register another Mac':'Register';button.disabled=!loggedIn}
+});
+function paintProviderMacsSum(n){
+  const sum=$('provider-macs-sum');
+  if(!sum)return;
+  if(Number.isInteger(n))sum.textContent='Your Macs \xB7 '+n;
+}
+async function loadProviders(){
+  if(!loggedIn){ownMacOnline=0;ownMacModels=new Set();ownMacTps=0;paintAskMyMac();return}
+  try{
+    const data=await api('/compute/api/providers'),list=$('provider-list');
+    list.replaceChildren();
+    const macs=$('provider-macs');
+    if(macs)macs.hidden=tfStep!=='provide-done';
+    const providers=Array.isArray(data.providers)?data.providers:[];
+    const onlineMine=providers.filter(p=>p&&p.online);
+    ownMacOnline=onlineMine.length;
+    ownMacModels=new Set(onlineMine.flatMap(p=>Array.isArray(p.models)?p.models:[]));
+    const measuredMine=onlineMine.flatMap(p=>Array.isArray(p.hardware?.benchmarks)?p.hardware.benchmarks:[]).map(b=>Number(b?.tokens_per_second)).filter(v=>Number.isFinite(v)&&v>0);
+    ownMacTps=measuredMine.length?measuredMine.reduce((a,b)=>a+b,0)/measuredMine.length:0;
+    paintProviderMacsSum(providers.length);
+    paintAskMyMac();
+    if(!providers.length)return;
+    data.providers.forEach(provider=>{
+      const row=document.createElement('div'),label=document.createElement('span'),name=document.createElement('strong'),detail=document.createElement('small'),remove=document.createElement('button');
+      const state=provider.online?'online':provider.last_seen_at?'offline \xB7 last seen '+new Date(provider.last_seen_at).toLocaleString():'waiting for first heartbeat';
+      const benches=Array.isArray(provider.hardware?.benchmarks)?provider.hardware.benchmarks:[];
+      const tpsVals=benches.map(b=>Number(b?.tokens_per_second)).filter(v=>Number.isFinite(v)&&v>0);
+      const tpsLabel=tpsVals.length?formatTokPerSec(tpsVals.reduce((a,b)=>a+b,0)/tpsVals.length):'';
+      row.className='model';name.textContent=provider.name;
+      detail.textContent=[state,provider.models.length+' model'+(provider.models.length===1?'':'s'),tpsLabel?tpsLabel+' tok/s':''].filter(Boolean).join(' \xB7 ');
+      label.append(name,detail);remove.className='secondary';remove.type='button';remove.dataset.revoke=provider.id;remove.textContent='Revoke';
+      row.append(label,remove);list.append(row);
+    });
+  }catch{const list=$('provider-list');if(list)list.textContent='Could not load registered Macs.';paintProviderMacsSum(0)}
+}
+$('refresh-providers').addEventListener('click',auth);
+$('provider-list').addEventListener('click',async event=>{
+  const id=event.target.dataset.revoke;
+  if(!id||!confirm('Revoke this provider token? The agent will disconnect.'))return;
+  event.target.disabled=true;
+  try{await api('/compute/api/providers/'+id,{method:'DELETE'});await auth()}catch(error){alert(error.message);event.target.disabled=false}
+});
+$('cancel-job').addEventListener('click',async()=>{
+  if(!activeJob&&!runAbort)return;$('cancel-job').disabled=true;
+  jobCancelled=true;
+  try{
+    if(activeJob)await api('/compute/api/jobs/'+activeJob,{method:'DELETE'});
+    if(runAbort){try{runAbort.abort()}catch{}}
+    clearRunTick();$('answer-title').textContent='Answer.';$('answer').textContent='Request cancelled. Prompt deleted.';
+  }catch(error){$('answer').textContent=error.message}
+  finally{$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney()}
+});
+async function loadApiKeys(){
+  if(!loggedIn){apiKeyCount=0;paintAnswerApi();return}
+  try{
+    const data=await api('/compute/api/keys'),list=$('api-key-list');
+    list.replaceChildren();
+    apiKeyCount=Array.isArray(data.keys)?data.keys.length:0;
+    if(!apiKeyCount){list.textContent='No developer keys yet.';paintAnswerApi();return}
+    data.keys.forEach(key=>{
+      const row=document.createElement('div'),label=document.createElement('span'),name=document.createElement('strong'),detail=document.createElement('small'),remove=document.createElement('button');
+      row.className='model';name.textContent=key.name;
+      const lim=key.limit_cents==null?'uncapped':('$'+((Number(key.limit_cents)||0)/100).toFixed((Number(key.limit_cents)||0)%100?2:0));
+      const rem=key.limit_cents==null?'':(' \xB7 $'+((Number(key.limit_remaining_cents)||0)/100).toFixed(2)+' left');
+      const reset=key.limit_reset&&key.limit_reset!=='none'?' / '+key.limit_reset:'';
+      detail.textContent=key.prefix+'\u2026 \xB7 '+lim+reset+rem+' \xB7 '+(key.last_used_at?'last used '+new Date(key.last_used_at).toLocaleString():'never used');
+      label.append(name,detail);remove.className='secondary';remove.type='button';remove.dataset.key=key.id;remove.textContent='Revoke';
+      row.append(label,remove);list.append(row);
+    });
+  }catch{apiKeyCount=0;$('api-key-list').textContent='Could not load API keys.'}
+  paintAnswerApi();
+}
+$('create-api-key').addEventListener('click',async()=>{
+  const button=$('create-api-key');button.disabled=true;
+  try{
+    const dollars=Number($('api-key-limit')?.value);
+    const limit_cents=Number.isFinite(dollars)&&dollars>0?Math.round(dollars*100):500;
+    const key=await api('/compute/api/keys',{method:'POST',body:JSON.stringify({name:'Developer key',limit_cents,limit_reset:'monthly'})});
+    const cap=key.limit_cents==null?'uncapped':('$'+((key.limit_cents)/100).toFixed(key.limit_cents%100?2:0)+' / '+(key.limit_reset||'month'));
+    $('api-key-output').textContent="export DASHA_API_KEY='"+key.api_key+"'\\n\\nCopy this now. Dasha stores only its hash.\\nSpend cap: "+cap+".";
+    await loadApiKeys();
+  }catch(error){$('api-key-output').textContent=error.message}
+  finally{button.disabled=!loggedIn}
+});
+
+$('api-key-list').addEventListener('click',async event=>{
+  const id=event.target.dataset.key;
+  if(!id||!confirm('Revoke this developer key?'))return;
+  event.target.disabled=true;
+  try{await api('/compute/api/keys/'+id,{method:'DELETE'});await loadApiKeys()}
+  catch(error){$('api-key-output').textContent=error.message;event.target.disabled=false}
+});
+function paintCode(){
+  const base=$('gateway').value.replace(/\\/$/,'');
+  // Soft-prefer live online catalog model when fleet known and qwen3-8b offline (example id still OK).
+  let model='qwen3-8b';
+  if(networkModels.size&&!networkModels.has(model)){
+    const hit=MODELS.find(item=>networkModels.has(item[0]));
+    if(hit)model=hit[0];
+  }
+  $('code').textContent=\`curl \${base}/chat/completions \\\\\\n  -H "Authorization: Bearer $DASHA_API_KEY" \\\\\\n  -H "Content-Type: application/json" \\\\\\n  -d '\${JSON.stringify({model,messages:[{role:'user',content:'hello'}],stream:true})}'\`;
+}
+$('gateway').addEventListener('input',paintCode);
+function paintApiKeyCapHint(){
+  const el=$('api-key-cap-hint'),input=$('api-key-limit');
+  if(!el)return;
+  const dollars=Number(input?.value);
+  const n=Number.isFinite(dollars)&&dollars>0?dollars:5;
+  el.textContent='Cap $'+n+' / month';
+}
+$('api-key-limit')?.addEventListener('input',paintApiKeyCapHint);
+
+function copy(text,button){
+  const old=button.textContent;
+  const done=()=>{button.textContent='Copied';setTimeout(()=>button.textContent=old,1400)};
+  const select=()=>{
+    const node=$('code');
+    if(node&&text===node.textContent){
+      const range=document.createRange();range.selectNodeContents(node);const sel=getSelection();sel.removeAllRanges();sel.addRange(range);button.textContent='Select text';return;
+    }
+    const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.focus();ta.select();button.textContent='Select text';
+  };
+  const legacy=()=>{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch{}ta.remove();return ok};
+  const timed=p=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Error('copy')),600))]);
+  if(navigator.clipboard&&navigator.clipboard.writeText){timed(navigator.clipboard.writeText(text)).then(done).catch(()=>{legacy()?done():select()})}
+  else if(legacy())done();else select();
+}
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>copy($('code').textContent,b)));
+$('copy-skill-use')?.addEventListener('click',()=>copy(USE_SKILL,$('copy-skill-use')));
+$('copy-skill-provide-reg')?.addEventListener('click',()=>copy(PROVIDE_SKILL,$('copy-skill-provide-reg')));
+$('copy-skill-provide-done')?.addEventListener('click',()=>copy(PROVIDE_SKILL,$('copy-skill-provide-done')));
+$('check').addEventListener('click',async()=>{
+  const button=$('check'),base=$('gateway').value.replace(/\\/v1\\/?$/,'');
+  button.disabled=true;$('check-result').textContent='Checking\u2026';
+  try{
+    const [health,network]=await Promise.all([fetch(base+'/healthz',{cache:'no-store'}),fetch(base+'/v1/network',{cache:'no-store'})]);
+    if(!health.ok||!network.ok)throw Error('Gateway returned an error');
+    $('check-result').textContent=JSON.stringify({health:await health.json(),network:await network.json()},null,2);
+  }catch(error){
+    $('check-result').textContent=JSON.stringify({offline:true,detail:'Could not reach this gateway from the browser.',next:'Run curl '+base+'/healthz'},null,2);
+  }finally{button.disabled=false}
+});
+
+function setComputeIntent(intent){
+  try{localStorage.setItem('dasha-compute-intent',intent)}catch{}
+  document.body.dataset.intent=intent||'';
+}
+function goAskFromGate(intent){
+  cameFromHow=false;cameFromGate=true;setComputeIntent(intent);setEngine('hosted',true);
+}
+function shortDest(addr){const s=String(addr||'');return s.length>12?s.slice(0,4)+'\u2026'+s.slice(-4):s}
+const CREDIT_DISCOUNTS={usdc:0.03,dasha:0.05};
+const CREDIT_PACK_CENTS={5:500,20:2000,50:5000};
+function priceFor(method,pack){
+  const face=CREDIT_PACK_CENTS[String(pack||'')];
+  const d=CREDIT_DISCOUNTS[String(method||'').toLowerCase()];
+  if(!face||!(d>=0))return null;
+  return Math.round(face*(1-d));
+}
+function formatChargeDollars(cents){
+  const n=Math.max(0,Math.floor(Number(cents)||0));
+  return '$'+(n/100).toFixed(2);
+}
+function formatCredits(cents){
+  const n=Math.max(0,Math.floor(Number(cents)||0));
+  const dollars=(n/100).toFixed(n%100?2:0);
+  return '$'+dollars;
+}
+function paintPayMethodAuth(){
+  const login=$('pay-method-login'), usdc=$('pay-usdc'), dasha=$('pay-dasha');
+  if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23pay'}
+  // Guest: only Sign in \u2014 no payable method buttons to click through.
+  if(usdc)usdc.hidden=!loggedIn;
+  if(dasha)dasha.hidden=!loggedIn;
+}
+function paintPayBuyFine(){
+  const el=$('pay-buy-fine');
+  if(!el)return;
+  const pack=creditPack||'5';
+  const face=CREDIT_PACK_CENTS[String(pack)];
+  if(!(face>0)){el.textContent='Pack credits \xB7 crypto discount \xB7 no card yet.';return}
+  el.textContent=formatCredits(face)+' credits \xB7 crypto discount \xB7 no card yet.';
+}
+function paintPayMethodPrices(){
+  const pack=creditPack||'5';
+  const usdc=$('pay-usdc'),dasha=$('pay-dasha');
+  const u=priceFor('usdc',pack),d=priceFor('dasha',pack);
+  if(usdc&&u!=null)usdc.textContent='USDC \xB7 '+formatChargeDollars(u);
+  if(dasha&&d!=null)dasha.textContent='$dasha \xB7 '+formatChargeDollars(d);
+  paintPayBuyFine();
+}
+function paintPayPacks(){
+  const pack=creditPack||'5';
+  document.querySelectorAll('[data-pack]').forEach(btn=>{
+    const on=btn.getAttribute('data-pack')===String(pack);
+    btn.setAttribute('aria-pressed',on?'true':'false');
+    btn.classList.toggle('primary',on);
+    btn.classList.toggle('secondary',!on);
+  });
+}
+function paintPayBuy(){
+  paintPayPacks();
+  paintPayMethodAuth();
+  paintPayMethodPrices();
+  const err=$('pay-method-err');
+  if(err&&loggedIn){err.hidden=true;err.textContent=''}
+}
+function paintPayMethod(){paintPayBuy()}
+function paintAskCredits(){
+  const el=$('ask-credits'), sep=$('ask-credits-sep');
+  if(!el)return;
+  if(!loggedIn||creditBalanceCents==null){
+    el.hidden=true;el.textContent='';
+    if(sep)sep.hidden=true;
+    return;
+  }
+  el.hidden=false;
+  el.textContent=formatCredits(creditBalanceCents);
+  el.title='Credits';
+  el.setAttribute('aria-label','Credits');
+  if(sep)sep.hidden=false;
+}
+
+function formatUsdCents(cents){
+  const n=Math.max(0,Math.floor(Number(cents)||0));
+  return '$'+(n/100).toFixed(2);
+}
+
+
+function paintPresenceActBoot(){
+  const boot=$('presence-act-boot');
+  if(!boot)return;
+  const onGate=tfStep==='gate';
+  // Quiet gate dogfood: presence + Act tape only on Start.; post-Start uses #honesty-panel.
+  boot.hidden=!onGate;
+  if(!onGate)return;
+  const community=$('presence-community');
+  if(community){
+    const n=Number.isInteger(providersOnline)?providersOnline:0;
+    let model='';
+    let tpsLabel='';
+    if(n>=1){
+      const row=(networkCapacity||[])[0];
+      const tps=Number(row?.tokens_per_second);
+      const mp=Number(row?.measured_providers||0);
+      model=row?.model?String(row.model):'';
+      // Advertising only (providers_online) \u2014 never pad enrolled OCM hosts.
+      if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
+      if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
+    }
+    if(n===0)community.textContent='No Mac advertising';
+    else{
+      const bits=[n+' advertising'];
+      if(model)bits.push(model);
+      if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
+      community.textContent=bits.join(' \xB7 ');
+    }
+    community.title=n>=1?'Community advertising (providers_online) \xB7 not OCM enrolled':'Community advertising \xB7 none online';
+  }
+  const enrolled=$('presence-enrolled-boot');
+  const enrolledSep=$('presence-enrolled-boot-sep');
+  if(enrolled){
+    if(Number.isInteger(ocmHosts)&&ocmHosts>=1){
+      enrolled.hidden=false;
+      enrolled.textContent=ocmHosts+' enrolled';
+      enrolled.title='OCM enrolled \xB7 not the same as advertising';
+      if(enrolledSep)enrolledSep.hidden=false;
+    }else{
+      enrolled.hidden=true;
+      enrolled.textContent='';
+      enrolled.removeAttribute('title');
+      if(enrolledSep)enrolledSep.hidden=true;
+    }
+  }
+  const act=$('act-tape-boot');
+  if(act){
+    // Visible acts: factory settled_24h only \u2014 never invent.
+    act.textContent=formatSettledLine();
+  }
+}
+function paintHonestyPanel(){
+  paintPresenceActBoot();
+  const panel=$('honesty-panel');
+  if(!panel)return;
+  const onGate=tfStep==='gate';
+  panel.hidden=onGate;
+  if(onGate)return;
+  const hosted=$('honesty-hosted');
+  if(hosted){
+    if(!window.__dashaAuthReady){
+      hosted.textContent='Hosted \xB7 live';
+      hosted.className='honesty-ok';
+    }else if(hostedLive){
+      hosted.textContent='Hosted \xB7 live';
+      hosted.className='honesty-ok';
+    }else{
+      hosted.textContent='Hosted \xB7 \u2014';
+      hosted.className='';
+    }
+  }
+  const macs=$('honesty-macs');
+  if(macs){
+    const n=Number.isInteger(providersOnline)?providersOnline:0;
+    let tpsLabel='';
+    let model='';
+    if(n>=1){
+      const row=(networkCapacity||[])[0];
+      const tps=Number(row?.tokens_per_second);
+      const mp=Number(row?.measured_providers||0);
+      model=row?.model?String(row.model):'';
+      // Advertising only (providers_online) \u2014 never pad enrolled OCM hosts.
+      if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
+      // Live measured only \u2014 stamp capacity[].tokens_per_second; never invent/pad.
+      if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
+    }
+    if(n===0)macs.textContent='No Mac online';
+    else{
+      // Quiet presence: N online \xB7 model id \xB7 ~tok/s \u2014 only fields live network has.
+      const bits=[n+' online'];
+      if(model)bits.push(model);
+      if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
+      macs.textContent=bits.join(' \xB7 ');
+    }
+    let title='';
+    if(n>=1&&(model||tpsLabel)){
+      const tbits=[];
+      if(model)tbits.push(model);
+      if(tpsLabel)tbits.push(tpsLabel+' tok/s measured');
+      title=tbits.join(' \xB7 ');
+    }
+    if(title){macs.title=title;macs.setAttribute('aria-label',title)}
+    else{macs.removeAttribute('title');macs.removeAttribute('aria-label')}
+    const strip=$('presence-strip');
+    if(strip){
+      strip.title='Community advertising \u2260 OCM enrolled';
+      strip.dataset.advertising=String(n);
+      strip.dataset.enrolled=Number.isInteger(ocmHosts)?String(ocmHosts):'';
+    }
+  }
+  const enrolled=$('honesty-enrolled');
+  const enrolledSep=$('honesty-enrolled-sep');
+  if(enrolled){
+    // Fail closed: integer hosts from /compute/ocm/healthz only \u2014 never invent; never pad advertising.
+    if(Number.isInteger(ocmHosts)&&ocmHosts>=1){
+      enrolled.hidden=false;
+      enrolled.textContent=ocmHosts+' enrolled';
+      enrolled.title='OCM enrolled \xB7 not the same as online';
+      enrolled.setAttribute('aria-label',enrolled.title);
+      if(enrolledSep)enrolledSep.hidden=false;
+    }else{
+      enrolled.hidden=true;
+      enrolled.textContent='';
+      enrolled.removeAttribute('title');
+      enrolled.removeAttribute('aria-label');
+      if(enrolledSep)enrolledSep.hidden=true;
+    }
+  }
+  const settled=$('honesty-settled');
+  if(settled){
+    // Visible acts: factory settled_24h tokens/jobs/cents only \u2014 never invent.
+    settled.textContent=formatSettledLine();
+  }
+  const actTape=$('act-tape');
+  if(actTape){
+    actTape.title='Visible acts \xB7 settled paid-inference \xB7 24h';
+    actTape.dataset.tokens=String(Math.max(0,Math.floor(Number(settled24h?.tokens)||0)));
+    actTape.dataset.jobs=String(Math.max(0,Math.floor(Number(settled24h?.jobs)||0)));
+    actTape.dataset.cents=String(Math.max(0,Math.floor(Number(settled24h?.cents)||0)));
+  }
+}
+function clearHonestyPoll(){if(honestyPollTimer){clearInterval(honestyPollTimer);honestyPollTimer=null}}
+function startHonestyPoll(){
+  clearHonestyPoll();
+  honestyPollTimer=setInterval(()=>{
+    refreshHonesty();
+  },15000);
+}
+async function refreshHonesty(){
+  const onGate=tfStep==='gate';
+  try{
+    const network=await api('/compute/api/network');
+    networkModels=new Set(network?.models_available||[]);
+    providersOnline=Number.isInteger(network?.providers_online)?network.providers_online:0;
+    networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];
+    $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
+    if(!onGate){paintSplit();paintAskCommunity()}
+  }catch{}
+  try{
+    const status=await api('/compute/api/status');
+    hostedLive=status?.live===true;
+    $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
+  }catch{}
+  await loadSettled24h();
+  try{
+    const res=await fetch('/compute/ocm/healthz',{cache:'no-store'});
+    if(!res.ok)throw Error('ocm');
+    const data=await res.json();
+    ocmHosts=Number.isInteger(data.hosts)?data.hosts:null;
+  }catch{ocmHosts=null}
+  paintHonestyPanel();
+}
+
+function formatTokPerSec(n){const v=Number(n);if(!Number.isFinite(v)||v<=0)return '';if(v>=100)return String(Math.round(v));if(v>=10)return String(Math.round(v*10)/10);return String(Math.round(v*100)/100)}
+function formatSettledTok(n){
+  const v=Math.max(0,Math.floor(Number(n)||0));
+  if(v>=1_000_000)return (Math.round(v/100_000)/10)+'M';
+  if(v>=10_000)return Math.round(v/1000)+'k';
+  if(v>=1000)return (Math.round(v/100)/10)+'k';
+  return String(v);
+}
+function formatSettledLine(){
+  const tok=Math.max(0,Math.floor(Number(settled24h?.tokens)||0));
+  const jobs=Math.max(0,Math.floor(Number(settled24h?.jobs)||0));
+  const cents=Math.max(0,Math.floor(Number(settled24h?.cents)||0));
+  // Honest zero stays finished; non-zero shows last settled / jobs (+\xA2 when present).
+  if(tok===0&&jobs===0&&cents===0)return '0 tok \xB7 24h';
+  const bits=[formatSettledTok(tok)+' tok'];
+  if(jobs>0)bits.push(jobs===1?'1 job':(jobs+' jobs'));
+  if(cents>0)bits.push(cents+'\xA2');
+  bits.push('24h');
+  return bits.join(' \xB7 ');
+}
+function paintSettled24h(){
+  const el=$('settled-24h');
+  if(!el)return;
+  // Quiet footer \u2014 honest zero, never invent volume.
+  el.textContent=formatSettledLine();
+  paintHonestyPanel();
+}
+function settleFieldsFrom(src){
+  const cents=Math.max(0,Math.floor(Number(src?.cents ?? src?.settle_cents)||0));
+  const state=String(src?.state ?? src?.settle_state ?? '').trim();
+  if(!(cents>0)||!state)return {};
+  return {settle_cents:cents,settle_state:state};
+}
+/** Phase 0 honesty fields from job/SSE receipt \u2014 never invent tok/s, cents, or attestation. */
+function honestyFieldsFrom(src){
+  const out={};
+  if(!src||typeof src!=='object')return out;
+  const jobId=String(src.job_id||src.id||'').trim();
+  if(jobId)out.job_id=jobId;
+  const modelId=String(src.model_id||src.model||'').trim();
+  if(modelId)out.model=modelId;
+  const pc=String(src.provider_class||'').trim();
+  if(pc==='hosted'||pc==='community'||pc==='mixture'||pc==='self')out.provider_class=pc;
+  const tps=Number(src.tokens_per_second);
+  if(Number.isFinite(tps)&&tps>0&&tps<=10000)out.tokens_per_second=Math.round(tps*100)/100;
+  const completed=String(src.completed_at||'').trim();
+  if(completed)out.completed_at=completed;
+  // Phase 0: attestation always null/omitted \u2014 never invent a verify badge.
+  if('attestation' in src)out.attestation=src.attestation==null?null:null;
+  if(src.settled&&typeof src.settled==='object')Object.assign(out,settleFieldsFrom(src.settled));
+  else Object.assign(out,settleFieldsFrom(src));
+  return out;
+}
+function measuredTpsForModel(model){
+  const want=String(model||'').trim();
+  if(!want)return null;
+  const row=(networkCapacity||[]).find(item=>item&&item.model===want);
+  if(!row)return null;
+  const mp=Number(row.measured_providers||0);
+  const tps=Number(row.tokens_per_second);
+  if(!(mp>=1)||!Number.isFinite(tps)||!(tps>0)||tps>10000)return null;
+  return Math.round(tps*100)/100;
+}
+function paintAnswerReceiptNote(routeFace){
+  const note=$('answer-receipt-note');
+  if(!note)return;
+  // Quiet Dasha tone \u2014 community peer Mac is not an enclave. No disclaimer lecture.
+  if(routeFace==='community'){
+    note.hidden=false;note.removeAttribute('hidden');
+    note.textContent='no enclave \xB7 attestation N/A';
+  }else{
+    note.hidden=true;note.setAttribute('hidden','');note.textContent='';
+  }
+}
+function paintAnswerReceipt(){
+  const el=$('answer-receipt');
+  if(!el)return;
+  const hide=()=>{el.hidden=true;el.setAttribute('hidden','');el.textContent='';paintAnswerReceiptNote('');};
+  const show=(text,routeFace)=>{
+    // Keep Answer step open so receipt is actually visible (not only textContent under a hidden step).
+    if(tfStep!=='answer')showTf('answer');
+    else{
+      const step=$('step-answer');
+      if(step){step.hidden=false;step.removeAttribute('hidden')}
+    }
+    el.hidden=false;el.removeAttribute('hidden');
+    el.textContent=text;
+    paintAnswerReceiptNote(routeFace);
+  };
+  const r=lastPaidReceipt;
+  if(!r){hide();return}
+  const tok=Math.max(0,Math.floor(Number(r.tokens)||0));
+  const cents=Math.max(0,Math.floor(Number(r.cents)||0));
+  const eng=String(r.engine||'');
+  // Prefer job GET route / provider_class when known (honesty if engine UI drifted); else client engine face.
+  const apiRoute=String(r.route||'').trim();
+  const pc=String(r.provider_class||'').trim();
+  const routeFace=(apiRoute==='self'||apiRoute==='community'||apiRoute==='mixture')?apiRoute
+    :(pc==='self'||pc==='community'||pc==='mixture'||pc==='hosted')?pc:eng;
+  // selected/routed model id from client/job only (never trust answer self-description); receipt or live select.
+  const model=String(r.model||$('model')?.value||'').trim();
+  const job=String(r.job_id||'').trim();
+  const shortJob=job?(job.length>18?job.slice(0,14)+'\u2026':job):'';
+  // tok/s only when measured on capacity[] (receipt or live network) \u2014 never invent.
+  let tps=Number(r.tokens_per_second);
+  if(!(Number.isFinite(tps)&&tps>0)){
+    const live=measuredTpsForModel(model);
+    tps=live==null?NaN:live;
+  }
+  const tpsLabel=(Number.isFinite(tps)&&tps>0)?('~'+formatTokPerSec(tps)+' tok/s'):'';
+  // Community / Mixture / self \u2014 job receipt; never show provider-earn cents as user $.
+  // Quiet settle face only when job/usage JSON provided settle_cents + settle_state (fail closed).
+  // Self: assert charge:0; omit settle \xA2 (no-earn/no-settle on self).
+  if(routeFace==='community'||routeFace==='mixture'||routeFace==='self'){
+    const label=routeFace==='mixture'?'Mixture':routeFace==='self'?'Your Mac':'Community';
+    const parts=[label];
+    if(model)parts.push(model);
+    if(tok>0)parts.push(formatSettledTok(tok)+' tok');
+    if(tpsLabel)parts.push(tpsLabel);
+    if(shortJob)parts.push(shortJob);
+    if(routeFace==='self'){
+      // Fail closed: only paint free when route confirmed self \u2014 never invent for Community/Hosted.
+      parts.push('charge:0');
+    }else{
+      const settleCents=Math.max(0,Math.floor(Number(r.settle_cents)||0));
+      const settleState=String(r.settle_state||'').trim();
+      if(settleCents>0&&settleState){
+        parts.push(settleCents+'\xA2 USDC');
+        parts.push(settleState==='settled'||settleState==='paid'?'settled':'pending operator settle');
+      }
+    }
+    if(parts.length<2){hide();return}
+    show(parts.join(' \xB7 '),routeFace);
+    return;
+  }
+  // Hosted paid settle only (user charged). Free floor stays quiet. Attestation omitted in Phase 0.
+  if(!(tok>0||cents>0)){hide();return}
+  const hostedCore=cents>0
+    ?('Settled \xB7 '+formatSettledTok(tok)+' tok'+(tpsLabel?(' \xB7 '+tpsLabel):'')+' \xB7 '+formatUsdCents(cents)+' credits')
+    :('Settled \xB7 '+formatSettledTok(tok)+' tok'+(tpsLabel?(' \xB7 '+tpsLabel):''));
+  show(hostedCore,'hosted');
+}
+async function loadSettled24h(){
+  try{
+    const data=await api('/compute/api/factory');
+    const s=data?.settled_24h&&typeof data.settled_24h==='object'?data.settled_24h:null;
+    settled24h={
+      tokens:Math.max(0,Math.floor(Number(s?.tokens)||0)),
+      jobs:Math.max(0,Math.floor(Number(s?.jobs)||0)),
+      cents:Math.max(0,Math.floor(Number(s?.cents)||0)),
+    };
+  }catch{
+    // Keep prior / zero \u2014 never invent.
+    if(!settled24h)settled24h={tokens:0,jobs:0,cents:0};
+  }
+  paintSettled24h();
+}
+function formatEarnRatesLine(rates){
+  const job=Math.max(0,Math.floor(Number(rates?.job_cents)));
+  const tok=Math.max(0,Math.floor(Number(rates?.token_cents_per_1k)));
+  const min=Math.max(0,Math.floor(Number(rates?.min_payout_cents)));
+  // Fall back to published schedule constants when rates missing \u2014 never invent balances.
+  const j=Number.isFinite(job)&&job>0?job:5;
+  const t=Number.isFinite(tok)&&tok>=0?tok:1;
+  const m=Number.isFinite(min)&&min>0?min:100;
+  const jobUsd='$'+(j/100).toFixed(2).replace(/\\.00$/,'');
+  const tokUsd='$'+(t/100).toFixed(2).replace(/\\.00$/,'');
+  const minUsd='$'+(m/100).toFixed(2).replace(/\\.00$/,'');
+  return jobUsd+'/job + '+tokUsd+'/1k completion \xB7 min '+minUsd+' \xB7 pending operator settle';
+}
+function paintEarnRates(rates){
+  const el=$('earn-rates');
+  if(el)el.textContent=formatEarnRatesLine(rates||null);
+  const pe=$('provide-earn-fine');
+  if(pe)pe.textContent=formatEarnRatesLine(rates||null);
+}
+function paintEarn(){
+  const bal=$('earn-balance'),jobs=$('earn-jobs'),methods=$('earn-methods'),wrap=$('earn-wallet-wrap');
+  const actions=$('earn-actions'),btn=$('earn-payout'),status=$('earn-status'),login=$('earn-login');
+  const compare=$('earn-compare'),pending=$('earn-pending');
+  const usdc=$('earn-usdc'),dasha=$('earn-dasha');
+  if(login){login.hidden=loggedIn;login.textContent='Sign in'}
+  paintEarnRates(earnRates);
+  // Guest: Sign in only \u2014 never invent $0.
+  if(!loggedIn){
+    earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;
+    if(bal){bal.hidden=true;bal.textContent=''}
+    if(jobs){jobs.hidden=true;jobs.textContent=''}
+    if(methods)methods.hidden=true;
+    if(wrap)wrap.hidden=true;
+    if(actions)actions.hidden=true;
+    if(btn){btn.hidden=true;btn.disabled=true}
+    if(compare){compare.hidden=true;compare.textContent=''}
+    if(pending){pending.hidden=true;pending.textContent=''}
+    if(status){status.hidden=true;status.textContent=''}
+    return;
+  }
+  if(!earnLoaded||earnTotalUsdc==null){
+    if(bal){bal.hidden=true;bal.textContent=''}
+    if(jobs){jobs.hidden=true;jobs.textContent=''}
+    if(methods)methods.hidden=true;
+    if(wrap)wrap.hidden=true;
+    if(actions)actions.hidden=true;
+    if(btn){btn.hidden=true;btn.disabled=true}
+    if(compare){compare.hidden=true;compare.textContent=''}
+    if(pending){pending.hidden=true;pending.textContent=''}
+    return;
+  }
+  const face=Math.max(0,Math.floor(Number(earnTotalUsdc)||0));
+  const dashaCents=Math.floor(face*1.1);
+  if(bal){bal.hidden=false;bal.textContent=formatUsdCents(face)+' owed \xB7 USDC face'}
+  if(jobs){jobs.hidden=false;const tpsLabel=formatTokPerSec(ownMacTps);jobs.textContent=(earnTotalJobs===1?'1 job':earnTotalJobs+' jobs')+' completed'+(tpsLabel?' \xB7 '+tpsLabel+' tok/s':'')}
+  if(methods)methods.hidden=false;
+  if(wrap)wrap.hidden=false;
+  if(actions)actions.hidden=false;
+  if(usdc){usdc.className='tf-choice '+(earnMethod==='usdc'?'primary':'secondary');usdc.setAttribute('aria-pressed',earnMethod==='usdc'?'true':'false')}
+  if(dasha){dasha.className='tf-choice '+(earnMethod==='dasha'?'primary':'secondary');dasha.setAttribute('aria-pressed',earnMethod==='dasha'?'true':'false')}
+  if(compare){
+    compare.hidden=false;
+    compare.textContent=earnMethod==='dasha'
+      ?('Payout '+formatUsdCents(dashaCents)+' in $dasha \xB7 face '+formatUsdCents(face)+' USDC')
+      :('Payout '+formatUsdCents(face)+' USDC \xB7 $dasha would be '+formatUsdCents(dashaCents));
+  }
+  const canPay=face>=100;
+  if(btn){
+    btn.hidden=!canPay;
+    btn.disabled=!canPay;
+    btn.textContent='Request payout';btn.title='Queues for operator settle \xB7 not auto';btn.setAttribute('aria-label','Request payout \xB7 operator settles \xB7 not auto');
+  }
+  if(pending){
+    const rows=(earnPending||[]);
+    pending.replaceChildren();
+    if(!rows.length){pending.hidden=true;return}
+    pending.hidden=false;
+    rows.forEach((row,i)=>{
+      if(i)pending.append(document.createTextNode(' \xB7 '));
+      const st=String(row.status||'pending');
+      const amt=formatUsdCents(row.payout_cents!=null?row.payout_cents:row.usdc_cents);
+      const meth=row.method==='dasha'?' $dasha':' USDC';
+      if(st==='paid'&&row.signature){
+        pending.append(document.createTextNode('Paid '+amt+meth+' '));
+        const a=document.createElement('a');
+        a.className='tf-quiet';
+        a.href=row.solscan||('https://solscan.io/tx/'+encodeURIComponent(row.signature));
+        a.target='_blank';
+        a.rel='noopener noreferrer';
+        a.textContent='Solscan';
+        a.style.display='inline';
+        a.style.padding='0';
+        pending.append(a);
+      }else{
+        pending.append(document.createTextNode((st==='pending'?'Pending \xB7 operator settles':'Paid')+' '+amt+meth));
+      }
+    });
+  }
+}
+async function loadEarn(){
+  if(!loggedIn){earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;paintEarn();return}
+  try{
+    const data=await api('/compute/api/provider/earnings');
+    earnTotalUsdc=Number.isFinite(Number(data?.total_usdc_cents))?Math.max(0,Math.floor(Number(data.total_usdc_cents))):0;
+    earnTotalJobs=Number.isFinite(Number(data?.total_jobs))?Math.max(0,Math.floor(Number(data.total_jobs))):0;
+    earnPending=Array.isArray(data?.pending)?data.pending:[];
+    earnPref=data?.pref||null;
+    if(data?.rates&&typeof data.rates==='object')earnRates=data.rates;
+    if(earnPref?.method==='dasha'||earnPref?.method==='usdc')earnMethod=earnPref.method;
+    const wallet=$('earn-wallet');
+    if(wallet&&earnPref?.wallet&&!wallet.value)wallet.value=earnPref.wallet;
+    earnLoaded=true;
+  }catch{
+    earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;
+  }
+  paintEarn();
+}
+async function saveEarnPref(){
+  const wallet=String($('earn-wallet')?.value||'').trim();
+  const data=await api('/compute/api/provider/payout-pref',{method:'POST',body:JSON.stringify({method:earnMethod,wallet})});
+  earnPref={method:data.method,wallet:data.wallet};
+  return data;
+}
+async function requestEarnPayout(){
+  const status=$('earn-status');
+  if(status){status.hidden=false;status.textContent='\xB7'}
+  try{
+    await saveEarnPref();
+    const data=await api('/compute/api/provider/payout',{method:'POST',body:JSON.stringify({method:earnMethod,wallet:String($('earn-wallet')?.value||'').trim()})});
+    if(status){status.hidden=false;status.textContent='Pending \xB7 operator settles \xB7 '+formatUsdCents(data.payout_cents||data.usdc_cents)+(data.method==='dasha'?' $dasha':' USDC')+' \xB7 not auto';status.title='Operator settles \xB7 not auto'}
+    await loadEarn();
+  }catch(e){
+    if(status){status.hidden=false;status.textContent=e?.message||'Request failed'}
+  }
+}
+
+function paintCreditsBalance(){
+  const el=$('credits-balance');
+  const login=$('credits-login');
+  const use=$('credits-use'), topup=$('credits-topup');
+  if(login){login.hidden=loggedIn;login.textContent='Sign in';login.href='/login?return=/compute%23credits'}
+  // Guest: Sign in only \u2014 no $0 balance, no Use/Top up pretending a session.
+  if(use)use.hidden=!loggedIn;
+  if(topup)topup.hidden=!loggedIn;
+  if(!el){paintAskCredits();return}
+  if(!loggedIn){el.hidden=true;el.textContent='';paintAskCredits();return}
+  if(creditBalanceCents==null){el.hidden=true;el.textContent='';paintAskCredits();return}
+  el.hidden=false;
+  el.textContent=formatCredits(creditBalanceCents)+' credits';
+  paintAskCredits();
+}
+async function loadCreditsBalance(){
+  if(!loggedIn){creditBalanceCents=null;paintCreditsBalance();return}
+  try{
+    const data=await api('/compute/api/credits');
+    creditBalanceCents=Number.isFinite(Number(data?.balance_cents))?Math.max(0,Math.floor(Number(data.balance_cents))):0;
+  }catch{creditBalanceCents=null}
+  paintCreditsBalance();
+}
+function clearCreditPoll(){if(creditPollTimer){clearInterval(creditPollTimer);creditPollTimer=null}}
+function paintPaySend(){
+  const line=$('pay-send-line'),wait=$('pay-wait'),err=$('pay-send-err'),open=$('pay-open'),login=$('pay-send-login');
+  if(err){err.hidden=true;err.textContent=''}
+  if(login){login.hidden=true;login.href='/login?return=/compute%23pay'}
+  if(!loggedIn||!creditOrder){
+    if(line)line.textContent='\xB7';
+    if(wait)wait.textContent='';
+    if(open){open.removeAttribute('href')}
+    return;
+  }
+  const meth=creditOrder.method==='dasha'?'$dasha':'USDC';
+  const credits=formatCredits(creditOrder.credits_cents||creditOrder.face_cents||CREDIT_PACK_CENTS[String(creditPack||'5')]||0);
+  if(line)line.textContent=creditOrder.amount+' '+meth+' \xB7 +'+credits+' credits \u2192 '+shortDest(creditOrder.dest);
+  if(open&&creditOrder.pay_url){
+    open.href=creditOrder.pay_url;
+    open.setAttribute('href',creditOrder.pay_url);
+  }
+  if(wait)wait.textContent='Waiting\u2026';
+}
+async function createCreditOrder(){
+  const methodErr=$('pay-method-err');
+  // Auth gate: never paint payable Send / never POST orders until session exists (Ask Run pattern).
+  if(!loggedIn){
+    creditOrder=null;
+    clearCreditPoll();
+    paintPayMethod();
+    showTf('pay-buy');
+    return;
+  }
+  try{
+    if(methodErr){methodErr.hidden=true;methodErr.textContent=''}
+    const data=await api('/compute/api/credits/orders',{method:'POST',body:JSON.stringify({pack:creditPack,method:creditMethod})});
+    // Never open pay-send unless loggedIn AND order created.
+    if(!loggedIn||!data?.id){
+      creditOrder=null;clearCreditPoll();paintPayMethod();showTf('pay-buy');return;
+    }
+    creditOrder=data;
+    paintPaySend();
+    showTf('pay-send');
+    startCreditPoll();
+  }catch(e){
+    creditOrder=null;
+    clearCreditPoll();
+    paintPayMethod();
+    showTf('pay-buy');
+    if(methodErr){methodErr.hidden=false;methodErr.textContent=e.message||'Could not create order'}
+  }
+}
+async function pollCreditOrder(){
+  if(!creditOrder?.id||!loggedIn)return;
+  try{
+    const data=await api('/compute/api/credits/orders/'+creditOrder.id+'/confirm',{method:'POST',body:JSON.stringify({})});
+    if(data?.status==='paid'){
+      clearCreditPoll();
+      creditBalanceCents=Number.isFinite(Number(data.balance_cents))?Math.floor(Number(data.balance_cents)):creditBalanceCents;
+      const done=$('pay-done-line');
+      if(done)done.textContent=formatCredits(data.credits_cents||creditOrder.credits_cents)+' added \xB7 '+formatCredits(creditBalanceCents)+' total';
+      showTf('pay-done');
+      return;
+    }
+    const wait=$('pay-wait');
+    if(wait&&data?.status==='pending')wait.textContent='Waiting\u2026';
+  }catch(e){
+    if(e.message==='order expired'){
+      clearCreditPoll();
+      const wait=$('pay-wait');if(wait)wait.textContent='Expired. Start again.';
+    }
+  }
+}
+function startCreditPoll(){
+  clearCreditPoll();
+  pollCreditOrder();
+  creditPollTimer=setInterval(pollCreditOrder,4000);
+}
+
+function clearSponsorPoll(){if(sponsorPollTimer){clearInterval(sponsorPollTimer);sponsorPollTimer=null}}
+function sponsorFaceCents(){
+  if(sponsorCustomCents!=null&&sponsorCustomCents>=100)return sponsorCustomCents;
+  const pack=sponsorPack||'5';
+  if(pack==='20')return 2000;
+  if(pack==='50')return 5000;
+  return 500;
+}
+function formatSponsorTip(cents){
+  const n=Math.max(0,Math.floor(Number(cents)||0));
+  if(!(n>0))return '$0 tip';
+  return formatCredits(n)+' tip';
+}
+function paintSponsorBuyFine(){
+  const el=$('sponsor-buy-fine');
+  if(!el)return;
+  const face=sponsorFaceCents();
+  if(!(face>0)){el.textContent='Tip face \xB7 no crypto discount.';return}
+  el.textContent=formatSponsorTip(face)+' \xB7 face \xB7 no crypto discount.';
+}
+function formatSponsorRaised(cents){
+  const n=Math.max(0,Math.floor(Number(cents)||0));
+  const dollars=n%100? (n/100).toFixed(2) : String(n/100);
+  return '$'+dollars+' raised';
+}
+function paintSponsorRaised(data){
+  const el=$('sponsor-raised');
+  if(!el)return;
+  // Honesty: tip pledge cents only \u2014 never catalog machine.usd / goal.
+  const cents=data&&data.raised_cents!=null?data.raised_cents:(data&&data.raised_usd!=null?Math.round(Number(data.raised_usd)*100):0);
+  el.textContent=formatSponsorRaised(cents);
+  el.hidden=false;
+  paintSponsorCredit(data);
+}
+function paintSponsorCredit(data){
+  const el=$('sponsor-credit');
+  if(!el)return;
+  // Quiet named tip credits only \u2014 anonymous tips stay nameless (no invented Mac names).
+  const rows=Array.isArray(data&&data.credit)?data.credit.filter(r=>r&&String(r.name||'').trim()):[];
+  if(!rows.length){el.textContent='';el.hidden=true;return}
+  el.textContent=rows.slice(0,6).map(r=>{
+    const raw=String(r.handle||'').trim()||String(r.name||'').trim();
+    const label=r.handle?('@'+String(r.handle).replace(/^@+/,'')):raw;
+    return label+' \xB7 '+formatCredits(r.cents);
+  }).join(' \xB7 ');
+  el.hidden=false;
+}
+function paintSponsorTargets(){
+  const wrap=$('sponsor-macs');
+  if(!wrap)return;
+  wrap.replaceChildren();
+  // Quiet Mac chips from board (open/named); Network stays primary above.
+  api('/compute/api/sponsors').then(data=>{
+    if(tfStep!=='sponsor')return;
+    paintSponsorRaised(data);
+    const machines=Array.isArray(data?.machines)?data.machines:[];
+    wrap.replaceChildren();
+    let n=0;
+    for(const m of machines){
+      if(!m||m.status==='funded')continue;
+      if(n>=4)break;
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='tf-choice secondary';
+      btn.dataset.sponsorTarget=m.id;
+      btn.textContent=m.name||m.id;
+      btn.title=m.role||'Mac';
+      btn.addEventListener('click',()=>{sponsorTarget=m.id;sponsorPack=sponsorPack||'5';sponsorMethod='';sponsorOrder=null;showTf('sponsor-buy');});
+      wrap.append(btn);
+      n++;
+    }
+    wrap.hidden=n===0;
+  }).catch(()=>{wrap.hidden=true});
+}
+function paintSponsorBuy(){
+  const pack=sponsorCustomCents!=null?'':(sponsorPack||'5');
+  document.querySelectorAll('[data-sponsor-pack]').forEach(btn=>{
+    const on=sponsorCustomCents==null&&btn.getAttribute('data-sponsor-pack')===String(pack);
+    btn.setAttribute('aria-pressed',on?'true':'false');
+    btn.classList.toggle('primary',on);
+    btn.classList.toggle('secondary',!on);
+  });
+  const login=$('sponsor-method-login'), usdc=$('sponsor-usdc'), dasha=$('sponsor-dasha');
+  // Wallet tip works without login; Sign in stays optional for name on board.
+  if(login){login.hidden=loggedIn;login.textContent='Sign in for name';login.href='/login?return=/compute%23sponsor'}
+  if(usdc)usdc.hidden=false;
+  if(dasha)dasha.hidden=false;
+  const face=sponsorFaceCents();
+  const faceLabel=face>0?formatCredits(face):'$5';
+  if(usdc)usdc.textContent='USDC \xB7 '+faceLabel;
+  if(dasha)dasha.textContent='$dasha \xB7 '+faceLabel;
+  const err=$('sponsor-method-err');
+  if(err){err.hidden=true;err.textContent=''}
+  const custom=$('sponsor-custom');
+  if(custom&&sponsorCustomCents!=null)custom.value=String(Math.round(sponsorCustomCents/100));
+  paintSponsorBuyFine();
+}
+function paintSponsorSend(){
+  const line=$('sponsor-send-line'),wait=$('sponsor-wait'),err=$('sponsor-send-err'),open=$('sponsor-open');
+  if(err){err.hidden=true;err.textContent=''}
+  if(!sponsorOrder){
+    if(line)line.textContent='\xB7';
+    if(wait)wait.textContent='';
+    if(open){open.removeAttribute('href')}
+    return;
+  }
+  const meth=sponsorOrder.method==='dasha'?'$dasha':'USDC';
+  const tip=formatSponsorTip(sponsorOrder.face_cents||sponsorOrder.charge_cents||sponsorFaceCents());
+  if(line)line.textContent=sponsorOrder.amount+' '+meth+' \xB7 '+tip+' \u2192 '+shortDest(sponsorOrder.dest);
+  if(open&&sponsorOrder.pay_url){
+    open.href=sponsorOrder.pay_url;
+    open.setAttribute('href',sponsorOrder.pay_url);
+  }
+  if(wait)wait.textContent='Waiting\u2026';
+}
+async function createSponsorOrder(){
+  const methodErr=$('sponsor-method-err');
+  try{
+    if(methodErr){methodErr.hidden=true;methodErr.textContent=''}
+    const body={method:sponsorMethod,machine:sponsorTarget||'network'};
+    if(sponsorCustomCents!=null)body.cents=sponsorCustomCents;
+    else body.pack=sponsorPack||'5';
+    const data=await api('/compute/api/sponsors/orders',{method:'POST',body:JSON.stringify(body)});
+    if(!data?.id){
+      sponsorOrder=null;clearSponsorPoll();paintSponsorBuy();showTf('sponsor-buy');return;
+    }
+    sponsorOrder=data;
+    paintSponsorSend();
+    showTf('sponsor-send');
+    startSponsorPoll();
+  }catch(e){
+    sponsorOrder=null;clearSponsorPoll();paintSponsorBuy();showTf('sponsor-buy');
+    if(methodErr){methodErr.hidden=false;methodErr.textContent=e.message||'Could not create tip'}
+  }
+}
+async function pollSponsorOrder(){
+  if(!sponsorOrder?.id)return;
+  try{
+    const data=await api('/compute/api/sponsors/orders/'+sponsorOrder.id+'/confirm',{method:'POST',body:JSON.stringify({})});
+    if(data?.status==='funded'||data?.status==='paid'){
+      clearSponsorPoll();
+      const done=$('sponsor-done-line');
+      const dollars=formatCredits(data.face_cents||sponsorOrder.face_cents||sponsorFaceCents());
+      const who=data.name||sponsorOrder.name||'';
+      if(done)done.textContent=who?('Thanks '+who+' \xB7 '+dollars):('Thanks \xB7 '+dollars);
+      showTf('sponsor-done');
+      return;
+    }
+    const wait=$('sponsor-wait');
+    if(wait&&data?.status==='pending')wait.textContent='Waiting\u2026';
+  }catch(e){
+    if(e.message==='order expired'){
+      clearSponsorPoll();
+      const wait=$('sponsor-wait');if(wait)wait.textContent='Expired. Start again.';
+    }
+  }
+}
+function startSponsorPoll(){
+  clearSponsorPoll();
+  pollSponsorOrder();
+  sponsorPollTimer=setInterval(pollSponsorOrder,4000);
+}
+$('sponsor-network')?.addEventListener('click',()=>{sponsorTarget='network';sponsorPack=sponsorPack||'5';sponsorMethod='';sponsorOrder=null;showTf('sponsor-buy');});
+document.querySelectorAll('[data-sponsor-pack]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    sponsorPack=btn.getAttribute('data-sponsor-pack')||'5';
+    sponsorCustomCents=null;
+    const custom=$('sponsor-custom');if(custom)custom.value='';
+    paintSponsorBuy();
+  });
+});
+$('sponsor-custom')?.addEventListener('change',()=>{
+  const raw=Number($('sponsor-custom')?.value);
+  if(!Number.isFinite(raw)||raw<1){sponsorCustomCents=null;paintSponsorBuy();return}
+  const cents=Math.round(raw*100);
+  if(cents<100||cents>100000){sponsorCustomCents=null;paintSponsorBuy();return}
+  sponsorCustomCents=cents;sponsorPack='';paintSponsorBuy();
+});
+$('sponsor-usdc')?.addEventListener('click',()=>{
+  sponsorMethod='usdc';createSponsorOrder();
+});
+$('sponsor-dasha')?.addEventListener('click',()=>{
+  sponsorMethod='dasha';createSponsorOrder();
+});
+$('sponsor-copy')?.addEventListener('click',async()=>{
+  if(!sponsorOrder)return;
+  const text=sponsorOrder.pay_url||(sponsorOrder.amount+' to '+sponsorOrder.dest);
+  try{await navigator.clipboard.writeText(text)}catch{}
+});
+$('sponsor-done-pay')?.addEventListener('click',()=>{clearSponsorPoll();sponsorOrder=null;showTf('pay');});
+$('sponsor-done-ask')?.addEventListener('click',()=>{clearSponsorPoll();sponsorOrder=null;cameFromHow=false;cameFromGate=true;setComputeIntent('ask');setEngine('hosted',true);});
+
+$('gate-you')?.addEventListener('click',()=>showTf('you'));
+$('you-macs')?.addEventListener('click',async()=>{
+  if(!loggedIn){provideBack='ask';clearPaySponsorFine();showTf('provide-name');return}
+  try{
+    const data=await api('/compute/api/providers');
+    if(Array.isArray(data?.providers)&&data.providers.length){showTf('provide-done');return}
+  }catch{}
+  provideBack='ask';clearPaySponsorFine();showTf('provide-name');
+});
+$('you-credits')?.addEventListener('click',()=>{setComputeIntent('credits');showTf('credits');});
+$('you-earn')?.addEventListener('click',()=>showTf('earn'));
+$('provide-done-earn')?.addEventListener('click',()=>showTf('earn'));
+$('earn-usdc')?.addEventListener('click',()=>{earnMethod='usdc';paintEarn();});
+$('earn-dasha')?.addEventListener('click',()=>{earnMethod='dasha';paintEarn();});
+$('earn-payout')?.addEventListener('click',()=>{requestEarnPayout();});
+$('earn-wallet')?.addEventListener('change',()=>{/* pref saved on payout */});
+$('you-api')?.addEventListener('click',()=>showTf('build'));
+$('you-logout')?.addEventListener('click',async()=>{
+  try{await api('/auth/logout',{method:'POST',body:'{}'})}catch{}
+  loggedIn=false;sessionLabel='';creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;sponsorOrder=null;clearSponsorPoll();
+  paintGateAuth();paintCreditsBalance();paintEarn();paintAnswerApi();paintPayMethod();updateProvideAuth();updateRun();
+  try{await auth()}catch{}
+  showTf('gate');
+});
+$('pick-ask').addEventListener('click',()=>goAskFromGate('ask'));
+$('pick-pay').addEventListener('click',()=>{setComputeIntent('pay');showTf('pay');});
+$('pick-credits').addEventListener('click',()=>{setComputeIntent('credits');showTf('credits');});
+$('pay-topup')?.addEventListener('click',()=>{setComputeIntent('pay');creditPack='5';creditMethod='';creditOrder=null;showTf('pay-buy');});
+$('pay-sponsor')?.addEventListener('click',()=>{setComputeIntent('pay');sponsorTarget='network';sponsorPack='5';sponsorMethod='';sponsorOrder=null;sponsorCustomCents=null;clearPaySponsorFine();showTf('sponsor');});
+$('credits-use')?.addEventListener('click',()=>{cameFromHow=false;cameFromGate=true;setComputeIntent('credits');setEngine('hosted',true);});
+$('credits-topup')?.addEventListener('click',()=>{setComputeIntent('pay');creditPack='5';creditMethod='';creditOrder=null;showTf('pay-buy');});
+document.querySelectorAll('[data-pack]').forEach(btn=>btn.addEventListener('click',()=>{creditPack=btn.getAttribute('data-pack')||'5';paintPayBuy();}));
+$('pay-usdc')?.addEventListener('click',()=>{
+  creditMethod='usdc';
+  if(!creditPack)creditPack='5';
+  paintPayBuy();
+  if(!loggedIn){showTf('pay-buy');return}
+  createCreditOrder();
+});
+$('pay-dasha')?.addEventListener('click',()=>{
+  creditMethod='dasha';
+  if(!creditPack)creditPack='5';
+  paintPayBuy();
+  if(!loggedIn){showTf('pay-buy');return}
+  createCreditOrder();
+});
+$('pay-copy')?.addEventListener('click',()=>{
+  if(!creditOrder)return;
+  const text=creditOrder.pay_url||(creditOrder.amount+' to '+creditOrder.dest);
+  copy(text,$('pay-copy'));
+});
+$('pay-done-credits')?.addEventListener('click',()=>{setComputeIntent('credits');showTf('credits');});
+$('pay-done-ask')?.addEventListener('click',()=>{cameFromHow=false;cameFromGate=true;setComputeIntent('pay');setEngine('hosted',true);});
+document.querySelectorAll('#ask-starters [data-prompt]').forEach(btn=>btn.addEventListener('click',()=>{$('prompt').value=btn.getAttribute('data-prompt')||'';$('prompt').focus();updateRun();try{const t=($('prompt').value||'').trim();if(t)sessionStorage.setItem(ASK_DRAFT_KEY,t.slice(0,2000))}catch{}}));
+$('login')?.addEventListener('click',()=>{if(!loggedIn)saveAskDraftForLogin();});
+
+$('change-engine')?.addEventListener('click',()=>{cameFromHow=true;cameFromGate=false;showTf('how');});
+$('ask-mymac')?.addEventListener('click',()=>{if(ownMacOnline<1)return;cameFromHow=true;cameFromGate=false;setEngine('self');});
+$('ask-community')?.addEventListener('click',()=>{if(providersOnline<1)return;cameFromHow=true;cameFromGate=false;setEngine('community',true);});
+$('ask-provide')?.addEventListener('click',()=>{provideBack='ask';clearPaySponsorFine();showTf('provide-name');});
+$('ask-ocm')?.addEventListener('click',()=>showTf('market'));
+$('ask-host')?.addEventListener('click',()=>showTf('host'));
+$('ask-credits')?.addEventListener('click',()=>{setComputeIntent('credits');showTf('credits');});
+$('pick-provide').addEventListener('click',()=>{setComputeIntent('provide');provideBack='gate';clearPaySponsorFine();showTf('provide-name');});
+$('pick-provide-after').addEventListener('click',()=>{clearAnswerMoney();provideBack='ask';clearPaySponsorFine();showTf('provide-name')});
+$('answer-api')?.addEventListener('click',event=>{
+  if(!loggedIn)return; // <a> \u2192 login return=/compute%23build
+  event.preventDefault();
+  showTf('build');
+  setTimeout(()=>{
+    const btn=$('create-api-key');
+    if(btn&&!btn.hidden)btn.focus();
+  },40);
+});
+$('answer-credits')?.addEventListener('click',()=>{
+  if(lastAskFailKind==='credits'){
+    setComputeIntent('pay');creditPack='';creditMethod='';creditOrder=null;showTf('pay-buy');
+  }else{
+    setComputeIntent('credits');showTf('credits');
+  }
+});
+$('ask-again').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};showTf('ask');$('prompt').focus()});
+$('answer-retry')?.addEventListener('click',()=>{const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};clearAnswerMoney();const run=$('run-demo'); if(run&&!run.disabled)run.click(); else showTf('ask');});
+$('tf-done').addEventListener('click',()=>{clearAnswerMoney();const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')};cameFromHow=false;cameFromGate=false;showTf('ask');});
+$('provide-done-gate').addEventListener('click',()=>{cameFromHow=false;cameFromGate=false;setEngine('hosted',true);});
+document.querySelectorAll('[data-back]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const dest=btn.getAttribute('data-back');
+    if(btn.id==='back-ask'){
+      const eng=$('engine').value;
+      if(nightQueueIntent||(eng!=='hosted'&&fleetEmpty(eng))){nightQueueIntent=false;showNightEmpty();return}
+      if(eng==='hosted'){
+        if(cameFromHow){showTf('how');return}
+        if(cameFromGate){showTf('gate');return}
+        return;
+      }
+      showTf('model');
+      return;
+    }
+    if(dest)showTf(dest);
+  });
+});
+
+
+document.addEventListener('keydown',event=>{
+  const tag=(document.activeElement&&document.activeElement.tagName||'').toLowerCase();
+  const typing=tag==='input'||tag==='textarea'||tag==='select'||!!(document.activeElement&&document.activeElement.isContentEditable);
+  if(event.key==='Escape'){
+    const step=document.querySelector('[data-tf]:not([hidden])');
+    const back=step&&(step.querySelector('.tf-back')||step.querySelector('#back-ask'));
+    if(back&&!back.hidden){event.preventDefault();back.click()}
+    return;
+  }
+  if(typing)return;
+  if(event.key==='1'||event.key==='2'||event.key==='3'||event.key==='4'){
+    const step=document.querySelector('[data-tf]:not([hidden])');
+    if(!step)return;
+    const choices=[...step.querySelectorAll('.tf-choices .tf-choice, .tf-choices button.tf-choice, .tf-choices a.tf-choice')].filter(el=>!el.hidden&&!el.disabled&&el.getAttribute('aria-disabled')!=='true'&&el.offsetParent);
+    const idx=Number(event.key)-1;
+    if(choices[idx]){event.preventDefault();choices[idx].click()}
+  }
+});
+function bootHash(){
+  const id=location.hash.replace(/^#/,'').toLowerCase();
+  if(id==='provide'){provideBack='gate';clearPaySponsorFine();showTf('provide-name');}
+  else if(id==='build')showTf('build');
+  else if(id==='market'||id==='ocm')showTf('market');
+  else if(id==='host')showTf('host');
+  else if(id==='you'||id==='account')showTf('you');
+  else if(id==='earn'||id==='earnings')showTf('earn');
+  else if(id==='credits')showTf('credits');
+  else if(id==='pay')showTf('pay');
+  else if(id==='sponsor'){clearPaySponsorFine();showTf('sponsor');}
+  else if(id==='night'){cameFromHow=true;showNightEmpty();}
+  else if(id==='ask'){cameFromHow=false;cameFromGate=true;setComputeIntent('ask');setEngine('hosted',true)}
+  else showTf('gate');
+}
+window.addEventListener('hashchange',bootHash);
+window.addEventListener('focus',()=>setTimeout(auth,250));
+bootHash();
+(function resumeAskAfterLogin(){
+  const pack=takeAskResume();
+  if(!pack)return;
+  pendingAskResumeEngine=pack.engine||'hosted';
+  const prompt=$('prompt');
+  if(prompt&&pack.text&&!(prompt.value||'').trim())prompt.value=pack.text;
+  cameFromGate=true;cameFromHow=false;
+  setComputeIntent('ask');
+  // Stay on Ask with draft; applyAskResumeEngine after auth knows fleet (Community when Mac still up).
+  showTf('ask');
+})();
+paintRequest();paintCode();updateRun();auth();
+<\/script>
+</body>
+</html>
+`;
