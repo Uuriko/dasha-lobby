@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { COMPUTE_PAGE_HTML } from "./dasha-compute-page.mjs";
 
 const disk = readFileSync(new URL("./dasha-compute.html", import.meta.url), "utf8");
@@ -52,17 +52,20 @@ function assertPulse(html, label) {
 assertPulse(disk, "disk");
 assertPulse(COMPUTE_PAGE_HTML, "embed");
 
+const chrome = process.env.CHROME_BIN || "/usr/bin/google-chrome";
 let puppeteer;
 try {
-  puppeteer = (await import("puppeteer")).default;
-} catch {
+  puppeteer = (await import("puppeteer-core")).default;
+} catch {}
+if (!puppeteer || !existsSync(chrome)) {
   console.log("dasha-compute-provide-online-pulse: PASS (static; no puppeteer)");
   process.exit(0);
 }
 
 const browser = await puppeteer.launch({
-  headless: "new",
-  args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  executablePath: chrome,
+  headless: true,
+  args: ["--no-sandbox"],
 });
 try {
   const page = await browser.newPage();
