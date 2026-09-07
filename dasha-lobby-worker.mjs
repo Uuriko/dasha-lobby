@@ -4150,7 +4150,7 @@ function securityTxtResponse(request, host) {
     headers: {
       ...SECURITY,
       'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
     },
   });
 }
@@ -4766,7 +4766,7 @@ function computeSkillResponse(request, pathname) {
     status: 200,
     headers: {
       'Content-Type': 'text/markdown; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
       'Strict-Transport-Security': 'max-age=31536000',
       'X-Content-Type-Options': 'nosniff',
       'Access-Control-Allow-Origin': '*',
@@ -5238,7 +5238,7 @@ function privacyPageResponse(request) {
     status: 200,
     headers: htmlLlmsHeaders({
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
       'X-Dasha-Edge': 'privacy',
     }),
   });
@@ -5790,7 +5790,7 @@ export function grokBotWellKnownResponse(request) {
     status: 200,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
       'X-Dasha-Edge': 'grok-bot',
@@ -6490,7 +6490,7 @@ export class DashaLobby {
       return new Response(headOnly ? null : html, {
         headers: htmlHeaders({
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
           'X-Dasha-Edge': 'simp-share',
         }),
       });
@@ -8707,7 +8707,7 @@ export function manifestJsonResponse(request) {
     headers: {
       ...SECURITY,
       'Content-Type': 'application/manifest+json; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
       'X-Dasha-Edge': 'site-manifest',
       'X-Robots-Tag': 'noindex, nofollow',
     },
@@ -8903,7 +8903,7 @@ async function productEdge(request, url, env) {
       status: 404,
       headers: htmlHeaders({
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'public, max-age=300',
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
         'X-Robots-Tag': 'noindex, nofollow',
         'X-Dasha-Edge': 'retired-commerce',
       }),
@@ -8930,7 +8930,7 @@ async function productEdge(request, url, env) {
       status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'public, max-age=300',
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
         'X-Robots-Tag': 'all',
         'X-Dasha-Edge': 'robots',
       },
@@ -8976,7 +8976,7 @@ async function productEdge(request, url, env) {
       status: 200,
       headers: {
         'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=300',
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
         'X-Dasha-Edge': 'sitemap',
       },
     });
@@ -9090,7 +9090,7 @@ async function productEdge(request, url, env) {
         status: 200,
         headers: htmlHeaders({
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
           'X-Dasha-Edge': 'simp-share',
         }),
       });
@@ -9996,7 +9996,7 @@ export default {
       return new Response(request.method === 'HEAD' ? null : AI_TXT, {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
           'Strict-Transport-Security': 'max-age=31536000',
           'X-Content-Type-Options': 'nosniff',
           'X-Dasha-Edge': 'ai',
@@ -10023,7 +10023,7 @@ export default {
       return new Response(request.method === 'HEAD' ? null : LLMS_TXT, {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
           'Strict-Transport-Security': 'max-age=31536000',
           'X-Content-Type-Options': 'nosniff',
           'X-Dasha-Edge': 'llms',
@@ -10034,7 +10034,7 @@ export default {
       return new Response(request.method === 'HEAD' ? null : LLMS_FULL_TXT, {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
           'Strict-Transport-Security': 'max-age=31536000',
           'X-Content-Type-Options': 'nosniff',
           'X-Dasha-Edge': 'llms-full',
@@ -10066,7 +10066,7 @@ export default {
       return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(WHICH_HTML), {
         headers: htmlHeaders({
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
           'X-Dasha-Edge': 'which',
           Link: LLMS_DESCRIBEDBY,
         }),
@@ -10268,7 +10268,7 @@ export default {
         status: 200,
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
           'X-Robots-Tag': 'all',
         },
       });
@@ -10278,7 +10278,7 @@ export default {
         status: 200,
         headers: {
           'Content-Type': 'application/xml; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
         },
       });
     }
