@@ -217,8 +217,11 @@ for (const path of ['/provider-kit', '/Provider-kit', '/compute/provider-kit', '
 for (const path of ['/llm', '/Llm', '/onboarding', '/macbook', '/factory', '/Factory', '/beta', '/providerkit', '/early-access', '/compute/llm']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
-for (const path of ['/machine', '/Machine', '/machine/', '/compute/machine', '/compute/machine/']) {
+for (const path of ['/vram', '/hosting', '/rent-gpu', '/infer', '/deposit', '/vscode', '/compute/vram', '/compute/hosting', '/compute/vscode']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
+}
+for (const path of ['/code', '/terminal', '/python', '/rust', '/go', '/x402']) {
+  assert.equal(potterHome308Dest(path), null, path);
 }
 assert.equal(potterHome308Dest('/docs'), 'https://www.getdasha.com/compute/api', '/docs stays /compute/api');
 for (const path of ['/base-url', '/baseurl', '/chat-completions', '/embeddings', '/embedding', '/responses', '/response', '/completion', '/compute/base-url', '/compute/embeddings']) {

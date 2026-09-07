@@ -3438,18 +3438,26 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/early', '/compute/early/',
   '/compute/early-access', '/compute/early-access/',
   '/compute/earlyaccess', '/compute/earlyaccess/',
-  // Leftover chatgpt/cursor/copilot batch (Worker 66dadebe): live /chatgpt
-  // /cursor /copilot (+ /compute/* tabs, slash / Title-case) html-404 → 308
-  // /compute. Peers of live /claude /lmstudio /openwebui (mirror PR #69).
-  // Fold product doors to plain /compute (no hash). NOT OpenAI/Microsoft product pages.
-  // Skip /openai /anthropic /arcade /v1 /x402 /health /status.
-  // Never fold /price (200 JSON) or /privacy (200).
-  '/chatgpt', '/chatgpt/',
-  '/cursor', '/cursor/',
-  '/copilot', '/copilot/',
-  '/compute/chatgpt', '/compute/chatgpt/',
-  '/compute/cursor', '/compute/cursor/',
-  '/compute/copilot', '/compute/copilot/',
+  // Leftover /vram /hosting /rent-gpu /infer /deposit /vscode batch
+  // (Worker 2c4779a2): live apex + trailing slash + /compute/* tabs
+  // (+ Title-case) already 308→/compute. Peers: /vram of /gpu /gpus;
+  // /hosting of /host /hosts /provider; /rent-gpu of /rent; /infer of
+  // /inference; /deposit of /topup /credits; /vscode of /chatgpt /cursor
+  // /copilot. Fold product doors to plain /compute (no hash). Skip
+  // intentional 404s: /code /terminal /python /rust /go /openai /arcade
+  // /x402 /status. Never fold /price (200 JSON) or /privacy (200).
+  '/vram', '/vram/',
+  '/hosting', '/hosting/',
+  '/rent-gpu', '/rent-gpu/',
+  '/infer', '/infer/',
+  '/deposit', '/deposit/',
+  '/vscode', '/vscode/',
+  '/compute/vram', '/compute/vram/',
+  '/compute/hosting', '/compute/hosting/',
+  '/compute/rent-gpu', '/compute/rent-gpu/',
+  '/compute/infer', '/compute/infer/',
+  '/compute/deposit', '/compute/deposit/',
+  '/compute/vscode', '/compute/vscode/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
