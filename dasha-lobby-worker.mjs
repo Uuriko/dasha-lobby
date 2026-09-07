@@ -3274,7 +3274,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // /compute/factory|/api/factory stay dedicated → /compute/api/factory (JSON). Do NOT
   // put /compute/factory in this set. /llms stays AEO → /llms.txt (not this set).
   // Skip locks: /arcade /games /multichain /room /project* /rooms /chatroom /connect
-  // /v1 /openai /openai-api /admin /blog /news /faq /waitlist /join /oauth /terms /tos
+  // /v1 /openai /openai-api /x402 /admin /blog /news /faq /waitlist /join /oauth /terms /tos
   // /legal /status /health /discord /slack. Never /price (200 JSON) /privacy.
   '/llm', '/llm/',
   '/llms-api', '/llms-api/',
