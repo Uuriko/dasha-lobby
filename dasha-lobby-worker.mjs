@@ -4711,6 +4711,21 @@ export function stripBountiesLeftoverCodeCss(html) {
   return out.replace(/a,\s*code\s*\{/g, 'a{');
 }
 
+/** Empty /bounties drops leftover .cta CSS (and its box-shadow:#ff3b81). Restore Dasha hot-pink accent on product skip-link so empty inventory still carries literal #ff3b81. Funded listings already keep .cta pink. Bounties only. No Designer. */
+export function restoreBountiesHotPinkAccent(html) {
+  let out = String(html || '');
+  const bounties =
+    /<h1>Bounties<\/h1>/.test(out) ||
+    /rel=["']canonical["'][^>]*href=["']https:\/\/www\.getdasha\.com\/bounties["']/.test(out) ||
+    /id=["']bb-app["']/.test(out);
+  if (!bounties) return out;
+  if (/#ff3b81/i.test(out)) return out;
+  if (/\.skip-link\{[^}]*\}/.test(out)) {
+    return out.replace(/\.skip-link\{([^}]*)\}/, '.skip-link{$1;box-shadow:4px 4px 0 #ff3b81}');
+  }
+  return out.replace(/<\/style>/i, '#bb-app{border-left:3px solid #ff3b81;padding-left:.75rem}</style>');
+}
+
 /** Leftover /contribute dropped-selector CSS after <code> was never in the contribute DOM (htmlPage still emits a,code). Humans see leftover code in view-source. Distinct leftover vs leftover privacy a,code / leftover bounties a,code. a color stays. .cta stays. Product skip-link stays. 404 mint <code> a,code stays. Contribute only. Do not eat a{color}. Do not eat .cta.
  */
 export function stripContributeLeftoverCodeCss(html) {
@@ -8525,7 +8540,7 @@ async function bountiesFeedResponse(request) {
 }
 
 async function bountiesPageResponse(request) {
-  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(stripBountiesLeftoverCodeCss(stripBountiesDroppedCtaCss(injectXConnectPrompt(bountiesHtml(await loadBountiesFeed()))))), {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(restoreBountiesHotPinkAccent(stripBountiesLeftoverCodeCss(stripBountiesDroppedCtaCss(injectXConnectPrompt(bountiesHtml(await loadBountiesFeed())))))), {
     status: 200,
     headers: htmlLlmsHeaders({
       'Content-Type': 'text/html; charset=utf-8',
