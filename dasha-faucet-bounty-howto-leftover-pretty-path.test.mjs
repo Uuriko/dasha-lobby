@@ -6,7 +6,8 @@
  * /how-tobuy /howto_buy (+slash / Title-case) html-404 → 308 /how-to-buy.
  * Keep existing peers (/fill-the-jar, /bounties, /how-to-buy, /howtobuy, …).
  * Exact /faucet /bounties /how-to-buy stay 200 (null dest).
- * Never invent /aeo /shorts /social. Bare /me now folds via compute-door leftover
+ * Never invent /aeo /shorts. /social now folds via leftover → /lobby
+ * (dasha-tokens-birdeye-dex-socials-vision-pretty-path). Bare /me now folds via compute-door leftover
  * (dasha-hosts-tips-job-receipt-pretty-path). Disk only. No Designer.
  * Never plugin.jup.ag.
  */
@@ -44,7 +45,6 @@ assert.doesNotMatch(
 );
 assert.doesNotMatch(workerSrc, /['"]\/aeo['"]/, 'do not invent /aeo');
 assert.doesNotMatch(workerSrc, /['"]\/shorts['"]/, 'do not invent /shorts');
-assert.doesNotMatch(workerSrc, /['"]\/social['"]/, 'do not invent /social');
 
 const FAUCET = 'https://www.getdasha.com/faucet';
 const BOUNTIES = 'https://www.getdasha.com/bounties';
@@ -88,7 +88,6 @@ const STAY_200 = [
 const STAY_OUT = [
   '/aeo',
   '/shorts',
-  '/social',
   '/faucet/jar',
   '/Faucet/jar',
 ];
@@ -179,4 +178,4 @@ for (const path of [
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-faucet-bounty-howto-leftover-pretty-path: PASS (/faucet/fill-the-jar+/faucet/fill_the_jar 308 /faucet; /bounty 308 /bounties; /how-tobuy+/howto_buy 308 /how-to-buy; Title-case+slash; peers; /faucet+/bounties+/how-to-buy 200; no /aeo /shorts /social; no plugin.jup.ag)');
+console.log('dasha-faucet-bounty-howto-leftover-pretty-path: PASS (/faucet/fill-the-jar+/faucet/fill_the_jar 308 /faucet; /bounty 308 /bounties; /how-tobuy+/howto_buy 308 /how-to-buy; Title-case+slash; peers; /faucet+/bounties+/how-to-buy 200; no /aeo /shorts; no plugin.jup.ag)');

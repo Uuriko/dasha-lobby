@@ -221,6 +221,25 @@ assert.equal(potterHome308Dest('/docs'), 'https://www.getdasha.com/compute/api',
 for (const path of ['/openai', '/openai-api', '/v1', '/resend', '/email', '/health', '/status', '/healthz', '/connect', '/arcade', '/games', '/room', '/admin', '/blog', '/news', '/faq', '/waitlist', '/join', '/oauth', '/tos', '/terms', '/legal']) {
   assert.equal(potterHome308Dest(path), null, path);
 }
+for (const path of ['/tokens', '/Tokens', '/token', '/mint']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/', path);
+}
+for (const path of ['/birdeye', '/Birdeye', '/cmc', '/coingecko', '/coinmarketcap']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/listings', path);
+}
+for (const path of ['/jupiter', '/raydium', '/pumpfun', '/pump-fun', '/pump_fun', '/swap']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/how-to-buy', path);
+}
+for (const path of ['/socials', '/Socials', '/social', '/Social']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/lobby', path);
+}
+assert.equal(potterHome308Dest('/community'), 'https://www.getdasha.com/compute', '/community stays /compute');
+for (const path of ['/vision', '/tts', '/text-to-speech', '/text_to_speech', '/embeddings', '/compute/vision']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/api', path);
+}
+for (const path of ['/careers', '/hiring', '/discord', '/roadmap', '/whitepaper', '/tokenomics', '/x402', '/openrouter']) {
+  assert.equal(potterHome308Dest(path), null, path);
+}
 for (const path of ['/Faucet', '/Faucet/', '/FAUCET']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/faucet', path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
