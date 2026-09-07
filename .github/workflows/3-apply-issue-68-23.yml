@@ -20,8 +20,8 @@ jobs:
             echo "patches already applied"
             exit 0
           fi
-          git apply patches/issue-68-cache-boost.patch
-          git apply patches/issue-23-poll-backoff.patch
+          git apply patches/1-issue-68-cache-boost.patch
+          git apply patches/2-issue-23-poll-backoff.patch
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add dasha-lobby-worker.mjs dasha-chess-page.html dasha-lobby-static-gen.mjs dasha-poll-backoff.test.mjs
