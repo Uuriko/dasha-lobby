@@ -37,11 +37,11 @@ function assertReceiptUx(html, label) {
   assert.match(html, /parts\.join\(' · '\)/, `${label} · joined receipt`);
   assert.match(html, /if\(routeFace==='community'\|\|routeFace==='mixture'\|\|routeFace==='self'\)/, `${label} community/mixture/self branch`);
   assert.match(html, /Hosted paid settle only \(user charged\)/, `${label} hosted paid settle comment`);
-  assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok \u00b7 '\+formatUsdCents\(cents\)\+' credits'/, `${label} hosted Settled · tok · $ credits`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\)\}/, `${label} SSE community receipt cents:0 + settleFieldsFrom`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\)\}/, `${label} poll community receipt cents:0 + settle`);
+  assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok'\+\(tpsLabel\?\(' \u00b7 '\+tpsLabel\):''\)\+' \u00b7 '\+formatUsdCents\(cents\)\+' credits'/, `${label} hosted Settled · tok · $ credits`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\),\.\.\.honestyFieldsFrom\(lastSseReceipt\)\}/, `${label} SSE community receipt cents:0 + settleFieldsFrom`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\),\.\.\.\(\(data\?\.route==='self'\|\|data\?\.route==='community'\|\|data\?\.route==='mixture'\)\?\{route:data\.route\}:\{\}\),\.\.\.honestyFieldsFrom\(data\?\.receipt\)\}/, `${label} poll community receipt cents:0 + settle`);
   assert.doesNotMatch(html, /data\?\.model\|\|\$\(['"]model['"]\)\.value/, `${label} never trust data?.model`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted',settle_cents:5,settle_state:'settled'\}/, `${label} hosted paid cents:5 settled`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted',provider_class:'hosted',settle_cents:5,settle_state:'settled',attestation:null\}/, `${label} hosted paid cents:5 settled`);
   assert.match(html, /function settleFieldsFrom\(/, `${label} settleFieldsFrom`);
   assert.match(html, /lastSseSettle=null/, `${label} lastSseSettle`);
   assert.match(html, /pending operator settle/, `${label} pending operator settle face`);

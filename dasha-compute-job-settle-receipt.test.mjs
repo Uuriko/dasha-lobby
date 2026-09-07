@@ -31,10 +31,11 @@ function assertSettleReceipt(html, label) {
   assert.match(html, /never show provider-earn cents as user \$/, `${label} never provider-earn as user $`);
   assert.match(html, /pending operator settle/, `${label} pending operator settle`);
   assert.match(html, /settleState==='settled'\|\|settleState==='paid'\?'settled':'pending operator settle'/, `${label} settled vs pending`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted',settle_cents:5,settle_state:'settled'\}/, `${label} hosted charged settled`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted',provider_class:'hosted',settle_cents:5,settle_state:'settled',attestation:null\}/, `${label} hosted charged settled`);
   assert.match(html, /Advertising only \(providers_online\)/, `${label} honesty advertising only`);
   assert.match(html, /never pad enrolled OCM/, `${label} never pad enrolled OCM`);
-  assert.doesNotMatch(html, /Nitro/, `${label} no Nitro claim`);
+  assert.match(html, /never claims Secure Enclave, TEE, Nitro/, `${label} Nitro only in never-claims`);
+  assert.doesNotMatch(html, /attestation:\s*['"]nitro/i, `${label} no Nitro claim`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 }
 
@@ -290,14 +291,14 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.communityEarn.text, "Community · gemma3-27b · 40 tok · job_abc123xyz");
     assert.doesNotMatch(painted.communityEarn.text, /\$|¢|pending operator settle/);
 
-    assert.equal(painted.pending.text, "Community · gemma3-27b · 40 tok · job_abc123xyz · 6¢ · pending operator settle");
+    assert.equal(painted.pending.text, "Community · gemma3-27b · 40 tok · job_abc123xyz · 6¢ USDC · pending operator settle");
     assert.doesNotMatch(painted.pending.text, /\$/);
 
-    assert.equal(painted.settled.text, "Mixture · gemma3-12b · 12 tok · job_mix_1 · 5¢ · settled");
-    assert.equal(painted.paid.text, "Your Mac · qwen3-8b · 9 tok · job_self_1 · 5¢ · settled");
+    assert.equal(painted.settled.text, "Mixture · gemma3-12b · 12 tok · job_mix_1 · 5¢ USDC · settled");
+    assert.equal(painted.paid.text, "Your Mac · qwen3-8b · 9 tok · job_self_1 · charge:0");
     assert.doesNotMatch(painted.paid.text, /\$/);
 
-    assert.equal(painted.hosted.text, "Settled · 33 tok · $0.05");
+    assert.equal(painted.hosted.text, "Settled · 33 tok · $0.05 credits");
   } finally {
     await browser.close();
   }

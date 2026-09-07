@@ -39,7 +39,7 @@ function assertAnswerCredits(html, label) {
     `${label} no mid-read yank to Credits on top-up`
   );
   // Happy path must not set fail kind
-  assert.match(html, /onFirstToken\(\);clearAnswerMoney\(\)/, `${label} clear on success`);
+  assert.match(html, /'Answer\.';\s*clearAnswerMoney\(\)/, `${label} clear on success`);
 }
 
 assertAnswerCredits(disk, "disk");

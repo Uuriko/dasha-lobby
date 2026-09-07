@@ -29,8 +29,8 @@ function assertHonesty(html, label) {
   assert.match(html, /You are model '\+id\+' on Dasha Compute\. If asked your name\/model, answer with exactly that id\./, `${label} client identity tip`);
   assert.match(html, /if\(community\)messages=modelIdentityFraming\(messages,\$\(['"]model['"]\)\.value\)/, `${label} community wire`);
   assert.match(html, /selected\/routed model id from client\/job only \(never trust answer self-description\)/, `${label} receipt comment`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\)\}/, `${label} SSE receipt selected model`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\)\}/, `${label} poll receipt selected model`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\),\.\.\.honestyFieldsFrom\(lastSseReceipt\)\}/, `${label} SSE receipt selected model`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\),\.\.\.\(\(data\?\.route==='self'\|\|data\?\.route==='community'\|\|data\?\.route==='mixture'\)\?\{route:data\.route\}:\{\}\),\.\.\.honestyFieldsFrom\(data\?\.receipt\)\}/, `${label} poll receipt selected model`);
   assert.doesNotMatch(html, /data\?\.model\|\|\$\(['"]model['"]\)\.value/, `${label} never trust data?.model`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 }
@@ -45,8 +45,8 @@ assertHonesty(await servedRes.text(), "worker.fetch");
 
 assert.match(networkSrc, /export function modelIdentitySystemContent\(/);
 assert.match(networkSrc, /export function withModelIdentityHint\(/);
-assert.match(networkSrc, /const messages = withModelIdentityHint\(parsed, model\)/);
-assert.match(networkSrc, /const parsed = chatMessages\(input\), model = String\(input\.model \|\| ''\)/);
+assert.match(networkSrc, /messages = withModelIdentityHint\(messages, model\)/);
+assert.match(networkSrc, /let messages = chatMessages\(input\)/);
 const hosted = networkSrc.slice(networkSrc.indexOf("export async function computeApi"));
 assert.match(hosted, /Do not claim to be running on a community Mac; this hosted demo uses Cloudflare Workers AI\./);
 assert.doesNotMatch(hosted, /withModelIdentityHint/, "hosted Workers AI path unchanged");
