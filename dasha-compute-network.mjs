@@ -182,6 +182,18 @@ function maybeHead(request, res) {
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
 }
 
+function withV1Cors(res, origin) {
+  const headers = new Headers(res.headers);
+  if (!headers.has('Access-Control-Allow-Origin')) {
+    headers.set('Access-Control-Allow-Origin', origin);
+    headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Dasha-Route');
+    if (origin !== '*') headers.set('Access-Control-Allow-Credentials', 'true');
+    headers.append('Vary', 'Origin');
+  }
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
 
 const FACTORY_KEY = 'compute:factory:v0';
 
@@ -819,58 +831,62 @@ export class ComputeNetwork {
       return json({ ok: true }, 200, allowedOrigin, true);
     }
 
+    // v1 gateway: every response (errors + successes + stream) carries ACAO (OpenAI convention).
+    const v1Origin = allowedOrigin || '*';
+    const v1cors = (res) => withV1Cors(res, v1Origin);
+    const v1err = (message, status = 400, type = 'invalid_request_error') => v1cors(openaiError(message, status, type));
     if ((path === '/compute/api/v1/models' || path === '/compute/api/v1/models/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
+      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
-      return maybeHead(request, json({ object: 'list', data: models.map(id => ({ id, object: 'model', created: 0, owned_by: 'dasha-community' })) }));
+      return maybeHead(request, v1cors(json({ object: 'list', data: models.map(id => ({ id, object: 'model', created: 0, owned_by: 'dasha-community' })) })));
     }
 
     const modelRetrieve = path.match(/^\/compute\/api\/v1\/models\/([A-Za-z0-9._-]+)\/?$/);
     if (modelRetrieve && (request.method === 'GET' || request.method === 'HEAD')) {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
+      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
       await this.prune(now);
       const id = modelRetrieve[1];
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
-      if (!models.includes(id)) return maybeHead(request, openaiError(`The model '${id}' does not exist`, 404, 'invalid_request_error'));
-      return maybeHead(request, json({ id, object: 'model', created: 0, owned_by: 'dasha-community' }));
+      if (!models.includes(id)) return maybeHead(request, v1err(`The model '${id}' does not exist`, 404, 'invalid_request_error'));
+      return maybeHead(request, v1cors(json({ id, object: 'model', created: 0, owned_by: 'dasha-community' })));
     }
 
     if ((path === '/compute/api/v1/embeddings' || path === '/compute/api/v1/embeddings/') && request.method === 'POST') {
-      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error');
-      return openaiError('embeddings are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
+      if (!await this.apiKey(request)) return v1err('invalid API key', 401, 'authentication_error');
+      return v1err('embeddings are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
     if ((path === '/compute/api/v1/embeddings' || path === '/compute/api/v1/embeddings/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
-      return maybeHead(request, openaiError('Only POST is supported. Use POST /v1/embeddings', 405, 'invalid_request_error'));
+      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      return maybeHead(request, v1err('Only POST is supported. Use POST /v1/embeddings', 405, 'invalid_request_error'));
     }
 
     if ((path === '/compute/api/v1/completions' || path === '/compute/api/v1/completions/') && request.method === 'POST') {
-      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error');
-      return openaiError('legacy completions are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
+      if (!await this.apiKey(request)) return v1err('invalid API key', 401, 'authentication_error');
+      return v1err('legacy completions are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
     if ((path === '/compute/api/v1/completions' || path === '/compute/api/v1/completions/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
-      return maybeHead(request, openaiError('Only POST is supported. Use POST /v1/completions', 405, 'invalid_request_error'));
+      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      return maybeHead(request, v1err('Only POST is supported. Use POST /v1/completions', 405, 'invalid_request_error'));
     }
 
     if ((path === '/compute/api/v1/responses' || path === '/compute/api/v1/responses/') && request.method === 'POST') {
-      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error');
-      return openaiError('responses are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
+      if (!await this.apiKey(request)) return v1err('invalid API key', 401, 'authentication_error');
+      return v1err('responses are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
     if ((path === '/compute/api/v1/responses' || path === '/compute/api/v1/responses/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return maybeHead(request, openaiError('invalid API key', 401, 'authentication_error'));
-      return maybeHead(request, openaiError('Only POST is supported. Use POST /v1/responses', 405, 'invalid_request_error'));
+      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      return maybeHead(request, v1err('Only POST is supported. Use POST /v1/responses', 405, 'invalid_request_error'));
     }
 
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method === 'POST') {
       const key = await this.apiKey(request);
-      if (!key) return openaiError('invalid API key', 401, 'authentication_error');
+      if (!key) return v1err('invalid API key', 401, 'authentication_error');
       // v1: prepaid HOSTED_ASK_PRICE_CENTS per non-self API chat (community/mixture). Self-route free. Key limit_cents is runaway-only.
       const input = mergeRouteFromHeaders(await body(request, 12 * 1024), request);
       await this.prune(now);
@@ -878,14 +894,14 @@ export class ComputeNetwork {
       const peek = resolveJobRoute(key.owner, input, providersPeek, now);
       if (peek.route !== 'self') {
         const gate = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now, { checkOnly: true });
-        if (!gate.ok) return openaiError(gate.error || 'key spend limit reached', gate.status || 402, 'invalid_request_error');
+        if (!gate.ok) return v1err(gate.error || 'key spend limit reached', gate.status || 402, 'invalid_request_error');
         const balPeek = Math.max(0, Math.floor(Number((await this.state.storage.get(`compute:credit-balance:${key.owner}`))?.cents) || 0));
         if (balPeek < HOSTED_ASK_PRICE_CENTS) {
-          return openaiError('top up credits', 402, 'invalid_request_error');
+          return v1err('top up credits', 402, 'invalid_request_error');
         }
       }
       const queued = await this.queueJob(key.owner, input, now);
-      if (queued.error) return openaiError(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error');
+      if (queued.error) return v1err(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error');
       if (queued.job.route !== 'self') {
         const debit = await this.debitCredits(key.owner, {
           cents: HOSTED_ASK_PRICE_CENTS,
@@ -895,30 +911,30 @@ export class ComputeNetwork {
         });
         if (!debit.ok) {
           await this.state.storage.delete(`compute:job:${queued.job.id}`);
-          return openaiError(debit.error || 'top up credits', 402, 'invalid_request_error');
+          return v1err(debit.error || 'top up credits', 402, 'invalid_request_error');
         }
         const spend = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now);
         if (!spend.ok) {
           await this.state.storage.delete(`compute:job:${queued.job.id}`);
-          return openaiError(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error');
+          return v1err(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error');
         }
       }
-      if (input.stream) return this.streamResponse(queued.job);
+      if (input.stream) return v1cors(this.streamResponse(queued.job));
       while (!request.signal.aborted) {
         const job = await this.state.storage.get(`compute:job:${queued.job.id}`);
-        if (!job) return openaiError('job expired', 410, 'server_error');
+        if (!job) return v1err('job expired', 410, 'server_error');
         if (Number(job.expiresAt) <= Date.now()) break;
-        if (job.status === 'complete') return json({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, message: { role: 'assistant', content: job.answer }, finish_reason: 'stop' }], usage: job.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } });
-        if (job.status === 'failed') return openaiError(job.error || 'provider failed', 502, 'server_error');
+        if (job.status === 'complete') return v1cors(json({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, message: { role: 'assistant', content: job.answer }, finish_reason: 'stop' }], usage: job.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }));
+        if (job.status === 'failed') return v1err(job.error || 'provider failed', 502, 'server_error');
         await new Promise(resolve => setTimeout(resolve, 250));
       }
       await this.state.storage.delete(`compute:job:${queued.job.id}`);
-      return openaiError(request.signal.aborted ? 'request cancelled' : 'request timed out', request.signal.aborted ? 499 : 504, 'server_error');
+      return v1err(request.signal.aborted ? 'request cancelled' : 'request timed out', request.signal.aborted ? 499 : 504, 'server_error');
     }
 
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return openaiError('invalid API key', 401, 'authentication_error');
-      return openaiError('Only POST is supported. Use POST /v1/chat/completions', 405, 'invalid_request_error');
+      if (!await this.apiKey(request)) return v1err('invalid API key', 401, 'authentication_error');
+      return v1err('Only POST is supported. Use POST /v1/chat/completions', 405, 'invalid_request_error');
     }
 
 

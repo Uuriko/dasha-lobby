@@ -37,7 +37,7 @@ assert.doesNotMatch(html, /plugin\.jup\.ag/);
 
 const useDisk = readFileSync(new URL('./dasha-compute-skills/USE.md', import.meta.url), 'utf8');
 assert.equal(USE_SKILL_MD, useDisk);
-assert.match(USE_SKILL_MD, /Sponsor \(tip USDC \/ \$dasha; wallet OK without login\)/);
+assert.match(USE_SKILL_MD, /Sponsor \(tip USDC \/ \$dasha; wallet OK without login \u00b7 quiet named tip credits when signed in\)/);
 {
   const m = html.match(/const USE_SKILL="((?:\\.|[^"\\])*)"/);
   assert.ok(m, 'USE_SKILL string present');
