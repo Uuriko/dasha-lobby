@@ -14,7 +14,7 @@ assert.doesNotMatch(html, /id="tab-sponsor"/);
 assert.doesNotMatch(html, /Exact claim|Sponsor the fleet|Night Shift/);
 assert.match(html, /hashchange/);
 assert.match(html, /jup\.ag\/tokens\/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/);
-assert.match(html, /id="login" href="\/login\?return=\/compute"/);
+assert.match(html, /id="login" href="\/login\?return=\/compute%23ask"/);
 assert.match(html, /id="provider-login" href="\/login\?return=\/compute%23provide"/);
 assert.doesNotMatch(html, /id="login"[^>]+oauth\/x\/start/);
 assert.match(html, /https:\/\/lobby\.getdasha\.com\/compute\/api\/v1/);
@@ -154,7 +154,9 @@ assert.equal(route.headers.get('x-dasha-edge'), 'compute');
 const routeHtml = await route.text();
 assert.match(routeHtml, /Start\./);
 assert.match(routeHtml, /<h1 class="tf-q">Ask\.<\/h1>/);
-assert.equal((await worker.fetch(new Request('https://www.getdasha.com/compute/index.html'), {}, {})).headers.get('x-dasha-edge'), 'compute');
+const indexRedirect = await worker.fetch(new Request('https://www.getdasha.com/compute/index.html'), {}, {});
+assert.equal(indexRedirect.status, 308, '/compute/index.html canonicalizes');
+assert.equal(indexRedirect.headers.get('location'), 'https://www.getdasha.com/compute');
 const archive = await worker.fetch(new Request('https://www.getdasha.com/dasha-compute-open-alpha.tar.gz'), { ASSETS: { fetch: async () => new Response('kit') } }, {});
 assert.equal(await archive.text(), 'kit');
 let hostedInput;
@@ -172,7 +174,7 @@ const hosted = await worker.fetch(new Request('https://lobby.getdasha.com/comput
   body: JSON.stringify({ prompt: 'Say hello.' }),
 }), env, {});
 assert.equal(hosted.status, 200);
-assert.deepEqual(await hosted.json(), { answer: 'Hosted inference works.', model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false });
+assert.deepEqual(await hosted.json(), { answer: 'Hosted inference works.', model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, usage: { prompt_tokens: 35, completion_tokens: 6, total_tokens: 41 } });
 assert.deepEqual(hostedInput.messages.slice(-1), [{ role: 'user', content: 'Say hello.' }]);
 const continued = await worker.fetch(new Request('https://lobby.getdasha.com/compute/api/chat', {
   method: 'POST', headers: { Cookie: `__Host-dasha_x=${token}`, Origin: 'https://www.getdasha.com', 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'First.' }, { role: 'assistant', content: 'Reply.' }, { role: 'user', content: 'Continue.' }] }),
@@ -431,9 +433,11 @@ assert.equal(await page.$eval('body', node => node.dataset.step), 'answer');
 await page.click('#pick-provide-after');
 assert.equal(await page.$eval('body', node => node.dataset.step), 'provide-name');
 assert.equal(await page.$eval('#step-provide-name', node => node.hidden), false);
+await page.evaluate(() => { loggedIn = false; updateProvideAuth(); });
 await page.click('#provide-next');
 assert.equal(await page.$eval('body', node => node.dataset.step), 'provide-reg');
-assert.equal(await page.$eval('#provider-login', node => node.hidden), false);
+assert.equal(await page.$eval('#provider-login', node => node.hidden), false, 'logged-out session shows the sign-in link');
+assert.equal(await page.$eval('#register-provider', node => node.hidden), true, 'logged-out session hides Register');
 await page.evaluate(() => {
   loggedIn = true;
   $('provider-login').hidden = true;
