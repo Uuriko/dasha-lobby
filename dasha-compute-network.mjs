@@ -398,7 +398,7 @@ function capacityFromProviders(providers, now = Date.now()) {
 
 /**
  * Phase 0 honesty receipt — job/model/class + measured tok/s + attestation:null.
- * Never invent tok/s, cents, or a verify badge. Caution-verifiable is out of scope.
+ * Never invent tok/s, cents, or a verify badge. Phase 0 has no enclave attest.
  */
 export function publicPhase0Receipt(job, { capacity } = {}) {
   if (!job || typeof job !== 'object') return null;
