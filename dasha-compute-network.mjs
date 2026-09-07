@@ -48,6 +48,21 @@ import { X402_BILLING_DOCS, x402BillingDocsLine } from './dasha-compute-x402.mjs
 
 export { HOSTED_ASK_PRICE_CENTS };
 
+/** Honesty only — COMPUTE_X402_POC default off; no facilitator / settle this hop. */
+export const X402_BILLING_DOCS = 'flag_off';
+const BILLING_CHAT_COMPLETIONS = 'Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card';
+
+export function isComputeX402PocEnabled(env) {
+  const raw = String(env?.COMPUTE_X402_POC ?? '').trim().toLowerCase();
+  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+}
+
+/** Honesty field for billing docs — never means live settle. */
+export function x402BillingDocsLine(env) {
+  if (isComputeX402PocEnabled(env)) return 'flag_on_stub';
+  return X402_BILLING_DOCS;
+}
+
 const MODELS = new Set(['qwen3-8b', 'gemma3-12b', 'gpt-oss-20b', 'qwen3-30b-a3b', 'gemma3-27b', 'gpt-oss-120b']);
 const FRESH_MS = 45_000;
 const JOB_TTL_MS = 5 * 60_000;
@@ -212,7 +227,7 @@ function computeApiRootBody(env) {
     limit: '3 free / 10 min · then credits',
     usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)',
     billing: {
-      chat_completions: 'Prepaid credits ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection',
+      chat_completions: BILLING_CHAT_COMPLETIONS,
       keys: `Create-time spend cap default $${API_KEY_LIMIT_DEFAULT_CENTS / 100}/month · 402 on exceed · see /caps`,
       // Honesty only — COMPUTE_X402_POC default off; no facilitator / settle this hop.
       x402: x402BillingDocsLine(env),
@@ -237,7 +252,7 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
       jobs: 'GET /compute/api/jobs/:id returns stored usage (+ route + settle + receipt) when present — never invent',
     },
     billing: {
-      chat_completions: 'Prepaid credits ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection',
+      chat_completions: BILLING_CHAT_COMPLETIONS,
       // Honesty only — flag off / planned; not an enable switch.
       x402: X402_BILLING_DOCS,
     },
@@ -384,20 +399,12 @@ function tokenUsage(input) {
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
 }
 
-/** Mid-stream Mac die / URLError — keep provider voice; never invent a success. */
-export function normalizeStreamProviderError(raw) {
-  const msg = String(raw || '').trim().slice(0, 300);
-  if (!msg) return '';
-  if (/^provider inference failed:/i.test(msg) || /^provider cut$/i.test(msg) || /^empty completion$/i.test(msg)) return msg;
-  if (/URLError|urllib\.error|stream ended before completion|Connection reset|Connection refused|IncompleteRead|RemoteDisconnected/i.test(msg)) {
-    return `provider inference failed: ${msg.slice(0, 240)}`;
-  }
-  if (/provider inference failed/i.test(msg)) return msg;
-  return msg;
-}
-
-export function isProviderStreamCutError(msg) {
-  return /provider inference failed|provider cut|empty completion|stream ended before completion|URLError/i.test(String(msg || ''));
+/** Fail-closed public settle face. Omit when cents/state unknown. Never invent. */
+export function publicJobSettle(job) {
+  const cents = Math.max(0, Math.floor(Number(job?.settle_cents) || 0));
+  const state = String(job?.settle_state || '').trim();
+  if (!(cents > 0) || !state) return null;
+  return { cents, state };
 }
 
 async function cancelJob(storage, key, job, now = Date.now()) {
@@ -605,22 +612,7 @@ export class ComputeNetwork {
         sent = (current.chunks || []).length;
         if (current.status === 'complete') {
           const settle = publicJobSettle(current);
-          const providers = [...(await storage.list({ prefix: 'compute:provider:' })).values()];
-          const receipt = publicPhase0Receipt(current, { capacity: capacityFromProviders(providers) });
-          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}), ...(receipt ? { receipt } : {}) });
-          emit('[DONE]');
-          controller.close();
-          return;
-        }
-        if (current.status === 'failed' || current.status === 'cancelled') {
-          const errMsg = current.error || (current.status === 'cancelled' ? 'job cancelled' : 'provider failed');
-          emit({ error: { message: errMsg, type: 'server_error', code: isProviderStreamCutError(errMsg) ? 'provider_cut' : null } });
-          emit('[DONE]');
-          controller.close();
-          return;
-        }
-        if (sent > 0 && current.status === 'queued') {
-          emit({ error: { message: 'provider cut', type: 'server_error', code: 'provider_cut' } });
+          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}) });
           emit('[DONE]');
           controller.close();
           return;
@@ -1020,22 +1012,19 @@ export class ComputeNetwork {
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       const rawError = String(input.error || '').trim().slice(0, 300);
       const chunks = !rawError && delta ? [...(job.chunks || []), delta] : job.chunks || [];
-      let streamError = normalizeStreamProviderError(rawError);
+      let streamError = rawError;
       if (!streamError && input.done && !String(chunks.join('') || '').trim()) {
         streamError = 'empty completion';
       }
-      if (!streamError && rawError) streamError = rawError.slice(0, 300);
       const usage = input.done ? tokenUsage(input) : job.usage;
-      const failed = Boolean(streamError);
-      const finished = failed || Boolean(input.done);
-      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000 });
-      if (finished) {
-        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
-        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
-        if (!streamError && input.done && job.route !== 'self') {
-          const earned = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-          if (earned?.ok) await this.recordPaidInferenceSettle({
-            owner: job.owner,
+      let settlePatch = {};
+      if (!streamError && input.done && job.route !== 'self') {
+        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+        if (accrued?.ok) {
+          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
+          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
+          await this.recordPaidInferenceSettle({
+            owner: job.owner || null,
             engine: job.route === 'mixture' ? 'mixture' : 'community',
             usage,
             cents: settleCents,
@@ -1045,10 +1034,12 @@ export class ComputeNetwork {
           });
         }
       }
-      await this.state.storage.put(key, { ...job, chunks, status: error ? 'failed' : input.done ? 'complete' : 'leased', error: error || null, usage, messages: error || input.done ? null : job.messages, completedAt: error || input.done ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: error || input.done ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
-      if (error || input.done) {
-        await this.finishNight(job, error ? 'failed' : 'complete', error ? null : chunks.join(''), error || null, now);
-        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
+      const failed = Boolean(streamError);
+      const finished = failed || Boolean(input.done);
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
+      if (finished) {
+        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
+        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
       }
       return json({ accepted: true }, 202);
     }
@@ -1100,14 +1091,13 @@ export class ComputeNetwork {
         total_tokens: Math.max(0, Math.floor(Number(job.usage.total_tokens) || 0)),
       } : null;
       const route = ['community', 'mixture', 'self'].includes(String(job.route || '')) ? String(job.route) : null;
-      const settle = publicJobSettle(job);
-      const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
-      const receipt = publicPhase0Receipt(job, { capacity: capacityFromProviders(providers, now) });
+      // jobs/:id settle only on complete — never invent pending/failed money.
+      const settle = job.status === 'complete' ? publicJobSettle(job) : null;
       return maybeHead(request, json({
         id: job.id,
         status: job.status,
         model: job.model,
-        answer: (job.chunks || []).join('') || job.answer || null,
+        answer: job.status === 'failed' ? null : (job.chunks || []).join('') || job.answer || null,
         error: job.error || null,
         provider: job.providerId || null,
         queue_position: queuePosition || null,
@@ -1115,7 +1105,6 @@ export class ComputeNetwork {
         ...(usage && (usage.total_tokens > 0 || usage.prompt_tokens > 0 || usage.completion_tokens > 0) ? { usage } : {}),
         ...(route ? { route } : {}),
         ...(settle ? { settle } : {}),
-        ...(receipt ? { receipt } : {}),
       }, 200, allowedOrigin, credentials));
     }
 

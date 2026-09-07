@@ -37,7 +37,7 @@ for (const path of ['/compute/api/status', '/compute/api/status/']) {
   assert.equal(get.body.model, 'gpt-oss-20b');
   assert.equal(get.body.login_required, true);
   assert.equal(get.body.limit, '3 free / 10 min · then credits');
-  assert.match(get.body.billing?.chat_completions || '', /Prepaid credits.*key spend cap is runaway protection/);
+  assert.match(get.body.billing?.chat_completions || '', /Prepaid credits via USDC\/\$dasha.*no card/);
   assert.match(get.body.billing?.keys || '', /Create-time spend cap default \$5\/month/);
   assert.match(get.body.billing?.keys || '', /402 on exceed/);
   assert.match(get.body.billing?.keys || '', /\/caps/);
@@ -91,7 +91,8 @@ for (const path of ['/compute/api', '/compute/api/']) {
   assert.equal(root.status, 200, `${path} GET`);
   const body = await root.json();
   assert.match(body.billing?.keys || '', /Create-time spend cap default \$5\/month/);
-  assert.match(body.billing?.chat_completions || '', /runaway protection/);
+  assert.match(body.billing?.chat_completions || '', /USDC\/\$dasha/);
+  assert.match(body.billing?.chat_completions || '', /no card/);
   assert.equal(body.billing?.x402, 'flag_off');
 }
 

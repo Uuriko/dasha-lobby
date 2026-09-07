@@ -37,11 +37,15 @@ function assertReceiptUx(html, label) {
   assert.match(html, /parts\.join\(' · '\)/, `${label} · joined receipt`);
   assert.match(html, /if\(routeFace==='community'\|\|routeFace==='mixture'\|\|routeFace==='self'\)/, `${label} community/mixture/self branch`);
   assert.match(html, /Hosted paid settle only \(user charged\)/, `${label} hosted paid settle comment`);
-  assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok/, `${label} hosted Settled · tok`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\),\.\.\.honestyFieldsFrom\(lastSseReceipt\)\}/, `${label} SSE community receipt cents:0 + honesty`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\)/, `${label} poll community receipt cents:0 + settle`);
+  assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok \u00b7 '\+formatUsdCents\(cents\)\+' credits'/, `${label} hosted Settled · tok · $ credits`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\)\}/, `${label} SSE community receipt cents:0 + settleFieldsFrom`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\)\}/, `${label} poll community receipt cents:0 + settle`);
   assert.doesNotMatch(html, /data\?\.model\|\|\$\(['"]model['"]\)\.value/, `${label} never trust data?.model`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted',provider_class:'hosted',settle_cents:5,settle_state:'settled',attestation:null\}/, `${label} hosted paid cents:5 Phase0`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted',settle_cents:5,settle_state:'settled'\}/, `${label} hosted paid cents:5 settled`);
+  assert.match(html, /function settleFieldsFrom\(/, `${label} settleFieldsFrom`);
+  assert.match(html, /lastSseSettle=null/, `${label} lastSseSettle`);
+  assert.match(html, /pending operator settle/, `${label} pending operator settle face`);
+  assert.match(html, /Quiet settle face only when job\/usage JSON provided settle_cents \+ settle_state \(fail closed\)/, `${label} fail-closed settle comment`);
   assert.match(html, /const u=data\?\.usage&&typeof data\.usage==='object'\?data\.usage:null/, `${label} poll reads job usage`);
   assert.match(html, /const u=lastSseUsage/, `${label} SSE reads lastSseUsage`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
@@ -198,12 +202,12 @@ if (puppeteer && existsSync(chrome)) {
     assert.doesNotMatch(painted.communityEarn.text, /1\.00|Settled|pending operator settle|¢/);
 
     assert.equal(painted.communitySettle.hidden, false);
-    assert.equal(painted.communitySettle.text, "Community · gemma3-27b · 40 tok · job_abc123xyz · 6¢ · pending operator settle");
+    assert.equal(painted.communitySettle.text, "Community · gemma3-27b · 40 tok · job_abc123xyz · 6¢ USDC · pending operator settle");
     assert.doesNotMatch(painted.communitySettle.text, /\$/);
     assert.doesNotMatch(painted.communitySettle.text, /1\.00/);
 
     assert.equal(painted.communitySettled.hidden, false);
-    assert.equal(painted.communitySettled.text, "Mixture · gemma3-12b · 12 tok · job_mix_1 · 6¢ · settled");
+    assert.equal(painted.communitySettled.text, "Mixture · gemma3-12b · 12 tok · job_mix_1 · 6¢ USDC · settled");
     assert.doesNotMatch(painted.communitySettled.text, /\$/);
 
     assert.equal(painted.mixture.hidden, false);
@@ -225,7 +229,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.doesNotMatch(painted.longJob.text, /\$/);
 
     assert.equal(painted.hostedPaid.hidden, false);
-    assert.equal(painted.hostedPaid.text, "Settled · 33 tok · $0.05");
+    assert.equal(painted.hostedPaid.text, "Settled · 33 tok · $0.05 credits");
     assert.equal(painted.hostedTokOnly.hidden, false);
     assert.equal(painted.hostedTokOnly.text, "Settled · 8 tok");
     assert.equal(painted.hostedFree.hidden, true, "hosted free floor stays quiet");

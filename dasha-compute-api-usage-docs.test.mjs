@@ -56,7 +56,9 @@ function assertUsageDocs(body, label) {
   assert.match(String(body.usage.hosted_chat || ''), /\/compute\/api\/chat SSE/, label);
   assert.match(String(body.usage.jobs || ''), /GET \/compute\/api\/jobs\/:id returns stored usage/, label);
   assert.match(String(body.usage.jobs || ''), /never invent/, label);
-  assert.match(String(body.billing?.chat_completions || ''), /Prepaid credits \(\$0\.05\/job\)/, label);
+  assert.match(String(body.billing?.chat_completions || ''), /Prepaid credits via USDC\/\$dasha \(\$0\.05\/job\)/, label);
+  assert.match(String(body.billing?.chat_completions || ''), /no card/, label);
+  assert.equal(body.billing?.x402, 'flag_off', `${label} x402 stays flag_off`);
 }
 
 const gw = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/v1'));
