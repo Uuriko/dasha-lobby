@@ -3303,6 +3303,39 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/early', '/compute/early/',
   '/compute/early-access', '/compute/early-access/',
   '/compute/earlyaccess', '/compute/earlyaccess/',
+  // Leftover lmstudio/openwebui/claude batch (Worker 35fc317b): live /lmstudio
+  // /lm-studio /lm_studio /openwebui /open-webui /open_webui /webui /claude
+  // /m3 /gettingstarted /hi /welcome (+ /compute/* tabs, slash / Title-case)
+  // already 308→/compute. /run /ollama /m4 /getstarted /hello peers already
+  // 308→/compute. Fold product doors to plain /compute (no hash). Do NOT
+  // invent /arcade /games. Do NOT fold /openai /anthropic /v1 /api/v1 /status
+  // /health /healthz /network /x402 /attestation /blog /news /faq /waitlist
+  // /tos /legal /discord /slack /admin /deposit /sell /jupiter /raydium /git
+  // /about /metrics /ping. Never fold /price (200 JSON) or /privacy (200).
+  '/lmstudio', '/lmstudio/',
+  '/lm-studio', '/lm-studio/',
+  '/lm_studio', '/lm_studio/',
+  '/openwebui', '/openwebui/',
+  '/open-webui', '/open-webui/',
+  '/open_webui', '/open_webui/',
+  '/webui', '/webui/',
+  '/claude', '/claude/',
+  '/m3', '/m3/',
+  '/gettingstarted', '/gettingstarted/',
+  '/hi', '/hi/',
+  '/welcome', '/welcome/',
+  '/compute/lmstudio', '/compute/lmstudio/',
+  '/compute/lm-studio', '/compute/lm-studio/',
+  '/compute/lm_studio', '/compute/lm_studio/',
+  '/compute/openwebui', '/compute/openwebui/',
+  '/compute/open-webui', '/compute/open-webui/',
+  '/compute/open_webui', '/compute/open_webui/',
+  '/compute/webui', '/compute/webui/',
+  '/compute/claude', '/compute/claude/',
+  '/compute/m3', '/compute/m3/',
+  '/compute/gettingstarted', '/compute/gettingstarted/',
+  '/compute/hi', '/compute/hi/',
+  '/compute/welcome', '/compute/welcome/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -3352,7 +3385,7 @@ const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
   '/api/healthz', '/api/healthz/',
   '/api/health', '/api/health/',
 ]);
-/** Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /docs /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /compute/sdk /compute/cli (+slash) → /compute/api. */
+/** Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /docs /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /compute/sdk /compute/cli /base-url /baseurl /base_url /chat-completions /chatcompletions /chat_completions /embeddings /embedding /responses /response /completion /compute/base-url /compute/baseurl /compute/base_url /compute/chat-completions /compute/chatcompletions /compute/chat_completions /compute/embeddings /compute/embedding /compute/responses /compute/response /compute/completion (+slash) → /compute/api. */
 const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set([
   '/swagger-ui', '/swagger-ui/',
   '/swagger-ui.html', '/swagger-ui.html/',
@@ -3384,6 +3417,35 @@ const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set([
   '/compute/endpoints', '/compute/endpoints/',
   '/compute/sdk', '/compute/sdk/',
   '/compute/cli', '/compute/cli/',
+  // Leftover /base-url /baseurl /base_url /chat-completions /chatcompletions
+  // /chat_completions /embeddings /embedding /responses /response /completion
+  // + /compute/* tabs (Worker 35fc317b). Live apex/tabs already 308→/compute/api
+  // while /endpoint|/endpoints|/sdk|/cli|/docs peers already 308→/compute/api.
+  // Docs face only — do NOT invent /v1/chat/completions behavior. Skip /openai
+  // /anthropic /v1 /api/v1 /status /health /healthz /network /x402 /attestation.
+  // Do NOT invent /arcade /games. Never fold /price (200 JSON) or /privacy (200).
+  '/base-url', '/base-url/',
+  '/baseurl', '/baseurl/',
+  '/base_url', '/base_url/',
+  '/chat-completions', '/chat-completions/',
+  '/chatcompletions', '/chatcompletions/',
+  '/chat_completions', '/chat_completions/',
+  '/embeddings', '/embeddings/',
+  '/embedding', '/embedding/',
+  '/responses', '/responses/',
+  '/response', '/response/',
+  '/completion', '/completion/',
+  '/compute/base-url', '/compute/base-url/',
+  '/compute/baseurl', '/compute/baseurl/',
+  '/compute/base_url', '/compute/base_url/',
+  '/compute/chat-completions', '/compute/chat-completions/',
+  '/compute/chatcompletions', '/compute/chatcompletions/',
+  '/compute/chat_completions', '/compute/chat_completions/',
+  '/compute/embeddings', '/compute/embeddings/',
+  '/compute/embedding', '/compute/embedding/',
+  '/compute/responses', '/compute/responses/',
+  '/compute/response', '/compute/response/',
+  '/compute/completion', '/compute/completion/',
 ]);
 /** Leftover /security /security.txt (+slash / Title-case) → /.well-known/security.txt. */
 const POTTER_SECURITY_TXT_308_PATHS = new Set([
@@ -3483,9 +3545,10 @@ export function potterHome308Dest(path) {
   // Title-case product pages (/Faucet /Compute /Lobby /Chess /Bag …) were html-404 while
   // lowercase siblings already 200 — 308 to the same dest (canonical lowercase).
   // Machine files (/Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Llms-Full.txt) same pattern.
-  // Quiet /fill /jar /fill-the-jar /tip /tip-me /tips /compute/tips /donate /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar /once-a-day|/once_a_day → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana /hosted|/community|/mixture|/compute/hosted|/compute/community|/compute/mixture /hosts|/inferences|/key|/keys|/apikey|/api-key|/api_key|/install|/doctor|/me|/usage|/inference|/gpu|/gpus|/pricing|/providing|/mac-kit|/compute/hosts|/compute/inferences|/compute/key|/compute/keys|/compute/apikey|/compute/api-key|/compute/api_key|/compute/install|/compute/doctor|/compute/me|/compute/usage|/compute/inference|/compute/gpu|/compute/gpus|/compute/pricing|/compute/providing|/compute/mac-kit /fleet|/rent|/capacity|/offer|/offers|/worker|/workers|/node|/nodes|/cluster|/pool|/machines|/benchmark|/queue|/dashboard|/console|/balance|/pay-usdc|/apple-silicon|/macos|/silicon|/local|/edge|/onboard|/setup|/quickstart|/playground|/sandbox|/hello|/example|/examples|/prefer|/preference|/preferences|/compute/fleet|/compute/rent|/compute/capacity|/compute/offer|/compute/offers|/compute/worker|/compute/workers|/compute/node|/compute/nodes|/compute/cluster|/compute/pool|/compute/machines|/compute/benchmark|/compute/queue|/compute/dashboard|/compute/console|/compute/balance|/compute/pay-usdc|/compute/apple-silicon|/compute/macos|/compute/silicon|/compute/local|/compute/edge|/compute/onboard|/compute/setup|/compute/quickstart|/compute/playground|/compute/sandbox|/compute/hello|/compute/example|/compute/examples|/compute/prefer|/compute/preference|/compute/preferences /settlement|/settlements|/invoice|/invoices|/credit|/refill|/kits|/try|/getting-started|/get-started|/getstarted|/mac_kit|/compute/settlement|/compute/settlements|/compute/invoice|/compute/invoices|/compute/credit|/compute/refill|/compute/kits|/compute/try|/compute/getting-started|/compute/get-started|/compute/getstarted|/compute/mac_kit /plan|/plans|/prices|/payout|/payouts|/withdraw|/cashout|/payment|/payments|/checkout|/getting_started|/mac-setup|/mac_setup|/agents|/agent|/mcp|/tools|/tool|/earn|/mac|/kit|/compute/plan|/compute/plans|/compute/prices|/compute/price|/compute/payout|/compute/payouts|/compute/withdraw|/compute/cashout|/compute/payment|/compute/payments|/compute/checkout|/compute/getting_started|/compute/mac-setup|/compute/mac_setup|/compute/agents|/compute/agent|/compute/mcp|/compute/tools|/compute/tool| /compute/earn|/compute/mac|/compute/kit /help|/guide|/tutorial|/support|/docs-help|/getting-help|/contact|/free-credits|/buy-credits|/get-credits|/compute/help|/compute/guide|/compute/tutorial|/compute/support|/compute/contact|/compute/free-credits|/compute/buy-credits|/compute/get-credits|/compute/docs-help|/compute/getting-help|/app|/application|/compute/app|/compute/application /prefermlx|/compute/prefermlx|/m4|/compute/m4|/balances|/compute/balances|/credits/buy|/compute/credits/buy|/prefer-mlx|/prefer_mlx|/mlx|/compute/prefer-mlx|/compute/prefer_mlx|/compute/mlx /provider-kit|/provide-kit|/host-kit|/install-kit|/dasha-kit|/compute-kit|/provider_kit|/provide_kit|/host_kit|/install_kit|/dasha_kit|/compute_kit|/compute/provider-kit|/compute/provide-kit|/compute/host-kit|/compute/install-kit|/compute/dasha-kit|/compute/compute-kit|/compute/provider_kit|/compute/provide_kit|/compute/host_kit|/compute/install_kit|/compute/dasha_kit|/compute/compute_kit → /compute. Apex /gateway|/compute/gateway|/docs|/endpoint|/endpoints|/sdk|/cli|/compute/endpoint|/compute/endpoints|/compute/sdk|/compute/cli → /compute/api. Exact lowercase product stays null for 200 handlers.
+  // Quiet /fill /jar /fill-the-jar /tip /tip-me /tips /compute/tips /donate /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar /once-a-day|/once_a_day → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana /hosted|/community|/mixture|/compute/hosted|/compute/community|/compute/mixture /hosts|/inferences|/key|/keys|/apikey|/api-key|/api_key|/install|/doctor|/me|/usage|/inference|/gpu|/gpus|/pricing|/providing|/mac-kit|/compute/hosts|/compute/inferences|/compute/key|/compute/keys|/compute/apikey|/compute/api-key|/compute/api_key|/compute/install|/compute/doctor|/compute/me|/compute/usage|/compute/inference|/compute/gpu|/compute/gpus|/compute/pricing|/compute/providing|/compute/mac-kit /fleet|/rent|/capacity|/offer|/offers|/worker|/workers|/node|/nodes|/cluster|/pool|/machines|/benchmark|/queue|/dashboard|/console|/balance|/pay-usdc|/apple-silicon|/macos|/silicon|/local|/edge|/onboard|/setup|/quickstart|/playground|/sandbox|/hello|/example|/examples|/prefer|/preference|/preferences|/compute/fleet|/compute/rent|/compute/capacity|/compute/offer|/compute/offers|/compute/worker|/compute/workers|/compute/node|/compute/nodes|/compute/cluster|/compute/pool|/compute/machines|/compute/benchmark|/compute/queue|/compute/dashboard|/compute/console|/compute/balance|/compute/pay-usdc|/compute/apple-silicon|/compute/macos|/compute/silicon|/compute/local|/compute/edge|/compute/onboard|/compute/setup|/compute/quickstart|/compute/playground|/compute/sandbox|/compute/hello|/compute/example|/compute/examples|/compute/prefer|/compute/preference|/compute/preferences /settlement|/settlements|/invoice|/invoices|/credit|/refill|/kits|/try|/getting-started|/get-started|/getstarted|/mac_kit|/compute/settlement|/compute/settlements|/compute/invoice|/compute/invoices|/compute/credit|/compute/refill|/compute/kits|/compute/try|/compute/getting-started|/compute/get-started|/compute/getstarted|/compute/mac_kit /plan|/plans|/prices|/payout|/payouts|/withdraw|/cashout|/payment|/payments|/checkout|/getting_started|/mac-setup|/mac_setup|/agents|/agent|/mcp|/tools|/tool|/earn|/mac|/kit|/compute/plan|/compute/plans|/compute/prices|/compute/price|/compute/payout|/compute/payouts|/compute/withdraw|/compute/cashout|/compute/payment|/compute/payments|/compute/checkout|/compute/getting_started|/compute/mac-setup|/compute/mac_setup|/compute/agents|/compute/agent|/compute/mcp|/compute/tools|/compute/tool| /compute/earn|/compute/mac|/compute/kit /help|/guide|/tutorial|/support|/docs-help|/getting-help|/contact|/free-credits|/buy-credits|/get-credits|/compute/help|/compute/guide|/compute/tutorial|/compute/support|/compute/contact|/compute/free-credits|/compute/buy-credits|/compute/get-credits|/compute/docs-help|/compute/getting-help|/app|/application|/compute/app|/compute/application /prefermlx|/compute/prefermlx|/m4|/compute/m4|/balances|/compute/balances|/credits/buy|/compute/credits/buy|/prefer-mlx|/prefer_mlx|/mlx|/compute/prefer-mlx|/compute/prefer_mlx|/compute/mlx /provider-kit|/provide-kit|/host-kit|/install-kit|/dasha-kit|/compute-kit|/provider_kit|/provide_kit|/host_kit|/install_kit|/dasha_kit|/compute_kit|/compute/provider-kit|/compute/provide-kit|/compute/host-kit|/compute/install-kit|/compute/dasha-kit|/compute/compute-kit|/compute/provider_kit|/compute/provide_kit|/compute/host_kit|/compute/install_kit|/compute/dasha_kit|/compute/compute_kit /lmstudio|/lm-studio|/lm_studio|/openwebui|/open-webui|/open_webui|/webui|/claude|/m3|/gettingstarted|/hi|/welcome|/compute/lmstudio|/compute/lm-studio|/compute/lm_studio|/compute/openwebui|/compute/open-webui|/compute/open_webui|/compute/webui|/compute/claude|/compute/m3|/compute/gettingstarted|/compute/hi|/compute/welcome → /compute. Apex /gateway|/compute/gateway|/docs|/endpoint|/endpoints|/sdk|/cli|/compute/endpoint|/compute/endpoints|/compute/sdk|/compute/cli|/base-url|/baseurl|/base_url|/chat-completions|/chatcompletions|/chat_completions|/embeddings|/embedding|/responses|/response|/completion|/compute/base-url|/compute/baseurl|/compute/base_url|/compute/chat-completions|/compute/chatcompletions|/compute/chat_completions|/compute/embeddings|/compute/embedding|/compute/responses|/compute/response|/compute/completion → /compute/api. Exact lowercase product stays null for 200 handlers.
   // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
   // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy|/purchase → /how-to-buy.
+  // Leftover /lmstudio|/lm-studio|/lm_studio|/openwebui|/open-webui|/open_webui|/webui|/claude|/m3|/gettingstarted|/hi|/welcome → /compute. Leftover /base-url|/baseurl|/base_url|/chat-completions|/chatcompletions|/chat_completions|/embeddings|/embedding|/responses|/response|/completion → /compute/api (Worker 35fc317b).
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
   // Privacy synonyms: /privacy stays 200 (null). /help now folds via COMPUTE_TAB → /compute
   // (not /privacy). Still skip /terms /tos /legal /faq — do not invent a privacy dest.
@@ -3525,7 +3588,7 @@ export function potterHome308Dest(path) {
   if (POTTER_LLMS_FULL_AEO_308_PATHS.has(p)) return 'https://www.getdasha.com/llms-full.txt';
   if (POTTER_LLMS_AEO_308_PATHS.has(p)) return 'https://www.getdasha.com/llms.txt';
   if (POTTER_AI_TXT_WELLKNOWN_308_PATHS.has(p)) return 'https://www.getdasha.com/ai.txt';
-  // Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /docs /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /compute/sdk /compute/cli (+slash / Title-case) → /compute/api.
+  // Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /docs /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /compute/sdk /compute/cli /base-url /baseurl /base_url /chat-completions /chatcompletions /chat_completions /embeddings /embedding /responses /response /completion /compute/base-url /compute/baseurl /compute/base_url /compute/chat-completions /compute/chatcompletions /compute/chat_completions /compute/embeddings /compute/embedding /compute/responses /compute/response /compute/completion (+slash / Title-case) → /compute/api.
   // Lobby same-host rewrite covers /compute/api dests in potterHome308Response.
   if (POTTER_COMPUTE_API_DOCS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api';
   // apex /api/{jobs,status,network,healthz,health} (+ /jobs /job /compute/jobs /compute/job /api/job and
