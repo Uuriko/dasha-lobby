@@ -2969,10 +2969,17 @@ const POTTER_HOME_308_PATHS = new Set([
   '/learn', '/learn/',
   '/graph', '/graph/',
   '/index.html', '/index.html/',
-  // Leftover /candles (Worker 66dadebe): live /candles (+slash / Title-case)
-  // html-404 → 308 home. Peer of live /chart (mirror PR #63). Do not invent
-  // /compute/candles. Never fold /price (200 JSON) or /privacy (200).
-  '/candles', '/candles/',
+  // Leftover /meme /memes /memestudio /meme-studio /meme_studio (Worker 1d5f3c49):
+  // live html-404 → 308 home. Do not invent Discord/openrouter/whitepaper/tokenomics.
+  '/meme', '/meme/',
+  '/memes', '/memes/',
+  '/memestudio', '/memestudio/',
+  '/meme-studio', '/meme-studio/',
+  '/meme_studio', '/meme_studio/',
+  // Chart door in potterHome308Dest (Worker 1d5f3c49): also /price-chart /price_chart
+  // (+slash / Title-case) → home. Skip /roadmap /v1 /status /x402.
+  '/price-chart', '/price-chart/',
+  '/price_chart', '/price_chart/',
 ]);
 const POTTER_HOWTO_308_PATHS = new Set([
   '/dasha', '/dasha/',
@@ -3442,36 +3449,14 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   '/compute/early', '/compute/early/',
   '/compute/early-access', '/compute/early-access/',
   '/compute/earlyaccess', '/compute/earlyaccess/',
-  // Leftover chatgpt/cursor/copilot/vscode batch (live peers of Worker a17b9472):
-  // live /chatgpt /cursor /copilot /vscode (+ /compute/* tabs, slash / Title-case)
-  // already 308→/compute. Fold product doors to plain /compute (no hash).
-  // NOT OpenAI/Microsoft product pages. Title-case via potterHome308Dest
-  // toLowerCase — do not invent a second casefold.
-  // Skip intentional 404s listed on the windsurf leftover block below.
-  // Never fold /price (200 JSON) or /privacy (200).
-  '/chatgpt', '/chatgpt/',
-  '/cursor', '/cursor/',
-  '/copilot', '/copilot/',
-  '/vscode', '/vscode/',
-  '/compute/chatgpt', '/compute/chatgpt/',
-  '/compute/cursor', '/compute/cursor/',
-  '/compute/copilot', '/compute/copilot/',
-  '/compute/vscode', '/compute/vscode/',
-  // Leftover /windsurf /aider /continue /zed batch (Worker a17b9472):
-  // live apex + trailing slash + /compute/* tabs (+ Title-case) already
-  // 308→/compute. Peers of live /vscode /cursor /copilot /chatgpt.
-  // /continue is the Continue.dev IDE door (OAuth ?continue=1 query is unrelated).
-  // Fold product doors to plain /compute (no hash). Skip intentional 404s:
-  // /code /terminal /emacs /vim /neovim /jetbrains /codeium /tabnine
-  // /openai /arcade /x402. Never fold /price (200 JSON) or /privacy (200).
-  '/windsurf', '/windsurf/',
-  '/aider', '/aider/',
-  '/continue', '/continue/',
-  '/zed', '/zed/',
-  '/compute/windsurf', '/compute/windsurf/',
-  '/compute/aider', '/compute/aider/',
-  '/compute/continue', '/compute/continue/',
-  '/compute/zed', '/compute/zed/',
+  // Leftover /peers /peer /uptime + /compute/peers /compute/uptime (Worker 1d5f3c49).
+  // Apex + slash + Title-case html-404 → 308 /compute. Do NOT add /status /health
+  // /v1 /openai /x402 (leave 404). Do not invent /compute/peer.
+  '/peers', '/peers/',
+  '/peer', '/peer/',
+  '/uptime', '/uptime/',
+  '/compute/peers', '/compute/peers/',
+  '/compute/uptime', '/compute/uptime/',
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
   '/verify', '/verify/',
@@ -3513,6 +3498,12 @@ const POTTER_LISTINGS_308_PATHS = new Set([
  * Do not invent /compute/sim. Do not fold /simp/board. */
 const POTTER_SIMP_308_PATHS = new Set([
   '/sim', '/sim/',
+]);
+/** Leftover /coinmarketcap /coin_market_cap (Worker 1d5f3c49). Sibling of /coingecko /cmc.
+ * Live already 308→/listings. Exact /listings stays 200 on live. Skip /roadmap. */
+const POTTER_LISTINGS_308_PATHS = new Set([
+  '/coinmarketcap', '/coinmarketcap/',
+  '/coin_market_cap', '/coin_market_cap/',
 ]);
 /** Leftover /bounty (+slash / Title-case) still html-404 while /bounties is 200. */
 const POTTER_BOUNTIES_308_PATHS = new Set([
@@ -3728,8 +3719,10 @@ export function potterHome308Dest(path) {
   // Quiet /fill /jar /fill-the-jar /tip /tip-me /tips /compute/tips /donate /compute/faucet /faucet/fill-the-jar|/faucet/fill_the_jar /once-a-day|/once_a_day → /faucet. Apex /provide /start /sponsor(s) /ask /pay /credits /host /use /marketplace /market /you /night /build /ocm /products|/compute/products /faucet/compute /run|/ollama|/compute/run|/compute/ollama /models|/model|/compute/models|/compute/model /usdc|/settle|/topup|/top-up|/billing|/wallet|/phantom|/solana|/compute/usdc|/compute/settle|/compute/topup|/compute/top-up|/compute/billing|/compute/wallet|/compute/phantom|/compute/solana /hosted|/community|/mixture|/compute/hosted|/compute/community|/compute/mixture /hosts|/inferences|/key|/keys|/apikey|/api-key|/api_key|/install|/doctor|/me|/usage|/inference|/gpu|/gpus|/pricing|/providing|/mac-kit|/compute/hosts|/compute/inferences|/compute/key|/compute/keys|/compute/apikey|/compute/api-key|/compute/api_key|/compute/install|/compute/doctor|/compute/me|/compute/usage|/compute/inference|/compute/gpu|/compute/gpus|/compute/pricing|/compute/providing|/compute/mac-kit /fleet|/rent|/capacity|/offer|/offers|/worker|/workers|/node|/nodes|/cluster|/pool|/machines|/benchmark|/queue|/dashboard|/console|/balance|/pay-usdc|/apple-silicon|/macos|/silicon|/local|/edge|/onboard|/setup|/quickstart|/playground|/sandbox|/hello|/example|/examples|/prefer|/preference|/preferences|/compute/fleet|/compute/rent|/compute/capacity|/compute/offer|/compute/offers|/compute/worker|/compute/workers|/compute/node|/compute/nodes|/compute/cluster|/compute/pool|/compute/machines|/compute/benchmark|/compute/queue|/compute/dashboard|/compute/console|/compute/balance|/compute/pay-usdc|/compute/apple-silicon|/compute/macos|/compute/silicon|/compute/local|/compute/edge|/compute/onboard|/compute/setup|/compute/quickstart|/compute/playground|/compute/sandbox|/compute/hello|/compute/example|/compute/examples|/compute/prefer|/compute/preference|/compute/preferences /settlement|/settlements|/invoice|/invoices|/credit|/refill|/kits|/try|/getting-started|/get-started|/getstarted|/mac_kit|/compute/settlement|/compute/settlements|/compute/invoice|/compute/invoices|/compute/credit|/compute/refill|/compute/kits|/compute/try|/compute/getting-started|/compute/get-started|/compute/getstarted|/compute/mac_kit /plan|/plans|/prices|/payout|/payouts|/withdraw|/cashout|/payment|/payments|/checkout|/getting_started|/mac-setup|/mac_setup|/agents|/agent|/mcp|/tools|/tool|/earn|/mac|/kit|/compute/plan|/compute/plans|/compute/prices|/compute/price|/compute/payout|/compute/payouts|/compute/withdraw|/compute/cashout|/compute/payment|/compute/payments|/compute/checkout|/compute/getting_started|/compute/mac-setup|/compute/mac_setup|/compute/agents|/compute/agent|/compute/mcp|/compute/tools|/compute/tool| /compute/earn|/compute/mac|/compute/kit /help|/guide|/tutorial|/support|/docs-help|/getting-help|/contact|/free-credits|/buy-credits|/get-credits|/compute/help|/compute/guide|/compute/tutorial|/compute/support|/compute/contact|/compute/free-credits|/compute/buy-credits|/compute/get-credits|/compute/docs-help|/compute/getting-help|/app|/application|/compute/app|/compute/application /prefermlx|/compute/prefermlx|/m4|/compute/m4|/balances|/compute/balances|/credits/buy|/compute/credits/buy|/prefer-mlx|/prefer_mlx|/mlx|/compute/prefer-mlx|/compute/prefer_mlx|/compute/mlx /provider-kit|/provide-kit|/host-kit|/install-kit|/dasha-kit|/compute-kit|/provider_kit|/provide_kit|/host_kit|/install_kit|/dasha_kit|/compute_kit|/compute/provider-kit|/compute/provide-kit|/compute/host-kit|/compute/install-kit|/compute/dasha-kit|/compute/compute-kit|/compute/provider_kit|/compute/provide_kit|/compute/host_kit|/compute/install_kit|/compute/dasha_kit|/compute/compute_kit /chatgpt|/cursor|/copilot|/vscode|/windsurf|/aider|/continue|/zed|/compute/chatgpt|/compute/cursor|/compute/copilot|/compute/vscode|/compute/windsurf|/compute/aider|/compute/continue|/compute/zed → /compute. Apex /gateway|/compute/gateway|/docs|/endpoint|/endpoints|/sdk|/cli|/compute/endpoint|/compute/endpoints|/compute/sdk|/compute/cli → /compute/api. Exact lowercase product stays null for 200 handlers.
   // Product bridge leftover: /compute/faucet|/faucet/compute (+slash / Title-case).
   // Leftover /bounty → /bounties. Leftover /how-tobuy|/howto_buy|/purchase → /how-to-buy.
-  // Leftover /chatgpt|/cursor|/copilot|/vscode|/compute/chatgpt|/compute/cursor|/compute/copilot|/compute/vscode → /compute.
-  // Leftover /windsurf|/aider|/continue|/zed|/compute/windsurf|/compute/aider|/compute/continue|/compute/zed → /compute (Worker a17b9472). /continue is Continue.dev (OAuth ?continue=1 unrelated).
+  // Leftover /meme|/memes|/memestudio|/meme-studio|/meme_studio|/price-chart|/price_chart → /.
+  // Leftover /coinmarketcap|/coin_market_cap → /listings (sibling of /coingecko /cmc).
+  // Leftover /peers|/peer|/uptime|/compute/peers|/compute/uptime → /compute.
+  // Leftover /readme → /compute/api (peer of /docs). Worker 1d5f3c49. Skip /roadmap.
   // /forum /chat stay OUT (keep ?t= via forumToLobbyRedirect).
   // Privacy synonyms: /privacy stays 200 (null). /help now folds via COMPUTE_TAB → /compute
   // (not /privacy). Still skip /terms /tos /legal /faq — do not invent a privacy dest.
@@ -3752,6 +3745,9 @@ export function potterHome308Dest(path) {
   }
   if (POTTER_HOWTO_308_PATHS.has(p)) return 'https://www.getdasha.com/how-to-buy';
   if (POTTER_HOME_308_PATHS.has(p)) return 'https://www.getdasha.com/';
+  // Leftover /coinmarketcap /coin_market_cap (+slash / Title-case) → /listings.
+  // Sibling of /coingecko /cmc. Exact /listings stays 200 on live. Skip /roadmap.
+  if (POTTER_LISTINGS_308_PATHS.has(p)) return 'https://www.getdasha.com/listings';
   if (POTTER_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login#grok';
   if (POTTER_PLAIN_LOGIN_308_PATHS.has(p)) return 'https://www.getdasha.com/login';
   if (POTTER_WHICH_308_PATHS.has(p)) return 'https://www.getdasha.com/which';
@@ -3774,6 +3770,9 @@ export function potterHome308Dest(path) {
   if (POTTER_AI_TXT_WELLKNOWN_308_PATHS.has(p)) return 'https://www.getdasha.com/ai.txt';
   // Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /docs /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /compute/sdk /compute/cli /devtools /devtool /developer-docs /sdk-docs /cli-docs /sdks-docs /api-reference /sdk-reference /cli-reference /developer-api /dev-api /compute/devtools /compute/devtool /compute/developer-docs /compute/sdk-docs /compute/cli-docs /compute/sdks-docs /compute/api-reference /compute/sdk-reference /compute/cli-reference /compute/developer-api /compute/dev-api (+slash / Title-case) → /compute/api.
   // Lobby same-host rewrite covers /compute/api dests in potterHome308Response.
+  // Docs face: leftover /readme (+slash / Title-case) → /compute/api. Peer of /docs.
+  // Skip /roadmap. Worker 1d5f3c49.
+  if (p === '/readme' || p === '/readme/') return 'https://www.getdasha.com/compute/api';
   if (POTTER_COMPUTE_API_DOCS_308_PATHS.has(p)) return 'https://www.getdasha.com/compute/api';
   // apex /api/{jobs,status,network,healthz,health} (+ /jobs /job /compute/jobs /compute/job /api/job and
   // /compute/{status,network,healthz,health}) → /compute/api/{jobs|status|network|healthz}.
