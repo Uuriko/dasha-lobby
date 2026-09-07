@@ -149,7 +149,11 @@ def run_ollama(job):
         payload={"model": MODELS[job["model"]], "messages": job["messages"], "stream": False, "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)}},
         timeout=600,
     )
-    return {"content": str((result.get("message") or {}).get("content") or ""), "finish_reason": "stop", "usage": usage_from(result)}
+    message = result.get("message") or {}
+    content = str(message.get("content") or "") or str(message.get("thinking") or message.get("reasoning") or "")
+    if not content.strip():
+        raise RuntimeError("empty completion")
+    return {"content": content, "finish_reason": "stop", "usage": usage_from(result)}
 
 
 def report(job_id, result):
@@ -184,6 +188,7 @@ def stream_ollama(job, cancelled):
         payload={"model": MODELS[job["model"]], "messages": job["messages"], "stream": True, "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)}},
     )
     final = {}
+    sent = False
     with urllib.request.urlopen(request, timeout=600) as response:
         for raw_line in response:
             if cancelled.is_set():
@@ -194,13 +199,21 @@ def stream_ollama(job, cancelled):
             if event.get("error"):
                 raise RuntimeError(str(event["error"]))
             final = event
-            content = str((event.get("message") or {}).get("content") or "")
+            message = event.get("message") or {}
+            # Prefer assistant content; if a thinking/reasoning-only chunk arrives, forward it so Ask is not blank.
+            content = str(message.get("content") or "")
+            if not content:
+                content = str(message.get("thinking") or message.get("reasoning") or "")
             if content:
                 report_chunk(job["id"], delta=content)
+                sent = True
     if cancelled.is_set():
         return False
     if final.get("done") is not True:
         raise RuntimeError("Ollama stream ended before completion")
+    if not sent:
+        # Fail closed — coordinator rejects empty stream done; do not mark success with blank answer.
+        raise RuntimeError("empty completion")
     report_chunk(job["id"], done=True, finish_reason="stop", usage=usage_from(final))
     return True
 
@@ -259,6 +272,128 @@ def keepalive_soft_report(ready_locals):
         + ", ".join(cold[:4])
         + ") · set OLLAMA_KEEP_ALIVE=-1 on the Ollama launch agent/service — a shell export alone is not enough on macOS"
     )
+
+
+
+def _darwin_probe(argv, timeout=5):
+    """Best-effort Darwin subprocess probe. Returns combined text or None. Never invents."""
+    if platform.system() != "Darwin":
+        return None
+    try:
+        probe = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return ((probe.stdout or "") + "\n" + (probe.stderr or "")).strip()
+
+
+def power_soft_lines(batt_text, low_power=False):
+    """Pure power soft lines from pmset batt text. Never fails doctor."""
+    lines = []
+    raw = (batt_text or "").strip()
+    if not raw:
+        lines.append("power    soft · could not read AC/battery · plug in for Show HN / wake canary")
+        return lines
+    lower = raw.lower()
+    on_batt = ("battery power" in lower) or ("drawing from 'battery" in lower) or ("now drawing from \"battery" in lower)
+    on_ac = ("ac power" in lower) or ("drawing from 'ac" in lower) or ("now drawing from \"ac" in lower) or ("charged" in lower and "ac" in lower)
+    if on_batt and not on_ac:
+        lines.append(
+            "power    soft · on battery · Prefer AC for stable Community advertise · pause-on-battery may skip leases · never fails doctor"
+        )
+    elif not on_ac and not on_batt:
+        lines.append("power    soft · could not read AC/battery · plug in for Show HN / wake canary")
+    if low_power:
+        lines.append("power    soft · Low Power Mode on · Ollama / Metal may throttle · Prefer plug-in for canary")
+    return lines
+
+
+def thermal_soft_lines(therm_text):
+    """Pure thermal soft lines from pmset -g therm. Skip silently when empty/nominal."""
+    raw = (therm_text or "").strip()
+    if not raw:
+        return []
+    lower = raw.lower()
+    # Nominal / empty-ish — no warn
+    if "no thermal warning" in lower or "thermal pressure: nominal" in lower:
+        return []
+    elevated_markers = (
+        "cpu_speed_limit",
+        "thermal pressure: heavy",
+        "thermal pressure: serious",
+        "thermal pressure: critical",
+        "thermal pressure: elevated",
+        "scheduler limit",
+    )
+    # Only warn on known elevated markers — never invent "CPU too hot" from empty/unknown dumps.
+    if any(marker in lower for marker in elevated_markers):
+        return [
+            "thermal  soft · thermal pressure elevated · expect throttle / slower tok/s · Prefer cool + AC · never fails doctor"
+        ]
+    return []
+
+
+def sip_soft_lines(sip_text):
+    """Pure SIP soft lines from csrutil status. Local health only — never attestation."""
+    raw = (sip_text or "").strip()
+    if not raw:
+        return [
+            "sip      soft · SIP disabled or unreadable · local policy may affect Ollama/Metal installs · fix on-device · never fails doctor"
+        ]
+    lower = raw.lower()
+    if "disabled" in lower:
+        return [
+            "sip      soft · SIP disabled or unreadable · local policy may affect Ollama/Metal installs · fix on-device · never fails doctor"
+        ]
+    if "enabled" in lower:
+        return ["sip      ok · SIP enabled · local OS health only — not network attestation"]
+    return [
+        "sip      soft · SIP disabled or unreadable · local policy may affect Ollama/Metal installs · fix on-device · never fails doctor"
+    ]
+
+
+def power_soft_report(*, batt_text=None, low_power=None, force_darwin=None):
+    """Soft warn battery / AC / Low Power. Darwin-first. Never fails doctor."""
+    darwin = platform.system() == "Darwin" if force_darwin is None else bool(force_darwin)
+    if not darwin:
+        return
+    if batt_text is None:
+        batt_text = _darwin_probe(["pmset", "-g", "batt"])
+    if low_power is None:
+        low_power = False
+        pm = _darwin_probe(["pmset", "-g"])
+        if pm:
+            for line in pm.splitlines():
+                if "lowpowermode" in line.lower().replace(" ", ""):
+                    parts = line.split()
+                    if parts and parts[-1] in ("1", "true", "on"):
+                        low_power = True
+                    break
+    for line in power_soft_lines(batt_text, low_power=bool(low_power)):
+        print(line)
+
+
+def thermal_soft_report(*, therm_text=None, force_darwin=None):
+    """Soft warn thermal pressure. Darwin-first. Never fails doctor; skip when unavailable."""
+    darwin = platform.system() == "Darwin" if force_darwin is None else bool(force_darwin)
+    if not darwin:
+        return
+    if therm_text is None:
+        therm_text = _darwin_probe(["pmset", "-g", "therm"])
+        if therm_text is None:
+            return  # probe unavailable — skip silently
+    for line in thermal_soft_lines(therm_text):
+        print(line)
+
+
+def sip_soft_report(*, sip_text=None, force_darwin=None):
+    """Soft SIP / Hardened Runtime friction. Local only — never network attestation / enclave."""
+    darwin = platform.system() == "Darwin" if force_darwin is None else bool(force_darwin)
+    if not darwin:
+        return
+    if sip_text is None:
+        sip_text = _darwin_probe(["csrutil", "status"])
+    for line in sip_soft_lines(sip_text):
+        print(line)
 
 
 def parse_ollama_version(raw):
@@ -389,6 +524,9 @@ def doctor():
     prefer_mlx_report()
     size_soft_report()
     keepalive_soft_report(ready_locals)
+    power_soft_report()
+    thermal_soft_report()
+    sip_soft_report()
     benchmark_path = os.getenv("DASHA_BENCHMARK_PATH")
     has_bench = False
     if benchmark_path:

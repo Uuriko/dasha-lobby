@@ -83,8 +83,15 @@ assert.match(agentSrc, /never fails doctor/);
 assert.match(PROVIDE_SKILL_MD, /soft-hints when a mapped model looks ≥27B/);
 assert.match(PROVIDE_SKILL_MD, /Ollama `\/api\/ps`/);
 assert.match(PROVIDE_SKILL_MD, /Never fails solely for size or keep-alive/);
+assert.match(PROVIDE_SKILL_MD, /OLLAMA_KEEP_ALIVE=-1/);
+assert.match(PROVIDE_SKILL_MD, /Advertising\/heartbeat OK while mid-Ask fails with `provider inference failed: URLError`/);
 assert.match(readme, /mapped ≥27B tags and cold `\/api\/ps` keep-alive/);
 assert.match(readme, /never fails solely for those/);
+assert.match(readme, /OLLAMA_KEEP_ALIVE=-1/);
+assert.match(readme, /Heartbeat advertising can succeed while a mid-Ask \*\*`URLError`\*\*/);
+assert.match(agentSrc, /def power_soft_report/);
+assert.match(agentSrc, /def thermal_soft_report/);
+assert.match(agentSrc, /def sip_soft_report/);
 
 function listen(handler) {
   return new Promise((resolve) => {
