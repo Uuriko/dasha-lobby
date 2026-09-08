@@ -32,6 +32,8 @@ for (const path of HEALTH_PROBES) {
 }
 assert.equal(potterHome308Dest('/compute/api/healthz'), null, '/compute/api/healthz stays 200');
 assert.equal(potterHome308Dest('/compute/api/healthz/'), null, '/compute/api/healthz/ stays API');
+assert.equal(potterHome308Dest('/compute/api/health'), null, '/compute/api/health stays 200 JSON alias');
+assert.equal(potterHome308Dest('/compute/api/health/'), null, '/compute/api/health/ stays API');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.equal(potterHome308Dest('/compute/use'), COMPUTE, '/compute/use still compute tab');
 for (const path of INVENTED) {
@@ -61,6 +63,9 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     } else {
       assert.equal(await health.text(), '');
     }
+    const alias = await edgeWorker.fetch(new Request(`https://${host}/compute/api/health`, { method }), env);
+    assert.equal(alias.status, 200, `${host} /compute/api/health ${method}`);
+    if (method === 'HEAD') assert.equal(await alias.text(), '');
   }
   const compute = await edgeWorker.fetch(new Request(`https://${host}/compute`), env);
   assert.equal(compute.status, 200, `${host} /compute stays 200`);

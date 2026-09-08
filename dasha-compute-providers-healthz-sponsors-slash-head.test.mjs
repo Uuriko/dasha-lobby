@@ -50,7 +50,7 @@ const emptyHead = await network.fetch(new Request('https://lobby.getdasha.com/co
 assert.equal(emptyHead.status, 200);
 assert.equal(await emptyHead.text(), '');
 
-for (const path of ['/compute/api/healthz', '/compute/api/healthz/']) {
+for (const path of ['/compute/api/healthz', '/compute/api/healthz/', '/compute/api/health', '/compute/api/health/']) {
   const get = await pair('lobby.getdasha.com', path);
   assert.equal(get.status, 200, `${path} GET`);
   assert.equal(get.body.ok, true);
@@ -99,6 +99,13 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const healthHead = await worker.fetch(new Request(`https://${host}/compute/api/healthz/`, { method: 'HEAD' }), workerEnv);
   assert.equal(healthHead.status, 200);
   assert.equal(await healthHead.text(), '');
+
+  const healthAlias = await workerPair(host, '/compute/api/health');
+  assert.equal(healthAlias.status, 200, `${host} /compute/api/health GET`);
+  assert.deepEqual(healthAlias.body, health.body, `${host} /health body matches healthz`);
+  const healthAliasHead = await worker.fetch(new Request(`https://${host}/compute/api/health/`, { method: 'HEAD' }), workerEnv);
+  assert.equal(healthAliasHead.status, 200, `${host} /compute/api/health/ HEAD`);
+  assert.equal(await healthAliasHead.text(), '');
 
   const sponsors = await workerPair(host, '/compute/api/sponsors');
   assert.equal(sponsors.status, 200);

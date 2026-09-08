@@ -25,6 +25,8 @@ const STAY_NULL = [
   '/compute/api/status/',
   '/compute/api/healthz',
   '/compute/api/healthz/',
+  '/compute/api/health',
+  '/compute/api/health/',
   '/compute/api/network/',
   '/compute/ocm',
   '/compute/ocm/',
