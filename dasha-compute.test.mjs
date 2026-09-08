@@ -46,7 +46,7 @@ if (existsSync(kit)) {
 }
 assert.match(kitFile('README.md'), /curl -fLO https:\/\/www\.getdasha\.com\/dasha-compute-open-alpha\.tar\.gz/);
 assert.match(kitFile('README.md'), /doctor exits nonzero when the coordinator, Ollama, or any configured model is unavailable/);
-assert.match(kitFile('provider/agent.py'), /dasha-compute-provider\/0\.3/);
+assert.match(kitFile('provider/agent.py'), /dasha-compute-provider\/\{KIT_VERSION\}/, 'UA carries the kit VERSION (0.3 line superseded by v0.3.1)');
 assert.match(kitFile('provider/agent.py'), /models\s+failed · missing:/);
 assert.match(kitFile('provider/agent.py'), /def size_soft_report/);
 assert.match(kitFile('provider/agent.py'), /def keepalive_soft_report/);
@@ -66,7 +66,7 @@ assert.match(kitFile('install.sh'), /DASHA_PROVIDER_KEY_FILE|\.dasha-provider-ke
 assert.match(kitFile('install.sh'), /rm -f "\$KEY_FILE"/);
 assert.doesNotMatch(html, /DASHA_PROVIDER_KEY=/);
 assert.match(html, /\.dasha-provider-key/);
-assert.match(kitFile('provider/dasha-compute'), /status\|doctor\|benchmark\|logs/);
+assert.match(kitFile('provider/dasha-compute'), /status\|doctor\|earnings\|benchmark\|logs/);
 assert.match(kitFile('provider/agent.py'), /--benchmark/);
 assert.doesNotMatch([kitFile('README.md'), kitFile('SECURITY.md'), kitFile('THREAT_MODEL.md'), kitFile('provider/agent.py'), kitFile('coordinator/server.mjs')].join('\n'), /v0\.2|0\.2\.0/);
 const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
