@@ -167,7 +167,7 @@ const secret = 'hosted-denial-honesty-secret';
       },
     },
   };
-  const session = await createSessionToken(env, { xId: 'hosted-sse-throw', handle: 'hosted_sse_throw' });
+  const session = await createSessionToken(env, { xId: 'hosted-sse-throw', handle: 'hosted_throw' });
   const headers = { Cookie: `${COOKIE}=${session}`, Origin: origin, 'Content-Type': 'application/json' };
   const res = await computeApi(new Request('https://lobby.getdasha.com/compute/api/chat', {
     method: 'POST',
