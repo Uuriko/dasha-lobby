@@ -28,7 +28,7 @@ function assertTip(html, label) {
   assert.match(html, /usdc\.textContent='USDC · '\+faceLabel/, `${label} paint USDC face`);
   assert.match(html, /dasha\.textContent='\$dasha · '\+faceLabel/, `${label} paint \$dasha face`);
   assert.match(html, /sponsorOrder\.amount\+' '\+meth\+' · '\+tip\+' → '/, `${label} Send tip → dest`);
-  assert.match(html, /id=["']pay-buy-fine["'][^>]*>\$5 credits · crypto discount · no card yet\.</, `${label} Credits keep crypto discount`);
+  assert.match(html, /id=["']pay-buy-fine["'][^>]*>\$5 credits · crypto discount\.</, `${label} Credits keep crypto discount`);
   assert.match(html, /function paintPayBuyFine\(/, `${label} Credits paintPayBuyFine stays`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 }

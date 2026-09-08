@@ -17,6 +17,14 @@ import {
   verifyCreditTx,
 } from './dasha-compute-credits.mjs';
 import {
+  createCardCheckoutSession,
+  retrieveCardSession,
+  sessionSettlesOrder,
+  stripeConfigured,
+  stripeWebhookConfigured,
+  verifyStripeSignature,
+} from './dasha-compute-card.mjs';
+import {
   PROVIDER_MIN_PAYOUT_CENTS,
   PROVIDER_PAYOUT_MODE,
   PROVIDER_USDC_MINT,
@@ -365,6 +373,7 @@ export function identity(session) {
   if (session?.provider === 'x') return `x:${session.xId}`;
   if (session?.provider === 'wallet') return `wallet:${session.wallet}`;
   if (session?.provider === 'grok' && session.displayName) return `grok:${String(session.displayName).toLowerCase()}`;
+  if (session?.provider === 'email' && session.email) return `email:${session.email}`;
   return '';
 }
 
@@ -1010,7 +1019,7 @@ export class ComputeNetwork {
         const tps = measured.length ? measured.reduce((sum, value) => sum + value, 0) / measured.length : 0;
         return { model, providers: serving.length, measured_providers: measured.length, tokens_per_second: Math.round(tps * 100) / 100 };
       });
-      return maybeHead(request, json({ providers_online: providers.length, models_available: models, capacity, jobs_queued: jobs.filter(job => job.status === 'queued').length }, 200, allowedOrigin || '*', credentials));
+      return maybeHead(request, json({ providers_online: providers.length, models_available: models, capacity, jobs_queued: jobs.filter(job => job.status === 'queued').length, card_available: stripeConfigured(this.env) }, 200, allowedOrigin || '*', credentials));
     }
 
     if ((path === '/compute/api/providers' || path === '/compute/api/providers/') && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -1690,6 +1699,71 @@ export class ComputeNetwork {
       }, 200, allowedOrigin, true);
     }
 
+    if ((path === '/compute/api/credits/card/checkout' || path === '/compute/api/credits/card/checkout/') && request.method === 'POST') {
+      if (!allowedOrigin) return json({ error: 'origin required' }, 403);
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
+      if (!takeRate(this.rates, `credit-card:${owner}`, 6)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
+      if (!stripeConfigured(this.env)) return json({ error: 'card payments unavailable' }, 503, allowedOrigin, true);
+      const input = await body(request);
+      const pack = packById(input.pack);
+      if (!pack) return json({ error: 'pick a pack' }, 400, allowedOrigin, true);
+      const id = `crd_${randomUrlToken(12)}`;
+      const now = Date.now();
+      const session = await createCardCheckoutSession(this.env, {
+        orderId: id,
+        pack,
+        successUrl: `https://www.getdasha.com/compute?card_order=${id}#pay`,
+        cancelUrl: 'https://www.getdasha.com/compute#pay',
+      });
+      if (!session.ok) return json({ error: `card checkout failed - ${session.error || 'try again'}`, provider: 'stripe' }, session.status === 400 ? 400 : 502, allowedOrigin, true);
+      const order = {
+        id,
+        owner,
+        pack: pack.id,
+        method: 'card',
+        face_cents: pack.cents,
+        charge_cents: pack.cents,
+        credits_cents: pack.cents,
+        status: 'pending',
+        stripe_session_id: session.session_id,
+        checkout_url: session.url,
+        createdAt: now,
+        expiresAt: now + CREDIT_ORDER_TTL_MS,
+        paidAt: null,
+      };
+      await this.state.storage.put(`compute:credit-order:${id}`, order);
+      return json({
+        id: order.id,
+        status: order.status,
+        pack: order.pack,
+        method: 'card',
+        credits_cents: order.credits_cents,
+        charge_cents: order.charge_cents,
+        checkout_url: order.checkout_url,
+        expires_at: order.expiresAt,
+      }, 201, allowedOrigin, true);
+    }
+
+    if ((path === '/compute/api/credits/card/webhook' || path === '/compute/api/credits/card/webhook/') && request.method === 'POST') {
+      // Stripe calls this; no session. Raw body is the signed payload - never parse before verify.
+      if (!stripeWebhookConfigured(this.env)) return json({ error: 'card webhook unavailable' }, 503);
+      const raw = await request.text();
+      const verified = await verifyStripeSignature(this.env.STRIPE_WEBHOOK_SECRET, raw, request.headers.get('Stripe-Signature'));
+      if (!verified.ok) return json({ error: verified.error }, verified.status || 400);
+      let event = null;
+      try { event = JSON.parse(raw); } catch { return json({ error: 'bad payload' }, 400); }
+      if (event?.type === 'checkout.session.completed') {
+        const session = event.data?.object || {};
+        const orderId = String(session?.metadata?.order_id || '').trim();
+        const order = orderId ? await this.state.storage.get(`compute:credit-order:${orderId}`) : null;
+        if (order) {
+          await this.settleCardOrder(order, { session, now: Date.now() });
+        }
+      }
+      return json({ received: true }, 200);
+    }
+
     const creditOrderMatch = path.match(/^\/compute\/api\/credits\/orders\/([A-Za-z0-9_-]+)\/?(confirm)?\/?$/);
     if (creditOrderMatch) {
       const orderId = creditOrderMatch[1];
@@ -1703,7 +1777,9 @@ export class ComputeNetwork {
       if (isConfirm) {
         if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, true));
         const input = await body(request);
-        const result = await this.settleCreditOrder(order, { signature: input.signature, now: Date.now() });
+        const result = order.method === 'card'
+          ? await this.settleCardOrder(order, { now: Date.now() })
+          : await this.settleCreditOrder(order, { signature: input.signature, now: Date.now() });
         if (result.error && result.status) return json({ error: result.error, status: order.status, balance_cents: result.balance_cents }, result.status, allowedOrigin, true);
         return json(result.body, 200, allowedOrigin, true);
       }
@@ -1713,6 +1789,12 @@ export class ComputeNetwork {
       if (order.status === 'pending' && Number(order.expiresAt) <= now) {
         order = { ...order, status: 'expired' };
         await this.state.storage.put(key, order);
+      } else if (order.status === 'pending' && order.method === 'card') {
+        const settled = await this.settleCardOrder(order, { now });
+        if (settled.body?.status === 'paid') {
+          return maybeHead(request, json(settled.body, 200, allowedOrigin, true));
+        }
+        order = await this.state.storage.get(key) || order;
       } else if (order.status === 'pending') {
         const settled = await this.settleCreditOrder(order, { now });
         if (settled.body?.status === 'paid') {
@@ -1734,6 +1816,7 @@ export class ComputeNetwork {
         amount: order.amountUi,
         reference: order.reference,
         signature: order.signature || null,
+        checkout_url: order.method === 'card' ? order.checkout_url || null : undefined,
         expires_at: order.expiresAt,
         ...(balance_cents != null ? { balance_cents } : {}),
       }, 200, allowedOrigin, true));
@@ -1958,6 +2041,68 @@ export class ComputeNetwork {
     }
 
     // Re-read order for race; credit once
+    const fresh = await this.state.storage.get(key);
+    if (!fresh || fresh.owner !== order.owner) return { error: 'order not found', status: 404 };
+    if (fresh.status === 'paid') {
+      return { body: { id: fresh.id, status: 'paid', credits_cents: fresh.credits_cents, signature: fresh.signature, balance_cents: await readBal() } };
+    }
+
+    const prevBal = await readBal();
+    const nextBal = prevBal + Math.floor(Number(fresh.credits_cents) || 0);
+    const paid = { ...fresh, status: 'paid', signature: sig, paidAt: now };
+    await this.state.storage.put(key, paid);
+    await this.state.storage.put(balKey, { owner: fresh.owner, cents: nextBal, updatedAt: now });
+    await this.state.storage.put(sigKey, { orderId: fresh.id, owner: fresh.owner, at: now });
+
+    return {
+      body: {
+        id: paid.id,
+        status: 'paid',
+        credits_cents: paid.credits_cents,
+        signature: sig,
+        balance_cents: nextBal,
+      },
+    };
+  }
+
+  /** Card settle: Stripe session is the proof. Idempotent - webhook + return-poll can race. */
+  async settleCardOrder(order, { session = null, now = Date.now() } = {}) {
+    const key = `compute:credit-order:${order.id}`;
+    const balKey = `compute:credit-balance:${order.owner}`;
+    const readBal = async () => Math.max(0, Math.floor(Number((await this.state.storage.get(balKey))?.cents) || 0));
+
+    if (order.status === 'paid') {
+      return { body: { id: order.id, status: 'paid', credits_cents: order.credits_cents, signature: order.signature, balance_cents: await readBal() } };
+    }
+    if (order.status === 'expired' || Number(order.expiresAt) <= now) {
+      if (order.status !== 'expired') {
+        order = { ...order, status: 'expired' };
+        await this.state.storage.put(key, order);
+      }
+      return { error: 'order expired', status: 410, balance_cents: await readBal() };
+    }
+
+    let settled = session && typeof session === 'object' ? session : null;
+    if (!settled) {
+      if (!stripeConfigured(this.env)) return { body: { id: order.id, status: 'pending', credits_cents: order.credits_cents, expires_at: order.expiresAt } };
+      const got = await retrieveCardSession(this.env, order.stripe_session_id);
+      if (!got.ok) return { body: { id: order.id, status: 'pending', credits_cents: order.credits_cents, expires_at: order.expiresAt } };
+      settled = got.session;
+    }
+    const pack = packById(order.pack);
+    const match = sessionSettlesOrder(settled, order, pack);
+    if (!match.ok) {
+      if (match.pending) return { body: { id: order.id, status: 'pending', credits_cents: order.credits_cents, expires_at: order.expiresAt } };
+      return { error: match.error || 'session mismatch', status: 400, balance_cents: await readBal() };
+    }
+
+    const sig = `card:${settled.id}`;
+    const sigKey = `compute:credit-sig:${sig}`;
+    const prior = await this.state.storage.get(sigKey);
+    if (prior && prior.orderId !== order.id) {
+      return { error: 'session already used', status: 409, balance_cents: await readBal() };
+    }
+
     const fresh = await this.state.storage.get(key);
     if (!fresh || fresh.owner !== order.owner) return { error: 'order not found', status: 404 };
     if (fresh.status === 'paid') {
