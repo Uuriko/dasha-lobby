@@ -201,6 +201,8 @@ footer a:hover{color:var(--paper)}
     <button type="button" class="tf-quiet" id="ask-starter-3" data-prompt="Draft a curl that POSTs JSON to an HTTPS API.">Draft a curl</button>
   </div>
   <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
+  <!-- buyer-live-models:2026-09-08 -->
+  <p class="fine" id="buyer-live-line" aria-live="polite">No Mac online.</p>
   <div class="actions">
     <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
     <a class="primary" id="login" href="/login?return=/compute%23ask">Sign in</a>
@@ -507,6 +509,7 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
       <button class="secondary" id="check" type="button">Run check</button>
     </div>
     <section id="buyer-one-path">
+      <p class="fine" id="buyer-live-line-build" aria-live="polite">No Mac online.</p>
       <p class="fine" id="compat-lead">OpenAI-compatible. Change the base URL.</p>
       <p class="fine" id="build-free-fine">3 free / 10 min · then credits.</p>
       <p class="fine" id="compat-litellm-label">LiteLLM</p>
@@ -2032,8 +2035,22 @@ function paintPresenceActBoot(){
     act.textContent=formatSettledLine();
   }
 }
+function paintBuyerLiveLine(){
+  // Show Live. {models_available ids} only when providers_online>=1 and models_available nonempty.
+  // Else No Mac online. — never invent a model. Hosted Ask path stays. No tok/s. No $0.05/job.
+  const n=Number.isInteger(providersOnline)?providersOnline:0;
+  const ids=[...(networkModels||[])].map(id=>String(id||'').trim()).filter(Boolean);
+  const live=n>=1&&ids.length>0;
+  const text=live?('Live. '+ids.join(' ')):'No Mac online.';
+  for(const id of ['buyer-live-line','buyer-live-line-build']){
+    const el=$(id);
+    if(!el)continue;
+    el.textContent=text;
+  }
+}
 function paintHonestyPanel(){
   paintPresenceActBoot();
+  paintBuyerLiveLine();
   const panel=$('honesty-panel');
   if(!panel)return;
   const onGate=tfStep==='gate';
