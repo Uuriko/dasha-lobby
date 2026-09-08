@@ -56,8 +56,10 @@ assert.match(which, new RegExp(MINT), 'hers mint');
 assert.match(which, new RegExp(OTHER), 'other mint');
 assert.match(which, /"@type":"FAQPage"/, 'FAQPage stays');
 assert.match(which, /jup\.ag\/tokens\/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/, 'jup tokens');
+assert.match(which, /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Provide<\/a><\/p>/, 'quiet Compute Ask/Provide doors');
 assert.doesNotMatch(which, /<form\b/, 'no form');
-assert.doesNotMatch(which, /disclaimer|not financial advice|NFA|dyor/i, 'no disclaimer');
+assert.doesNotMatch(which, /disclaimer|not financial advice|NFA|dyor|not official/i, 'no disclaimer');
+assert.doesNotMatch(which, /\b(?:Macs?|users?|volume)\b/i, 'no invented volume');
 
 const res = await edgeWorker.fetch(new Request('https://www.getdasha.com/which'), {});
 assert.equal(res.status, 200);
@@ -68,6 +70,9 @@ assert.match(body, /<h1>Which \$dasha\?<\/h1>/);
 assert.match(body, /VVAIFU/);
 assert.match(body, new RegExp(MINT));
 assert.match(body, new RegExp(OTHER));
+assert.match(body, /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Provide<\/a><\/p>/, 'served Compute doors');
 assert.doesNotMatch(body, /plugin\.jup\.ag/);
+assert.doesNotMatch(body, /disclaimer|not financial advice|NFA|dyor|not official/i, 'served no disclaimer');
+assert.doesNotMatch(body, /\b(?:Macs?|users?|volume)\b/i, 'served no invented volume');
 
-console.log('dasha-which-og: PASS (identity card dash_eats / Buy $dasha., page still names VVAIFU, no mint lecture)');
+console.log('dasha-which-og: PASS (identity card dash_eats / Buy $dasha., page still names VVAIFU, quiet Compute Ask/Provide doors, no mint lecture)');
