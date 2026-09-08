@@ -63,6 +63,7 @@ dasha-compute status
 
 ## Keep-alive (sub-24GB)
 - Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service — a shell export alone is not enough for the macOS app).
+- A sleeping Mac is offline to buyers: the agent holds `caffeinate -is` while it runs (system sleep prevented on AC; battery can still sleep). For an always-on server Mac, also `sudo pmset -a sleep 0`. Doctor soft-warns when system sleep is enabled.
 - Do not pin 27B on a 16–24GB Air for interactive chat; use 8B/12B.
 - `dasha-compute doctor` soft-hints when a mapped model looks ≥27B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.
 - Advertising/heartbeat OK while mid-Ask fails with `provider inference failed: URLError` → localhost Ollama on `127.0.0.1:11434` was refused/reset. Soft doctor does not block advertise alone — fix Ollama keep-alive / restart service.

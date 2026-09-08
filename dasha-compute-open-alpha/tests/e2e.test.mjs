@@ -256,3 +256,76 @@ test("relays provider deltas as OpenAI-compatible SSE", async (context) => {
   assert.match(events, /"finish_reason":"stop"/);
   assert.match(events, /data: \[DONE\]/);
 });
+
+test("service mode waits for Ollama instead of crash-looping at startup", () => {
+  const probe = `
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("dasha_compute_agent", "provider/agent.py")
+agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(agent)
+agent.MODELS = {"qwen3-8b": "qwen3:8b"}
+agent.time.sleep = lambda *_args, **_kwargs: None
+attempts = {"n": 0}
+def flaky_models():
+    attempts["n"] += 1
+    if attempts["n"] < 3:
+        raise RuntimeError("connection refused")
+    return {"qwen3:8b"}
+agent.installed_models = flaky_models
+held = []
+agent.hold_sleep_assertions = lambda: held.append(True)
+def fake_request(url, **_kwargs):
+    agent.stop(0, None)
+    raise RuntimeError("coordinator down")
+agent.request_json = fake_request
+sys.argv = ["agent.py"]
+agent.main()
+assert attempts["n"] == 3, attempts
+assert held == [True], held
+`;
+  const output = execFileSync("python3", ["-B", "-c", probe], { cwd: new URL("..", import.meta.url), encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  assert.match(output, /provider stopped/);
+});
+
+test("--once still fails loud when Ollama is down", () => {
+  const probe = `
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("dasha_compute_agent", "provider/agent.py")
+agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(agent)
+agent.MODELS = {"qwen3-8b": "qwen3:8b"}
+agent.time.sleep = lambda *_args, **_kwargs: None
+agent.installed_models = lambda: (_ for _ in ()).throw(RuntimeError("connection refused"))
+sys.argv = ["agent.py", "--once"]
+try:
+    agent.main()
+except SystemExit as exit:
+    assert "Ollama unavailable" in str(exit), exit
+else:
+    raise AssertionError("expected SystemExit")
+`;
+  execFileSync("python3", ["-B", "-c", probe], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
+});
+
+test("sleep soft report warns on enabled system sleep, quiet when disabled", () => {
+  const probe = `
+import contextlib, importlib.util, io, sys
+spec = importlib.util.spec_from_file_location("dasha_compute_agent", "provider/agent.py")
+agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(agent)
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    agent.sleep_soft_report(pm_text="System-wide power settings:\\n sleep\\t\\t10 (minutes)\\n disksleep\\t0\\n", force_darwin=True)
+out = buf.getvalue()
+assert "sleep     soft" in out and "10 min" in out and "caffeinate" in out, out
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    agent.sleep_soft_report(pm_text=" sleep\\t\\t0\\n", force_darwin=True)
+assert "sleep     ok" in buf.getvalue(), buf.getvalue()
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    agent.sleep_soft_report(force_darwin=False)
+assert buf.getvalue() == "", buf.getvalue()
+`;
+  execFileSync("python3", ["-B", "-c", probe], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
+});

@@ -245,6 +245,49 @@ def size_soft_report():
         print(f"size     soft · host ~{mem}GB RAM · large mapped models risk swap/slow · Prefer 8B/12B")
 
 
+def hold_sleep_assertions():
+    """Hold caffeinate -is for this process's lifetime on macOS. -i idle sleep, -s system sleep
+    (AC power only; on battery the Mac can still sleep, which is honest). The -w flag ties the
+    assertions to this pid, so caffeinate exits with the agent - no orphaned assertions, and
+    launchd keeps signaling the agent process directly."""
+    if platform.system() != "Darwin":
+        return None
+    try:
+        return subprocess.Popen(
+            ["/usr/bin/caffeinate", "-is", "-w", str(os.getpid())],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError:
+        return None
+
+
+def sleep_soft_report(*, pm_text=None, force_darwin=None):
+    """Soft warn when system sleep is enabled - a sleeping Mac is offline to buyers. Never fails doctor."""
+    darwin = platform.system() == "Darwin" if force_darwin is None else bool(force_darwin)
+    if not darwin:
+        return
+    if pm_text is None:
+        pm_text = _darwin_probe(["pmset", "-g"])
+    if not pm_text:
+        return
+    for line in pm_text.splitlines():
+        parts = line.split()
+        if parts and parts[0] == "sleep" and len(parts) > 1:
+            try:
+                minutes = int(parts[1])
+            except ValueError:
+                return
+            if minutes > 0:
+                print(
+                    f"sleep     soft · system sleep after {minutes} min - a sleeping Mac is offline to buyers"
+                    " · the agent holds caffeinate while it runs (AC only), or: sudo pmset -a sleep 0"
+                )
+            else:
+                print("sleep     ok · system sleep disabled")
+            return
+
+
 def keepalive_soft_report(ready_locals):
     """Soft Prefer keep-alive when mapped models are cold in Ollama /api/ps. Never fails doctor."""
     if not ready_locals:
@@ -525,6 +568,7 @@ def doctor():
     size_soft_report()
     keepalive_soft_report(ready_locals)
     power_soft_report()
+    sleep_soft_report()
     thermal_soft_report()
     sip_soft_report()
     benchmark_path = os.getenv("DASHA_BENCHMARK_PATH")
@@ -593,14 +637,26 @@ def main():
         raise SystemExit(doctor())
     if args.benchmark:
         raise SystemExit(benchmark())
-    try:
-        available = {public: local for public, local in MODELS.items() if local in installed_models()}
-    except Exception as error:
-        raise SystemExit(f"Ollama unavailable: {error}") from error
-    if not available:
-        raise SystemExit("No configured Ollama model is installed. Run with --doctor for pull commands.")
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
+    available = {}
+    ollama_wait = 1
+    while RUNNING and not available:
+        try:
+            available = {public: local for public, local in MODELS.items() if local in installed_models()}
+            if not available:
+                print("no configured Ollama model is installed yet - run with --doctor for pull commands; waiting", file=sys.stderr)
+        except Exception as error:
+            print(f"Ollama unavailable: {error}; retrying in {ollama_wait}s", file=sys.stderr)
+        if available or args.once:
+            break
+        time.sleep(ollama_wait)
+        ollama_wait = min(ollama_wait * 2, 60)
+    if not available:
+        if args.once:
+            raise SystemExit("Ollama unavailable: no configured model ready. Run with --doctor for pull commands.")
+        raise SystemExit("provider stopped before Ollama became ready")
+    hold_sleep_assertions()
     print(f"dasha-compute provider {PROVIDER_NAME} ({PROVIDER_ID})")
     print("models: " + ", ".join(f"{public} → {local}" for public, local in available.items()))
     backoff = 1
