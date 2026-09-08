@@ -124,6 +124,7 @@ import {
 import { ComputeNetwork, computeApi } from './dasha-compute-network.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
+import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import { isComputeOcmPath, proxyComputeOcm } from './dasha-compute-ocm-proxy.mjs';
@@ -193,6 +194,7 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/bag</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/which</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/verify</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://www.getdasha.com/benchmarks</loc><lastmod>2026-09-08</lastmod></url>
   <url><loc>https://www.getdasha.com/listings</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/listings.json</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/crew</loc><lastmod>2026-09-01</lastmod></url>
@@ -6081,6 +6083,21 @@ function isComputeKitJsonPath(pathname) {
   return pathname === '/compute/kit.json' || pathname === '/compute/kit.json/';
 }
 
+function benchmarksPageResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(BENCHMARKS_PAGE_HTML), {
+    headers: htmlHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=300',
+      'X-Dasha-Edge': 'benchmarks',
+      Link: LLMS_DESCRIBEDBY,
+    }),
+  });
+}
+
+function isBenchmarksPath(pathname) {
+  return ['/benchmarks', '/benchmarks/'].includes(String(pathname || '').toLowerCase());
+}
+
 function computeKitJsonResponse(request) {
   return new Response(request.method === 'HEAD' ? null : JSON.stringify(COMPUTE_KIT_JSON), {
     status: 200,
@@ -10162,6 +10179,9 @@ async function productEdge(request, url, env) {
       if (request.method !== 'GET' && request.method !== 'HEAD') return new Response(null, { status: 405, headers: SECURITY });
       return computeKitJsonResponse(request);
     }
+    if ((request.method === 'GET' || request.method === 'HEAD') && isBenchmarksPath(url.pathname)) {
+      return benchmarksPageResponse(request);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/dasha-compute-open-alpha.tar.gz') {
       return computeKitResponse(request, env);
     }
@@ -11363,6 +11383,9 @@ export default {
       if (request.method !== 'GET' && request.method !== 'HEAD') return new Response(null, { status: 405, headers: SECURITY });
       return computeKitJsonResponse(request);
     }
+    if ((request.method === 'GET' || request.method === 'HEAD') && isBenchmarksPath(url.pathname)) {
+      return benchmarksPageResponse(request);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/dasha-compute-open-alpha.tar.gz') {
       return computeKitResponse(request, env);
     }
@@ -11590,6 +11613,9 @@ export default {
     if (isComputeKitJsonPath(url.pathname)) {
       if (request.method !== 'GET' && request.method !== 'HEAD') return new Response(null, { status: 405, headers: SECURITY });
       return computeKitJsonResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && isBenchmarksPath(url.pathname)) {
+      return benchmarksPageResponse(request);
     }
 
     if (isComputeBadgePath(url.pathname)) {
