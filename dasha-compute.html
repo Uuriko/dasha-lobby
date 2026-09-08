@@ -90,7 +90,8 @@ button:disabled{opacity:.5;cursor:not-allowed}
 #step-night .tf-q{margin-bottom:28px}
 .panel{margin-top:12px}
 .panel[hidden],[hidden]{display:none!important}
-#answer-receipt:not([hidden]){display:block!important}#answer-receipt-note:not([hidden]){display:block!important}
+#answer-receipt:not([hidden]){display:block!important}#answer-receipt-note:not([hidden]){display:block!important}#answer-mac-line:not([hidden]){display:block!important}
+#answer-mac-line a{color:inherit;text-decoration:underline;text-underline-offset:2px}#answer-mac-line a:hover{color:var(--paper)}
 .field{display:grid;gap:7px;margin-top:16px;font-size:12px;font-weight:900;text-transform:uppercase}
 .field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);background:#09080b;color:var(--paper)}
 pre.setup,pre#code,pre#api-key-output,pre#check-result{overflow-x:auto;overflow-y:auto;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0 0;padding:14px;border:1px solid var(--line);background:#09080b;color:#d8cfe0;font:13px/1.55 ui-monospace,monospace;-webkit-overflow-scrolling:touch}
@@ -400,6 +401,8 @@ footer a:hover{color:var(--paper)}
   <h1 class="tf-q" id="answer-title">Answer.</h1>
   <button class="tf-quiet" id="cancel-job" type="button" hidden>Cancel</button>
   <pre class="answer" id="answer" aria-live="polite"></pre>
+  <!-- mac-answered-honesty:2026-09-08 -->
+  <p class="fine" id="answer-mac-line" hidden></p>
   <p class="fine" id="answer-receipt" hidden aria-live="polite"></p>
   <p class="fine" id="answer-receipt-note" hidden aria-live="polite"></p>
   <div class="tf-choices" id="after-answer">
@@ -2215,10 +2218,25 @@ function paintAnswerReceiptNote(routeFace){
     note.hidden=true;note.setAttribute('hidden','');note.textContent='';
   }
 }
+function paintAnswerMacLine(routeFace){
+  const el=$('answer-mac-line');
+  if(!el)return;
+  // Community completed reply only — same routeFace the receipt uses (job route / provider_class / engine).
+  // Never Hosted, Mixture, self, fail, clear, or offline. No invented Mac count / tok/s / users.
+  if(routeFace!=='community'||!lastPaidReceipt||lastAskFailKind){
+    el.hidden=true;el.setAttribute('hidden','');el.replaceChildren();
+    return;
+  }
+  el.hidden=false;el.removeAttribute('hidden');
+  const a=document.createElement('a');
+  a.href='https://www.getdasha.com/compute#provide';
+  a.textContent='Join a Mac';
+  el.replaceChildren(document.createTextNode('A Mac answered. '),a);
+}
 function paintAnswerReceipt(){
   const el=$('answer-receipt');
   if(!el)return;
-  const hide=()=>{el.hidden=true;el.setAttribute('hidden','');el.textContent='';paintAnswerReceiptNote('');};
+  const hide=()=>{el.hidden=true;el.setAttribute('hidden','');el.textContent='';paintAnswerReceiptNote('');paintAnswerMacLine('');};
   const show=(text,routeFace)=>{
     // Keep Answer step open so receipt is actually visible (not only textContent under a hidden step).
     if(tfStep!=='answer')showTf('answer');
@@ -2229,6 +2247,7 @@ function paintAnswerReceipt(){
     el.hidden=false;el.removeAttribute('hidden');
     el.textContent=text;
     paintAnswerReceiptNote(routeFace);
+    paintAnswerMacLine(routeFace);
   };
   const r=lastPaidReceipt;
   if(!r){hide();return}
