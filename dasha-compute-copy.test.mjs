@@ -15,6 +15,7 @@ assert.match(script, /execCommand\('copy'\)/);
 assert.match(script, /Promise\.race/);
 assert.match(script, /selectNodeContents/);
 assert.match(html, /Copy curl|data-copy=["']code["']/);
+assert.match(html, /data-copy=["']code-openai["']/);
 assert.match(html, /data-copy=["']code-litellm["']/);
 assert.match(html, /data-copy=["']code-langchain["']/);
 assert.match(html, /data-copy=["']code-n8n["']/);
