@@ -15,6 +15,7 @@ import edgeWorker, {
   listingsJsonBody,
   orderHomeLongPage,
   potterHome308Dest,
+  resetListingsMarketCacheForTest,
 } from './dasha-lobby-worker.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -56,10 +57,21 @@ assert.match(listings, /geckoterminal\.com\/solana\/pools\//);
 assert.match(listings, /<!-- listings-coingecko-venue:2026-09-07 -->/);
 assert.match(listings, /coingecko\.com\/en\/coins\/dash_eats/);
 assert.match(listings, /trade\.phantom\.com\/token\//);
+assert.match(listings, /<!-- listings-board:2026-09-08 -->/);
+assert.match(listings, /<section id="board"/);
+assert.match(listings, /<th>#<\/th><th>Coin<\/th><th>Price<\/th><th>24h<\/th><th>Volume<\/th><th>Mcap<\/th><th>Liq<\/th>/);
+assert.match(listings, /<!-- listings-board-rows -->/);
+assert.match(listings, /We list <code[^>]*>\$dasha<\/code>\./);
+assert.match(listings, /Solana, live\./);
 assert.doesNotMatch(listings, /plugin\.jup\.ag/);
 assert.doesNotMatch(listings, /Listed on CoinGecko/);
 assert.doesNotMatch(listings, /VVAIFU|FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8/);
 assert.doesNotMatch(listings, /disclaimer|not financial advice|NFA|dyor/i);
+assert.doesNotMatch(listings, /\$[0-9]/, 'template has no invented $ prices');
+{
+  const tbody = (listings.match(/<tbody>([\s\S]*?)<\/tbody>/) || [,'']);
+  assert.doesNotMatch(tbody[1], /<tr/, 'template board has no static rows');
+}
 
 const body = listingsJsonBody();
 assert.equal(body.schema, 'dasha.listings.v0');
@@ -69,6 +81,8 @@ assert.equal(body.listings[0].pair, PAIR);
 assert.equal(body.listings[0].symbol, '$dasha');
 assert.equal(body.listings[0].name, 'dash_eats');
 assert.equal(body.listings[0].status, 'listed');
+assert.ok(Array.isArray(body.market), 'market array on the feed');
+assert.equal(body.market.length, 0, 'sync body does not invent market rows');
 assert.ok(body.venues == null, 'venues live on the featured row');
 const venues = body.listings[0].venues.map((v) => v.id);
 assert.deepEqual(venues, [
@@ -142,6 +156,17 @@ assert.equal(potterHome308Dest('/verify'), null, '/verify is the real verifier p
 }
 
 const env = {};
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, init) => {
+  if (String(url).includes('trending_pools')) {
+    return new Response(JSON.stringify({ data: [] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+  return realFetch(url, init);
+};
+resetListingsMarketCacheForTest();
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   for (const method of ['GET', 'HEAD']) {
     const page = await edgeWorker.fetch(new Request(`https://${host}/listings`, { method }), env);
@@ -155,6 +180,10 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       assert.match(html, /<h1>Dasha List<\/h1>/);
       assert.match(html, new RegExp(MINT));
       assert.match(html, new RegExp(PAIR));
+      assert.match(html, /<!-- listings-coingecko-venue:2026-09-07 -->/);
+      assert.match(html, /<!-- listings-board:2026-09-08 -->/);
+      assert.match(html, /<section id="board"/);
+      assert.match(html, /<th>#<\/th><th>Coin<\/th><th>Price<\/th><th>24h<\/th><th>Volume<\/th><th>Mcap<\/th><th>Liq<\/th>/);
       assert.doesNotMatch(html, /plugin\.jup\.ag/);
     }
 
@@ -169,6 +198,12 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       assert.equal(data.schema, 'dasha.listings.v0');
       assert.equal(data.listings.length, 1);
       assert.equal(data.listings[0].mint, MINT);
+      assert.equal(data.listings[0].status, 'listed');
+      assert.ok(Array.isArray(data.market));
+      for (const row of data.market) {
+        assert.notEqual(row.status, 'listed', 'board rows are not listed');
+        assert.equal(Object.hasOwn(row, 'status'), false, 'board rows omit listed status');
+      }
       assert.doesNotMatch(JSON.stringify(data), /plugin\.jup\.ag/);
     }
   }
@@ -191,4 +226,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   assert.equal(ca.headers.get('location'), `${WWW}/which`, `${host} /ca stays /which`);
 }
 
-console.log('dasha-listings-leftover: PASS (/listings + /listings.json 200, leftover 308s, /market+/ca locks, quiet list-door, no plugin.jup.ag)');
+globalThis.fetch = realFetch;
+resetListingsMarketCacheForTest();
+
+console.log('dasha-listings-leftover: PASS (/listings + /listings.json 200, leftover 308s, /market+/ca locks, quiet list-door, board marker, no plugin.jup.ag)');
