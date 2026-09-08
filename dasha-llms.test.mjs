@@ -79,8 +79,14 @@ assert.match(full, /Ask a Mac:/, 'llms-full names Ask a Mac');
 assert.match(full, /Join a Mac:/, 'llms-full names Join a Mac');
 assert.match(full, /OpenAI-compatible base URL:/, 'llms-full names OpenAI-compatible base URL');
 assert.match(full, /First path: Sign in, create a key, change the base URL\./, 'llms-full first path');
+assert.match(full, /^## Compute buyer FAQ$/m, 'llms-full Compute buyer FAQ');
+assert.match(full, /^How do I ask\? Sign in\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1$/m, 'llms-full FAQ how');
+assert.match(full, /^What is live\? The Mac that is advertising\. Read \/compute\/api\/network\.$/m, 'llms-full FAQ live');
+assert.match(full, /^What if no Mac is online\? Hosted is still there\.$/m, 'llms-full FAQ hosted');
+assert.match(full, /^What does \$0\.05\/job mean\? Provider Earn\. Not the buyer price\.$/m, 'llms-full FAQ earn');
 assert.doesNotMatch(llms, /\$0\.05\/job/, 'llms.txt buyer lines have no provider Earn rate');
-assert.doesNotMatch(full, /\$0\.05\/job/, 'llms-full buyer lines have no provider Earn rate');
+assert.doesNotMatch(llms, /## Compute buyer FAQ/, 'FAQ stays off the short index');
+assert.doesNotMatch(full.split('## Compute buyer FAQ')[0], /\$0\.05\/job/, 'llms-full buyer lines have no provider Earn rate');
 assert.doesNotMatch(llms + full, /Show HN/, 'llms files must not mention Show HN');
 assert.doesNotMatch(llms + full, /always free/i, 'llms files must not name a model as always free');
 assert.doesNotMatch(llms + full, /providers_online=\d/, 'llms files must not invent a Mac count');
@@ -225,7 +231,8 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   }
   assert.doesNotMatch(fullBody, /plugin\.jup\.ag/);
   assert.doesNotMatch(fullBody, /t\.me/);
-  assert.doesNotMatch(fullBody, /\$0\.05\/job/);
+  assert.match(fullBody, /^What does \$0\.05\/job mean\? Provider Earn\. Not the buyer price\.$/m, `${origin}/llms-full.txt FAQ earn`);
+  assert.doesNotMatch(fullBody.split('## Compute buyer FAQ')[0], /\$0\.05\/job/, `${origin}/llms-full.txt buyer lines have no Earn rate`);
   assert.doesNotMatch(fullBody, /Show HN/);
 
   const head = await edgeWorker.fetch(new Request(`${origin}/llms-full.txt`, { method: 'HEAD' }), {});

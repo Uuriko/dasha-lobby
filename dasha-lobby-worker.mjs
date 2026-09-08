@@ -434,6 +434,13 @@ Join a Mac: https://www.getdasha.com/compute#provide
 OpenAI-compatible base URL: https://lobby.getdasha.com/compute/api/v1
 First path: Sign in, create a key, change the base URL.
 
+## Compute buyer FAQ
+
+How do I ask? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1
+What is live? The Mac that is advertising. Read /compute/api/network.
+What if no Mac is online? Hosted is still there.
+What does $0.05/job mean? Provider Earn. Not the buyer price.
+
 Login: Grok Bot first, then X, then wallet. https://www.getdasha.com/login
 
 ## Machine files
