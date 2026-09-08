@@ -58,7 +58,7 @@ assert.ok(llms.includes('/bag'), 'llms.txt lists /bag');
 assert.ok(llms.includes('/listings'), 'llms.txt lists /listings');
 assert.ok(llms.includes('/listings.json'), 'llms.txt lists /listings.json');
 assert.match(full, /^## Dasha List/m, 'llms-full inlines Dasha List');
-for (const path of ['/login', '/contribute', '/bounties', '/crew', '/compute', '/listings']) {
+for (const path of ['/login', '/contribute', '/bounties', '/crew', '/compute', '/benchmarks', '/listings']) {
   assert.ok(llms.includes(path), `llms.txt lists live 200 ${path}`);
   assert.ok(full.includes(`https://www.getdasha.com${path}`), `llms-full lists live 200 ${path}`);
 }
