@@ -128,7 +128,7 @@ assertNoLedeClass(stripHomeLeftoverDashaHomeLedeClass(LIVE), "strip leftover fix
   assert.match(html, /id=["']dasha-home-chrome-hide["']/, "Watch chrome-hide stays");
   assert.match(html, /\.price,#price,\.ticker/, "Watch price/ticker belt stays");
   assert.match(html, /#spark\{display:none!important\}/, "Watch #spark hide stays");
-  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.doesNotMatch(html, /id=["']grok-door["']/, "served home has no grok-door");
   assert.match(html, /id=["']dasha-home-faucet["']/, "HOME_FAUCET_MOUNT stays");
   assert.match(html, /johns-awesome/, "johns-awesome CSS stays");
   assert.doesNotMatch(html, /class=["'][^"']*\bdasha-root\b/, "prior leftover dasha-root class stays dropped");

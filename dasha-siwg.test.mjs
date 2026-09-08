@@ -72,21 +72,43 @@ assert.equal(normalizeGrokPairCode('ABCDEFGH'), 'ABCD-EFGH');
 assert.equal(normalizeGrokPairCode('ILOUXXXX'), '');
 assert.match(mintGrokPairCode(Uint8Array.from([0, 1, 2, 3, 4, 5, 6, 7])), /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/);
 
+function assertNoRayCredit(html, label) {
+  assert.doesNotMatch(html, /Ray Fernando|RayFernando|2092696487637737929|siwg-credit/i, `${label} no Ray credit`);
+}
+
+function assertNavDrop(html, label) {
+  assert.match(html, /<!-- siwg-nav-drop:2026-09-07 -->/, `${label} marker`);
+  assert.match(html, /<details class="nav-drop">/, `${label} details.nav-drop`);
+  assert.doesNotMatch(html, /<details class="nav-drop"[^>]*\bopen\b/, `${label} dropdown closed`);
+  const drop = (html.match(/<details class="nav-drop">[\s\S]*?<\/details>/) || [''])[0];
+  assert.match(drop, /<summary>Menu<\/summary>/, `${label} Menu`);
+  const hrefs = [...drop.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(hrefs, ['/login#grok', '/lobby', '/how-to-buy', '/listings', '/bag'], `${label} menu hrefs`);
+  assert.match(drop, /Sign in with Grok Bot/, `${label} SIWG`);
+  assert.match(drop, />Chat</, `${label} Chat`);
+  assert.match(drop, /href="\/how-to-buy">Buy</, `${label} Buy`);
+  assert.match(drop, /href="\/listings">List</, `${label} List`);
+  assert.match(drop, /href="\/bag">Bag</, `${label} Bag`);
+  assert.doesNotMatch(drop, /\/simp|\/faucet|\/verse|\/learn|\/desk|\/compute/i, `${label} no retired menu doors`);
+  assert.ok(/min-height:44px/.test(html), `${label} 44px menu ink`);
+}
+
+assertNoRayCredit(loginSrc, 'login source');
+assertNoRayCredit(LOGIN_PAGE_HTML, 'LOGIN_PAGE_HTML');
+assertNoRayCredit(SIWG_BUTTON_HTML, 'shared button');
+assert.doesNotMatch(workerSrc, /Ray Fernando|RayFernando|2092696487637737929/, 'worker source no Ray credit');
+
 {
   const html = orderHomeLongPage('<main><header id="content">hero</header><section id="grwm">GRWM</section></main>');
-  const grokAt = html.indexOf('id="grok-door"');
   const listAt = html.indexOf('id="list-door"');
   const grwmAt = html.indexOf('id="grwm"');
   const chatAt = html.indexOf('id="chat-door"');
   const simpAt = html.indexOf('id="simp-door"');
   assert.ok(chatAt >= 0 && simpAt > chatAt, 'chat then simp');
   assert.ok(grwmAt > simpAt, 'grwm after first-paint doors');
-  assert.ok(grokAt > grwmAt, 'grok-door after grwm');
-  assert.ok(listAt > grokAt, 'quiet list-door after grwm + grok');
-  assert.match(html, /<p class="section-kicker">Grok Bot<\/p>/);
-  assert.match(html, /<h2 class="section-title" id="grok-title">Sign in with Grok Bot\.<\/h2>/);
-  assert.match(html, /Ray Fernando/);
-  assert.match(html, /2092696487637737929/);
+  assert.ok(listAt > grwmAt, 'quiet list-door after grwm');
+  assert.doesNotMatch(html, /id=["']grok-door["']/, 'no mid-page grok-door');
+  assertNoRayCredit(html, 'orderHomeLongPage');
   assert.doesNotMatch(html, /generational wealth/i);
   const firstPaint = html.slice(0, grwmAt);
   assert.doesNotMatch(firstPaint, /id="grok-door"/);
@@ -125,6 +147,22 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com', 
   assert.equal(login.headers.get('x-dasha-edge'), 'login');
   const body = await login.text();
   assertSiwgMarkup(body, 'served /login');
+  assertNoRayCredit(body, 'served /login');
+}
+
+{
+  const home = await edgeWorker.fetch(new Request('https://www.getdasha.com/'), {});
+  assert.equal(home.status, 200);
+  const html = await home.text();
+  assert.doesNotMatch(html, /id=["']grok-door["']/, 'served home no grok-door');
+  assertNoRayCredit(html, 'served home');
+  assertNavDrop(html, 'served home');
+  const grwmAt = html.indexOf('id="grwm"');
+  const firstPaint = grwmAt >= 0 ? html.slice(0, grwmAt) : html;
+  assert.match(firstPaint, /\$<b>dasha<\/b>/, 'first paint wordmark');
+  assert.match(firstPaint, />Buy</, 'first paint Buy chip');
+  assert.match(firstPaint, /<details class="nav-drop">/, 'first paint closed Menu');
+  assert.doesNotMatch(firstPaint, /id=["']grok-door["']/, 'first paint no grok-door section');
 }
 
 {
@@ -255,4 +293,4 @@ assert.match(workerSrc, /provider: 'grok'/);
   assert.doesNotMatch(wrangler, /"pattern": "getdasha\.com\/\*"/, 'apex catch-all would steal Webflow');
 }
 
-console.log('dasha-siwg: PASS (login SIWG, /siwg 308 login#grok, grok-door after grwm, well-known incl apex host, path-only apex route, start→verify→status ok, no twimg)');
+console.log('dasha-siwg: PASS (login SIWG, /siwg 308 login#grok, SIWG in closed top Menu, no Ray Fernando, no grok-door, well-known incl apex host, path-only apex route, start→verify→status ok, no twimg)');

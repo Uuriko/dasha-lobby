@@ -62,6 +62,17 @@ function withoutWhichDoor(html) {
   return String(html).replace(/<section\b[^>]*\bid=["']which-door["'][^>]*>[\s\S]*?<\/section>/i, '');
 }
 
+function assertNavDrop(html, label) {
+  assert.match(html, /<!-- siwg-nav-drop:2026-09-07 -->/, `${label} marker`);
+  assert.match(html, /<details class="nav-drop">/, `${label} details.nav-drop`);
+  assert.doesNotMatch(html, /<details class="nav-drop"[^>]*\bopen\b/, `${label} dropdown closed`);
+  const drop = (html.match(/<details class="nav-drop">[\s\S]*?<\/details>/) || [''])[0];
+  assert.match(drop, /<summary>Menu<\/summary>/, `${label} Menu`);
+  const hrefs = [...drop.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(hrefs, ['/login#grok', '/lobby', '/how-to-buy', '/listings', '/bag'], `${label} menu hrefs`);
+  assert.doesNotMatch(drop, /\/simp|\/faucet|\/verse|\/learn|\/desk|\/compute/i, `${label} no retired menu doors`);
+}
+
 function assertHomeContract(html, label) {
   assert.match(html, /id=["']chat-door["']/, `${label} chat-door`);
   assert.match(html, /id=["']simp-door["']/, `${label} simp`);
@@ -73,13 +84,13 @@ function assertHomeContract(html, label) {
   assert.doesNotMatch(html, /Try the console/, `${label} no Try the console`);
   assert.doesNotMatch(html, /<nav class="dasha-nav">/, `${label} no leftover dasha-nav`);
   assert.doesNotMatch(html, /<nav class="nav wrap"/, `${label} no leftover wrap nav`);
+  assert.doesNotMatch(html, /id=["']grok-door["']/, `${label} no grok-door`);
+  assert.doesNotMatch(html, /Ray Fernando|RayFernando|2092696487637737929/i, `${label} no Ray credit`);
   const paint = firstPaint(html);
   assert.match(paint, /id=["']chat-door["']/, `${label} chat on first paint`);
   assert.doesNotMatch(paint, /id=["']chess-door["']/, `${label} no chess on first paint`);
+  assert.doesNotMatch(paint, /id=["']grok-door["']/, `${label} no grok-door on first paint`);
   assert.doesNotMatch(withoutWhichDoor(paint), /VVAIFU|Not CoinGecko/i, `${label} no other-coin lecture on first paint`);
-  const grokAt = html.indexOf('id="grok-door"');
-  const grwmAt = html.indexOf('id="grwm"');
-  assert.ok(grokAt > grwmAt, `${label} grok-door AFTER grwm`);
 }
 
 // --- failing fixture: the 5:50 PM PT live rollback ---
@@ -97,6 +108,7 @@ assert.doesNotMatch(keptEmbed, /\/dasha|\/desk|\/studio/);
 
 const transformed = stripHomeOtherCoinWarning(stripDeadNav(BROKEN_LIVE_HOME));
 assertHomeContract(transformed, 'stripDeadNav+other-coin');
+assertNavDrop(transformed, 'stripDeadNav+other-coin');
 
 const ordered = orderHomeLongPage('<main><header id="content">hero</header><section id="grwm">GRWM</section></main>');
 assertHomeContract(ordered, 'orderHomeLongPage');
@@ -104,7 +116,8 @@ assertHomeContract(ordered, 'orderHomeLongPage');
 const taped = applyDigestTape(transformed, homeTapeItems(DEFAULT.items));
 assert.match(taped, /id=["']dasha-digest["']/, 'home tape lands');
 assert.ok(taped.indexOf('id="dasha-digest"') > taped.indexOf('id="grwm"'), 'tape AFTER grwm');
-assert.ok(taped.indexOf('id="dasha-digest"') > taped.indexOf('id="grok-door"'), 'tape AFTER grok-door');
+assert.doesNotMatch(taped, /id=["']grok-door["']/, 'tape home has no grok-door');
+assertNavDrop(taped, 'taped home');
 assert.doesNotMatch(firstPaint(taped), /id=["']dasha-digest["']/, 'first paint no tape');
 assert.doesNotMatch(withoutWhichDoor(firstPaint(taped)), /VVAIFU/, 'first paint still no VVAIFU outside which-door');
 assert.match(firstPaint(taped), /id=["']chat-door["']/, 'first paint still chat-door');
@@ -413,7 +426,10 @@ assert.match(loginSrc, /data-grok-login/);
 assert.match(loginSrc, /Sign in with Grok Bot/);
 const methods = loginSrc.split('data-login-methods')[1] || '';
 assert.ok(methods.indexOf('data-grok-login') < methods.indexOf('data-x-login'), 'SIWG first button');
-assert.match(workerSrc, /id=["']grok-door["']/);
+assert.match(workerSrc, /siwg-nav-drop:2026-09-07/);
+assert.match(workerSrc, /details class="nav-drop"/);
+assert.doesNotMatch(workerSrc, /Ray Fernando|RayFernando|2092696487637737929/);
+assert.doesNotMatch(loginSrc, /Ray Fernando|RayFernando|2092696487637737929|siwg-credit/);
 assert.match(workerSrc, /\/auth\/grok\/start/);
 assert.match(workerSrc, /\.well-known\/grok-bot\.json/);
 {

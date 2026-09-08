@@ -98,7 +98,7 @@ assert.doesNotMatch(injected, /plugin\.jup\.ag/);
   assert.match(html, /#spark\{display:none!important\}/, "Watch #spark hide stays");
   assert.match(html, /id=["']chat-door["']/, "chat-door stays");
   assert.match(html, /id=["']simp-door["']/, "simp-door stays");
-  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.doesNotMatch(html, /id=["']grok-door["']/, "served home has no grok-door");
   assert.match(html, /class=["']pill primary["']/, "simp-door pill stays");
   assert.match(html, /@view-transition/, "@view-transition stays");
   assert.doesNotMatch(html, /window\.Webflow/, "prior leftover Webflow.push stays dropped");

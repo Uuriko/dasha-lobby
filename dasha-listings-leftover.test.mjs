@@ -127,9 +127,8 @@ assert.equal(potterHome308Dest('/verify'), null, '/verify is the real verifier p
   const html = orderHomeLongPage('<main><header id="content">hero</header><section id="grwm">GRWM</section></main>');
   const grwm = html.indexOf('id="grwm"');
   const list = html.indexOf('id="list-door"');
-  const grok = html.indexOf('id="grok-door"');
   assert.ok(grwm >= 0 && list > grwm, 'list-door after #grwm');
-  assert.ok(list > grok, 'quiet list-door after SIWG');
+  assert.doesNotMatch(html, /id=["']grok-door["']/, 'list-door home has no grok-door');
   assert.match(html, /We list \$dasha here/);
   assert.match(html, /href="\/listings"/);
   assert.doesNotMatch(html.slice(0, grwm), /id="list-door"/, 'list-door not first paint');

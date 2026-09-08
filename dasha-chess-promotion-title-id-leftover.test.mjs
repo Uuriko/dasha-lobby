@@ -279,7 +279,7 @@ assertNoPromotionTitleId(polishServedSlim(CHESS_PAGE_HTML), "polished bundled");
   assert.match(html, /\.dasha a,\.dasha strong/, "home mixed .dasha a,.dasha strong stays (separate leftover)");
   assert.match(html, /id=["']chat-door["']/, "chat-door stays");
   assert.match(html, /id=["']simp-door["']/, "simp-door stays");
-  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.doesNotMatch(html, /id=["']grok-door["']/, "served home has no grok-door");
   assert.match(html, /id=["']dasha-home-faucet["']/, "HOME_FAUCET_MOUNT stays");
   assert.match(html, /johns-awesome/, "johns-awesome CSS stays");
   assert.match(html, /@view-transition/, "@view-transition stays");

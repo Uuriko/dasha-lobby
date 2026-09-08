@@ -114,7 +114,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "id drop is per-attr, not eat-the-pag
   assert.match(html, /\.price,#price,\.ticker/, "Watch price/ticker belt stays");
   assert.match(html, /id=["']chat-door["']/, "chat-door stays");
   assert.match(html, /id=["']simp-door["']/, "simp-door stays");
-  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.doesNotMatch(html, /id=["']grok-door["']/, "served home has no grok-door");
   assert.match(html, /johns-awesome-project/, "served johns-awesome stays");
   assert.match(html, /image\/svg\+xml/, "served cherries SVG stays");
   assert.doesNotMatch(html, /\bid=["']forum-play["']/, "prior leftover lobby forum-play id stays dropped");

@@ -92,7 +92,7 @@ assert.ok(gone.length > LIVE.length * 0.4, 'comment drop is per-comment, not eat
   assert.match(html, /rel="canonical"/, 'served canonical link');
   assert.match(html, /id=["']chat-door["']/, 'served chat-door');
   assert.match(html, /id=["']simp-door["']/, 'served simp-door');
-  assert.match(html, /id=["']grok-door["']/, 'served grok-door');
+  assert.doesNotMatch(html, /id=["']grok-door["']/, 'served home has no grok-door');
   assert.match(html, /x-connect\.js/, 'served x-connect.js');
   assert.match(html, /faucet\.js/, 'served faucet.js');
   assert.match(html, /johns-awesome/, 'served johns-awesome');

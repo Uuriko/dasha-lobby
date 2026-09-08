@@ -132,7 +132,7 @@ const rewritten = stripDeadNav(LIVE);
 assert.equal(viewTransitionOnlyStyleCount(rewritten), 0, 'stripDeadNav drops leftover standalone @view-transition style');
 assert.match(rewritten, /@view-transition/, 'rewrite keeps product @view-transition');
 assert.match(rewritten, /id=["']chat-door["']/, 'rewrite keeps chat-door');
-assert.match(rewritten, /id=["']grok-door["']/, 'rewrite keeps grok-door');
+assert.doesNotMatch(rewritten, /id=["']grok-door["']/, 'rewrite has no grok-door');
 assert.doesNotMatch(rewritten, /id=["']compute-door["']/, 'rewrite no compute-door');
 assert.doesNotMatch(rewritten, /plugin\.jup\.ag/, 'rewrite no plugin.jup.ag');
 
@@ -147,7 +147,7 @@ assert.doesNotMatch(rewritten, /plugin\.jup\.ag/, 'rewrite no plugin.jup.ag');
   assert.match(html, /johns-awesome/, 'served johns-awesome');
   assert.match(html, /id=["']chat-door["']/, 'served chat-door');
   assert.match(html, /id=["']simp-door["']/, 'served simp-door');
-  assert.match(html, /id=["']grok-door["']/, 'served grok-door');
+  assert.doesNotMatch(html, /id=["']grok-door["']/, 'served home has no grok-door');
   assert.match(html, /id=["']grwm["']/, 'served GRWM');
   assert.match(html, /id=["']dasha-digest-remount["']/, 'served digest remount');
   assert.match(html, /\/digest\.json/, 'served /digest.json');
