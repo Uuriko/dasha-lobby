@@ -3,6 +3,7 @@
  * Buyer one-path on /compute API: OpenAI-compatible base URL snippets.
  * Quiet first-job checklist: Sign in. / Create a key. / Change the base URL.
  * LiteLLM / LangChain / n8n share lobby v1. $0.05/job stays on Provide, not this block.
+ * Quiet gateways line lives on buyer-one-path (not the first-job checklist, not Ask).
  * Test-only. No wrangler. No Designer. No plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -64,6 +65,22 @@ function assertBuyerOnePath(html, label) {
   assert.match(block, /id=["']compat-n8n-label["'][^>]*>n8n</, `${label} n8n label`);
   assert.ok(block.includes(`OpenAI node · base URL\n${BASE}`), `${label} n8n base URL`);
   assert.match(block, /data-copy=["']code-n8n["'][^>]*>Copy n8n</, `${label} Copy n8n`);
+  assert.match(
+    block,
+    /id=["']buyer-gateways["'][^>]*>For gateways\. <a href=["']mailto:potter@trydemigod\.com["']>potter@trydemigod\.com<\/a><\/p>/,
+    `${label} For gateways. potter@trydemigod.com`,
+  );
+  assert.equal((block.match(/potter@trydemigod\.com/g) || []).length, 2, `${label} potter email once (href + text)`);
+  const emails = [...block.matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)].map((m) => m[0]);
+  assert.deepEqual([...new Set(emails)], ['potter@trydemigod.com'], `${label} no invented email`);
+  assert.doesNotMatch(block, /<form\b/i, `${label} no form`);
+
+  const askStart = html.indexOf('id="step-ask"');
+  const askEnd = html.indexOf('id="step-market"', askStart);
+  assert.ok(askStart >= 0 && askEnd > askStart, `${label} Ask bounds`);
+  const ask = html.slice(askStart, askEnd);
+  assert.doesNotMatch(ask, /\$0\.05\/job/, `${label} no \$0.05/job on Ask`);
+  assert.doesNotMatch(ask, /For gateways|potter@trydemigod/, `${label} gateways line stays off Ask`);
 
   assert.doesNotMatch(block, /\$0\.05\/job/, `${label} no provider payout on buyer block`);
   assert.doesNotMatch(block, /\$0\.01\/1k/, `${label} no provider token rate on buyer block`);
@@ -120,8 +137,11 @@ if (puppeteer && existsSync(chrome)) {
       n8n: document.getElementById('code-n8n')?.textContent || '',
       block: document.getElementById('buyer-one-path')?.innerText || '',
       job: document.getElementById('buyer-first-job')?.innerText || '',
+      gateways: document.getElementById('buyer-gateways')?.textContent || '',
+      mailto: document.querySelector('#buyer-gateways a')?.getAttribute('href') || '',
       signin: document.querySelector('#buyer-first-job a')?.getAttribute('href') || '',
       lines: [...document.querySelectorAll('#buyer-first-job p')].map((p) => p.textContent),
+      askStep: document.getElementById('step-ask')?.innerText || '',
     }));
     assert.equal(first.lead, 'OpenAI-compatible. Change the base URL.');
     assert.deepEqual(first.lines, ['Sign in.', 'Create a key.', 'Change the base URL.']);
@@ -133,6 +153,11 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(first.litellm, `api_base = "${BASE}"`);
     assert.equal(first.langchain, `ChatOpenAI(openai_api_base="${BASE}")`);
     assert.equal(first.n8n, `OpenAI node · base URL\n${BASE}`);
+    assert.equal(first.gateways, 'For gateways. potter@trydemigod.com');
+    assert.equal(first.mailto, 'mailto:potter@trydemigod.com');
+    assert.doesNotMatch(first.job, /For gateways|potter@trydemigod/);
+    assert.doesNotMatch(first.askStep, /\$0\.05\/job/);
+    assert.doesNotMatch(first.askStep, /For gateways|potter@trydemigod/);
     assert.doesNotMatch(first.block, /\$0\.05\/job/);
 
     const painted = await page.evaluate(() => {
