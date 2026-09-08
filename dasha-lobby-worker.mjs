@@ -302,6 +302,9 @@ contribute https://www.getdasha.com/contribute
 bounties https://www.getdasha.com/bounties
 crew https://www.getdasha.com/crew
 compute https://www.getdasha.com/compute
+Ask a Mac https://www.getdasha.com/compute#ask
+Join a Mac https://www.getdasha.com/compute#provide
+OpenAI-compatible base URL https://lobby.getdasha.com/compute/api/v1
 associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump
 pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7
 CoinGecko dash_eats https://www.coingecko.com/en/coins/dash_eats
@@ -320,6 +323,9 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Bounties](https://www.getdasha.com/bounties)
 - [Crew](https://www.getdasha.com/crew)
 - [Compute](https://www.getdasha.com/compute)
+- [Ask a Mac](https://www.getdasha.com/compute#ask)
+- [Join a Mac](https://www.getdasha.com/compute#provide)
+- [OpenAI-compatible base URL](https://lobby.getdasha.com/compute/api/v1)
 - [CoinGecko dash_eats](https://www.coingecko.com/en/coins/dash_eats)
 - [Jupiter](https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump)
 
@@ -328,6 +334,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Full text](https://www.getdasha.com/llms-full.txt)
 
 Grok Bot compatible. Login https://www.getdasha.com/login
+First path: Sign in, create a key, change the base URL.
 `;
 
 const AI_TXT = `# $dasha
@@ -422,6 +429,10 @@ Contribute: Build Dasha. Open a pull request. https://www.getdasha.com/contribut
 Crew: five jobs. You keep the keys. https://www.getdasha.com/crew
 
 Compute: Start. (Ask / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Sponsor. Credits → balance + Use. Ask → Hosted. Quiet Marketplace / Host. https://www.getdasha.com/compute
+Ask a Mac: https://www.getdasha.com/compute#ask
+Join a Mac: https://www.getdasha.com/compute#provide
+OpenAI-compatible base URL: https://lobby.getdasha.com/compute/api/v1
+First path: Sign in, create a key, change the base URL.
 
 Login: Grok Bot first, then X, then wallet. https://www.getdasha.com/login
 
