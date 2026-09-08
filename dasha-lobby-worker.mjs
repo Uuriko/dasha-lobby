@@ -4117,7 +4117,14 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/hi",
   "/compute/hi/",
   "/compute/welcome",
-  "/compute/welcome/"
+  "/compute/welcome/",
+  // Retired Studio leftover under Compute (2026-09-07 hop DOWN):
+  // live /compute/studio (+slash / Title-case) html-404 nofollow while
+  // /studio already 308→/ and /compute is 200. Fold to /compute.
+  // Do not restore Studio. Skip /arcade /multichain /room /x402.
+  // Never fold /price or /privacy.
+  "/compute/studio",
+  "/compute/studio/"
   // /status|/health|/healthz|/v1|/openai|/x402 — those stay intentional skips).
 ]);
 const POTTER_PLAIN_LOGIN_308_PATHS = new Set([
