@@ -53,8 +53,11 @@ assert.match(listings, /dexscreener\.com\/solana\/9KkDpvUQRqXjiuyMFcy1CwqrxLwDcG
 assert.match(listings, /birdeye\.so\/token\//);
 assert.match(listings, /pump\.fun\/coin\//);
 assert.match(listings, /geckoterminal\.com\/solana\/pools\//);
+assert.match(listings, /<!-- listings-coingecko-venue:2026-09-07 -->/);
+assert.match(listings, /coingecko\.com\/en\/coins\/dash_eats/);
 assert.match(listings, /trade\.phantom\.com\/token\//);
 assert.doesNotMatch(listings, /plugin\.jup\.ag/);
+assert.doesNotMatch(listings, /Listed on CoinGecko/);
 assert.doesNotMatch(listings, /VVAIFU|FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8/);
 assert.doesNotMatch(listings, /disclaimer|not financial advice|NFA|dyor/i);
 
@@ -76,8 +79,12 @@ assert.deepEqual(venues, [
   'birdeye',
   'pump',
   'geckoterminal',
+  'coingecko',
   'phantom',
 ]);
+const gecko = body.listings[0].venues.find((v) => v.id === 'coingecko');
+assert.equal(gecko.name, 'CoinGecko');
+assert.equal(gecko.href, 'https://www.coingecko.com/en/coins/dash_eats');
 for (const v of body.listings[0].venues) {
   assert.doesNotMatch(v.href, /plugin\.jup\.ag/);
 }
