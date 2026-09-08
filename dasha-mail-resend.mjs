@@ -19,7 +19,7 @@ function asList(value) {
   const one = String(value || "").trim();
   return one ? [one] : [];
 }
-async function sendResendMail(env, opts = {}) {
+export async function sendResendMail(env, opts = {}) {
   const key = String(env?.RESEND_API_KEY || "").trim();
   if (!key) return { ok: false, error: "resend unset", status: 503 };
   const to = asList(opts.to);

@@ -36,6 +36,7 @@ import {
   createSessionToken,
   createWalletSessionToken,
   createGrokSessionToken,
+  createEmailSessionToken,
   authSessionFromRequest,
   sessionFromRequest,
   cookieHeader,
@@ -287,7 +288,7 @@ import {
   validateReport,
   visibleReplies,
 } from './dasha-forum.mjs';
-import { handleMailSmoke, isMailSmokePath } from './dasha-mail-resend.mjs';
+import { handleMailSmoke, isMailSmokePath, sendResendMail } from './dasha-mail-resend.mjs';
 
 const LLMS_TXT = `# $dasha is dash_eats on Solana
 
@@ -5614,6 +5615,15 @@ function simpRate(map, key, maxPerMin) {
   return checkRate(state, Date.now(), { rateMs: 0, maxPerMin });
 }
 
+async function emailLoginCodeHash(email, nonce, code) {
+  const dig = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`email-login:${email}:${nonce}:${code}`));
+  return [...new Uint8Array(dig)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+function isLoginEmail(value) {
+  const email = String(value || '').trim().toLowerCase();
+  return email.length <= 254 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? email : null;
+}
+
 function countMetric(object, key) {
   object[key] = (object[key] || 0) + 1;
 }
@@ -7522,6 +7532,69 @@ export class DashaLobby {
       });
     }
 
+    if (path === '/auth/email/start') {
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+      if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'email login unavailable' }, 503, allowedOrigin, cred);
+      if (!String(this.env.RESEND_API_KEY || '').trim()) return json({ error: 'email login unavailable' }, 503, allowedOrigin, cred);
+      const email = isLoginEmail((await requestJson(request)).email);
+      if (!email) return json({ error: 'valid email required' }, 400, allowedOrigin, cred);
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const ipAllowed = simpRate(this.simpRates, `email-login-ip:${ip}`, 12);
+      if (!ipAllowed.ok) return json({ error: 'email login rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      const emailAllowed = simpRate(this.simpRates, `email-login-start:${email}`, 4);
+      if (!emailAllowed.ok) return json({ error: 'email login rate limited', waitMs: emailAllowed.waitMs }, 429, allowedOrigin, cred);
+      const now = Date.now();
+      const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+      const nonce = randomUrlToken(16);
+      const expiresAt = now + 10 * 60_000;
+      const codeHash = await emailLoginCodeHash(email, nonce, code);
+      const saved = await this.state.storage.get('emailLogins');
+      const live = Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {})
+        .filter(([, row]) => Number(row?.exp) > now));
+      live[email] = { codeHash, nonce, exp: expiresAt, attempts: 0 };
+      const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 200));
+      const sent = await sendResendMail(this.env, {
+        to: email,
+        subject: 'Your Dasha sign-in code',
+        text: `Your Dasha sign-in code is ${code}. It expires in 10 minutes. If you did not ask for it, ignore this email.`,
+        tags: [{ name: 'kind', value: 'email-login' }],
+        idempotencyKey: `email-login/${nonce}`,
+      });
+      if (!sent.ok) return json({ error: 'email send failed - no code was stored', provider: sent.provider || 'resend' }, 502, allowedOrigin, cred);
+      await this.state.storage.put('emailLogins', bounded);
+      return json({ ok: true, expiresIn: 600 }, 200, allowedOrigin, cred);
+    }
+
+    if (path === '/auth/email/verify') {
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+      const body = await requestJson(request);
+      const email = isLoginEmail(body.email);
+      const code = String(body.code || '').trim();
+      if (!email || !/^\d{6}$/.test(code)) return json({ error: 'email and 6-digit code required' }, 400, allowedOrigin, cred);
+      const allowed = simpRate(this.simpRates, `email-login-verify:${email}`, 6);
+      if (!allowed.ok) return json({ error: 'email login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      const logins = await this.state.storage.get('emailLogins');
+      const pending = logins && typeof logins === 'object' ? logins[email] : null;
+      if (!pending || Number(pending.exp) < Date.now()) return json({ error: 'code expired - request a new one' }, 409, allowedOrigin, cred);
+      if (Number(pending.attempts) >= 5) return json({ error: 'too many tries - request a new code' }, 429, allowedOrigin, cred);
+      const candidate = await emailLoginCodeHash(email, pending.nonce, code);
+      if (candidate !== pending.codeHash) {
+        pending.attempts = Number(pending.attempts || 0) + 1;
+        await this.state.storage.put('emailLogins', logins);
+        return json({ error: 'wrong code' }, 401, allowedOrigin, cred);
+      }
+      delete logins[email];
+      if (Object.keys(logins).length) await this.state.storage.put('emailLogins', logins);
+      else await this.state.storage.delete('emailLogins');
+      const token = await createEmailSessionToken(this.env, email);
+      return json({ ok: true, provider: 'email' }, 200, allowedOrigin, {
+        credentials: true,
+        headers: { 'Set-Cookie': cookieHeader(token) },
+      });
+    }
+
     if (path === '/auth/grok/start') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
@@ -9185,6 +9258,7 @@ export class DashaLobby {
       url.pathname.startsWith('/simp/') ||
       url.pathname.startsWith('/auth/wallet/') ||
       url.pathname.startsWith('/auth/grok/') ||
+      url.pathname.startsWith('/auth/email/') ||
       url.pathname.startsWith('/studio/') ||
       url.pathname.startsWith('/chess/') ||
       url.pathname.startsWith('/forum/') ||
@@ -11476,6 +11550,7 @@ export default {
         x: session?.provider === 'x' ? publicLink(session) : null,
         wallet: wallet ? { address: wallet, display: `${wallet.slice(0, 4)}…${wallet.slice(-4)}` } : null,
         grok: session?.provider === 'grok' ? { display: session.displayName || 'Grok Bot' } : null,
+        email: session?.provider === 'email' ? { address: session.email } : null,
       }, 200, allowedOrigin, { credentials: true });
     }
 
@@ -11539,6 +11614,7 @@ export default {
       url.pathname.startsWith('/simp/') ||
       url.pathname.startsWith('/auth/wallet/') ||
       url.pathname.startsWith('/auth/grok/') ||
+      url.pathname.startsWith('/auth/email/') ||
       url.pathname.startsWith('/studio/') ||
       url.pathname.startsWith('/h/') ||
       (url.pathname.startsWith('/forum/') && url.pathname !== '/forum/') ||

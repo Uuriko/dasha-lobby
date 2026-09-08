@@ -255,6 +255,20 @@ export async function createWalletSessionToken(env, publicKey) {
   });
 }
 
+/** Email code login proves control of one inbox. It does not imply an X identity or wallet. */
+export async function createEmailSessionToken(env, email) {
+  const normalized = String(email || '').trim().toLowerCase().slice(0, 254);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalized)) throw new Error('bad email');
+  const now = Date.now();
+  return signPayload(env.LOBBY_SESSION_SECRET, {
+    v: 1,
+    provider: 'email',
+    email: normalized,
+    iat: now,
+    exp: now + SESSION_TTL_MS,
+  });
+}
+
 /** Grok Bot device-code login. displayName is optional and public. */
 export async function createGrokSessionToken(env, displayName) {
   const now = Date.now();
@@ -278,6 +292,11 @@ export async function authSessionFromRequest(env, request) {
   if (payload.provider === 'grok') {
     const displayName = String(payload.displayName || '').trim().slice(0, 48);
     return { provider: 'grok', displayName };
+  }
+  if (payload.provider === 'email') {
+    const email = String(payload.email || '').trim().toLowerCase().slice(0, 254);
+    if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { provider: 'email', email };
+    return null;
   }
   const handle = normalizeHandle(payload.handle);
   if (payload.xId && handle) {

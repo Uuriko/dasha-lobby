@@ -938,12 +938,12 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Log in — $dasha</title>
-  <meta name="description" content="Log in to Dasha with Grok Bot, X, or a Solana wallet.">
+  <meta name="description" content="Log in to Dasha with Grok Bot, X, email, or a Solana wallet.">
   <meta name="robots" content="noindex,follow">
   <meta name="theme-color" content="#070608">
   <style>
     :root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81;--line:rgba(244,237,219,.24)}
-    *{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 70% 15%,rgba(124,77,255,.3),transparent 25rem),var(--ink);color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif}.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:12px 16px;background:var(--acid);color:var(--ink)!important;font-weight:900;text-decoration:none}.skip-link:focus{left:12px;top:12px;outline:3px solid var(--paper);outline-offset:2px}.login{width:min(28rem,100%);padding:28px;border:1px solid var(--line);background:#120c18;box-shadow:10px 10px 0 var(--hot)}.brand{color:var(--acid);font-size:13px;font-weight:900;letter-spacing:.12em;text-decoration:none;text-transform:uppercase}h1{margin:14px 0 8px;font-size:clamp(2.5rem,12vw,4.5rem);line-height:.9;letter-spacing:-.06em}p{margin:0 0 18px;color:rgba(244,237,219,.78)}.methods{display:grid;gap:12px}.button{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border:1px solid var(--paper);border-radius:999px;background:transparent;color:var(--paper);font:900 14px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em;text-decoration:none;cursor:pointer}.button.primary{border-color:var(--acid);background:var(--acid);color:var(--ink);box-shadow:4px 4px 0 var(--hot)}.button:disabled{opacity:.6;cursor:wait}.siwg{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#22d3ee);color:#fff;font:900 15px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em;text-decoration:none;cursor:pointer;box-shadow:0 0 22px rgba(124,58,237,.55),0 0 28px rgba(34,211,238,.4)}.siwg .siwg-icon{width:28px;height:28px;flex:0 0 28px;display:block;border-radius:6px}.siwg:focus-visible{outline:3px solid var(--paper);outline-offset:3px}.siwg[aria-disabled=true]{opacity:.6;cursor:wait}.status{min-height:1.45em;margin:16px 0 0;font-size:14px}.status[data-kind=ok]{color:var(--acid)}.status[data-kind=bad]{color:var(--hot)}.grok-pair{margin:16px 0 0}.grok-code{margin:0 0 8px;color:#fff;font:900 clamp(1.8rem,8vw,2.6rem)/1.05 Arial,Helvetica,sans-serif;letter-spacing:.12em}.grok-say{margin:0;color:rgba(244,237,219,.86)}.note{margin:14px 0 0;font-size:13px}.note a{display:inline-flex;align-items:center;min-height:44px;color:var(--paper)}[hidden]{display:none!important}:focus-visible{outline:3px solid var(--acid);outline-offset:4px}
+    *{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 70% 15%,rgba(124,77,255,.3),transparent 25rem),var(--ink);color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif}.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:12px 16px;background:var(--acid);color:var(--ink)!important;font-weight:900;text-decoration:none}.skip-link:focus{left:12px;top:12px;outline:3px solid var(--paper);outline-offset:2px}.login{width:min(28rem,100%);padding:28px;border:1px solid var(--line);background:#120c18;box-shadow:10px 10px 0 var(--hot)}.brand{color:var(--acid);font-size:13px;font-weight:900;letter-spacing:.12em;text-decoration:none;text-transform:uppercase}h1{margin:14px 0 8px;font-size:clamp(2.5rem,12vw,4.5rem);line-height:.9;letter-spacing:-.06em}p{margin:0 0 18px;color:rgba(244,237,219,.78)}.methods{display:grid;gap:12px}.button{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border:1px solid var(--paper);border-radius:999px;background:transparent;color:var(--paper);font:900 14px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em;text-decoration:none;cursor:pointer}.button.primary{border-color:var(--acid);background:var(--acid);color:var(--ink);box-shadow:4px 4px 0 var(--hot)}.button:disabled{opacity:.6;cursor:wait}.siwg{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#22d3ee);color:#fff;font:900 15px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em;text-decoration:none;cursor:pointer;box-shadow:0 0 22px rgba(124,58,237,.55),0 0 28px rgba(34,211,238,.4)}.siwg .siwg-icon{width:28px;height:28px;flex:0 0 28px;display:block;border-radius:6px}.siwg:focus-visible{outline:3px solid var(--paper);outline-offset:3px}.siwg[aria-disabled=true]{opacity:.6;cursor:wait}.status{min-height:1.45em;margin:16px 0 0;font-size:14px}.status[data-kind=ok]{color:var(--acid)}.status[data-kind=bad]{color:var(--hot)}.grok-pair{margin:16px 0 0}.grok-code{margin:0 0 8px;color:#fff;font:900 clamp(1.8rem,8vw,2.6rem)/1.05 Arial,Helvetica,sans-serif;letter-spacing:.12em}.grok-say{margin:0;color:rgba(244,237,219,.86)}.note{margin:14px 0 0;font-size:13px}.note a{display:inline-flex;align-items:center;min-height:44px;color:var(--paper)}.payout-note{margin:-6px 0 18px;font-size:13px;color:rgba(244,237,219,.55)}.email-form{display:grid;gap:10px}.field{width:100%;min-height:52px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:#0b0710;color:var(--paper);font:16px/1.2 Arial,Helvetica,sans-serif}.field::placeholder{color:rgba(244,237,219,.4)}[hidden]{display:none!important}:focus-visible{outline:3px solid var(--acid);outline-offset:4px}
   </style>
 </head>
 <body>
@@ -951,11 +951,19 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
   <main class="login" id="dasha-login" data-dasha-login>
     <a class="brand" href="https://www.getdasha.com/">$dasha</a>
     <h1>Log in.</h1>
-    <p>Grok Bot, X, or a Solana wallet. One login at a time.</p>
+    <p>Grok Bot, X, email, or a Solana wallet. One login at a time.</p>
+    <p class="payout-note">Providing a Mac? Payout is via Solana wallet.</p>
     <div class="methods" data-login-methods>
       <a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>
       <a class="button primary" href="https://lobby.getdasha.com/oauth/x/start" data-x-login>Continue with X</a>
       <button class="button" type="button" data-wallet-login>Connect wallet</button>
+      <div class="email-form" data-email-form>
+        <input class="field" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" aria-label="Email address" data-email-input>
+        <button class="button" type="button" data-email-send>Email me a sign-in code</button>
+        <input class="field" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" aria-label="Sign-in code" data-email-code hidden>
+        <button class="button primary" type="button" data-email-verify hidden>Sign in</button>
+        <p class="status" data-email-status role="status" aria-live="polite"></p>
+      </div>
     </div>
     <div class="grok-pair" data-grok-pair hidden>
       <p class="grok-code" data-grok-code></p>
@@ -966,6 +974,57 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     <p class="note" data-login-next hidden><a href="/simp#holder">Verify holder perks →</a></p>
     <p class="note"><a href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&amp;buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump">Buy</a> · <a href="https://www.getdasha.com/privacy">Privacy</a></p>
   </main>
+  <script>
+  (function () {
+    var API = 'https://lobby.getdasha.com';
+    var form = document.querySelector('[data-email-form]');
+    if (!form) return;
+    var emailInput = form.querySelector('[data-email-input]');
+    var codeInput = form.querySelector('[data-email-code]');
+    var sendBtn = form.querySelector('[data-email-send]');
+    var verifyBtn = form.querySelector('[data-email-verify]');
+    var status = form.querySelector('[data-email-status]');
+    function say(kind, text) { status.dataset.kind = kind; status.textContent = text; }
+    function fail(msg) { say('bad', msg || 'Something went wrong. Try again.'); }
+    sendBtn.addEventListener('click', function () {
+      var email = emailInput.value.trim();
+      if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
+      sendBtn.disabled = true; say('', 'Sending code...');
+      fetch(API + '/auth/email/start', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) })
+        .then(function (res) { return res.json().then(function (body) { return { status: res.status, body: body }; }); })
+        .then(function (r) {
+          sendBtn.disabled = false;
+          if (r.status === 200 && r.body.ok) {
+            codeInput.hidden = false; verifyBtn.hidden = false; codeInput.focus();
+            say('ok', 'Code sent - check your inbox. It expires in 10 minutes.');
+          } else if (r.status === 503) {
+            fail('Email sign-in is not available yet. Use Grok Bot, X, or a wallet.');
+          } else {
+            fail(r.body && r.body.error ? r.body.error : 'Could not send the code.');
+          }
+        })
+        .catch(function () { sendBtn.disabled = false; fail('Network error - try again.'); });
+    });
+    verifyBtn.addEventListener('click', function () {
+      var email = emailInput.value.trim();
+      var code = codeInput.value.trim();
+      if (!/^\\d{6}$/.test(code)) { fail('Enter the 6-digit code.'); return; }
+      verifyBtn.disabled = true; say('', 'Checking...');
+      fetch(API + '/auth/email/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, code: code }) })
+        .then(function (res) { return res.json().then(function (body) { return { status: res.status, body: body }; }); })
+        .then(function (r) {
+          verifyBtn.disabled = false;
+          if (r.status === 200 && r.body.ok) {
+            say('ok', 'Signed in. Redirecting...');
+            window.location.href = '/contribute';
+          } else {
+            fail(r.body && r.body.error ? r.body.error : 'Sign-in failed.');
+          }
+        })
+        .catch(function () { verifyBtn.disabled = false; fail('Network error - try again.'); });
+    });
+  })();
+  </script>
   <script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
 </body>
 </html>
