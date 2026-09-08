@@ -80,7 +80,7 @@ for (const path of STAY_AS_TODAY) {
 }
 assert.equal(potterHome308Dest('/buy'), HOWTO, '/buy already how-to-buy');
 assert.equal(potterHome308Dest('/Buy'), HOWTO, '/Buy already how-to-buy');
-assert.equal(potterHome308Dest('/verify'), `${WWW}/which`, '/verify still /which');
+assert.equal(potterHome308Dest('/verify'), null, '/verify is the real verifier page now (992/993)');
 assert.equal(potterHome308Dest('/simp/board'), null, '/simp/board stays board API');
 
 const FETCH = [

@@ -44,6 +44,17 @@ import {
   recordSettledInference,
   sumSettled24h,
 } from './dasha-compute-settled.mjs';
+import {
+  HEAD_MAX_AGE_MS,
+  appendChainedReceipt,
+  appendHead,
+  chainTip,
+  headsSigningKey,
+  listChain,
+  listHeads,
+  listHeadsForDay,
+  makeHead,
+} from './dasha-compute-heads.mjs';
 import { X402_BILLING_DOCS, x402BillingDocsLine } from './dasha-compute-x402.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
 
@@ -594,9 +605,22 @@ export class ComputeNetwork {
     return counters;
   }
 
-  /** Paid-inference settle only (credits or community earn). Replay-safe. */
+  /** Paid-inference settle only (credits or community earn). Replay-safe.
+   *  When the heads signing key is configured, every fresh settle also joins the
+   *  signed receipt chain and gets covered by a fresh head. Signing failure never
+   *  breaks the settle - the receipt stays unsigned (honest degradation). */
   async recordPaidInferenceSettle(input = {}) {
-    return recordSettledInference(this.state.storage, input);
+    const res = await recordSettledInference(this.state.storage, input);
+    if (res.ok && !res.replay) {
+      try {
+        const key = await headsSigningKey(this.env);
+        if (key) {
+          const row = await appendChainedReceipt(this.state.storage, key, res.receipt);
+          await appendHead(this.state.storage, await makeHead(key, row.hash));
+        }
+      } catch (e) { /* unsigned settle is better than a failed settle */ }
+    }
+    return res;
   }
   async factoryPayload(now = Date.now()) {
     await this.prune(now);
@@ -1348,6 +1372,40 @@ export class ComputeNetwork {
         anonymous: !!order.anonymous || String(order.owner || '').startsWith('anon:'),
         expires_at: order.expiresAt,
       }, 200, allowedOrigin, true));
+    }
+
+    // --- heads ladder (992/993): public chain read + /heads + /heads/archive ---
+    if ((path === '/compute/api/chain' || path === '/compute/api/chain/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const receipts = await listChain(this.state.storage);
+      return maybeHead(request, json({
+        schema: 'settled.chain.v0',
+        receipts,
+      }, 200, '*', false, { 'Cache-Control': 'no-cache' }));
+    }
+    if ((path === '/heads' || path === '/heads/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const key = await headsSigningKey(this.env);
+      if (!key) return maybeHead(request, json({ error: 'signing not configured' }, 503, '*'));
+      const now = Date.now();
+      // Lazy freshness top-up: cover the current tip when the freshest covering
+      // head is older than the anchored window. Read-triggered, still honest:
+      // a head only ever attests the real current tip at its own ts.
+      const tip = await chainTip(this.state.storage);
+      if (tip !== 'GENESIS') {
+        const recent = await listHeads(this.state.storage, { sinceMs: now - HEAD_MAX_AGE_MS, now });
+        if (!recent.some((h) => h.tip === tip)) {
+          await appendHead(this.state.storage, await makeHead(key, tip));
+        }
+      }
+      const heads = await listHeads(this.state.storage, { sinceMs: now - 86400000, now });
+      return maybeHead(request, json(heads, 200, '*', false, { 'Cache-Control': 'no-cache' }));
+    }
+    const headsArchiveMatch = path.match(/^\/heads\/archive\/(\d{4}-\d{2}-\d{2})\.json$/);
+    if (headsArchiveMatch && (request.method === 'GET' || request.method === 'HEAD')) {
+      const key = await headsSigningKey(this.env);
+      if (!key) return maybeHead(request, json({ error: 'signing not configured' }, 503, '*'));
+      const day = await listHeadsForDay(this.state.storage, headsArchiveMatch[1]);
+      if (day === null) return maybeHead(request, json({ error: 'bad date' }, 400, '*'));
+      return maybeHead(request, json(day, 200, '*', false, { 'Cache-Control': 'public, max-age=3600' }));
     }
 
     // --- provider earnings + payout preference (pending settle; no auto-chain) ---

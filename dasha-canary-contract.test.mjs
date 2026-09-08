@@ -279,10 +279,7 @@ assert.equal(potterHome308Dest('/chess'), null);
 assert.equal(potterHome308Dest('/privacy'), null);
 assert.equal(potterHome308Dest('/how-to-buy'), null);
 for (const path of ['/verify', '/verify/']) {
-  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/which', path);
-  const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
-  assert.equal(res.status, 308, path);
-  assert.equal(res.headers.get('location'), 'https://www.getdasha.com/which', path);
+  assert.equal(potterHome308Dest(path), null, path + ' stays 200 (real verifier page, 992/993)');
 }
 for (const path of ['/ca', '/ca/', '/CA', '/Ca']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/which', path);

@@ -18,13 +18,9 @@ assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 
 
 const WHICH = 'https://www.getdasha.com/which';
 const BAG = 'https://www.getdasha.com/bag';
-const PATHS = [
-  '/verify', '/verify/',
-  '/Verify', '/VERIFY', '/Verify/',
-];
-
-for (const path of PATHS) {
-  assert.equal(potterHome308Dest(path), WHICH, path);
+// Heads ladder (992/993): /verify retired its 308 and is now a real 200 page.
+for (const path of ['/verify', '/verify/', '/Verify', '/VERIFY', '/Verify/']) {
+  assert.equal(potterHome308Dest(path), null, path + ' stays 200 (real verify page)');
 }
 assert.equal(potterHome308Dest('/which'), null, '/which stays 200');
 assert.equal(potterHome308Dest('/auth/grok/verify'), null, 'SIWG verify stays JSON');
@@ -36,9 +32,9 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   for (const path of ['/verify', '/verify/', '/Verify']) {
     for (const method of ['GET', 'HEAD']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
-      assert.equal(res.status, 308, `${host} ${path} ${method}`);
-      assert.equal(res.headers.get('location'), WHICH, `${host} ${path} ${method} loc`);
+      assert.equal(res.status, 200, `${host} ${path} ${method} now the real verify page`);
       if (method === 'HEAD') assert.equal(await res.text(), '');
+      else assert.match(await res.text(), /signed receipt/i, `${host} ${path} serves the verifier`);
     }
   }
   const page = await edgeWorker.fetch(new Request(`https://${host}/which`), env);
@@ -52,6 +48,6 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/which<\/loc>/);
 assert.doesNotMatch(sitemapXml, /getdasha\.com\/ca</);
-assert.doesNotMatch(sitemapXml, /getdasha\.com\/verify</);
+assert.match(sitemapXml, /getdasha\.com\/verify<\/loc>/, 'sitemap lists the real /verify page');
 
-console.log('dasha-ca-which-pretty-path: PASS (/verify family 308 /which www+lobby GET+HEAD, /ca now /which, /which 200, sitemap omits leftover)');
+console.log('dasha-ca-which-pretty-path: PASS (/verify family 200 real page, /ca now /which, /which 200, sitemap lists /verify)');

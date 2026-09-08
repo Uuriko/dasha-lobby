@@ -121,7 +121,7 @@ assert.equal(potterHome308Dest('/Listings.json'), `${WWW}/listings.json`, 'Title
 assert.equal(potterHome308Dest('/market'), `${WWW}/compute`, '/market stays compute');
 assert.equal(potterHome308Dest('/market/'), `${WWW}/compute`, '/market/ stays compute');
 assert.equal(potterHome308Dest('/ca'), `${WWW}/which`, '/ca stays /which');
-assert.equal(potterHome308Dest('/verify'), `${WWW}/which`, '/verify stays /which');
+assert.equal(potterHome308Dest('/verify'), null, '/verify is the real verifier page now (992/993)');
 
 {
   const html = orderHomeLongPage('<main><header id="content">hero</header><section id="grwm">GRWM</section></main>');
