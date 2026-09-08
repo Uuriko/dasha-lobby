@@ -132,7 +132,10 @@ export async function verifyChain(receipts, pemById) {
 export async function verifyHeadsLog(heads, pemById) {
   let prev = 'GENESIS';
   for (const h of heads) {
-    if (String(h?.prev_head_hash || '') !== prev) return { ok: false, why: `heads chain break at ts ${h?.ts}` };
+    const hPrev = String(h?.prev_head_hash || 'GENESIS');
+    // Legacy pre-chain heads (2026-09-07) all carry prev_head_hash='GENESIS':
+    // accept them as explicit chain restarts. Chained heads must link.
+    if (hPrev !== 'GENESIS' && hPrev !== prev) return { ok: false, why: `heads chain break at ts ${h?.ts}` };
     const body = { ts: Math.floor(Number(h?.ts)), tip: String(h?.tip), prev_head_hash: String(h?.prev_head_hash || 'GENESIS') };
     const hash = await sha256Hex(JSON.stringify(body));
     if (hash !== h.hash) return { ok: false, why: `head hash mismatch at ts ${h.ts}` };
@@ -213,7 +216,18 @@ export async function appendHead(storage, head) {
   day.push(head);
   while (day.length > HEAD_DAY_LIMIT) day.shift();
   await storage.put(key, day);
+  await storage.put('compute:heads:tip', String(head.hash));
   return head;
+}
+
+/** Last appended head hash ('GENESIS' when none). Lazily seeds from the newest
+ *  existing head so the first chained head links onto the pre-chain records
+ *  (2026-09-07 heads all carried prev_head_hash='GENESIS'). */
+export async function headsTip(storage) {
+  const stored = await storage.get('compute:heads:tip');
+  if (stored) return String(stored);
+  const recent = await listHeads(storage, {});
+  return recent.length ? String(recent[recent.length - 1].hash) : 'GENESIS';
 }
 
 /** Oldest-first heads with ts >= sinceMs (walks back up to 3 day buckets). */
