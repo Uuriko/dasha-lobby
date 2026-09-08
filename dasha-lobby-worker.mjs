@@ -10151,6 +10151,10 @@ async function productEdge(request, url, env) {
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputePagePath(url.pathname)) {
       return computePageResponse(request);
     }
+    if (isComputeKitJsonPath(url.pathname)) {
+      if (request.method !== 'GET' && request.method !== 'HEAD') return new Response(null, { status: 405, headers: SECURITY });
+      return computeKitJsonResponse(request);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/dasha-compute-open-alpha.tar.gz') {
       return computeKitResponse(request, env);
     }
@@ -11347,6 +11351,10 @@ export default {
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputePagePath(url.pathname)) {
       return computePageResponse(request);
+    }
+    if (isComputeKitJsonPath(url.pathname)) {
+      if (request.method !== 'GET' && request.method !== 'HEAD') return new Response(null, { status: 405, headers: SECURITY });
+      return computeKitJsonResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/dasha-compute-open-alpha.tar.gz') {
       return computeKitResponse(request, env);
