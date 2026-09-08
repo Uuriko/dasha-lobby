@@ -137,7 +137,7 @@ assert.match(homeInjected, /\.price,#price,\.ticker/, "Watch price/ticker belt s
   assert.match(html, /#spark\{display:none!important\}/, "Watch #spark hide stays");
   assert.match(html, /id=["']chat-door["']/, "chat-door stays");
   assert.match(html, /id=["']simp-door["']/, "simp-door stays");
-  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.doesNotMatch(html, /id=["']grok-door["']/, "served home has no grok-door");
   assert.match(html, /@view-transition/, "@view-transition stays");
   assert.doesNotMatch(html, /plugin\.jup\.ag/, "home no plugin.jup.ag");
   assert.doesNotMatch(html, /id=["']compute-door["']/, "no compute-door");

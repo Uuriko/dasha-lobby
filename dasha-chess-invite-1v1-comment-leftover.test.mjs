@@ -198,7 +198,7 @@ assert.equal(stripChessLeftoverInvite1v1Comment(HOME), HOME, "home is not a ches
   assert.match(html, /#spark\{display:none!important\}/, "Watch #spark hide stays");
   assert.match(html, /id=["']chat-door["']/, "chat-door stays");
   assert.match(html, /id=["']simp-door["']/, "simp-door stays");
-  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.doesNotMatch(html, /id=["']grok-door["']/, "served home has no grok-door");
   assert.match(html, /id=["']dasha-home-faucet["']/, "HOME_FAUCET_MOUNT stays");
   assert.match(html, /@view-transition/, "product @view-transition stays");
   assert.match(html, /johns-awesome/, "johns-awesome CSS stays");

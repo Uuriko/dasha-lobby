@@ -329,7 +329,7 @@ assert.doesNotMatch(painted, /installSignin/, 'home rewrite drops leftover hambu
 assert.doesNotMatch(afterStyleScript(painted), /signin-menu/, 'rewrite leftover Sign in gone after style/script strip');
 assert.doesNotMatch(painted, /class=["']w-embed w-script["']/, 'home rewrite unwraps leftover product CSS Webflow wrapper');
 assert.doesNotMatch(afterStyleScript(painted), /w-embed w-script/, 'rewrite leftover w-embed gone after style/script strip');
-assert.match(painted, /id=["']grok-door["']/, 'home rewrite keeps grok-door');
+assert.doesNotMatch(painted, /id=["']grok-door["']/, 'home rewrite has no grok-door');
 assert.match(painted, /x-connect\.js/, 'home rewrite keeps x-connect.js');
 assert.match(painted, /@view-transition/, 'home rewrite keeps product view-transitions');
 assert.match(painted, /<main class="dasha"/, 'home rewrite keeps nested product main');

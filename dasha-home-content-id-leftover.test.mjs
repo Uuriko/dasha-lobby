@@ -94,7 +94,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "id drop is per-attr, not eat-the-pag
   assert.match(html, /\.price,#price,\.ticker/, "Watch price/ticker belt stays");
   assert.match(html, /id=["']chat-door["']/, "chat-door stays");
   assert.match(html, /id=["']simp-door["']/, "simp-door stays");
-  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.doesNotMatch(html, /id=["']grok-door["']/, "served home has no grok-door");
   assert.doesNotMatch(html, /class=["']skip-link["']/, "home skip-link stays dropped");
   assert.doesNotMatch(html, /href=["']#content["']/, "home has no #content skip");
   assert.doesNotMatch(html, /plugin\.jup\.ag/, "home no plugin.jup.ag");

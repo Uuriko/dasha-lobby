@@ -127,7 +127,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "CSS drop is per-token, not eat-the-p
   assert.match(html, /data:image\/svg\+xml/, "served cherries SVG stays");
   assert.match(html, /id=["']chat-door["']/, "chat-door stays");
   assert.match(html, /id=["']simp-door["']/, "simp-door stays");
-  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.doesNotMatch(html, /id=["']grok-door["']/, "served home has no grok-door");
   assert.match(html, /id=["']grwm["']/, "GRWM stays");
   assert.match(html, /id=["']dasha-home-faucet["']/, "HOME_FAUCET_MOUNT stays");
   assert.match(html, /id=["']dasha-digest-remount["']/, "home remount stays");

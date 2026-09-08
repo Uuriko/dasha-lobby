@@ -116,11 +116,11 @@ const taped = applyDigestTape(transformed, homeTapeItems(DEFAULT.items));
 assert.match(taped, /id=["']dasha-digest["']/, 'transformed home has tape');
 assert.match(taped, /id=["']chat-door["']/);
 assert.match(taped, /id=["']grwm["']/);
-assert.match(taped, /id=["']grok-door["']/);
+assert.doesNotMatch(taped, /id=["']grok-door["']/, 'no mid-page grok-door');
+assert.match(taped, /<details class="nav-drop">/, 'SIWG lives in top Menu');
+assert.doesNotMatch(taped, /Ray Fernando|RayFernando/);
 assert.doesNotMatch(taped, /id=["']chess-door["']/);
-assert.ok(taped.indexOf('id="dasha-digest"') > taped.indexOf('id="grok-door"'), 'tape after grok-door');
 assert.ok(taped.indexOf('id="dasha-digest"') > taped.indexOf('id="grwm"'), 'tape after grwm');
-assert.ok(taped.indexOf('id="grok-door"') > taped.indexOf('id="grwm"'), 'grok after grwm');
 const paint = firstPaint(taped);
 assert.doesNotMatch(paint, /id=["']dasha-digest["']/, 'first paint has no tape');
 assert.match(paint, /id=["']chat-door["']/, 'first paint still chat');
@@ -138,7 +138,8 @@ const ordered = applyDigestTape(
   orderHomeLongPage('<main><header id="content">hero</header><section id="grwm">GRWM</section></main>'),
   homeTapeItems(DEFAULT.items),
 );
-assert.ok(ordered.indexOf('id="dasha-digest"') > ordered.indexOf('id="grok-door"'));
+assert.ok(ordered.indexOf('id="dasha-digest"') > ordered.indexOf('id="grwm"'));
+assert.doesNotMatch(ordered, /id=["']grok-door["']/, 'ordered home has no grok-door');
 assert.doesNotMatch(firstPaint(ordered), /id=["']dasha-digest["']/);
 
 assert.match(workerSrc, /homeTapeItems\(\(await publicDigest\(env\)\)\.items\)/);

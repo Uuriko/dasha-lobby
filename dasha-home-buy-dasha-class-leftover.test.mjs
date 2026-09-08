@@ -124,7 +124,7 @@ assertNoBuyDashaClass(stripHomeLeftoverBuyDashaClass(LIVE), "strip leftover fixt
   assert.match(html, /id=["']dasha-home-chrome-hide["']/, "Watch chrome-hide stays");
   assert.match(html, /\.price,#price,\.ticker/, "Watch price/ticker belt stays");
   assert.match(html, /#spark\{display:none!important\}/, "Watch #spark hide stays");
-  assert.match(html, /id=["']grok-door["']/, "grok-door stays");
+  assert.doesNotMatch(html, /id=["']grok-door["']/, "served home has no grok-door");
   assert.match(html, /id=["']dasha-home-faucet["']/, "HOME_FAUCET_MOUNT stays");
   assert.match(html, /johns-awesome/, "johns-awesome CSS stays");
   assert.match(html, /image\/svg\+xml/, "cherries SVG favicon stays");
