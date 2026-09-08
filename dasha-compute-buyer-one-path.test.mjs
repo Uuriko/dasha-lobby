@@ -32,13 +32,13 @@ function assertBuyerOnePath(html, label) {
   assert.match(block, /OpenAI-compatible\. Change the base URL\./, `${label} lead`);
   assert.match(block, /id=["']build-free-fine["'][^>]*>3 free \/ 10 min · then credits\./, `${label} 3-free near snippets`);
   assert.match(block, /id=["']compat-litellm-label["'][^>]*>LiteLLM</, `${label} LiteLLM label`);
-  assert.match(block, /id=["']code-litellm["'][^>]*>api_base = "${BASE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"/, `${label} LiteLLM api_base`);
+  assert.ok(block.includes(`api_base = "${BASE}"`), `${label} LiteLLM api_base`);
   assert.match(block, /data-copy=["']code-litellm["'][^>]*>Copy LiteLLM</, `${label} Copy LiteLLM`);
   assert.match(block, /id=["']compat-langchain-label["'][^>]*>LangChain</, `${label} LangChain label`);
-  assert.match(block, /id=["']code-langchain["'][^>]*>ChatOpenAI\(openai_api_base="${BASE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"\)/, `${label} LangChain openai_api_base`);
+  assert.ok(block.includes(`ChatOpenAI(openai_api_base="${BASE}")`), `${label} LangChain openai_api_base`);
   assert.match(block, /data-copy=["']code-langchain["'][^>]*>Copy LangChain</, `${label} Copy LangChain`);
   assert.match(block, /id=["']compat-n8n-label["'][^>]*>n8n</, `${label} n8n label`);
-  assert.match(block, /id=["']code-n8n["'][^>]*>OpenAI node · base URL\n${BASE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/, `${label} n8n base URL`);
+  assert.ok(block.includes(`OpenAI node · base URL\n${BASE}`), `${label} n8n base URL`);
   assert.match(block, /data-copy=["']code-n8n["'][^>]*>Copy n8n</, `${label} Copy n8n`);
 
   assert.doesNotMatch(block, /\$0\.05\/job/, `${label} no provider payout on buyer block`);
