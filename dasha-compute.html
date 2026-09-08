@@ -410,6 +410,7 @@ footer a:hover{color:var(--paper)}
     <button type="button" class="tf-quiet" id="answer-credits" hidden>Credits</button>
     <!-- midstream-fail-honesty:2026-09-07 -->
     <!-- hosted-denial-honesty:2026-09-07 -->
+    <!-- hosted-ask-unavailable-honesty:2026-09-07 -->
     <!-- usdc-settle-honesty:2026-09-07 -->
     <button type="button" class="tf-quiet" id="answer-retry" hidden data-midstream-fail="1">Retry</button>
   </div>
@@ -1069,7 +1070,12 @@ function paintAskFreeFine(){
   // Hosted floor honesty: 3-free only on Hosted. Community / Prefer / self say so explicitly.
   if(eng==='hosted'){
     el.hidden=false;el.removeAttribute('hidden');
-    el.textContent='3 free / 10 min · then credits.';
+    // After auth: never paint 3-free while Hosted is down. Pre-auth optimistic 3-free stays.
+    if(window.__dashaAuthReady&&hostedLive===false){
+      el.textContent='Hosted · unavailable · try Community.';
+    }else{
+      el.textContent='3 free / 10 min · then credits.';
+    }
     return;
   }
   el.hidden=false;el.removeAttribute('hidden');
@@ -1093,6 +1099,7 @@ function paintAskEngine(){
   }else if(eng==='community')btn.textContent=providersOnline>=1?`Community · ${providersOnline}`:'Community';
   else if(eng==='mixture')btn.textContent='Mixture';
   else if(eng==='self')btn.textContent='My Mac · free';
+  else if(eng==='hosted'&&window.__dashaAuthReady&&hostedLive===false)btn.textContent='Hosted · —';
   else btn.textContent='Hosted';
   btn.setAttribute('aria-label','Change engine');
   if(preferSelf&&(eng==='community'||eng==='mixture')){
@@ -1246,7 +1253,22 @@ function updateRun(){
     }
   }
   const engHost=$('eng-hosted'),engCom=$('eng-community'),engMix=$('eng-mixture'),engSelf=$('eng-self');
-  if(engHost)engHost.textContent='Hosted';
+  if(engHost){
+    // After auth: mute How Hosted when hostedLive===false. Pre-auth optimistic Hosted stays.
+    if(window.__dashaAuthReady&&hostedLive===false){
+      engHost.textContent='Hosted · —';
+      engHost.disabled=true;
+      engHost.setAttribute('aria-disabled','true');
+      engHost.setAttribute('aria-label','Hosted · unavailable');
+      engHost.title='Hosted · unavailable';
+    }else{
+      engHost.textContent='Hosted';
+      engHost.disabled=false;
+      engHost.removeAttribute('aria-disabled');
+      engHost.removeAttribute('title');
+      engHost.setAttribute('aria-label','Hosted');
+    }
+  }
   if(engSelf)engSelf.textContent='My Mac · free';
   if(engCom){
     engCom.textContent=providersOnline>=1?`Community · ${providersOnline}`:'Community';
@@ -1300,6 +1322,7 @@ async function auth(){
   if(pendingAskResumeEngine)applyAskResumeEngine();
   else updateRun();
   if(tfStep==='night')paintNightAuth();
+  if(tfStep==='ask'||tfStep==='how'||tfStep==='model')updateRun();
   if(loggedIn){loadProviders();loadApiKeys();loadCreditsBalance()}
   else {creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;ownMacOnline=0;ownMacKnown=0;ownMacIds=new Set();ownMacModels=new Set();ownMacTps=0;preferSelf=false;clearProvideExpecting();paintCreditsBalance();paintEarn();paintAnswerApi();paintAskMyMac()}
   paintPayMethod();
@@ -1678,7 +1701,7 @@ $('run-demo').addEventListener('click',async()=>{
   }
   finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();$('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
 });
-document.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>setEngine(b.dataset.engine,true)));
+document.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.engine==='hosted'&&window.__dashaAuthReady&&hostedLive===false)return;setEngine(b.dataset.engine,true)}));
 $('model').addEventListener('change',updateRun);
 
 let registeredSetup='';
@@ -2101,6 +2124,7 @@ async function refreshHonesty(){
     hostedLive=status?.live===true;
     $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
     if(tfStep==='night')paintNightAuth();
+    if(tfStep==='ask'||tfStep==='how'||tfStep==='model')updateRun();
   }catch{}
   await loadSettled24h();
   try{
