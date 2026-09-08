@@ -16,6 +16,7 @@ case "${1:-status}" in
     if launchctl print "gui/$(id -u)/$LABEL" >/dev/null 2>&1; then echo "Dasha Compute is running as $DASHA_PROVIDER_ID."; else echo "Dasha Compute is stopped."; exit 1; fi
     ;;
   doctor) run_agent --doctor ;;
+  earnings) shift; run_agent --earnings "$@" ;;
   benchmark) run_agent --benchmark ;;
   logs) exec tail -n 100 -f "$HOME/Library/Logs/Dasha Compute/provider.log" "$HOME/Library/Logs/Dasha Compute/provider-error.log" ;;
   start) launchctl bootstrap "gui/$(id -u)" "$PLIST" 2>/dev/null || true; launchctl kickstart -k "gui/$(id -u)/$LABEL" ;;
@@ -28,5 +29,5 @@ case "${1:-status}" in
     rm -rf "$APP_DIR"
     echo "Dasha Compute was removed; logs remain in ~/Library/Logs/Dasha Compute."
     ;;
-  *) echo "usage: dasha-compute status|doctor|benchmark|logs|start|stop|restart|uninstall" >&2; exit 2 ;;
+  *) echo "usage: dasha-compute status|doctor|earnings|benchmark|logs|start|stop|restart|uninstall" >&2; exit 2 ;;
 esac

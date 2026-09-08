@@ -20,6 +20,62 @@ COORDINATOR = os.getenv("DASHA_COORDINATOR_URL", "http://127.0.0.1:8787").rstrip
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 KEYCHAIN_SERVICE = "com.getdasha.compute.provider"
 
+KIT_TAR_URL = "https://www.getdasha.com/dasha-compute-open-alpha.tar.gz"
+KIT_JSON_URL = "https://www.getdasha.com/compute/kit.json"
+KIT_VERSION_FALLBACK = "0.3.0"
+
+
+def kit_version():
+    env = os.getenv("DASHA_KIT_VERSION")
+    if env and env.strip():
+        return env.strip()
+    here = os.path.dirname(os.path.abspath(__file__))
+    for candidate in (os.path.join(here, "VERSION"), os.path.join(os.path.dirname(here), "VERSION")):
+        try:
+            with open(candidate, encoding="utf-8") as source:
+                value = source.read().strip()
+            if value:
+                return value
+        except OSError:
+            pass
+    return KIT_VERSION_FALLBACK
+
+
+KIT_VERSION = kit_version()
+
+
+def parse_version(value):
+    parts = []
+    for piece in str(value or "").strip().split("."):
+        try:
+            parts.append(int(piece))
+        except ValueError:
+            parts.append(0)
+    return tuple(parts)
+
+
+def check_kit_version(timeout=2):
+    """Soft-fail version check against the kit manifest. Returns (state, info)."""
+    try:
+        request = urllib.request.Request(KIT_JSON_URL, headers={"User-Agent": f"dasha-compute-provider/{KIT_VERSION}"})
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            info = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return "unknown", None
+    current = parse_version(KIT_VERSION)
+    minimum = parse_version(info.get("min_version"))
+    latest = parse_version(info.get("version"))
+    if minimum and current < minimum:
+        return "obsolete", info
+    if latest and current < latest:
+        return "update", info
+    return "current", info
+
+
+def kit_upgrade_line(info=None):
+    url = (info or {}).get("url") or KIT_TAR_URL
+    return f"re-download the kit: curl -fLO {url} && tar -xzf dasha-compute-open-alpha.tar.gz && cd dasha-compute-open-alpha && ./install.sh"
+
 
 def load_key_file():
     path = os.getenv("DASHA_PROVIDER_KEY_FILE") or ".dasha-provider-key"
@@ -95,7 +151,7 @@ MODELS = model_map()
 
 def make_request(url, method="GET", payload=None, token=None):
     data = None if payload is None else json.dumps(payload).encode("utf-8")
-    headers = {"Content-Type": "application/json", "User-Agent": "dasha-compute-provider/0.3"}
+    headers = {"Content-Type": "application/json", "User-Agent": f"dasha-compute-provider/{KIT_VERSION}"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     return urllib.request.Request(url, data=data, headers=headers, method=method)
@@ -595,6 +651,15 @@ def doctor():
         print("benchmark ok · measured tok/s will post on heartbeat")
     else:
         print("benchmark soft · run dasha-compute benchmark so measured tok/s can show on Ask")
+    kit_state, kit_info = check_kit_version()
+    if kit_state == "obsolete":
+        print(f"kit       HARD WARN · v{KIT_VERSION} is obsolete (minimum v{kit_info.get('min_version')}) - {kit_upgrade_line(kit_info)}", file=sys.stderr)
+    elif kit_state == "update":
+        print(f"kit       soft · v{KIT_VERSION} installed, v{kit_info.get('version')} available - {kit_upgrade_line(kit_info)}")
+    elif kit_state == "current":
+        print(f"kit       ok · v{KIT_VERSION}")
+    else:
+        print("kit       soft · version check skipped (offline)")
     return failures
 
 
@@ -620,6 +685,95 @@ def benchmark():
     return 0 if rows else 1
 
 
+
+class TokenRejected(Exception):
+    pass
+
+
+def earnings_cache_path():
+    return os.path.join(os.path.expanduser("~/Library/Application Support/Dasha Compute"), "earnings-cache.json")
+
+
+def fetch_earnings():
+    if not COORDINATOR.endswith("/compute/api"):
+        raise RuntimeError("earnings needs the live coordinator (https://lobby.getdasha.com/compute/api)")
+    if not PROVIDER_KEY:
+        raise TokenRejected("no provider token found - re-enroll from the Provide page: https://www.getdasha.com/compute")
+    url = f"{COORDINATOR}/provider/earnings?provider_id={PROVIDER_ID}"
+    try:
+        data = request_json(url, token=PROVIDER_KEY, timeout=10)
+    except RuntimeError as error:
+        if "HTTP 401" in str(error) or "HTTP 403" in str(error):
+            raise TokenRejected("provider token rejected - re-enroll from the Provide page: https://www.getdasha.com/compute") from error
+        raise
+    try:
+        os.makedirs(os.path.dirname(earnings_cache_path()), exist_ok=True)
+        with open(earnings_cache_path(), "w", encoding="utf-8") as sink:
+            json.dump({"fetched_at": int(time.time()), "data": data}, sink)
+    except OSError:
+        pass
+    return data
+
+
+def load_earnings_cache():
+    try:
+        with open(earnings_cache_path(), encoding="utf-8") as source:
+            saved = json.load(source)
+        if isinstance(saved, dict) and isinstance(saved.get("data"), dict):
+            return saved
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def money(cents):
+    return f"${int(cents or 0) / 100:.2f}"
+
+
+def print_earnings(data, cached_at=None):
+    providers = data.get("providers") or []
+    mine = providers[0] if providers else {}
+    pending_rows = data.get("pending") or []
+    paid = [row for row in pending_rows if row.get("status") == "paid"]
+    settled_cents = sum(int(row.get("payout_cents") or row.get("usdc_cents") or 0) for row in paid)
+    last_paid = max((int(row.get("paid_at") or 0) for row in paid), default=0)
+    pref = data.get("pref") or {}
+    print(f"provider   {mine.get('name') or PROVIDER_NAME} ({mine.get('id') or PROVIDER_ID})")
+    print(f"pending    {money(mine.get('usdc_cents'))} USDC (~{int(mine.get('dasha_cents') or 0):,} $dasha cents)")
+    print(f"settled    {money(settled_cents)} across {len(paid)} payout(s)" + (f" - last paid {time.strftime('%Y-%m-%d', time.gmtime(last_paid))}" if last_paid else ""))
+    print(f"jobs       {int(mine.get('jobs') or 0)} served - {int(mine.get('completion_tokens') or 0):,} completion tokens")
+    if pref.get("method"):
+        print(f"payout     {pref['method']} -> {pref.get('wallet')}")
+    else:
+        print("payout     not set - choose USDC or $dasha on the Provide page")
+    print("settlement operator-settled during alpha")
+    if cached_at:
+        print(f"(offline - last known copy from {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(cached_at))})")
+
+
+def earnings_cli(args):
+    while True:
+        data, cached_at = None, None
+        try:
+            data = fetch_earnings()
+        except TokenRejected as error:
+            print(str(error), file=sys.stderr)
+            return 1
+        except Exception as error:
+            cached = load_earnings_cache()
+            if not cached:
+                print(f"coordinator unreachable ({error}) and no cached copy yet", file=sys.stderr)
+                return 1
+            data, cached_at = cached["data"], cached.get("fetched_at")
+        if args.json:
+            print(json.dumps({"cached": cached_at is not None, "fetched_at": cached_at, **data}, indent=2))
+        else:
+            print_earnings(data, cached_at)
+        if not args.watch:
+            return 0
+        time.sleep(max(5, args.watch))
+
+
 def stop(_signum, _frame):
     global RUNNING
     RUNNING = False
@@ -630,7 +784,12 @@ def main():
     parser.add_argument("--doctor", action="store_true", help="check the coordinator, Ollama and mapped models")
     parser.add_argument("--benchmark", action="store_true", help="measure configured Ollama model throughput")
     parser.add_argument("--once", action="store_true", help="poll once and exit")
+    parser.add_argument("--earnings", action="store_true", help="show provider earnings from the live coordinator")
+    parser.add_argument("--json", action="store_true", help="with --earnings: print raw JSON")
+    parser.add_argument("--watch", type=float, default=0, metavar="SECONDS", help="with --earnings: refresh on an interval")
     args = parser.parse_args()
+    if args.earnings:
+        raise SystemExit(earnings_cli(args))
     if not MODELS:
         raise SystemExit("DASHA_MODEL_MAP contains no valid public=ollama mappings")
     if args.doctor:
@@ -657,15 +816,26 @@ def main():
             raise SystemExit("Ollama unavailable: no configured model ready. Run with --doctor for pull commands.")
         raise SystemExit("provider stopped before Ollama became ready")
     hold_sleep_assertions()
-    print(f"dasha-compute provider {PROVIDER_NAME} ({PROVIDER_ID})")
+    kit_state, kit_info = ("current", None) if not COORDINATOR.endswith("/compute/api") else check_kit_version()
+    kit_checked_at = time.time()
+    if kit_state == "obsolete":
+        print(f"kit v{KIT_VERSION} is obsolete - {kit_upgrade_line(kit_info)}", file=sys.stderr)
+    elif kit_state == "update":
+        print(f"kit v{kit_info.get('version')} available - {kit_upgrade_line(kit_info)}", file=sys.stderr)
+    print(f"dasha-compute provider {PROVIDER_NAME} ({PROVIDER_ID}) · kit v{KIT_VERSION}")
     print("models: " + ", ".join(f"{public} → {local}" for public, local in available.items()))
     backoff = 1
     while RUNNING:
         try:
+            if COORDINATOR.endswith("/compute/api") and time.time() - kit_checked_at > 3600:
+                kit_state, kit_info = check_kit_version()
+                kit_checked_at = time.time()
+            if kit_state == "obsolete":
+                print(f"kit v{KIT_VERSION} is obsolete - {kit_upgrade_line(kit_info)}", file=sys.stderr)
             response = request_json(
                 coordinator_path("/v1/providers/poll", "/providers/poll"),
                 method="POST",
-                payload={"provider_id": PROVIDER_ID, "name": PROVIDER_NAME, "models": list(available), "hardware": hardware()},
+                payload={"provider_id": PROVIDER_ID, "name": PROVIDER_NAME, "models": list(available), "hardware": hardware(), "version": KIT_VERSION},
                 token=PROVIDER_KEY,
                 timeout=35,
             )

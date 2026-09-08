@@ -36,6 +36,7 @@ DASHA_PROVIDER_KEY= DASHA_COORDINATOR_URL=$DASHA_COORDINATOR_URL DASHA_PROVIDER_
 
 mkdir -p "$APP_DIR" "$HOME/Library/LaunchAgents" "$HOME/Library/Logs/Dasha Compute" "$BIN_DIR"
 install -m 755 provider/agent.py "$APP_DIR/agent.py"
+install -m 644 VERSION "$APP_DIR/VERSION"
 install -m 755 provider/run-provider "$APP_DIR/run-provider"
 install -m 755 provider/dasha-compute "$BIN_DIR/dasha-compute"
 umask 077

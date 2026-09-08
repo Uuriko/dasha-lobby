@@ -1094,13 +1094,15 @@ export class ComputeNetwork {
       });
       const hourKey = `compute:metric:providers:${metricHour(now)}`;
       if ((await this.state.storage.get(hourKey)) === undefined) await this.state.storage.put(hourKey, providers.length);
-      return maybeHead(request, json({ providers_online: providers.length, models_available: models, capacity, jobs_queued: jobs.filter(job => job.status === 'queued').length, card_available: stripeConfigured(this.env) }, 200, allowedOrigin || '*', credentials));
+      const kit_versions = {};
+      for (const provider of providers) { const v = String(provider.kitVersion || 'pre-0.3.1'); kit_versions[v] = (kit_versions[v] || 0) + 1; }
+      return maybeHead(request, json({ providers_online: providers.length, models_available: models, capacity, kit_versions, jobs_queued: jobs.filter(job => job.status === 'queued').length, card_available: stripeConfigured(this.env) }, 200, allowedOrigin || '*', credentials));
     }
 
     if ((path === '/compute/api/providers' || path === '/compute/api/providers/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, credentials));
-      const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => provider.owner === owner).map(provider => ({ id: provider.id, name: provider.name, models: provider.models || [], allowed_models: provider.allowedModels || provider.models || [], hardware: provider.hardware || null, created_at: provider.createdAt, last_seen_at: provider.lastSeenAt || null, online: now - Number(provider.lastSeenAt || 0) < FRESH_MS }));
+      const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => provider.owner === owner).map(provider => ({ id: provider.id, name: provider.name, models: provider.models || [], allowed_models: provider.allowedModels || provider.models || [], hardware: provider.hardware || null, kit_version: provider.kitVersion || null, created_at: provider.createdAt, last_seen_at: provider.lastSeenAt || null, online: now - Number(provider.lastSeenAt || 0) < FRESH_MS }));
       return maybeHead(request, json({ providers }, 200, allowedOrigin, credentials));
     }
 
@@ -1146,6 +1148,8 @@ export class ComputeNetwork {
       const input = await body(request), provider = await this.provider(request, input);
       if (!provider) return json({ error: 'invalid provider token' }, 401);
       provider.lastSeenAt = now;
+      const kitVersion = String(input.version || '').trim().slice(0, 32);
+      if (kitVersion) provider.kitVersion = kitVersion;
       provider.allowedModels ||= provider.models || [];
       if (Array.isArray(input.models)) provider.models = [...new Set(input.models.map(String).filter(model => provider.allowedModels.includes(model)))];
       else provider.models ||= [];
@@ -1519,9 +1523,16 @@ export class ComputeNetwork {
       }, 200, allowedOrigin, true));
     }
     if ((path === '/compute/api/provider/earnings' || path === '/compute/api/provider/earnings/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const owner = identity(await authSessionFromRequest(this.env, request));
-      if (!owner) return maybeHead(request, json({ error: 'login required', ...earningsCatalog(), payout_mode: PROVIDER_PAYOUT_MODE }, 401, allowedOrigin, true));
-      const mine = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(p => p && p.owner === owner);
+      let owner = identity(await authSessionFromRequest(this.env, request));
+      let onlyProviderId = null;
+      if (!owner) {
+        // Kit CLI `dasha-compute earnings` (task 19): Bearer provider token + ?provider_id= scopes the view to that one Mac.
+        const bearer = await this.provider(request, { provider_id: new URL(request.url).searchParams.get('provider_id') || '' });
+        if (!bearer) return maybeHead(request, json({ error: 'login required', ...earningsCatalog(), payout_mode: PROVIDER_PAYOUT_MODE }, 401, allowedOrigin, true));
+        owner = bearer.owner;
+        onlyProviderId = bearer.id;
+      }
+      const mine = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(p => p && p.owner === owner && (!onlyProviderId || p.id === onlyProviderId));
       const providers = [];
       for (const p of mine) {
         const earn = normalizeEarnRow(await this.state.storage.get(`compute:provider-earn:${p.id}`));

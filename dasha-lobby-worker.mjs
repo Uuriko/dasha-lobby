@@ -6062,6 +6062,25 @@ function isComputeBadgePath(pathname) {
   return pathname === '/compute/badge.svg';
 }
 
+/** Kit version manifest (task 20). DEPLOY CHECKLIST: bump version/min_version/url sha256 in the SAME deploy as any kit tar change. */
+const COMPUTE_KIT_JSON = {
+  version: '0.3.0',
+  min_version: '0.3.0',
+  url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
+  sha256: '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf',
+};
+
+function isComputeKitJsonPath(pathname) {
+  return pathname === '/compute/kit.json' || pathname === '/compute/kit.json/';
+}
+
+function computeKitJsonResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : JSON.stringify(COMPUTE_KIT_JSON), {
+    status: 200,
+    headers: { ...SECURITY, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=300', 'X-Dasha-Edge': 'compute-kit-json' },
+  });
+}
+
 /** Funnel telemetry (task 22): aggregate counters in the shared 'public' DO storage.
  * Counter bump only - never stores identities, emails, or payloads. */
 async function bumpLobbyMetric(storage, name) {
@@ -11551,6 +11570,11 @@ export default {
         status: 204,
         headers: { ...SECURITY, ...corsHeaders(allowedOrigin || '*', { credentials: true }) },
       });
+    }
+
+    if (isComputeKitJsonPath(url.pathname)) {
+      if (request.method !== 'GET' && request.method !== 'HEAD') return new Response(null, { status: 405, headers: SECURITY });
+      return computeKitJsonResponse(request);
     }
 
     if (isComputeBadgePath(url.pathname)) {
