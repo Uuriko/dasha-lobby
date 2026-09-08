@@ -11553,6 +11553,11 @@ export default {
       });
     }
 
+    if (isComputeBadgePath(url.pathname)) {
+      const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
+      return stub ? stub.fetch(request) : new Response(null, { status: 503, headers: SECURITY });
+    }
+
     if (isComputeApiPath(url.pathname)) {
       const response = await computeApi(request, env, allowedOrigin);
       if (response) return response;

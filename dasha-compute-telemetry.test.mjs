@@ -81,3 +81,20 @@ const hour = new Date().toISOString().slice(0, 13);
 assert.equal(typeof m2.providers_online_hourly[hour], 'number', 'hourly providers sample present');
 
 console.log('dasha-compute-telemetry: PASS');
+
+// Module-level computeApi must proxy event/metrics/badge-era paths to the DO (regression: 404 on live).
+const { computeApi } = await import('./dasha-compute-network.mjs');
+const proxied = [];
+const fakeEnv = {
+  ...env,
+  LOBBY: {
+    idFromName: () => 'stub-id',
+    get: () => ({ fetch: async (req) => { proxied.push(new URL(req.url).pathname); return new Response('via-do', { status: 299 }); } }),
+  },
+};
+for (const p of ['/compute/api/event', '/compute/api/metrics']) {
+  const r = await computeApi(new Request(`https://www.getdasha.com${p}`, { method: p.endsWith('event') ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' }, body: p.endsWith('event') ? '{}' : null }), fakeEnv, 'https://www.getdasha.com');
+  assert.equal(r.status, 299, `${p} proxies to DO`);
+}
+assert.deepEqual(proxied, ['/compute/api/event', '/compute/api/metrics']);
+console.log('dasha-compute-telemetry: computeApi proxy PASS');
