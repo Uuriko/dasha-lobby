@@ -49,7 +49,9 @@ async function verifyChain(receipts, pemById) {
 async function verifyHeadsLog(heads, pemById) {
   let prev = 'GENESIS';
   for (const h of heads) {
-    if (String(h.prev_head_hash || '') !== prev) return { ok: false, why: 'heads chain break at ts ' + h.ts };
+    const hPrev = String(h.prev_head_hash || 'GENESIS');
+    // Legacy pre-chain heads (2026-09-07) restart the chain; chained heads must link.
+    if (hPrev !== 'GENESIS' && hPrev !== prev) return { ok: false, why: 'heads chain break at ts ' + h.ts };
     const body = { ts: Math.floor(Number(h.ts)), tip: String(h.tip), prev_head_hash: String(h.prev_head_hash || 'GENESIS') };
     const hash = await sha256Hex(JSON.stringify(body));
     if (hash !== h.hash) return { ok: false, why: 'head hash mismatch at ts ' + h.ts };

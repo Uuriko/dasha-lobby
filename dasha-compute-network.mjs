@@ -50,6 +50,7 @@ import {
   appendHead,
   chainTip,
   headsSigningKey,
+  headsTip,
   listChain,
   listHeads,
   listHeadsForDay,
@@ -616,7 +617,7 @@ export class ComputeNetwork {
         const key = await headsSigningKey(this.env);
         if (key) {
           const row = await appendChainedReceipt(this.state.storage, key, res.receipt);
-          await appendHead(this.state.storage, await makeHead(key, row.hash));
+          await appendHead(this.state.storage, await makeHead(key, row.hash, await headsTip(this.state.storage)));
         }
       } catch (e) { /* unsigned settle is better than a failed settle */ }
     }
@@ -1393,7 +1394,7 @@ export class ComputeNetwork {
       if (tip !== 'GENESIS') {
         const recent = await listHeads(this.state.storage, { sinceMs: now - HEAD_MAX_AGE_MS, now });
         if (!recent.some((h) => h.tip === tip)) {
-          await appendHead(this.state.storage, await makeHead(key, tip));
+          await appendHead(this.state.storage, await makeHead(key, tip, await headsTip(this.state.storage)));
         }
       }
       const heads = await listHeads(this.state.storage, { sinceMs: now - 86400000, now });

@@ -107,6 +107,22 @@ const replay = await network.recordPaidInferenceSettle({ owner: 'w1', engine: 'h
 assert.equal(replay.replay, true);
 assert.equal((await listChain(storage)).length, 1);
 
+// second settle chains its head onto the first (heads log self-chains from head 2 on)
+const settle2 = await network.recordPaidInferenceSettle({ owner: 'w1', engine: 'hosted', tokens: 20, cents: 2, jobId: 'job-2', replayKey: 'job:2' });
+assert.equal(settle2.ok, true);
+const heads2 = await listHeads(storage, {});
+assert.equal(heads2.length, 2);
+assert.equal(heads2[1].prev_head_hash, heads2[0].hash);
+assert.equal((await verifyHeadsLog(heads2, pemById)).ok, true);
+// dropping the middle head breaks the log
+assert.equal((await verifyHeadsLog([heads2[1]], pemById)).ok, false);
+// a legacy run of GENESIS-prev heads (pre-2026-09-07 records) still verifies
+const g1 = await makeHead(key, 'tip-a', 'GENESIS', 3000);
+const g2 = await makeHead(key, 'tip-b', 'GENESIS', 4000);
+const g3 = await makeHead(key, 'tip-c', g2.hash, 5000);
+assert.equal((await verifyHeadsLog([g1, g2, g3], pemById)).ok, true);
+assert.equal((await verifyHeadsLog([g1, g3], pemById)).ok, false); // dropped g2 breaks the chained run
+
 // whole stored chain + log verifies
 assert.equal((await verifyChain(chain, pemById)).ok, true);
 assert.equal((await verifyHeadsLog(headsNow, pemById)).ok, true);
@@ -118,7 +134,7 @@ assert.equal(chainRes.status, 200);
 assert.equal(chainRes.headers.get('Access-Control-Allow-Origin'), '*');
 const chainBody = await chainRes.json();
 assert.equal(chainBody.schema, 'settled.chain.v0');
-assert.equal(chainBody.receipts.length, 1);
+assert.equal(chainBody.receipts.length, 2);
 
 // /heads endpoint
 const headsRes = await network.fetch(new Request('https://lobby.getdasha.com/heads'), null);
@@ -127,14 +143,14 @@ assert.equal(headsRes.headers.get('Cache-Control'), 'no-cache');
 assert.equal(headsRes.headers.get('Access-Control-Allow-Origin'), '*');
 const headsBody = await headsRes.json();
 assert.ok(Array.isArray(headsBody));
-assert.equal(headsBody.length, 1);
+assert.equal(headsBody.length, 2);
 
 // archive
 const day = new Date().toISOString().slice(0, 10);
 const archRes = await network.fetch(new Request(`https://lobby.getdasha.com/heads/archive/${day}.json`), null);
 assert.equal(archRes.status, 200);
-assert.equal((await archRes.json()).length, 1);
-assert.deepEqual(await listHeadsForDay(storage, day), headsNow);
+assert.equal((await archRes.json()).length, 2);
+assert.deepEqual(await listHeadsForDay(storage, day), heads2);
 assert.equal(await listHeadsForDay(storage, 'nope'), null);
 
 // unsigned env: 503s honestly
