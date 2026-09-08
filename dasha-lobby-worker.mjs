@@ -644,10 +644,10 @@ const LISTINGS_VENUES = [
   { id: 'phantom', name: 'Phantom', href: 'https://trade.phantom.com/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump' },
 ];
 
-export function listingsJsonBody() {
+export function listingsJsonBody({ market = [], updated_at = LISTINGS_UPDATED_AT } = {}) {
   return {
     schema: 'dasha.listings.v0',
-    updated_at: LISTINGS_UPDATED_AT,
+    updated_at,
     listings: [{
       id: 'dasha',
       symbol: '$dasha',
@@ -660,7 +660,160 @@ export function listingsJsonBody() {
       buy: 'https://www.getdasha.com/how-to-buy',
       venues: LISTINGS_VENUES,
     }],
+    market,
   };
+}
+
+const LISTINGS_BOARD_CAP = 20;
+const LISTINGS_MARKET_TTL_MS = 60_000;
+const LISTINGS_TRENDING_URL = 'https://api.geckoterminal.com/api/v2/networks/solana/trending_pools?page=1';
+const LISTINGS_BOARD_BAN = /VVAIFU|FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8/i;
+const LISTINGS_POOL_ADDR = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+let listingsMarketMemo = { at: 0, market: null, updated_at: LISTINGS_UPDATED_AT };
+
+export function resetListingsMarketCacheForTest() {
+  listingsMarketMemo = { at: 0, market: null, updated_at: LISTINGS_UPDATED_AT };
+}
+
+function listingsFiniteNum(value) {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function listingsTokenTail(id) {
+  const s = String(id || '');
+  const i = s.lastIndexOf('_');
+  return i >= 0 ? s.slice(i + 1) : s;
+}
+
+function listingsMarketRow(row) {
+  return {
+    symbol: row.symbol,
+    name: row.name,
+    price_usd: row.price_usd,
+    change_h24: row.change_h24,
+    volume_h24: row.volume_h24,
+    market_cap_usd: row.market_cap_usd,
+    liquidity_usd: row.liquidity_usd,
+    href: row.href,
+  };
+}
+
+export function parseGeckoTrendingPools(payload) {
+  const tokens = new Map();
+  for (const inc of payload?.included || []) {
+    if (inc?.type === 'token' && inc.id) tokens.set(inc.id, inc.attributes || {});
+  }
+  const rows = [];
+  const seen = new Set();
+  for (const item of payload?.data || []) {
+    if (item?.type && item.type !== 'pool') continue;
+    const attrs = item?.attributes || {};
+    const address = String(attrs.address || '').trim();
+    if (!LISTINGS_POOL_ADDR.test(address) || seen.has(address)) continue;
+    const price = listingsFiniteNum(attrs.base_token_price_usd);
+    if (price == null || price <= 0) continue;
+    const baseId = item?.relationships?.base_token?.data?.id;
+    const tok = tokens.get(baseId) || {};
+    const mint = String(tok.address || listingsTokenTail(baseId) || '');
+    const poolName = String(attrs.name || '');
+    let symbol = String(tok.symbol || poolName.split(/\s*\/\s*/)[0] || '').trim();
+    let name = String(tok.name || symbol || '').trim();
+    if (!symbol) continue;
+    if (LISTINGS_BOARD_BAN.test(`${symbol} ${name} ${mint} ${address} ${poolName}`)) continue;
+    const pin = address === DASHA_LIST_PAIR || mint === DASHA_LIST_MINT;
+    if (pin) {
+      symbol = '$dasha';
+      name = 'dash_eats';
+    }
+    seen.add(address);
+    rows.push({
+      symbol,
+      name,
+      price_usd: price,
+      change_h24: listingsFiniteNum(attrs.price_change_percentage?.h24),
+      volume_h24: listingsFiniteNum(attrs.volume_usd?.h24),
+      market_cap_usd: listingsFiniteNum(attrs.market_cap_usd),
+      liquidity_usd: listingsFiniteNum(attrs.reserve_in_usd),
+      href: `https://www.geckoterminal.com/solana/pools/${address}`,
+      _pin: pin ? 0 : 1,
+    });
+  }
+  rows.sort((a, b) => a._pin - b._pin);
+  return rows.slice(0, LISTINGS_BOARD_CAP).map(listingsMarketRow);
+}
+
+export function filterListingsMarket(market, q) {
+  const needle = String(q || '').trim().toLowerCase();
+  if (!needle) return Array.isArray(market) ? market : [];
+  return (market || []).filter((row) => {
+    const sym = String(row?.symbol || '').toLowerCase();
+    const name = String(row?.name || '').toLowerCase();
+    return sym.includes(needle) || name.includes(needle);
+  });
+}
+
+export async function loadListingsMarket(fetchImpl = globalThis.fetch) {
+  const now = Date.now();
+  if (listingsMarketMemo.at && now - listingsMarketMemo.at < LISTINGS_MARKET_TTL_MS) {
+    return listingsMarketMemo;
+  }
+  try {
+    const res = await fetchImpl(LISTINGS_TRENDING_URL, {
+      signal: AbortSignal.timeout(6000),
+      headers: { accept: 'application/json', 'user-agent': 'dasha-lobby' },
+    });
+    if (!res?.ok) throw new Error('trending unavailable');
+    const payload = await res.json();
+    const market = parseGeckoTrendingPools(payload);
+    listingsMarketMemo = { at: now, market, updated_at: new Date(now).toISOString() };
+    return listingsMarketMemo;
+  } catch {
+    listingsMarketMemo = { at: now, market: [], updated_at: LISTINGS_UPDATED_AT };
+    return listingsMarketMemo;
+  }
+}
+
+function listingsEscapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function listingsFormatUsd(n) {
+  if (n == null) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `$${(n / 1e3).toFixed(2)}K`;
+  if (abs >= 1) return `$${n.toFixed(2)}`;
+  if (abs >= 0.0001) return `$${n.toFixed(4)}`;
+  return `$${n.toExponential(2)}`;
+}
+
+function listingsFormatPct(n) {
+  if (n == null) return '—';
+  const sign = n > 0 ? '+' : '';
+  return `${sign}${n.toFixed(2)}%`;
+}
+
+export function listingsBoardRowsHtml(market) {
+  return (market || []).map((row, i) => {
+    const href = listingsEscapeHtml(row.href);
+    const chg = listingsFormatPct(row.change_h24);
+    const cls = row.change_h24 == null ? '' : row.change_h24 >= 0 ? ' class="up"' : ' class="down"';
+    return `<tr><td><a href="${href}" rel="noopener noreferrer">${i + 1}</a></td><td><a href="${href}" rel="noopener noreferrer">${listingsEscapeHtml(row.symbol)}</a> <span class="quiet">${listingsEscapeHtml(row.name)}</span></td><td>${listingsEscapeHtml(listingsFormatUsd(row.price_usd))}</td><td${cls}>${listingsEscapeHtml(chg)}</td><td>${listingsEscapeHtml(listingsFormatUsd(row.volume_h24))}</td><td>${listingsEscapeHtml(listingsFormatUsd(row.market_cap_usd))}</td><td>${listingsEscapeHtml(listingsFormatUsd(row.liquidity_usd))}</td></tr>`;
+  }).join('');
+}
+
+export function renderListingsHtml(market = [], q = '') {
+  const rows = listingsBoardRowsHtml(filterListingsMarket(market, q));
+  return LISTINGS_HTML
+    .replace('<!-- listings-board-rows -->', rows)
+    .replace('name="q" value=""', `name="q" value="${listingsEscapeHtml(q)}"`);
 }
 
 const LISTINGS_HTML = `<!doctype html>
@@ -669,15 +822,15 @@ const LISTINGS_HTML = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dasha List · $dasha</title>
-  <meta name="description" content="We list $dasha here. dash_eats on Solana. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump.">
+  <meta name="description" content="We list $dasha. Solana, live. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump.">
   <link rel="canonical" href="https://www.getdasha.com/listings">
   <link rel="describedby" href="/llms.txt" type="text/plain">
   <link rel="describedby" href="/llms-full.txt" type="text/plain">
-  <meta property="og:type" content="website"><meta property="og:url" content="https://www.getdasha.com/listings"><meta property="og:title" content="Dasha List · $dasha"><meta property="og:description" content="We list $dasha here."><meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Dasha List · $dasha"><meta name="twitter:description" content="We list $dasha here."><meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+  <meta property="og:type" content="website"><meta property="og:url" content="https://www.getdasha.com/listings"><meta property="og:title" content="Dasha List · $dasha"><meta property="og:description" content="We list $dasha. Solana, live."><meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Dasha List · $dasha"><meta name="twitter:description" content="We list $dasha. Solana, live."><meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Dasha List","url":"https://www.getdasha.com/listings","description":"First-party listing for dash_eats / $dasha on Solana. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7."}</script>
   <style>
     :root { color-scheme: dark; font: 18px/1.5 Arial, Helvetica, sans-serif; background: #070608; color: #f4eddb; }
-    body { max-width: 44rem; margin: auto; padding: 2rem 1rem; }
+    body { max-width: 72rem; margin: auto; padding: 2rem 1rem; }
     h1 { line-height: 1; }
     h2 { margin: 2.2rem 0 0.8rem; font-size: 1.15rem; }
     code { display: block; padding: 1rem; border: 1px solid #666; overflow-wrap: anywhere; }
@@ -696,12 +849,22 @@ const LISTINGS_HTML = `<!doctype html>
     .venues a { display: flex; align-items: center; min-height: 44px; border: 1px solid #666; padding: 0.55rem 0.7rem; text-decoration: none; box-sizing: border-box; }
     .venues a:hover { border-color: #dfff00; }
     .quiet { opacity: 0.72; font-size: 0.95rem; }
+    #board { margin: 2.2rem 0 0; }
+    #board .board-search { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 1rem; }
+    #board .board-search input { flex: 1 1 12rem; min-height: 44px; font: inherit; color: #f4eddb; background: #070608; border: 1px solid #666; padding: 0.35rem 0.7rem; box-sizing: border-box; }
+    #board .board-search button { font: inherit; color: #dfff00; background: transparent; border: 1px solid #666; min-height: 44px; padding: 0.35rem 0.85rem; cursor: pointer; }
+    #board .board-scroll { overflow-x: auto; }
+    #board table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    #board th, #board td { text-align: left; padding: 0.55rem 0.45rem; border-bottom: 1px solid #333; white-space: nowrap; }
+    #board th { color: rgba(244,237,219,.72); font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    #board td.up { color: #9dff9d; }
+    #board td.down { color: #ff8a8a; }
   </style>
 </head>
 <body>
   <main>
     <h1>Dasha List</h1>
-    <p>We list <code style="display:inline;padding:0.1rem 0.35rem">$dasha</code> here.</p>
+    <p>We list <code style="display:inline;padding:0.1rem 0.35rem">$dasha</code>.</p>
     <article class="card" aria-labelledby="feat-name">
       <h2 id="feat-name">$dasha / dash_eats</h2>
       <p>Chain: Solana</p>
@@ -723,7 +886,25 @@ const LISTINGS_HTML = `<!doctype html>
       <a href="https://www.coingecko.com/en/coins/dash_eats" rel="noopener noreferrer">CoinGecko</a>
       <a href="https://trade.phantom.com/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Phantom</a>
     </div>
-    <p class="quiet">One listing for now · $dasha.</p>
+    <!-- listings-board:2026-09-08 -->
+    <section id="board" aria-labelledby="board-title">
+      <h2 id="board-title">Board</h2>
+      <p class="quiet">Solana, live.</p>
+      <form class="board-search" action="/listings" method="get" role="search">
+        <input id="board-q" type="search" name="q" value="" placeholder="symbol or name" aria-label="Search board" autocomplete="off">
+        <button type="submit">Search</button>
+      </form>
+      <div class="board-scroll">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Coin</th><th>Price</th><th>24h</th><th>Volume</th><th>Mcap</th><th>Liq</th></tr>
+          </thead>
+          <tbody>
+            <!-- listings-board-rows -->
+          </tbody>
+        </table>
+      </div>
+    </section>
     <p class="quiet"><a href="/listings.json">listings.json</a> · <a href="/bag">Bag</a> · <a href="/how-to-buy">Buy</a> · <a href="/which">Which</a></p>
   </main>
   <script>
@@ -11135,11 +11316,18 @@ export default {
       return fillShareApi(request, []);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings.json') {
-      const body = JSON.stringify(listingsJsonBody());
+      const q = url.searchParams.get('q') || '';
+      const pack = request.method === 'HEAD'
+        ? { market: [], updated_at: LISTINGS_UPDATED_AT }
+        : await loadListingsMarket();
+      const body = JSON.stringify(listingsJsonBody({
+        market: filterListingsMarket(pack.market, q),
+        updated_at: pack.updated_at,
+      }));
       return new Response(request.method === 'HEAD' ? null : body, {
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=60',
           'Strict-Transport-Security': 'max-age=31536000',
           'X-Content-Type-Options': 'nosniff',
           'X-Dasha-Edge': 'listings-json',
@@ -11148,10 +11336,15 @@ export default {
       });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/listings') {
-      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LISTINGS_HTML), {
+      const q = url.searchParams.get('q') || '';
+      const pack = request.method === 'HEAD'
+        ? { market: [] }
+        : await loadListingsMarket();
+      const page = attachLlmsHtmlLinks(renderListingsHtml(pack.market, q));
+      return new Response(request.method === 'HEAD' ? null : page, {
         headers: htmlHeaders({
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=60',
           'X-Dasha-Edge': 'listings',
           Link: LLMS_DESCRIBEDBY,
         }),
