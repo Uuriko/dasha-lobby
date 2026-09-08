@@ -506,6 +506,20 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
       <button class="primary" id="create-api-key" type="button" hidden disabled>Create API key</button>
       <button class="secondary" id="check" type="button">Run check</button>
     </div>
+    <section id="buyer-one-path">
+      <p class="fine" id="compat-lead">OpenAI-compatible. Change the base URL.</p>
+      <p class="fine" id="build-free-fine">3 free / 10 min · then credits.</p>
+      <p class="fine" id="compat-litellm-label">LiteLLM</p>
+      <pre class="setup" id="code-litellm">api_base = "https://lobby.getdasha.com/compute/api/v1"</pre>
+      <button class="copy tf-quiet" data-copy="code-litellm" type="button">Copy LiteLLM</button>
+      <p class="fine" id="compat-langchain-label">LangChain</p>
+      <pre class="setup" id="code-langchain">ChatOpenAI(openai_api_base="https://lobby.getdasha.com/compute/api/v1")</pre>
+      <button class="copy tf-quiet" data-copy="code-langchain" type="button">Copy LangChain</button>
+      <p class="fine" id="compat-n8n-label">n8n</p>
+      <pre class="setup" id="code-n8n">OpenAI node · base URL
+https://lobby.getdasha.com/compute/api/v1</pre>
+      <button class="copy tf-quiet" data-copy="code-n8n" type="button">Copy n8n</button>
+    </section>
     <p class="fine" id="api-key-cap-hint">Credits · Cap $5 / month</p>
     <label class="field" id="api-key-limit-wrap" hidden>Spend cap (USD / month)<input id="api-key-limit" type="number" min="1" max="1000" step="1" value="5" inputmode="decimal" placeholder="5"></label>
     <pre id="api-key-output" aria-live="polite">Sign in to create a developer key.</pre>
@@ -1836,6 +1850,9 @@ function paintCode(){
     if(hit)model=hit[0];
   }
   $('code').textContent=`curl ${base}/chat/completions \\\n  -H "Authorization: Bearer $DASHA_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify({model,messages:[{role:'user',content:'hello'}],stream:true})}'`;
+  const litellm=$('code-litellm');if(litellm)litellm.textContent='api_base = "'+base+'"';
+  const langchain=$('code-langchain');if(langchain)langchain.textContent='ChatOpenAI(openai_api_base="'+base+'")';
+  const n8n=$('code-n8n');if(n8n)n8n.textContent='OpenAI node · base URL\n'+base;
 }
 $('gateway').addEventListener('input',paintCode);
 function paintApiKeyCapHint(){
@@ -1851,7 +1868,7 @@ function copy(text,button){
   const old=button.textContent;
   const done=()=>{button.textContent='Copied';setTimeout(()=>button.textContent=old,1400)};
   const select=()=>{
-    const node=$('code');
+    const node=$(button.getAttribute('data-copy')||'')||$('code');
     if(node&&text===node.textContent){
       const range=document.createRange();range.selectNodeContents(node);const sel=getSelection();sel.removeAllRanges();sel.addRange(range);button.textContent='Select text';return;
     }
@@ -1862,7 +1879,7 @@ function copy(text,button){
   if(navigator.clipboard&&navigator.clipboard.writeText){timed(navigator.clipboard.writeText(text)).then(done).catch(()=>{legacy()?done():select()})}
   else if(legacy())done();else select();
 }
-document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>copy($('code').textContent,b)));
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>copy($(b.getAttribute('data-copy')).textContent,b)));
 $('copy-skill-use')?.addEventListener('click',()=>copy(USE_SKILL,$('copy-skill-use')));
 $('copy-skill-provide-reg')?.addEventListener('click',()=>copy(PROVIDE_SKILL,$('copy-skill-provide-reg')));
 $('copy-skill-provide-done')?.addEventListener('click',()=>copy(PROVIDE_SKILL,$('copy-skill-provide-done')));
