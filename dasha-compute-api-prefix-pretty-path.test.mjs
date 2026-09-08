@@ -97,6 +97,7 @@ const STAY_OUT = [
   '/compute/api/status', '/compute/api/status/',
   '/compute/api/network', '/compute/api/network/',
   '/compute/api/healthz', '/compute/api/healthz/',
+  '/compute/api/health', '/compute/api/health/',
   '/compute/ocm/healthz',
   '/api/sponsors', '/api/providers',
 ];
@@ -132,6 +133,9 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     } else {
       assert.equal(await health.text(), '');
     }
+    const alias = await edgeWorker.fetch(new Request(`https://${host}/compute/api/health`, { method }), env);
+    assert.equal(alias.status, 200, `${host} /compute/api/health ${method}`);
+    if (method === 'HEAD') assert.equal(await alias.text(), '');
   }
 }
 

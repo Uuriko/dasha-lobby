@@ -194,6 +194,12 @@ function maybeHead(request, res) {
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
 }
 
+/** Public compute health probe. /compute/api/health is a fail-loud alias of healthz (same 200 JSON, not 308). */
+function isComputeApiHealthzPath(path) {
+  return path === '/compute/api/healthz' || path === '/compute/api/healthz/'
+    || path === '/compute/api/health' || path === '/compute/api/health/';
+}
+
 function withV1Cors(res, origin) {
   const headers = new Headers(res.headers);
   if (!headers.has('Access-Control-Allow-Origin')) {
@@ -747,7 +753,7 @@ export class ComputeNetwork {
       const res = json(computeApiRootBody(this.env), 200, allowedOrigin || '*', credentials);
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
     }
-    if ((path === '/compute/api/healthz' || path === '/compute/api/healthz/') && (request.method === 'GET' || request.method === 'HEAD')) {
+    if (isComputeApiHealthzPath(path) && (request.method === 'GET' || request.method === 'HEAD')) {
       return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.0', midstream_fail_honesty: true }, 200, allowedOrigin || '*', credentials));
     }
     if ((path === '/compute/api/night' || path === '/compute/api/night/') && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'POST')) {
@@ -2038,7 +2044,7 @@ export async function computeApi(request, env, allowedOrigin) {
     const res = json(computeApiRootBody(env), 200, allowedOrigin || '*', credentials);
     return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
   }
-  if ((path === '/compute/api/healthz' || path === '/compute/api/healthz/') && (request.method === 'GET' || request.method === 'HEAD')) {
+  if (isComputeApiHealthzPath(path) && (request.method === 'GET' || request.method === 'HEAD')) {
     return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.0' }, 200, allowedOrigin || '*', credentials));
   }
   if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && (request.method === 'GET' || request.method === 'HEAD')) {
