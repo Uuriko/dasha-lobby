@@ -28,7 +28,7 @@ assert.match(sitemap, /https:\/\/www\.getdasha\.com\/crew<\/loc><lastmod>2026-09
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/digest<\/loc><lastmod>2026-09-01<\/lastmod>/);
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/compute<\/loc><lastmod>2026-09-01<\/lastmod>/);
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/contribute<\/loc><lastmod>2026-09-01<\/lastmod>/);
-for (const path of ['/studio', '/dasha', '/desk', '/login', '/grok', '/siwg', '/verse', '/learn', '/graph', '/index.html', '/compute/night', '/compute/use', '/compute/provide', '/compute/build', '/compute/sponsor', '/compute/studio']) {
+for (const path of ['/studio', '/dasha', '/desk', '/login', '/grok', '/siwg', '/verse', '/learn', '/graph', '/dancer', '/index.html', '/compute/night', '/compute/use', '/compute/provide', '/compute/build', '/compute/sponsor', '/compute/studio', '/compute/dancer']) {
   assert.ok(!sitemap.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits ${path}`);
 }
 assert.doesNotMatch(sitemap, /lobby\?/);

@@ -5,7 +5,7 @@ Worker-first. Exclusive write. Closest AGENTS.md wins. User chat overrides. Lock
 ## Product
 - One room: `/lobby` — chat, then Play, then threads. Chess is in-room Play, never a home door.
 - `/forum` and `/chat` 308 → `https://www.getdasha.com/lobby` (keep `?t=`).
-- `/studio` `/verse` `/learn` `/graph` 308 → `/`. Do not restore Studio.
+- `/studio` `/verse` `/learn` `/graph` `/dancer` 308 → `/`. `/compute/dancer` 308 → `/compute`. Do not restore Studio or the 3D dancer.
 - `/privacy` 200. `/compute` 200 (Use / Provide / Night / Build), not 410. `/crew` 200 (Crew). `/dasha` `/desk` 308 → `/how-to-buy`.
 - Mint `53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump`. Buy `jup.ag` only. Never `plugin.jup.ag`.
 

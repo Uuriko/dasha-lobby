@@ -3029,7 +3029,13 @@ const POTTER_HOME_308_PATHS = new Set([
   "/meme-studio",
   "/meme-studio/",
   "/meme_studio",
-  "/meme_studio/"
+  "/meme_studio/",
+  // Retired 3D dancer: live /dancer /Dancer html-404 (proven 2026-09-08)
+  // while /studio /verse /learn /graph already 308→/. Fold to home.
+  // /compute/dancer folds via POTTER_COMPUTE_TAB → /compute.
+  // Do not restore the dancer. Max one path-family.
+  "/dancer",
+  "/dancer/"
 ]);
 const POTTER_HOWTO_308_PATHS = new Set([
   "/dasha",
@@ -4130,7 +4136,14 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // Do not restore Studio. Skip /arcade /multichain /room /x402.
   // Never fold /price or /privacy.
   "/compute/studio",
-  "/compute/studio/"
+  "/compute/studio/",
+  // Retired 3D dancer leftover under Compute (2026-09-08 hop DOWN):
+  // live /compute/dancer (+slash / Title-case) html-404 while
+  // /dancer 308→/ and /compute is 200. Fold to /compute.
+  // Do not restore the dancer. Skip /arcade /multichain /room /x402.
+  // Never fold /price or /privacy.
+  "/compute/dancer",
+  "/compute/dancer/"
   // /status|/health|/healthz|/v1|/openai|/x402 — those stay intentional skips).
 ]);
 const POTTER_PLAIN_LOGIN_308_PATHS = new Set([

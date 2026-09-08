@@ -127,7 +127,7 @@ assert.equal((taped.match(/<li>/g) || []).length, 5, 'home tape cap 5');
 assert.equal(potterHome308Dest('/privacy'), null);
 assert.equal(potterHome308Dest('/privacy/'), null);
 assert.equal(potterHome308Response(new Request('https://www.getdasha.com/privacy'), new URL('https://www.getdasha.com/privacy')), null);
-for (const path of ['/studio', '/verse', '/learn', '/graph', '/index.html']) {
+for (const path of ['/studio', '/verse', '/learn', '/graph', '/dancer', '/index.html']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/', path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
   assert.equal(res.status, 308, path);
@@ -142,7 +142,7 @@ for (const path of ['/grok', '/grok/', '/siwg', '/siwg/']) {
   assert.equal(res.status, 308, path);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/login#grok', path);
 }
-for (const path of ['/compute/use', '/compute/provide', '/compute/night', '/compute/build', '/compute/sponsor', '/compute/night/', '/compute/ask', '/compute/pay', '/compute/credits', '/compute/host', '/compute/marketplace', '/compute/you', '/compute/Ask', '/compute/Credits', '/compute/studio', '/compute/studio/', '/Compute/studio']) {
+for (const path of ['/compute/use', '/compute/provide', '/compute/night', '/compute/build', '/compute/sponsor', '/compute/night/', '/compute/ask', '/compute/pay', '/compute/credits', '/compute/host', '/compute/marketplace', '/compute/you', '/compute/Ask', '/compute/Credits', '/compute/studio', '/compute/studio/', '/Compute/studio', '/compute/dancer', '/compute/dancer/', '/Compute/dancer']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
   assert.equal(res.status, 308, path);
@@ -339,7 +339,7 @@ const env = { LOBBY: mockLobby, ALLOWED_ORIGINS: 'https://www.getdasha.com,https
   assert.doesNotMatch(body, /Studio,/);
 }
 
-for (const path of ['/studio', '/verse', '/learn', '/graph']) {
+for (const path of ['/studio', '/verse', '/learn', '/graph', '/dancer', '/Dancer']) {
   const res = await edgeWorker.fetch(new Request(`https://www.getdasha.com${path}`), {});
   assert.equal(res.status, 308, `${path} 308 not 404`);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/', path);
@@ -417,7 +417,7 @@ assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/crew<\/loc><lastmod>2026
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/digest<\/loc><lastmod>2026-09-01<\/lastmod>/);
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/compute<\/loc><lastmod>2026-09-01<\/lastmod>/);
 assert.doesNotMatch(sitemapXml, /lobby\?/);
-for (const path of ['/dasha', '/desk', '/studio', '/graph', '/verse', '/learn', '/login']) {
+for (const path of ['/dasha', '/desk', '/studio', '/graph', '/verse', '/learn', '/login', '/dancer', '/compute/dancer']) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits ${path}`);
 }
 

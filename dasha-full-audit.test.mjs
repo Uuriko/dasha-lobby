@@ -123,7 +123,7 @@ describe('retired product doors', () => {
 });
 
 describe('route contract (worker, offline)', () => {
-  const destHome = ['/studio', '/verse', '/learn', '/graph', '/index.html'];
+  const destHome = ['/studio', '/verse', '/learn', '/graph', '/dancer', '/index.html'];
   const destHowto = ['/dasha', '/desk'];
 
   it('dest-by-path 308s', () => {
