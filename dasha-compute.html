@@ -92,6 +92,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .panel[hidden],[hidden]{display:none!important}
 #answer-receipt:not([hidden]){display:block!important}#answer-receipt-note:not([hidden]){display:block!important}#answer-mac-line:not([hidden]){display:block!important}
 #answer-mac-line a{color:inherit;text-decoration:underline;text-underline-offset:2px}#answer-mac-line a:hover{color:var(--paper)}
+#buyer-first-job a{color:inherit;text-decoration:underline;text-underline-offset:2px}#buyer-first-job a:hover{color:var(--paper)}
 .field{display:grid;gap:7px;margin-top:16px;font-size:12px;font-weight:900;text-transform:uppercase}
 .field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);background:#09080b;color:var(--paper)}
 pre.setup,pre#code,pre#api-key-output,pre#check-result{overflow-x:auto;overflow-y:auto;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0 0;padding:14px;border:1px solid var(--line);background:#09080b;color:#d8cfe0;font:13px/1.55 ui-monospace,monospace;-webkit-overflow-scrolling:touch}
@@ -510,6 +511,11 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
       <button class="secondary" id="check" type="button">Run check</button>
     </div>
     <section id="buyer-one-path">
+      <div id="buyer-first-job">
+        <p class="fine"><a href="/login">Sign in</a>.</p>
+        <p class="fine">Create a key.</p>
+        <p class="fine">Change the base URL.</p>
+      </div>
       <p class="fine" id="buyer-live-line-build" aria-live="polite">No Mac online.</p>
       <p class="fine" id="compat-lead">OpenAI-compatible. Change the base URL.</p>
       <p class="fine" id="build-free-fine">3 free / 10 min · then credits.</p>

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * Buyer one-path on /compute API: OpenAI-compatible base URL snippets.
+ * Quiet first-job checklist: Sign in. / Create a key. / Change the base URL.
  * LiteLLM / LangChain / n8n share lobby v1. $0.05/job stays on Provide, not this block.
  * Test-only. No wrangler. No Designer. No plugin.jup.ag.
  */
@@ -23,10 +24,33 @@ function buyerBlock(html) {
   return m[0];
 }
 
+function firstJobBlock(html) {
+  const m = html.match(/<div id=["']buyer-first-job["']>[\s\S]*?<\/div>/);
+  assert.ok(m, 'buyer-first-job checklist');
+  return m[0];
+}
+
+function assertFirstJob(html, label) {
+  const job = firstJobBlock(html);
+  const block = buyerBlock(html);
+  assert.ok(block.includes(job), `${label} checklist sits in buyer-one-path`);
+  assert.equal((job.match(/<p\b/g) || []).length, 3, `${label} three lines only`);
+  assert.match(job, /<a href=["']\/login["']>Sign in<\/a>\./, `${label} Sign in. → /login`);
+  assert.match(job, /<p class=["']fine["']>Create a key\.<\/p>/, `${label} Create a key.`);
+  assert.match(job, /<p class=["']fine["']>Change the base URL\.<\/p>/, `${label} Change the base URL.`);
+  assert.doesNotMatch(job, /For gateways|potter@trydemigod/, `${label} no extra gateway line on checklist`);
+  assert.doesNotMatch(job, /\$0\.05\/job/, `${label} no \$0.05/job on checklist`);
+  assert.doesNotMatch(job, /\d+\s*Mac|Macs · \d|providers_online=\d/i, `${label} no invented Mac count`);
+  assert.doesNotMatch(job, /plugin\.jup\.ag/, `${label} no plugin`);
+  assert.equal((html.match(/id=["']buyer-first-job["']/g) || []).length, 1, `${label} checklist once`);
+}
+
 function assertBuyerOnePath(html, label) {
   assert.match(html, /id=["']ask-free-fine["'][^>]*>3 free \/ 10 min · then credits\./, `${label} Ask keeps 3-free`);
   assert.match(html, /id=["']code["']>curl https:\/\/lobby\.getdasha\.com\/compute\/api\/v1\/chat\/completions/, `${label} existing curl`);
   assert.match(html, /Authorization: Bearer \$DASHA_API_KEY/, `${label} curl bearer`);
+
+  assertFirstJob(html, label);
 
   const block = buyerBlock(html);
   assert.match(block, /OpenAI-compatible\. Change the base URL\./, `${label} lead`);
@@ -95,8 +119,15 @@ if (puppeteer && existsSync(chrome)) {
       langchain: document.getElementById('code-langchain')?.textContent || '',
       n8n: document.getElementById('code-n8n')?.textContent || '',
       block: document.getElementById('buyer-one-path')?.innerText || '',
+      job: document.getElementById('buyer-first-job')?.innerText || '',
+      signin: document.querySelector('#buyer-first-job a')?.getAttribute('href') || '',
+      lines: [...document.querySelectorAll('#buyer-first-job p')].map((p) => p.textContent),
     }));
     assert.equal(first.lead, 'OpenAI-compatible. Change the base URL.');
+    assert.deepEqual(first.lines, ['Sign in.', 'Create a key.', 'Change the base URL.']);
+    assert.equal(first.signin, '/login');
+    assert.doesNotMatch(first.job, /\$0\.05\/job/);
+    assert.doesNotMatch(first.job, /\d+\s*Mac/);
     assert.equal(first.free, '3 free / 10 min · then credits.');
     assert.equal(first.ask, '3 free / 10 min · then credits.');
     assert.equal(first.litellm, `api_base = "${BASE}"`);
