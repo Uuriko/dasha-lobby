@@ -6090,7 +6090,7 @@ function benchmarksPageResponse(request) {
   return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(BENCHMARKS_PAGE_HTML), {
     headers: htmlHeaders({
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
       'X-Dasha-Edge': 'benchmarks',
       Link: LLMS_DESCRIBEDBY,
     }),
@@ -11542,7 +11542,7 @@ export default {
       return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(VERIFY_PAGE_HTML), {
         headers: htmlHeaders({
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
           'X-Dasha-Edge': 'verify',
           Link: LLMS_DESCRIBEDBY,
         }),
