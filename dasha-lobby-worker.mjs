@@ -5822,6 +5822,13 @@ function isComputeApiPath(pathname) {
 }
 
 
+/** Heads ladder (992/993): /heads + /heads/archive/<day>.json are ComputeNetwork routes, reached through the lobby DO like /compute/api/*. */
+function isHeadsPath(pathname) {
+  const path = String(pathname || '');
+  return path === '/heads' || path === '/heads/' || path.startsWith('/heads/archive/');
+}
+
+
 function factoryCatalogPayload() {
   const generated_at = new Date().toISOString();
   return {
@@ -8940,7 +8947,7 @@ export class DashaLobby {
 
   async fetch(request) {
     const url = new URL(request.url);
-    if (isComputeApiPath(url.pathname)) {
+    if (isComputeApiPath(url.pathname) || isHeadsPath(url.pathname)) {
       const origin = request.headers.get('Origin');
       const allowedOrigin = origin && originAllowed(origin, this.env.ALLOWED_ORIGINS || '') ? origin : null;
       return this.compute.fetch(request, allowedOrigin);

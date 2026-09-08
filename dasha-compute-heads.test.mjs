@@ -143,3 +143,46 @@ const noKeyRes = await networkNoKey.fetch(new Request('https://lobby.getdasha.co
 assert.equal(noKeyRes.status, 503);
 
 console.log('dasha-compute-heads: all assertions passed');
+
+// --- routing regressions (post-deploy fix): /compute/api/chain must clear the
+// computeApi forward-whitelist, and DashaLobby.fetch must delegate /heads* to
+// ComputeNetwork instead of falling through to the websocket 426. ---
+{
+  const { computeApi } = await import('./dasha-compute-network.mjs');
+  let hit = null;
+  const stubEnv = {
+    ALLOWED_ORIGINS: 'https://www.getdasha.com',
+    LOBBY: {
+      idFromName: () => 'id',
+      get: () => ({ fetch: async (req) => { hit = new URL(req.url).pathname; return new Response('{"schema":"settled.chain.v0","receipts":[]}', { status: 200, headers: { 'Content-Type': 'application/json' } }); } }),
+    },
+  };
+  const res = await computeApi(new Request('https://www.getdasha.com/compute/api/chain'), stubEnv, 'https://www.getdasha.com');
+  assert.equal(res.status, 200);
+  assert.equal(hit, '/compute/api/chain');
+}
+{
+  const { DashaLobby } = await import('./dasha-lobby-worker.mjs');
+  globalThis.WebSocketRequestResponsePair ||= class {};
+  const routeRows = new Map();
+  const routeStorage = {
+    async get(key) { return routeRows.get(key); },
+    async put(key, value) { if (typeof key === 'object') for (const [name, item] of Object.entries(key)) routeRows.set(name, item); else routeRows.set(key, value); },
+    async delete(key) { routeRows.delete(key); },
+    async list({ prefix = '' } = {}) { return new Map([...routeRows].filter(([key]) => key.startsWith(prefix))); },
+    async getAlarm() { return Date.now(); }, async setAlarm() {},
+  };
+  let routeReady;
+  const routeLobby = new DashaLobby({ storage: routeStorage, setWebSocketAutoResponse() {}, blockConcurrencyWhile(fn) { routeReady = fn(); }, getWebSockets() { return []; } }, { ALLOWED_ORIGINS: 'https://www.getdasha.com' });
+  await routeReady;
+  // no signing key configured -> ComputeNetwork's honest 503, NOT the websocket 426
+  const heads = await routeLobby.fetch(new Request('https://lobby.getdasha.com/heads'));
+  assert.equal(heads.status, 503);
+  assert.equal((await heads.json()).error, 'signing not configured');
+  const archive = await routeLobby.fetch(new Request('https://lobby.getdasha.com/heads/archive/2026-09-07.json'));
+  assert.equal(archive.status, 503);
+  const chain = await routeLobby.fetch(new Request('https://lobby.getdasha.com/compute/api/chain'));
+  assert.equal(chain.status, 200);
+  assert.equal((await chain.json()).schema, 'settled.chain.v0');
+}
+console.log('dasha-compute-heads: routing regressions ok');
