@@ -62,6 +62,28 @@ for (const path of ['/login', '/contribute', '/bounties', '/crew', '/compute', '
   assert.ok(llms.includes(path), `llms.txt lists live 200 ${path}`);
   assert.ok(full.includes(`https://www.getdasha.com${path}`), `llms-full lists live 200 ${path}`);
 }
+const BUYER_URLS = [
+  'https://www.getdasha.com/compute#ask',
+  'https://www.getdasha.com/compute#provide',
+  'https://lobby.getdasha.com/compute/api/v1',
+];
+for (const url of BUYER_URLS) {
+  assert.ok(llms.includes(url), `llms.txt buyer one-path ${url}`);
+  assert.ok(full.includes(url), `llms-full buyer one-path ${url}`);
+}
+assert.match(llms, /Ask a Mac/, 'llms.txt names Ask a Mac');
+assert.match(llms, /Join a Mac/, 'llms.txt names Join a Mac');
+assert.match(llms, /OpenAI-compatible base URL/, 'llms.txt names OpenAI-compatible base URL');
+assert.match(llms, /First path: Sign in, create a key, change the base URL\./, 'llms.txt first path');
+assert.match(full, /Ask a Mac:/, 'llms-full names Ask a Mac');
+assert.match(full, /Join a Mac:/, 'llms-full names Join a Mac');
+assert.match(full, /OpenAI-compatible base URL:/, 'llms-full names OpenAI-compatible base URL');
+assert.match(full, /First path: Sign in, create a key, change the base URL\./, 'llms-full first path');
+assert.doesNotMatch(llms, /\$0\.05\/job/, 'llms.txt buyer lines have no provider Earn rate');
+assert.doesNotMatch(full, /\$0\.05\/job/, 'llms-full buyer lines have no provider Earn rate');
+assert.doesNotMatch(llms + full, /Show HN/, 'llms files must not mention Show HN');
+assert.doesNotMatch(llms + full, /always free/i, 'llms files must not name a model as always free');
+assert.doesNotMatch(llms + full, /providers_online=\d/, 'llms files must not invent a Mac count');
 assert.match(full, /Bounties: USDC on Solana\. We don’t hold it\./);
 assert.doesNotMatch(full, /does not hold the funds/);
 assert.doesNotMatch(full, /Simp Board:/);
@@ -180,8 +202,13 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.equal(llmsRes.headers.get('x-dasha-edge'), 'llms');
   const llmsBody = await llmsRes.text();
   assert.ok(llmsBody.includes(MINT));
+  for (const url of BUYER_URLS) {
+    assert.ok(llmsBody.includes(url), `${origin}/llms.txt buyer one-path ${url}`);
+  }
   assert.doesNotMatch(llmsBody, /plugin\.jup\.ag/);
   assert.doesNotMatch(llmsBody, /t\.me/);
+  assert.doesNotMatch(llmsBody, /\$0\.05\/job/);
+  assert.doesNotMatch(llmsBody, /Show HN/);
 
   const fullRes = await edgeWorker.fetch(new Request(`${origin}/llms-full.txt`), {});
   assert.equal(fullRes.status, 200, `${origin}/llms-full.txt`);
@@ -193,8 +220,13 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.ok(fullBody.includes(OTHER));
   assert.match(fullBody, /^# \$dasha is dash_eats on Solana/m);
   assert.ok(fullBody.length > llmsBody.length);
+  for (const url of BUYER_URLS) {
+    assert.ok(fullBody.includes(url), `${origin}/llms-full.txt buyer one-path ${url}`);
+  }
   assert.doesNotMatch(fullBody, /plugin\.jup\.ag/);
   assert.doesNotMatch(fullBody, /t\.me/);
+  assert.doesNotMatch(fullBody, /\$0\.05\/job/);
+  assert.doesNotMatch(fullBody, /Show HN/);
 
   const head = await edgeWorker.fetch(new Request(`${origin}/llms-full.txt`, { method: 'HEAD' }), {});
   assert.equal(head.status, 200);
