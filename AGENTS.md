@@ -9,6 +9,9 @@ Worker-first. Exclusive write. Closest AGENTS.md wins. User chat overrides. Lock
 - `/privacy` 200. `/compute` 200 (Use / Provide / Night / Build), not 410. `/crew` 200 (Crew). `/dasha` `/desk` 308 → `/how-to-buy`.
 - Mint `53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump`. Buy `jup.ag` only. Never `plugin.jup.ag`.
 
+## Compute
+- Referral (dasha-compute-referral.mjs, tasks 16-17): NO device fingerprinting - the no-fingerprint telemetry rule stands. Self-referral is blocked by account equality + payout-wallet uniqueness at grant time. Do not reintroduce fingerprint heuristics from older referral specs.
+
 ## Write
 - One writer per path. Claim first (`dg-claim` / `dasha-claim-preflight --owner grok-bot`). Do not steal.
 - Grok Bot: live Workers from this tree. Deploy only with `dasha-lobby-wrangler.deploy.jsonc` (`npx wrangler@3.114.15 deploy -c dasha-lobby-wrangler.deploy.jsonc`).
