@@ -580,6 +580,10 @@ const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\n\nPaste this into
 const API='https://lobby.getdasha.com';
 let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,cardAvailable=false,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacKnown=0,ownMacIds=new Set(),ownMacModels=new Set(),ownMacTps=0,preferSelf=false,lastPreferAttempted=false,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask',provideExpectingNew=false,provideExpectingIds=new Set(),provideExpectingNewId='',provideExpectingOnline=0;
 
+// Funnel telemetry (task 22): aggregate counters only. anon id is a local UUID, never an identity.
+function anonId(){let id='';try{id=localStorage.getItem('dasha-anon-id')||''}catch(e){}if(!id){try{id=crypto.randomUUID()}catch(e){id='00000000-0000-4000-8000-'+String(Math.random()).slice(2,14).padEnd(12,'0')}try{localStorage.setItem('dasha-anon-id',id)}catch(e){}}return id}
+function beacon(name,step){try{const body=JSON.stringify({name:name,step:step,anon_id:anonId()});if(navigator.sendBeacon&&navigator.sendBeacon(API+'/compute/api/event',new Blob([body],{type:'application/json'})))return;fetch(API+'/compute/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:body,keepalive:true}).catch(()=>{})}catch(e){}}
+
 function pendingMessages(){
   const content=$('prompt').value.trim()||'…',kept=[];
   let budget=6000-content.length;
@@ -1537,6 +1541,7 @@ $('run-demo').addEventListener('click',async()=>{
   button.textContent=community?'Waiting for Mac…':'Running…';
   $('answer').textContent=community?'Waiting for a Mac…':'Thinking…';
   showTf('answer');
+  beacon('ask','start');
   $('after-answer').hidden=true;
   {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
   jobCancelled=false;
@@ -1656,6 +1661,7 @@ $('run-demo').addEventListener('click',async()=>{
     }else{
       window.__dashaEmptyRetryOnce=false;
       const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}
+      beacon('ask','complete');
       conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
       renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
     }
@@ -2892,7 +2898,7 @@ $('ask-provide')?.addEventListener('click',()=>{provideBack='ask';clearPaySponso
 $('ask-ocm')?.addEventListener('click',()=>showTf('market'));
 $('ask-host')?.addEventListener('click',()=>showTf('host'));
 $('ask-credits')?.addEventListener('click',()=>{setComputeIntent('credits');showTf('credits');});
-$('pick-provide').addEventListener('click',()=>{setComputeIntent('provide');provideBack='gate';clearPaySponsorFine();showTf('provide-name');});
+$('pick-provide').addEventListener('click',()=>{setComputeIntent('provide');provideBack='gate';clearPaySponsorFine();beacon('provide','open');showTf('provide-name');});
 $('pick-provide-after').addEventListener('click',()=>{clearAnswerMoney();provideBack='ask';clearPaySponsorFine();showTf('provide-name')});
 $('answer-api')?.addEventListener('click',event=>{
   if(!loggedIn)return; // <a> → login return=/compute%23build
@@ -2961,7 +2967,7 @@ document.addEventListener('keydown',event=>{
 });
 function bootHash(){
   const id=location.hash.replace(/^#/,'').toLowerCase();
-  if(id==='provide'){provideBack='gate';clearPaySponsorFine();showTf('provide-name');}
+  if(id==='provide'){provideBack='gate';clearPaySponsorFine();beacon('provide','open');showTf('provide-name');}
   else if(id==='build')showTf('build');
   else if(id==='market'||id==='ocm')showTf('market');
   else if(id==='host')showTf('host');
@@ -2988,7 +2994,7 @@ bootHash();
   // Stay on Ask with draft; applyAskResumeEngine after auth knows fleet (Community when Mac still up).
   showTf('ask');
 })();
-paintRequest();paintCode();updateRun();auth();resumeCardCheckout();
+paintRequest();paintCode();updateRun();auth();resumeCardCheckout();beacon('page','view');
 </script>
 </body>
 </html>

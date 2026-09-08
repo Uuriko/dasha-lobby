@@ -24,3 +24,11 @@ Large Worker media (`grwm` mp4, simp photos, open-alpha tarball) stay on the Clo
 ## Stay off
 
 Designer-publish · `plugin.jup.ag` · rewriting Graham OCM `#44` from this tree
+
+## Compute status badge
+
+Live provider count as an embeddable SVG (60s cache, aggregate only):
+
+```md
+[![Dasha Compute status](https://www.getdasha.com/compute/badge.svg)](https://www.getdasha.com/compute)
+```

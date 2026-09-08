@@ -977,6 +977,26 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
   <script>
   (function () {
     var API = 'https://lobby.getdasha.com';
+    // Funnel telemetry (task 22): aggregate counters only; anon id is a local UUID, never an identity.
+    function dashaAnonId() {
+      var id = '';
+      try { id = localStorage.getItem('dasha-anon-id') || ''; } catch (e) {}
+      if (!id) {
+        try { id = crypto.randomUUID(); } catch (e) { id = '00000000-0000-4000-8000-100000000000'; }
+        try { localStorage.setItem('dasha-anon-id', id); } catch (e) {}
+      }
+      return id;
+    }
+    function dashaBeacon(step) {
+      try {
+        var body = JSON.stringify({ name: 'signin', step: step, anon_id: dashaAnonId() });
+        if (navigator.sendBeacon && navigator.sendBeacon(API + '/compute/api/event', new Blob([body], { type: 'application/json' }))) return;
+        fetch(API + '/compute/api/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true }).catch(function () {});
+      } catch (e) {}
+    }
+    document.querySelector('[data-grok-login]') && document.querySelector('[data-grok-login]').addEventListener('click', function () { dashaBeacon('start:grok'); });
+    document.querySelector('[data-x-login]') && document.querySelector('[data-x-login]').addEventListener('click', function () { dashaBeacon('start:x'); });
+    document.querySelector('[data-wallet-login]') && document.querySelector('[data-wallet-login]').addEventListener('click', function () { dashaBeacon('start:wallet'); });
     var form = document.querySelector('[data-email-form]');
     if (!form) return;
     var emailInput = form.querySelector('[data-email-input]');
@@ -987,6 +1007,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     function say(kind, text) { status.dataset.kind = kind; status.textContent = text; }
     function fail(msg) { say('bad', msg || 'Something went wrong. Try again.'); }
     sendBtn.addEventListener('click', function () {
+      dashaBeacon('start:email');
       var email = emailInput.value.trim();
       if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
       sendBtn.disabled = true; say('', 'Sending code...');

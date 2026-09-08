@@ -6057,6 +6057,22 @@ function isHeadsPath(pathname) {
   return path === '/heads' || path === '/heads/' || path.startsWith('/heads/archive/');
 }
 
+/** Public compute status badge: served by the ComputeNetwork DO like /heads. */
+function isComputeBadgePath(pathname) {
+  return pathname === '/compute/badge.svg';
+}
+
+/** Funnel telemetry (task 22): aggregate counters in the shared 'public' DO storage.
+ * Counter bump only - never stores identities, emails, or payloads. */
+async function bumpLobbyMetric(storage, name) {
+  try {
+    if (!/^[a-z0-9:_-]{1,48}$/.test(String(name || ''))) return;
+    const key = `compute:metric:${new Date().toISOString().slice(0, 10)}:${name}`;
+    const current = Number(await storage.get(key)) || 0;
+    await storage.put(key, current + 1);
+  } catch {}
+}
+
 
 function factoryCatalogPayload() {
   const generated_at = new Date().toISOString();
@@ -7537,6 +7553,7 @@ export class DashaLobby {
       if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
       else await this.state.storage.delete('walletLogins');
       const token = await createWalletSessionToken(this.env, body.publicKey);
+      await bumpLobbyMetric(this.state.storage, 'signin:success:wallet');
       return json({ ok: true, provider: 'wallet' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -7600,6 +7617,7 @@ export class DashaLobby {
       if (Object.keys(logins).length) await this.state.storage.put('emailLogins', logins);
       else await this.state.storage.delete('emailLogins');
       const token = await createEmailSessionToken(this.env, email);
+      await bumpLobbyMetric(this.state.storage, 'signin:success:email');
       return json({ ok: true, provider: 'email' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -7662,6 +7680,7 @@ export class DashaLobby {
       if (Object.keys(logins).length) await this.state.storage.put('grokLogins', logins);
       else await this.state.storage.delete('grokLogins');
       const token = await createGrokSessionToken(this.env, pending.displayName);
+      await bumpLobbyMetric(this.state.storage, 'signin:success:grok');
       return json({ state: 'ok', provider: 'grok' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -9240,7 +9259,7 @@ export class DashaLobby {
 
   async fetch(request) {
     const url = new URL(request.url);
-    if (isComputeApiPath(url.pathname) || isHeadsPath(url.pathname)) {
+    if (isComputeApiPath(url.pathname) || isHeadsPath(url.pathname) || isComputeBadgePath(url.pathname)) {
       const origin = request.headers.get('Origin');
       const allowedOrigin = origin && originAllowed(origin, this.env.ALLOWED_ORIGINS || '') ? origin : null;
       return this.compute.fetch(request, allowedOrigin);
@@ -9650,6 +9669,7 @@ async function handleOAuth(request, env, allowedOrigin) {
       const user = await fetchXUser(tokens.access_token);
       if (!user.handle) throw new Error('missing handle');
       const session = await createSessionToken(env, user);
+      await bumpLobbyMetric(this.state.storage, 'signin:success:x');
       const safeHandle = escapeHtml(user.handle);
       const scriptHandle = JSON.stringify(user.handle).replace(/</g, '\\u003c');
       const scriptNonce = randomUrlToken(18);

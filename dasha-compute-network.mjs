@@ -202,6 +202,13 @@ function maybeHead(request, res) {
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
 }
 
+/** Funnel telemetry (task 22): aggregate counters only - no emails, prompts, or fingerprints. */
+const METRIC_STEP_RE = /^[a-z0-9:_-]{1,32}$/;
+const METRIC_ANON_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const METRIC_CLIENT_EVENTS = new Set(['page', 'provide', 'ask', 'pay', 'signin', 'kit']);
+const metricDay = () => new Date().toISOString().slice(0, 10);
+const metricHour = (now) => new Date(now).toISOString().slice(0, 13);
+
 /** Public compute health probe. /compute/api/health is a fail-loud alias of healthz (same 200 JSON, not 308). */
 function isComputeApiHealthzPath(path) {
   return path === '/compute/api/healthz' || path === '/compute/api/healthz/'
@@ -311,6 +318,13 @@ function sameSecret(a, b) {
 
 
 /** Parse create-time spend cap. Explicit null = uncapped; omit/invalid → default $5. */
+/** Embeddable status badge (task 23): aggregate providers_online only, no provider/account data. */
+export function computeBadgeSvg(online) {
+  const n = Math.max(0, Number.isFinite(Number(online)) ? Math.floor(Number(online)) : 0);
+  const label = n === 1 ? '1 Mac online' : `${n} Macs online`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="64" viewBox="0 0 360 64" role="img" aria-label="Dasha Compute - ${label}"><rect width="360" height="64" fill="#070608"/><rect x="2" y="2" width="356" height="60" fill="none" stroke="#dfff00" stroke-width="4"/><text x="16" y="26" fill="#dfff00" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="17" font-weight="900">DASHA COMPUTE</text><text x="16" y="49" fill="#f4eddb" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="700">${label}</text></svg>`;
+}
+
 export function parseApiKeyLimitCents(raw) {
   if (raw === null) return null;
   if (raw === undefined) return API_KEY_LIMIT_DEFAULT_CENTS;
@@ -756,6 +770,14 @@ export class ComputeNetwork {
     } }), { headers: { ...SECURITY, ...cors(origin, Boolean(origin)), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', ...extra } });
   }
 
+  /** Aggregate counter bump. Name-constrained, counter only, no payloads. */
+  async bumpMetric(name) {
+    if (!METRIC_STEP_RE.test(name)) return;
+    const key = `compute:metric:${metricDay()}:${name}`;
+    const current = Number(await this.state.storage.get(key)) || 0;
+    await this.state.storage.put(key, current + 1);
+  }
+
   async fetch(request, allowedOrigin) {
     const path = new URL(request.url).pathname, now = Date.now(), credentials = Boolean(allowedOrigin);
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -858,6 +880,7 @@ export class ComputeNetwork {
         limitCents, limitReset, spendCents: 0, spendWindowStart: now,
       };
       await this.state.storage.put(`compute:api-key:${id}`, record);
+      await this.bumpMetric('key:create');
       return json({
         id, name, api_key: token,
         limit_cents: limitCents, limit_reset: limitReset, spend_cents: 0,
@@ -1006,7 +1029,57 @@ export class ComputeNetwork {
           now: Date.now()
         });
       }
+      await this.bumpMetric('ask:hosted:complete');
       return json({ ok: true }, 202, allowedOrigin, credentials);
+    }
+
+    // Funnel telemetry (task 22): client beacon intake. anon_id is a client-local UUID used ONLY
+    // for rate limiting - never stored. No emails, prompts, or fingerprints accepted.
+    if (path === '/compute/api/event' || path === '/compute/api/event/') {
+      if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin || '*', credentials));
+      let body = {};
+      try { body = await request.json(); } catch { body = {}; }
+      const eventName = String(body && body.name || '');
+      const step = String(body && body.step || '');
+      const anon = String(body && body.anon_id || '');
+      if (!METRIC_CLIENT_EVENTS.has(eventName) || !METRIC_STEP_RE.test(step)) return json({ error: 'unknown event' }, 400, allowedOrigin || '*', credentials);
+      if (!METRIC_ANON_RE.test(anon)) return json({ error: 'anon_id required' }, 400, allowedOrigin || '*', credentials);
+      if (!takeRate(this.rates, `event:${anon}`, 60)) return json({ error: 'rate limited' }, 429, allowedOrigin || '*', credentials);
+      await this.bumpMetric(`${eventName}:${step}`);
+      return json({ ok: true }, 202, allowedOrigin || '*', credentials);
+    }
+
+    // Public daily rollup (doubles as a transparency asset): counts per step per day + hourly providers_online.
+    if ((path === '/compute/api/metrics' || path === '/compute/api/metrics/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const entries = [...(await this.state.storage.list({ prefix: 'compute:metric:' })).entries()];
+      const days = {};
+      const providersHourly = {};
+      for (const [key, value] of entries) {
+        const rest = key.slice('compute:metric:'.length);
+        if (rest.startsWith('providers:')) { providersHourly[rest.slice('providers:'.length)] = Number(value) || 0; continue; }
+        const day = rest.slice(0, 10), name = rest.slice(11);
+        if (!day || !name) continue;
+        (days[day] ||= {})[name] = Number(value) || 0;
+      }
+      return maybeHead(request, json({ days, providers_online_hourly: providersHourly }, 200, allowedOrigin || '*', false, { 'Cache-Control': 'public, max-age=60' }));
+    }
+
+    // Embeddable status badge: public SVG of providers_online, 60s cache. Aggregate count only.
+    if (path === '/compute/badge.svg' && (request.method === 'GET' || request.method === 'HEAD')) {
+      await this.prune(now);
+      const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
+      return maybeHead(request, new Response(computeBadgeSvg(providers.length), {
+        status: 200,
+        headers: {
+          ...SECURITY,
+          'Content-Type': 'image/svg+xml; charset=utf-8',
+          'Cache-Control': 'public, max-age=60',
+          'Cross-Origin-Resource-Policy': 'cross-origin',
+          'Access-Control-Allow-Origin': '*',
+          'X-Robots-Tag': 'noindex',
+          'X-Dasha-Edge': 'compute-badge',
+        },
+      }));
     }
 
     if ((path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/v1/network' || path === '/compute/api/v1/network/') && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -1019,6 +1092,8 @@ export class ComputeNetwork {
         const tps = measured.length ? measured.reduce((sum, value) => sum + value, 0) / measured.length : 0;
         return { model, providers: serving.length, measured_providers: measured.length, tokens_per_second: Math.round(tps * 100) / 100 };
       });
+      const hourKey = `compute:metric:providers:${metricHour(now)}`;
+      if ((await this.state.storage.get(hourKey)) === undefined) await this.state.storage.put(hourKey, providers.length);
       return maybeHead(request, json({ providers_online: providers.length, models_available: models, capacity, jobs_queued: jobs.filter(job => job.status === 'queued').length, card_available: stripeConfigured(this.env) }, 200, allowedOrigin || '*', credentials));
     }
 
@@ -1039,6 +1114,7 @@ export class ComputeNetwork {
       if (!models.length) return json({ error: 'choose at least one supported model' }, 400, allowedOrigin, true);
       const providerId = `mac_${randomUrlToken(9)}`, token = `dcp_${randomUrlToken(24)}`, name = String(input.name || '').trim().slice(0, 64) || 'My Mac';
       await this.state.storage.put(`compute:provider:${providerId}`, { id: providerId, owner, name, allowedModels: models, models: [], tokenHash: await sha256(token), createdAt: now, lastSeenAt: 0 });
+      await this.bumpMetric('provider:register');
       return json({ provider_id: providerId, provider_token: token, coordinator_url: 'https://lobby.getdasha.com/compute/api', models, note: 'Copy this token now. Dasha stores only its hash.' }, 201, allowedOrigin, true);
     }
 
@@ -1492,6 +1568,7 @@ export class ComputeNetwork {
       });
       if (!result.ok) return json({ error: result.error, min_payout_cents: PROVIDER_MIN_PAYOUT_CENTS, payout_mode: PROVIDER_PAYOUT_MODE }, result.status || 400, allowedOrigin, true);
       const p = result.payout;
+      await this.bumpMetric('provider:payout');
       return json({
         id: p.id,
         status: p.status,
@@ -1646,6 +1723,7 @@ export class ComputeNetwork {
         paidAt: null,
       };
       await this.state.storage.put(`compute:credit-order:${id}`, order);
+      await this.bumpMetric(`credits:order:${method}`);
       const pay_url = solanaPayUrl({ dest: CREDIT_DEST, amount: locked.amountUi, mint: locked.mint, reference, label: 'Dasha Compute' });
       return json({
         id: order.id,
@@ -1733,6 +1811,7 @@ export class ComputeNetwork {
         paidAt: null,
       };
       await this.state.storage.put(`compute:credit-order:${id}`, order);
+      await this.bumpMetric('credits:order:card');
       return json({
         id: order.id,
         status: order.status,
@@ -2053,6 +2132,7 @@ export class ComputeNetwork {
     await this.state.storage.put(key, paid);
     await this.state.storage.put(balKey, { owner: fresh.owner, cents: nextBal, updatedAt: now });
     await this.state.storage.put(sigKey, { orderId: fresh.id, owner: fresh.owner, at: now });
+    await this.bumpMetric(`credits:settled:${paid.method || 'crypto'}`);
 
     return {
       body: {
@@ -2115,6 +2195,7 @@ export class ComputeNetwork {
     await this.state.storage.put(key, paid);
     await this.state.storage.put(balKey, { owner: fresh.owner, cents: nextBal, updatedAt: now });
     await this.state.storage.put(sigKey, { orderId: fresh.id, owner: fresh.owner, at: now });
+    await this.bumpMetric(`credits:settled:${paid.method || 'crypto'}`);
 
     return {
       body: {
