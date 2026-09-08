@@ -56,6 +56,8 @@ export function publicReceipt(row) {
     at: Math.max(0, Math.floor(Number(row.at) || 0)) || null,
     job_id: row.job_id || null,
     request_id: row.request_id || null,
+    model: row.model ? String(row.model) : null,
+    latency_ms: Number.isFinite(Number(row.latency_ms)) ? Math.max(0, Math.floor(Number(row.latency_ms))) : null,
     kind: 'paid-inference',
   };
 }
@@ -72,6 +74,8 @@ export async function recordSettledInference(storage, {
   cents = 0,
   jobId = null,
   requestId = null,
+  model = null,
+  latencyMs = null,
   replayKey = null,
   now = Date.now(),
   idFactory = () => `rcp_${randomUrlToken(10)}`,
@@ -103,6 +107,8 @@ export async function recordSettledInference(storage, {
     cents: charge,
     job_id: jobId ? String(jobId).slice(0, 64) : null,
     request_id: requestId ? String(requestId).slice(0, 80) : null,
+    model: model ? String(model).slice(0, 64) : null,
+    latency_ms: Number.isFinite(Number(latencyMs)) ? Math.max(0, Math.floor(Number(latencyMs))) : null,
     at: now,
     kind: 'paid-inference',
   };

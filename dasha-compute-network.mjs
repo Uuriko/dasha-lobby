@@ -1024,6 +1024,7 @@ export class ComputeNetwork {
           usage: settle.usage || null,
           tokens: settle.tokens,
           cents: settle.cents != null ? settle.cents : HOSTED_ASK_PRICE_CENTS,
+          model: 'gpt-oss-20b',
           requestId: settle.request_id || null,
           replayKey: settle.replay_key || (settle.request_id ? `hosted:${settle.request_id}` : null),
           now: Date.now()
@@ -1161,7 +1162,7 @@ export class ComputeNetwork {
       const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].sort((a, b) => a.createdAt - b.createdAt);
       const job = jobs.find(candidate => candidate.status === 'queued' && provider.models.includes(candidate.model) && (candidate.route !== 'self' || provider.owner === candidate.owner));
       if (!job) return new Response(null, { status: 204, headers: SECURITY });
-      job.status = 'leased'; job.providerId = provider.id; job.leaseExpiresAt = now + LEASE_MS; job.expiresAt = now + LEASE_MS + 60_000;
+      job.status = 'leased'; job.providerId = provider.id; job.leasedAt = now; job.leaseExpiresAt = now + LEASE_MS; job.expiresAt = now + LEASE_MS + 60_000;
       await this.state.storage.put(`compute:job:${job.id}`, job);
       return json({ job: { id: job.id, model: job.model, messages: job.messages, max_tokens: job.maxTokens, temperature: job.temperature, stream: job.stream === true }, lease_seconds: LEASE_MS / 1000 });
     }
@@ -1202,6 +1203,8 @@ export class ComputeNetwork {
             usage,
             cents: settleCents,
             jobId: job.id,
+            model: job.model,
+            latencyMs: job.leasedAt ? now - job.leasedAt : null,
             replayKey: `job:${job.id}`,
             now,
           });
@@ -1242,6 +1245,8 @@ export class ComputeNetwork {
             usage,
             cents: settleCents,
             jobId: job.id,
+            model: job.model,
+            latencyMs: job.leasedAt ? now - job.leasedAt : null,
             replayKey: `job:${job.id}`,
             now,
           });

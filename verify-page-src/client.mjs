@@ -131,7 +131,8 @@ async function bootIndex() {
     if (chain.length) {
       list.innerHTML = chain.slice(-20).reverse().map((r) =>
         '<li><a href="/verify?id=' + encodeURIComponent(r.id || r.hash) + '">' +
-        (r.id || '(no id)') + '</a> · ' + r.engine + ' · ' + r.tokens + ' tok · ' + r.cents + '¢ · ' +
+        (r.id || '(no id)') + '</a> · ' + r.engine + (r.model ? ' · ' + r.model : '') + ' · ' + r.tokens + ' tok · ' +
+        (Number.isFinite(r.latency_ms) ? (r.latency_ms / 1000).toFixed(1) + 's · ' : '') + r.cents + '¢ · ' +
         (r.at ? new Date(r.at).toISOString() : '') + '</li>').join('');
     } else {
       list.innerHTML = '<li>No chained receipts yet - receipts join the chain as paid jobs settle.</li>';

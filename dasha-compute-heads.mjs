@@ -182,6 +182,10 @@ export async function appendChainedReceipt(storage, key, fields, now = Date.now(
     at: signed.at,
     job_id: signed.job_id,
     request_id: fields.request_id || null,
+    // Unsigned display fields (task 24 receipts showcase): outside the canonical
+    // signed body on purpose - the hash/sig still cover engine/tokens/cents/at.
+    model: fields.model ? String(fields.model).slice(0, 64) : null,
+    latency_ms: Number.isFinite(Number(fields.latency_ms)) ? Math.max(0, Math.floor(Number(fields.latency_ms))) : null,
     kind: 'paid-inference',
     prev_hash: signed.prev_hash,
     hash: signed.hash,
