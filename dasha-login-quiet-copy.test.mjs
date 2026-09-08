@@ -15,7 +15,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 const loginSrc = readFileSync(join(root, 'dasha-login-page.html'), 'utf8');
 
-const QUIET = 'Sign in. Grok Bot, X, or a wallet.';
+const QUIET = 'Sign in. Grok Bot, X, email, or a wallet.';
 const QUIET_P = `<p>${QUIET}</p>`;
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
@@ -28,7 +28,7 @@ function visible(html) {
 
 function assertQuietLogin(html, label) {
   const body = visible(html);
-  assert.equal((html.match(/<p>Sign in\. Grok Bot, X, or a wallet\.<\/p>/g) || []).length, 1, `${label} one quiet line`);
+  assert.equal((html.match(/<p>Sign in\. Grok Bot, X, email, or a wallet\.<\/p>/g) || []).length, 1, `${label} one quiet line`);
   assert.match(body, /data-login-methods/, `${label} methods`);
   const methodsAt = body.indexOf('data-login-methods');
   const lineAt = body.indexOf(QUIET_P);

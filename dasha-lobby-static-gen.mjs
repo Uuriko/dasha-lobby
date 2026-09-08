@@ -938,7 +938,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Log in — $dasha</title>
-  <meta name="description" content="Sign in. Grok Bot, X, or a wallet.">
+  <meta name="description" content="Sign in. Grok Bot, X, email, or a wallet.">
   <meta name="robots" content="noindex,follow">
   <meta name="theme-color" content="#070608">
   <style>
@@ -951,7 +951,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
   <main class="login" id="dasha-login" data-dasha-login>
     <a class="brand" href="https://www.getdasha.com/">$dasha</a>
     <h1>Log in.</h1>
-    <p>Sign in. Grok Bot, X, or a wallet.</p>
+    <p>Sign in. Grok Bot, X, email, or a wallet.</p>
     <p class="payout-note">Providing a Mac? Payout is via Solana wallet.</p>
     <div class="methods" data-login-methods>
       <a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>
