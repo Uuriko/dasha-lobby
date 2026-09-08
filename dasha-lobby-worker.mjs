@@ -6094,10 +6094,10 @@ function isComputeBadgePath(pathname) {
 
 /** Kit version manifest (task 20). DEPLOY CHECKLIST: bump version/min_version/url sha256 in the SAME deploy as any kit tar change. */
 const COMPUTE_KIT_JSON = {
-  version: '0.3.0',
-  min_version: '0.3.0',
+  version: '0.3.1',
+  min_version: '0.3.1',
   url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
-  sha256: '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf',
+  sha256: '43df0883a900058320ceca36bf029b82d2495b2f2f17086495d31219cc3fec24',
 };
 
 function isComputeKitJsonPath(pathname) {

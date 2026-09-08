@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * LIVE Worker c1749fba + kit 4f48b022: Provide / Host skill
+ * LIVE Worker + kit 43df0883 (0.3.1): Provide / Host skill
  * OLLAMA_KEEP_ALIVE + advertise≠URLError docs (PR-mirror).
  */
 import assert from 'node:assert/strict';
@@ -14,7 +14,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { PROVIDE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import worker from './dasha-lobby-worker.mjs';
 
-const LIVE_KIT_SHA256 = '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf';
+const LIVE_KIT_SHA256 = '43df0883a900058320ceca36bf029b82d2495b2f2f17086495d31219cc3fec24';
 const root = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
 const provideDisk = readFileSync(join(root, 'dasha-compute-skills/PROVIDE.md'), 'utf8');
