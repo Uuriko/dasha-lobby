@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** /contribute leftover lecture + Simp Board footer. Honest: Build Dasha. Open a PR. first-issue / guide / ideas. Quiet Compute Ask a Mac / Join a Mac doors. */
+/** /contribute leftover lecture + Simp Board footer. Honest: Build Dasha. Open a PR. first-issue / guide / ideas. Quiet Compute Ask a Mac / Join a Mac / Benchmarks doors. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -21,9 +21,10 @@ assert.match(html, /github\.com\/Uuriko\/dasha-desk\/contribute/);
 assert.match(html, /CONTRIBUTING\.md/);
 assert.match(html, /discussions\/categories\/ideas/);
 assert.match(html, /href="https:\/\/www\.getdasha\.com\/lobby"/);
-assert.match(html, /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/, 'quiet Compute Ask/Provide doors');
+assert.match(html, /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/benchmarks">Benchmarks<\/a><\/p>/, 'quiet Compute Ask/Provide/Benchmarks doors');
 assert.match(html, /href="https:\/\/www\.getdasha\.com\/compute#ask"/, 'Ask a Mac door');
 assert.match(html, /href="https:\/\/www\.getdasha\.com\/compute#provide"/, 'Join a Mac door');
+assert.match(html, /href="https:\/\/www\.getdasha\.com\/benchmarks"/, 'Benchmarks door');
 assert.doesNotMatch(html, /disclaimer|not financial advice|NFA|dyor|not official/i, 'no disclaimer');
 assert.doesNotMatch(html, /\b\d+\s+Macs?\b/i, 'no fake Mac count');
 assert.doesNotMatch(html, /nothing to join/i);
@@ -56,9 +57,10 @@ assert.match(body, /Open a pull request\./);
 assert.match(body, /Pick a first issue/);
 assert.match(body, /Read the guide/);
 assert.match(body, /Propose an idea/);
-assert.match(body, /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/, 'served Compute doors');
+assert.match(body, /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/benchmarks">Benchmarks<\/a><\/p>/, 'served Compute doors');
 assert.match(body, /href="https:\/\/www\.getdasha\.com\/compute#ask"/, 'served Ask a Mac');
 assert.match(body, /href="https:\/\/www\.getdasha\.com\/compute#provide"/, 'served Join a Mac');
+assert.match(body, /href="https:\/\/www\.getdasha\.com\/benchmarks"/, 'served Benchmarks');
 assert.doesNotMatch(body, /disclaimer|not financial advice|NFA|dyor|not official/i, 'served no disclaimer');
 assert.doesNotMatch(body, /\b\d+\s+Macs?\b/i, 'served no fake Mac count');
 assert.doesNotMatch(body, /nothing to join/i);
@@ -82,4 +84,4 @@ const llmsBody = await llmsRes.text();
 assert.match(llmsBody, /Contribute: Build Dasha\. Open a pull request\./);
 assert.doesNotMatch(llmsBody, /no application, wallet or points gate/);
 
-console.log('dasha-contribute-leftover: PASS (Build Dasha. Open a PR. quiet Compute Ask/Provide doors. no Simp footer. llms-full matches)');
+console.log('dasha-contribute-leftover: PASS (Build Dasha. Open a PR. quiet Compute Ask/Provide/Benchmarks doors. no Simp footer. llms-full matches)');

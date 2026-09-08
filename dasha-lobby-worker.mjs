@@ -306,6 +306,7 @@ crew https://www.getdasha.com/crew
 compute https://www.getdasha.com/compute
 Ask a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
+Live benchmarks https://www.getdasha.com/benchmarks
 OpenAI-compatible base URL https://lobby.getdasha.com/compute/api/v1
 associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump
 pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7
@@ -327,6 +328,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Compute](https://www.getdasha.com/compute)
 - [Ask a Mac](https://www.getdasha.com/compute#ask)
 - [Join a Mac](https://www.getdasha.com/compute#provide)
+- [Live benchmarks](https://www.getdasha.com/benchmarks)
 - [OpenAI-compatible base URL](https://lobby.getdasha.com/compute/api/v1)
 - [CoinGecko dash_eats](https://www.coingecko.com/en/coins/dash_eats)
 - [Jupiter](https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump)
@@ -433,6 +435,7 @@ Crew: five jobs. You keep the keys. https://www.getdasha.com/crew
 Compute: Start. (Ask / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Sponsor. Credits → balance + Use. Ask → Hosted. Quiet Marketplace / Host. https://www.getdasha.com/compute
 Ask a Mac: https://www.getdasha.com/compute#ask
 Join a Mac: https://www.getdasha.com/compute#provide
+Live benchmarks: https://www.getdasha.com/benchmarks
 OpenAI-compatible base URL: https://lobby.getdasha.com/compute/api/v1
 First path: Sign in, create a key, change the base URL.
 
@@ -6622,7 +6625,7 @@ const CONTRIBUTE_HTML = htmlPage('Contribute to Dasha', `<h1>Build Dasha.</h1>
 <p>Open a pull request.</p>
 <p><a class="cta" href="https://github.com/Uuriko/dasha-desk/contribute" target="_blank" rel="noopener noreferrer">Pick a first issue ↗</a></p>
 <p><a href="https://github.com/Uuriko/dasha-desk/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Read the guide ↗</a> · <a href="https://github.com/Uuriko/dasha-desk/discussions/categories/ideas" target="_blank" rel="noopener noreferrer">Propose an idea ↗</a></p>
-<p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
+<p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a> · <a href="https://www.getdasha.com/benchmarks">Benchmarks</a></p>
 <p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/lobby">Lobby</a></p>`, { path: '/contribute', description: 'Build Dasha. Open a pull request.' });
 
 function contributePageResponse(request) {
