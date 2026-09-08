@@ -122,6 +122,8 @@ import {
 } from './dasha-lobby-static-gen.mjs';
 import { ComputeNetwork, computeApi } from './dasha-compute-network.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
+import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
+import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import { isComputeOcmPath, proxyComputeOcm } from './dasha-compute-ocm-proxy.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
@@ -189,6 +191,7 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/faucet</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/bag</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/which</loc><lastmod>2026-09-01</lastmod></url>
+  <url><loc>https://www.getdasha.com/verify</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://www.getdasha.com/listings</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/listings.json</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/crew</loc><lastmod>2026-09-01</lastmod></url>
@@ -4142,8 +4145,6 @@ const POTTER_PLAIN_LOGIN_308_PATHS = new Set([
   "/log_in/"
 ]);
 const POTTER_WHICH_308_PATHS = new Set([
-  "/verify",
-  "/verify/"
 ]);
 /** Leftover /ca /contract /holder /holders (Worker 8266782e). Live already 308→/bag.
  * /ca used to fold /which; bag is the contract/holder facts page. Exact /bag stays 200.
@@ -11119,6 +11120,37 @@ export default {
           'Content-Type': 'text/html; charset=utf-8',
           'Cache-Control': 'public, max-age=300',
           'X-Dasha-Edge': 'listings',
+          Link: LLMS_DESCRIBEDBY,
+        }),
+      });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/keys.json') {
+      const headsKey = await headsSigningKey(env);
+      if (!headsKey) {
+        return new Response(JSON.stringify({ error: 'signing not configured' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+      return new Response(JSON.stringify({
+        schema: KEYS_SCHEMA,
+        keys: [{ id: headsKey.signer, algo: 'ed25519', spki_pem: headsKey.pubPem, public_key_base64: headsKey.pubRawB64 }],
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*', 'X-Dasha-Edge': 'keys' },
+      });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/heads' || url.pathname === '/heads/' || url.pathname.startsWith('/heads/archive/'))) {
+      const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
+      if (!stub) return new Response(JSON.stringify({ error: 'missing lobby' }), { status: 503, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+      return stub.fetch(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && ['/verify','/verify/'].includes(String(url.pathname || '').toLowerCase())) {
+      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(VERIFY_PAGE_HTML), {
+        headers: htmlHeaders({
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+          'X-Dasha-Edge': 'verify',
           Link: LLMS_DESCRIBEDBY,
         }),
       });

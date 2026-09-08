@@ -256,6 +256,7 @@ export const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/faucet</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/bag</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/which</loc><lastmod>2026-09-01</lastmod></url>
+  <url><loc>https://www.getdasha.com/verify</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://www.getdasha.com/listings</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/listings.json</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/crew</loc><lastmod>2026-09-01</lastmod></url>
