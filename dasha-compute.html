@@ -409,6 +409,7 @@ footer a:hover{color:var(--paper)}
     <a class="tf-quiet" id="answer-api" href="/login?return=/compute%23build" hidden>API key</a>
     <button type="button" class="tf-quiet" id="answer-credits" hidden>Credits</button>
     <!-- midstream-fail-honesty:2026-09-07 -->
+    <!-- hosted-denial-honesty:2026-09-07 -->
     <!-- usdc-settle-honesty:2026-09-07 -->
     <button type="button" class="tf-quiet" id="answer-retry" hidden data-midstream-fail="1">Retry</button>
   </div>
@@ -1298,6 +1299,7 @@ async function auth(){
   updateProvideAuth();
   if(pendingAskResumeEngine)applyAskResumeEngine();
   else updateRun();
+  if(tfStep==='night')paintNightAuth();
   if(loggedIn){loadProviders();loadApiKeys();loadCreditsBalance()}
   else {creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;ownMacOnline=0;ownMacKnown=0;ownMacIds=new Set();ownMacModels=new Set();ownMacTps=0;preferSelf=false;clearProvideExpecting();paintCreditsBalance();paintEarn();paintAnswerApi();paintAskMyMac()}
   paintPayMethod();
@@ -1348,7 +1350,22 @@ function paintNightAuth(reason){
   if(queue){queue.hidden=!loggedIn;queue.disabled=!loggedIn;queue.textContent='Queue'}
   if(login){login.hidden=loggedIn;login.textContent='Sign in'}
   const hosted=$('night-use-hosted');
-  if(hosted)hosted.textContent='Hosted';
+  if(hosted){
+    // After auth: mute Hosted when hostedLive===false. Pre-auth optimistic Hosted stays.
+    if(window.__dashaAuthReady&&hostedLive===false){
+      hosted.textContent='Hosted · —';
+      hosted.disabled=true;
+      hosted.setAttribute('aria-disabled','true');
+      hosted.setAttribute('aria-label','Hosted · unavailable');
+      hosted.title='Hosted · unavailable';
+    }else{
+      hosted.textContent='Hosted';
+      hosted.disabled=false;
+      hosted.removeAttribute('aria-disabled');
+      hosted.removeAttribute('title');
+      hosted.setAttribute('aria-label','Hosted');
+    }
+  }
   // Honest capacity: Mixture (or wrong-model) Night still offers live Community Macs.
   const com=$('night-use-community');
   if(com){
@@ -1421,7 +1438,7 @@ async function queueForMac(){
 async function readSse(response){
   if(!response.ok){
     const ct=response.headers.get('content-type')||'';
-    if(ct.includes('application/json')){const err=await response.json().catch(()=>({}));throw Error(err?.error?.message||err?.error||'Request failed')}
+    if(ct.includes('application/json')){const err=await response.json().catch(()=>({}));const e=Error(err?.error?.message||err?.error||'Request failed');e.code=err?.error?.code||err?.code||null;throw e}
     throw Error('Request failed');
   }
   const reader=response.body.getReader(),decoder=new TextDecoder();
@@ -1449,7 +1466,7 @@ async function readSse(response){
   return out;
 }
 $('queue-night').addEventListener('click',()=>queueForMac());
-$('night-use-hosted')?.addEventListener('click',()=>{nightQueueIntent=false;setEngine('hosted',true)});
+$('night-use-hosted')?.addEventListener('click',()=>{if(window.__dashaAuthReady&&hostedLive===false)return;nightQueueIntent=false;setEngine('hosted',true)});
 $('night-use-community')?.addEventListener('click',()=>{if(providersOnline<1)return;nightQueueIntent=false;cameFromHow=true;cameFromGate=false;preferOnlineModel($('model'),false);setEngine('community',false);showTf('ask');});
 $('run-demo').addEventListener('click',async()=>{
   if(nightQueueIntent){queueForMac();return}
@@ -1563,7 +1580,7 @@ $('run-demo').addEventListener('click',async()=>{
       let hostedUsage=null;
       if(ct.includes('event-stream')){answer=await readSse(res);hostedUsage=lastSseUsage}
       else{
-        if(!res.ok){const err=await res.json().catch(()=>({}));throw Error(err?.error||'Request failed')}
+        if(!res.ok){const err=await res.json().catch(()=>({}));const e=Error(err?.error?.message||err?.error||'Request failed');e.code=err?.error?.code||err?.code||null;throw e}
         const data=await res.json();answer=String(data.answer||'');onFirstToken();$('answer').textContent=answer;
         if(Number.isFinite(Number(data?.balance_cents))){creditBalanceCents=Math.max(0,Math.floor(Number(data.balance_cents)));paintAskCredits()}
         if(data?.usage&&typeof data.usage==='object')hostedUsage=data.usage;
@@ -1601,6 +1618,7 @@ $('run-demo').addEventListener('click',async()=>{
     const emptyFail=/empty completion/i.test(msg);
     // Mid-stream provider die (URLError / provider_cut) — fail loud + Retry; never settle/success face.
     const providerCut=error?.code==='provider_cut'||/provider inference failed|provider cut|URLError|stream ended before completion/i.test(msg);
+    const hostedCut=!community&&(error?.code==='hosted_cut'||/hosted demo unavailable|model request failed|Workers AI|AI binding/i.test(msg));
     if(jobCancelled||error?.name==='AbortError'){
       // Keep partial tokens already painted; only replace waiting placeholders.
       const cur=String($('answer')?.textContent||'');
@@ -1629,6 +1647,15 @@ $('run-demo').addEventListener('click',async()=>{
       // Dasha tone: short fail + Retry. Optional one-liner when advertise stayed up.
       const note=providersOnline>0?'\nStill listed online.':'';
       $('answer').textContent='Mac cut out.'+note;
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      paintAnswerMoney();paintAnswerReceipt();
+    }else if(hostedCut){
+      // Hosted denial (Workers AI / unavailable) — fail loud + Retry; never settle/success face.
+      clearAnswerMoney();
+      lastAskFailKind='hosted_cut';
+      $('answer-title').textContent='Answer.';
+      const note=providersOnline>=1?'\nTry Community or Queue.':'';
+      $('answer').textContent='Hosted cut out.'+note;
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
       paintAnswerMoney();paintAnswerReceipt();
     }else{
@@ -2073,6 +2100,7 @@ async function refreshHonesty(){
     const status=await api('/compute/api/status');
     hostedLive=status?.live===true;
     $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
+    if(tfStep==='night')paintNightAuth();
   }catch{}
   await loadSettled24h();
   try{

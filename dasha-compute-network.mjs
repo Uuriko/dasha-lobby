@@ -2073,7 +2073,7 @@ export async function computeApi(request, env, allowedOrigin) {
   if (path !== '/compute/api/chat' && path !== '/compute/api/chat/') return json({ error: 'not found' }, 404, allowedOrigin, credentials);
   if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, credentials));
   if (!allowedOrigin) return json({ error: 'origin required' }, 403);
-  if (!env.AI) return json({ error: 'hosted demo unavailable' }, 503, allowedOrigin, true);
+  if (!env.AI) return json({ error: 'hosted demo unavailable', code: 'hosted_cut' }, 503, allowedOrigin, true);
   const session = await authSessionFromRequest(env, request), owner = identity(session);
   if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
   const input = await body(request, 12 * 1024), messages = chatMessages(input);
@@ -2133,7 +2133,7 @@ export async function computeApi(request, env, allowedOrigin) {
         bumpHostedFactory(env, { failed: Boolean(failed), settled: failed ? null : hostedSettledPayload(usage) });
       };
       const emitError = (controller, message) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: { message } })}\n\n`));
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: { message, type: 'server_error', code: 'hosted_cut' } })}\n\n`));
         emitDone(controller, true);
       };
       const stream = new ReadableStream({
@@ -2218,6 +2218,6 @@ export async function computeApi(request, env, allowedOrigin) {
     return json({ answer, model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, usage, ...(creditBalanceHeader != null ? { balance_cents: Number(creditBalanceHeader) } : {}) }, 200, allowedOrigin, true, { 'X-Dasha-Model': 'gpt-oss-20b', ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) });
   } catch {
     await bumpHostedFactory(env, { failed: true });
-    return json({ error: 'model request failed; try again' }, 502, allowedOrigin, true);
+    return json({ error: 'model request failed; try again', code: 'hosted_cut' }, 502, allowedOrigin, true);
   }
 }
