@@ -588,6 +588,7 @@ let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,sent=0,apiKe
 
 // Funnel telemetry (task 22): aggregate counters only. anon id is a local UUID, never an identity.
 function anonId(){let id='';try{id=localStorage.getItem('dasha-anon-id')||''}catch(e){}if(!id){try{id=crypto.randomUUID()}catch(e){id='00000000-0000-4000-8000-'+String(Math.random()).slice(2,14).padEnd(12,'0')}try{localStorage.setItem('dasha-anon-id',id)}catch(e){}}return id}
+function refCode(){let code='';try{const q=new URLSearchParams(location.search).get('ref')||'';if(/^dash-[a-z2-9]{8}$/.test(q)){code=q;localStorage.setItem('dasha-ref',code)}}catch(e){}if(!code){try{code=localStorage.getItem('dasha-ref')||''}catch(e){}}return /^dash-[a-z2-9]{8}$/.test(code)?code:''}
 function beacon(name,step){try{const body=JSON.stringify({name:name,step:step,anon_id:anonId()});if(navigator.sendBeacon&&navigator.sendBeacon(API+'/compute/api/event',new Blob([body],{type:'application/json'})))return;fetch(API+'/compute/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:body,keepalive:true}).catch(()=>{})}catch(e){}}
 
 function pendingMessages(){
@@ -1755,7 +1756,7 @@ $('register-provider').addEventListener('click',async()=>{
   if(!name){$('provider-status').textContent='Name this Mac first.';showTf('provide-name');$('provider-name').focus();return}
   button.disabled=true;button.textContent='Registering…';$('provider-status').textContent='';
   try{
-    const credentials=await api('/compute/api/providers/register',{method:'POST',body:JSON.stringify({name,models})});
+    const credentials=await api('/compute/api/providers/register',{method:'POST',body:JSON.stringify({name,models,ref:refCode()||undefined})});
     registeredSetup='curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\nollama pull '+best[1]+'\numask 077\ncat > .dasha-provider-key <<\'EOF\'\n'+credentials.provider_token+'\nEOF\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL='+credentials.coordinator_url+' \\\nDASHA_PROVIDER_ID='+credentials.provider_id+' \\\nDASHA_MODEL_MAP='+best[0]+'='+best[1]+' \\\n./install.sh\n\nhttps://t.me/+xB7S8mIQaKFiZjRh';
     $('setup').textContent=registeredSetup;
     $('provider-status').textContent='';
@@ -2551,7 +2552,7 @@ async function startCardCheckout(){
   const methodErr=$('pay-method-err');
   try{
     if(methodErr){methodErr.hidden=true;methodErr.textContent=''}
-    const data=await api('/compute/api/credits/card/checkout',{method:'POST',body:JSON.stringify({pack:creditPack||'5'})});
+    const data=await api('/compute/api/credits/card/checkout',{method:'POST',body:JSON.stringify({pack:creditPack||'5',ref:refCode()||undefined})});
     if(!data?.checkout_url)throw new Error('no checkout url');
     window.location.assign(data.checkout_url);
   }catch(e){
@@ -2589,7 +2590,7 @@ async function createCreditOrder(){
   }
   try{
     if(methodErr){methodErr.hidden=true;methodErr.textContent=''}
-    const data=await api('/compute/api/credits/orders',{method:'POST',body:JSON.stringify({pack:creditPack,method:creditMethod})});
+    const data=await api('/compute/api/credits/orders',{method:'POST',body:JSON.stringify({pack:creditPack,method:creditMethod,ref:refCode()||undefined})});
     // Never open pay-send unless loggedIn AND order created.
     if(!loggedIn||!data?.id){
       creditOrder=null;clearCreditPoll();paintPayMethod();showTf('pay-buy');return;

@@ -53,6 +53,20 @@ import {
   sumSettled24h,
 } from './dasha-compute-settled.mjs';
 import {
+  REF_BUYER_CENTS,
+  REF_BUYER_MIN_TOPUP_CENTS,
+  REF_M1_CENTS,
+  REF_M2_JOBS,
+  REF_M2_REFEREE_CENTS,
+  REF_M2_REFERRER_CENTS,
+  REF_MONTH_CAP_CENTS,
+  REF_VELOCITY_PER_DAY,
+  normalizeRefCode,
+  refDayKey,
+  refMonthKey,
+  referralCodeFor,
+} from './dasha-compute-referral.mjs';
+import {
   HEAD_MAX_AGE_MS,
   appendChainedReceipt,
   appendHead,
@@ -610,6 +624,114 @@ export class ComputeNetwork {
     await this.state.storage.put(key, { ...task, status: hasNextStep ? (task.approvalRequired ? 'awaiting_approval' : 'scheduled') : nextRunAt ? 'scheduled' : status, stepIndex: hasNextStep ? nextStep : 0, nextRunAt: hasNextStep && !task.approvalRequired ? now : nextRunAt, lastJobId: job.id, lastCompletedAt: now, artifacts: [artifact, ...(task.artifacts || [])].slice(0, 5) });
   }
 
+  /** Referral: fetch-or-mint the account's code (collision-safe via stored mapping). */
+  async referralEnsureCode(owner, now = Date.now()) {
+    const key = `compute:referral-code:${owner}`;
+    const existing = await this.state.storage.get(key);
+    if (existing) return existing;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const code = await referralCodeFor(owner, attempt ? `:${attempt}` : '');
+      const mapKey = `compute:referral-owner:${code}`;
+      const mapped = await this.state.storage.get(mapKey);
+      if (mapped && mapped !== owner) continue;
+      await this.state.storage.put(key, code);
+      await this.state.storage.put(mapKey, owner);
+      return code;
+    }
+    return null;
+  }
+
+  /** One referral per account; 10 attributions/code/day trips review (skipped, metric bump). */
+  async referralAttribute(owner, rawCode, now = Date.now()) {
+    const who = String(owner || '').trim();
+    const code = normalizeRefCode(rawCode);
+    if (!who || !code) return { ok: false, error: 'bad code' };
+    if (await this.state.storage.get(`compute:referral:${who}`)) return { ok: false, error: 'already attributed' };
+    const referrer = await this.state.storage.get(`compute:referral-owner:${code}`);
+    if (!referrer || referrer === who) return { ok: false, error: 'unknown or self' };
+    const vKey = `compute:refvel:${code}:${refDayKey(now)}`;
+    const vel = Number(await this.state.storage.get(vKey)) || 0;
+    if (vel >= REF_VELOCITY_PER_DAY) {
+      await this.bumpMetric('referral:velocity-review');
+      return { ok: false, error: 'velocity review' };
+    }
+    await this.state.storage.put(vKey, vel + 1);
+    await this.state.storage.put(`compute:referral:${who}`, { code, referrer, at: now, milestones: [] });
+    const cKey = `compute:referral-count:${referrer}`;
+    await this.state.storage.put(cKey, (Number(await this.state.storage.get(cKey)) || 0) + 1);
+    await this.bumpMetric('referral:attributed');
+    return { ok: true, referrer };
+  }
+
+  /** Grant referral credits. Recipient-side month cap $50; wallet-uniqueness guard vs the other party. */
+  async referralGrant(recipient, cents, reason, now = Date.now(), { otherParty = null } = {}) {
+    const who = String(recipient || '').trim();
+    if (!who) return { ok: false, error: 'no recipient' };
+    if (otherParty) {
+      const [a, b] = await Promise.all([
+        this.state.storage.get(`compute:provider-payout-pref:${who}`),
+        this.state.storage.get(`compute:provider-payout-pref:${otherParty}`),
+      ]);
+      if (a?.wallet && b?.wallet && String(a.wallet) === String(b.wallet)) {
+        await this.bumpMetric('referral:self-wallet-skip');
+        return { ok: false, error: 'same payout wallet' };
+      }
+    }
+    const mKey = `compute:refgrant:${who}:${refMonthKey(now)}`;
+    const used = Math.max(0, Math.floor(Number((await this.state.storage.get(mKey))?.cents) || 0));
+    if (used + cents > REF_MONTH_CAP_CENTS) {
+      await this.bumpMetric('referral:cap-skip');
+      return { ok: false, error: 'month cap' };
+    }
+    const balKey = `compute:credit-balance:${who}`;
+    const bal = Math.max(0, Math.floor(Number((await this.state.storage.get(balKey))?.cents) || 0));
+    await this.state.storage.put(balKey, { owner: who, cents: bal + cents, updatedAt: now });
+    await this.state.storage.put(mKey, { cents: used + cents, updatedAt: now });
+    await this.state.storage.put(`compute:credit-ledger:${who}:${now}:ref-${randomUrlToken(6)}`, {
+      owner: who, cents, reason: `referral:${reason}`, balance_cents: bal + cents, at: now,
+    });
+    await this.bumpMetric(`referral:grant:${reason}`);
+    return { ok: true };
+  }
+
+  /** Idempotent milestone marker + grants. grants: [{to:'referrer'|'referee', cents}] */
+  async referralMilestone(referee, name, grants, now = Date.now()) {
+    const who = String(referee || '').trim();
+    const rKey = `compute:referral:${who}`;
+    const row = await this.state.storage.get(rKey);
+    if (!row || (row.milestones || []).includes(name)) return { ok: false, error: 'none or done' };
+    await this.state.storage.put(rKey, { ...row, milestones: [...(row.milestones || []), name] });
+    for (const g of grants || []) {
+      const target = g.to === 'referee' ? who : row.referrer;
+      await this.referralGrant(target, g.cents, name, now, { otherParty: g.to === 'referee' ? row.referrer : who });
+    }
+    return { ok: true };
+  }
+
+  /** M2: referee's providers reached 50 served jobs in total. */
+  async referralCheckM2(owner, now = Date.now()) {
+    const row = await this.state.storage.get(`compute:referral:${String(owner || '')}`);
+    if (!row || (row.milestones || []).includes('m2')) return;
+    const provs = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(v => v && v.owner === owner);
+    let jobs = 0;
+    for (const prov of provs) jobs += Number((await this.state.storage.get(`compute:provider-earn:${prov.id}`))?.jobs) || 0;
+    if (jobs >= REF_M2_JOBS) {
+      await this.referralMilestone(owner, 'm2', [
+        { to: 'referrer', cents: REF_M2_REFERRER_CENTS },
+        { to: 'referee', cents: REF_M2_REFEREE_CENTS },
+      ], now);
+    }
+  }
+
+  /** Buyer side: first top-up >= $5 settles -> both sides +$5. */
+  async referralCheckBuyer(owner, topupCents, now = Date.now()) {
+    if (Math.floor(Number(topupCents) || 0) < REF_BUYER_MIN_TOPUP_CENTS) return;
+    await this.referralMilestone(owner, 'buyer', [
+      { to: 'referrer', cents: REF_BUYER_CENTS },
+      { to: 'referee', cents: REF_BUYER_CENTS },
+    ], now);
+  }
+
   async provider(request, input) {
     const providerId = String(input?.provider_id || '').trim();
     if (!/^[A-Za-z0-9_-]{6,64}$/.test(providerId)) return null;
@@ -1117,8 +1239,9 @@ export class ComputeNetwork {
       if (!models.length) return json({ error: 'choose at least one supported model' }, 400, allowedOrigin, true);
       const providerId = `mac_${randomUrlToken(9)}`, token = `dcp_${randomUrlToken(24)}`, name = String(input.name || '').trim().slice(0, 64) || 'My Mac';
       await this.state.storage.put(`compute:provider:${providerId}`, { id: providerId, owner, name, allowedModels: models, models: [], tokenHash: await sha256(token), createdAt: now, lastSeenAt: 0 });
+      const referral = input.ref ? await this.referralAttribute(owner, input.ref, now) : null;
       await this.bumpMetric('provider:register');
-      return json({ provider_id: providerId, provider_token: token, coordinator_url: 'https://lobby.getdasha.com/compute/api', models, note: 'Copy this token now. Dasha stores only its hash.' }, 201, allowedOrigin, true);
+      return json({ provider_id: providerId, provider_token: token, coordinator_url: 'https://lobby.getdasha.com/compute/api', models, note: 'Copy this token now. Dasha stores only its hash.', ...(referral?.ok ? { referral: 'attributed' } : {}) }, 201, allowedOrigin, true);
     }
 
     const providerMatch = path.match(/^\/compute\/api\/providers\/([A-Za-z0-9_-]{6,64})$/);
@@ -1148,6 +1271,7 @@ export class ComputeNetwork {
       if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, credentials));
       const input = await body(request), provider = await this.provider(request, input);
       if (!provider) return json({ error: 'invalid provider token' }, 401);
+      const firstOnline = !Number(provider.lastSeenAt || 0);
       provider.lastSeenAt = now;
       const kitVersion = String(input.version || '').trim().slice(0, 32);
       if (kitVersion) provider.kitVersion = kitVersion;
@@ -1158,6 +1282,7 @@ export class ComputeNetwork {
       if (hardware) provider.hardware = hardware;
       provider.name = String(input.name || '').trim().slice(0, 64) || provider.name;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
+      if (firstOnline) await this.referralMilestone(provider.owner, 'm1', [{ to: 'referrer', cents: REF_M1_CENTS }], now);
       await this.prune(now);
       const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].sort((a, b) => a.createdAt - b.createdAt);
       const job = jobs.find(candidate => candidate.status === 'queued' && provider.models.includes(candidate.model) && (candidate.route !== 'self' || provider.owner === candidate.owner));
@@ -1208,6 +1333,7 @@ export class ComputeNetwork {
             replayKey: `job:${job.id}`,
             now,
           });
+          await this.referralCheckM2(job.owner, now);
         }
       }
       await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
@@ -1250,6 +1376,7 @@ export class ComputeNetwork {
             replayKey: `job:${job.id}`,
             now,
           });
+          await this.referralCheckM2(job.owner, now);
         }
       }
       const failed = Boolean(streamError);
@@ -1509,6 +1636,30 @@ export class ComputeNetwork {
       return maybeHead(request, json(day, 200, '*', false, { 'Cache-Control': 'public, max-age=3600' }));
     }
 
+    // --- referral (tasks 16-17): account-bound code + stats ---
+    if ((path === '/compute/api/referral/code' || path === '/compute/api/referral/code/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
+      const code = await this.referralEnsureCode(owner, now);
+      if (!code) return maybeHead(request, json({ error: 'code unavailable' }, 503, allowedOrigin, true));
+      const referees = Number(await this.state.storage.get(`compute:referral-count:${owner}`)) || 0;
+      const month = await this.state.storage.get(`compute:refgrant:${owner}:${refMonthKey(now)}`);
+      return maybeHead(request, json({
+        schema: 'compute.referral.v0',
+        code,
+        url: `https://www.getdasha.com/compute?ref=${code}`,
+        referees,
+        granted_month_cents: Math.max(0, Math.floor(Number(month?.cents) || 0)),
+        month_cap_cents: REF_MONTH_CAP_CENTS,
+        terms: {
+          provider_online_cents: REF_M1_CENTS,
+          provider_jobs_50: { referrer_cents: REF_M2_REFERRER_CENTS, referee_cents: REF_M2_REFEREE_CENTS, jobs: REF_M2_JOBS },
+          buyer_topup_min_cents: REF_BUYER_MIN_TOPUP_CENTS,
+          buyer_cents: REF_BUYER_CENTS,
+        },
+      }, 200, allowedOrigin, true));
+    }
+
     // --- provider earnings + payout preference (pending settle; no auto-chain) ---
     if ((path === '/compute/api/receipts' || path === '/compute/api/receipts/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const owner = identity(await authSessionFromRequest(this.env, request));
@@ -1718,6 +1869,7 @@ export class ComputeNetwork {
       const reference = await generateReference();
       const id = `crd_${randomUrlToken(12)}`;
       const now = Date.now();
+      if (input.ref) await this.referralAttribute(owner, input.ref, now);
       const order = {
         id,
         owner,
@@ -1804,6 +1956,7 @@ export class ComputeNetwork {
       if (!pack) return json({ error: 'pick a pack' }, 400, allowedOrigin, true);
       const id = `crd_${randomUrlToken(12)}`;
       const now = Date.now();
+      if (input.ref) await this.referralAttribute(owner, input.ref, now);
       const session = await createCardCheckoutSession(this.env, {
         orderId: id,
         pack,
@@ -2149,6 +2302,7 @@ export class ComputeNetwork {
     await this.state.storage.put(balKey, { owner: fresh.owner, cents: nextBal, updatedAt: now });
     await this.state.storage.put(sigKey, { orderId: fresh.id, owner: fresh.owner, at: now });
     await this.bumpMetric(`credits:settled:${paid.method || 'crypto'}`);
+    await this.referralCheckBuyer(paid.owner, paid.credits_cents, now);
 
     return {
       body: {
@@ -2212,6 +2366,7 @@ export class ComputeNetwork {
     await this.state.storage.put(balKey, { owner: fresh.owner, cents: nextBal, updatedAt: now });
     await this.state.storage.put(sigKey, { orderId: fresh.id, owner: fresh.owner, at: now });
     await this.bumpMetric(`credits:settled:${paid.method || 'crypto'}`);
+    await this.referralCheckBuyer(paid.owner, paid.credits_cents, now);
 
     return {
       body: {
@@ -2315,7 +2470,7 @@ export async function computeApi(request, env, allowedOrigin) {
     if (stub) return stub.fetch(request);
     return maybeHead(request, json({ error: 'login required', ...creditsCatalog(null) }, 401, allowedOrigin, Boolean(allowedOrigin)));
   }
-  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     return stub ? stub.fetch(request) : json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
   }
