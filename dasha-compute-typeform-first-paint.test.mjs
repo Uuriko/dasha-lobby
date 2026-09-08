@@ -498,7 +498,12 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(how.hosted, true);
   assert.equal(how.community, true);
   assert.equal(how.mixture, true);
-  // Hosted from How → Ask with Back
+  // Hosted from How → Ask with Back (available path; mute is a sibling lock)
+  await page.evaluate(() => {
+    window.__dashaAuthReady = true;
+    hostedLive = true;
+    updateRun();
+  });
   await page.click("#eng-hosted");
   const askBack = await page.evaluate(() => ({
     step: document.body.dataset.step,

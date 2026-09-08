@@ -56,6 +56,7 @@ if (puppeteer && existsSync(chrome)) {
     await page.click("#pick-ask");
     const idle = await page.evaluate(() => {
       const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
+      hostedLive = true;
       providersOnline = 0;
       networkModels = new Set();
       networkCapacity = [];
