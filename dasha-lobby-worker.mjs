@@ -695,8 +695,14 @@ const LISTINGS_TRENDING_URL = 'https://api.geckoterminal.com/api/v2/networks/sol
 const LISTINGS_BOARD_BAN = /VVAIFU|FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8/i;
 const LISTINGS_POOL_ADDR = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 let listingsMarketMemo = { at: 0, market: null, updated_at: LISTINGS_UPDATED_AT };
+let listingsMarketLastGood = null;
 
 export function resetListingsMarketCacheForTest() {
+  listingsMarketMemo = { at: 0, market: null, updated_at: LISTINGS_UPDATED_AT };
+  listingsMarketLastGood = null;
+}
+
+export function expireListingsMarketMemoForTest() {
   listingsMarketMemo = { at: 0, market: null, updated_at: LISTINGS_UPDATED_AT };
 }
 
@@ -784,20 +790,32 @@ export async function loadListingsMarket(fetchImpl = globalThis.fetch) {
   if (listingsMarketMemo.at && now - listingsMarketMemo.at < LISTINGS_MARKET_TTL_MS) {
     return listingsMarketMemo;
   }
-  try {
-    const res = await fetchImpl(LISTINGS_TRENDING_URL, {
-      signal: AbortSignal.timeout(6000),
-      headers: { accept: 'application/json', 'user-agent': 'dasha-lobby' },
-    });
-    if (!res?.ok) throw new Error('trending unavailable');
-    const payload = await res.json();
-    const market = parseGeckoTrendingPools(payload);
-    listingsMarketMemo = { at: now, market, updated_at: new Date(now).toISOString() };
-    return listingsMarketMemo;
-  } catch {
-    listingsMarketMemo = { at: now, market: [], updated_at: LISTINGS_UPDATED_AT };
+  // Per-isolate memo (issue #104): a failing colo must not memoize EMPTY over a
+  // payload it already knows is good. Retry once, then serve the last good
+  // payload (stale > absent; updated_at keeps the good fetch's real age).
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetchImpl(LISTINGS_TRENDING_URL, {
+        signal: AbortSignal.timeout(6000),
+        headers: { accept: 'application/json', 'user-agent': 'dasha-lobby' },
+      });
+      if (!res?.ok) throw new Error('trending unavailable');
+      const payload = await res.json();
+      const market = parseGeckoTrendingPools(payload);
+      if (!Array.isArray(market) || !market.length) throw new Error('trending empty');
+      listingsMarketLastGood = { at: now, market, updated_at: new Date(now).toISOString() };
+      listingsMarketMemo = listingsMarketLastGood;
+      return listingsMarketMemo;
+    } catch {
+      // retry once, then fall through to the last-good fallback
+    }
+  }
+  if (listingsMarketLastGood) {
+    listingsMarketMemo = { ...listingsMarketLastGood, at: now, stale: true };
     return listingsMarketMemo;
   }
+  listingsMarketMemo = { at: now, market: [], updated_at: LISTINGS_UPDATED_AT };
+  return listingsMarketMemo;
 }
 
 function listingsEscapeHtml(s) {
