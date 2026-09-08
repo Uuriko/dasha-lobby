@@ -52,7 +52,39 @@ function ogBlock({ title, description, url, image, width, height }) {
   ].join('\n');
 }
 
-export function simpPageHtml({ sri = SIMP_BOARD_SRI } = {}) {
+
+function simpStaticRowHtml(row) {
+  const rank = Number(row?.rank);
+  const handle = String(row?.handle || '').replace(/^@/, '');
+  if (!Number.isInteger(rank) || rank < 1 || !/^[A-Za-z0-9_]{1,15}$/.test(handle)) return '';
+  const display = escapeHtml(String(row?.display || `@${handle}`));
+  const href = escapeHtml(String(row?.href || `https://x.com/${handle}`));
+  const memberUrl = `${WWW}/simp/u/${handle.toLowerCase()}`;
+  const total = Number.isInteger(row?.total) && row.total >= 0
+    ? `<span class="p">${row.total} Simp Points</span>`
+    : (row?.kind === 'editorial' ? '<span class="p">Editorial</span>' : '');
+  const quiz = row?.quiz;
+  const quizMark = Number.isInteger(quiz?.correct) && Number.isInteger(quiz?.total) && quiz.total > 0
+    ? ` <span class="q">${escapeHtml(`${quizTitle(quiz.correct, quiz.total)} · ${quiz.correct}/${quiz.total}`)}</span>`
+    : '';
+  const holder = row?.holder === true ? ' <span class="h">Holder</span>' : '';
+  return `<li id="member-${handle.toLowerCase()}"><span class="r">#${rank}</span> <a href="${memberUrl}">${display}</a> <a class="x" href="${href}" target="_blank" rel="noopener noreferrer">X ↗</a>${quizMark}${holder}${total}</li>`;
+}
+
+/** Static server-rendered board rows for the no-JS / first-paint path.
+ *  simp-board.js mount() wipes #dasha-simp-board and re-renders live, so this
+ *  is pure progressive enhancement: no client change needed. */
+export function simpStaticBoardHtml(board) {
+  const rows = [
+    ...(Array.isArray(board?.editorial) ? board.editorial : []),
+    ...(Array.isArray(board?.measured) ? board.measured : []),
+  ].map(simpStaticRowHtml).filter(Boolean);
+  if (!rows.length) return '';
+  return `<ol class="simp-static-board">${rows.join('')}</ol>`;
+}
+
+export function simpPageHtml({ sri = SIMP_BOARD_SRI, board } = {}) {
+  const staticBoard = simpStaticBoardHtml(board);
   const title = '$dasha / Beat this';
   const description = 'How big of a Dasha simp are you?';
   const url = `${WWW}/simp`;
@@ -62,7 +94,7 @@ export function simpPageHtml({ sri = SIMP_BOARD_SRI } = {}) {
 <meta name="description" content="${description}">
 <meta name="theme-color" content="#dfff00">
 ${ogBlock({ title, description, url, image, width: 1200, height: 630 })}
-<style>:root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81}html,body{margin:0;min-height:100%;background:var(--ink);color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif}h1{margin:0 0 .5rem;font:900 clamp(3rem,12vw,6rem)/.9 "Arial Black",Arial,Helvetica,sans-serif}a{color:var(--acid)}.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:12px 16px;background:var(--acid);color:var(--ink)!important;font-weight:900;text-decoration:none}.skip-link:focus{left:12px;top:12px;outline:3px solid var(--paper);outline-offset:2px}.dasha-slim{display:flex;align-items:center;gap:.65rem;padding:.45rem 1rem}.dasha-word{display:inline-flex;align-items:center;min-height:48px;color:#f4eddb;font:900 1.15rem/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.04em;text-decoration:none;text-transform:uppercase}.buy-dasha{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 1rem;background:#dfff00;color:#070608;font:900 1rem/1 "Arial Black",Helvetica,Arial,sans-serif;text-decoration:none;text-transform:uppercase}#dasha-quiz{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--acid)}.simp-lede{margin:0 0 1.25rem;font:900 clamp(1.35rem,3.4vw,2rem)/1.15 "Arial Black",Helvetica,Arial,sans-serif}.simp-quiz-go{display:inline-flex;align-items:center;justify-content:center;min-height:56px;min-width:12rem;padding:0 1.25rem;border:0;background:#dfff00;color:#070608;font:900 1rem/1 "Arial Black",Helvetica,Arial,sans-serif;box-shadow:4px 4px 0 #ff3b81;cursor:pointer}footer.dasha-foot{margin:0;padding:1.5rem 1rem 2rem;font:900 1rem/1.3 Arial,Helvetica,sans-serif}footer.dasha-foot p{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:center;margin:0}footer.dasha-foot a{display:inline-flex;align-items:center;min-height:48px;min-width:48px;padding:0 .4rem;color:var(--paper);text-decoration:none}footer.dasha-foot a:hover{color:var(--acid)}</style>
+<style>:root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81}html,body{margin:0;min-height:100%;background:var(--ink);color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif}h1{margin:0 0 .5rem;font:900 clamp(3rem,12vw,6rem)/.9 "Arial Black",Arial,Helvetica,sans-serif}a{color:var(--acid)}.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:12px 16px;background:var(--acid);color:var(--ink)!important;font-weight:900;text-decoration:none}.skip-link:focus{left:12px;top:12px;outline:3px solid var(--paper);outline-offset:2px}.dasha-slim{display:flex;align-items:center;gap:.65rem;padding:.45rem 1rem}.dasha-word{display:inline-flex;align-items:center;min-height:48px;color:#f4eddb;font:900 1.15rem/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.04em;text-decoration:none;text-transform:uppercase}.buy-dasha{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 1rem;background:#dfff00;color:#070608;font:900 1rem/1 "Arial Black",Helvetica,Arial,sans-serif;text-decoration:none;text-transform:uppercase}#dasha-quiz{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--acid)}.simp-lede{margin:0 0 1.25rem;font:900 clamp(1.35rem,3.4vw,2rem)/1.15 "Arial Black",Helvetica,Arial,sans-serif}.simp-static-board{list-style:none;margin:1.5rem 0 0;padding:0;max-width:34rem}.simp-static-board li{display:flex;flex-wrap:wrap;gap:.35rem .6rem;align-items:baseline;padding:.5rem 0;border-bottom:1px solid #2a2133}.simp-static-board .r{color:var(--acid);font-weight:900;min-width:2.2rem}.simp-static-board .p{margin-left:auto;color:var(--acid);font-weight:900}.simp-static-board .q,.simp-static-board .h{color:var(--hot);font-weight:900}.simp-static-board a{color:var(--paper)}.simp-static-board a:hover{color:var(--acid)}.simp-quiz-go{display:inline-flex;align-items:center;justify-content:center;min-height:56px;min-width:12rem;padding:0 1.25rem;border:0;background:#dfff00;color:#070608;font:900 1rem/1 "Arial Black",Helvetica,Arial,sans-serif;box-shadow:4px 4px 0 #ff3b81;cursor:pointer}footer.dasha-foot{margin:0;padding:1.5rem 1rem 2rem;font:900 1rem/1.3 Arial,Helvetica,sans-serif}footer.dasha-foot p{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:center;margin:0}footer.dasha-foot a{display:inline-flex;align-items:center;min-height:48px;min-width:48px;padding:0 .4rem;color:var(--paper);text-decoration:none}footer.dasha-foot a:hover{color:var(--acid)}</style>
 <body>
 <a class="skip-link" href="#dasha-quiz">Skip to quiz</a>
 <header class="dasha-slim"><a class="dasha-word" href="${WWW}/">$dasha</a><a class="buy-dasha" href="${JUP}" target="_blank" rel="noopener noreferrer">Buy $dasha</a></header>
@@ -70,7 +102,7 @@ ${ogBlock({ title, description, url, image, width: 1200, height: 630 })}
 <h1>Simp</h1>
 <div id="dasha-quiz" class="dasha-quiz"><div id="dasha-simp-board"><p class="simp-lede">How big of a Dasha simp are you?</p>
 <button type="button" class="simp-quiz-go" data-dasha-take-quiz>Take Quiz</button>
-<noscript><p>Needs JavaScript.</p></noscript></div></div>
+${staticBoard}<noscript><p>${staticBoard ? 'Taking the quiz needs JavaScript - the board above is current as of page load.' : 'Needs JavaScript.'}</p></noscript></div></div>
 </main>
 <script>(function(){var s=document.createElement('script');s.src='${LOBBY}/client/simp-board.js';s.integrity='${sri}';s.crossOrigin='anonymous';s.defer=true;document.head.appendChild(s)})();</script>
 <footer class="dasha-foot"><p><a href="${WWW}/how-to-buy">How to buy</a> · <a href="${WWW}/privacy">Privacy</a></p></footer>
