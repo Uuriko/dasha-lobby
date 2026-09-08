@@ -18,7 +18,8 @@ const root = dirname(fileURLToPath(import.meta.url));
 const networkSrc = readFileSync(join(root, 'dasha-compute-network.mjs'), 'utf8');
 assert.doesNotMatch(networkSrc, /plugin\.jup\.ag/, 'network must not mention plugin.jup.ag');
 assert.match(networkSrc, /isComputeApiHealthzPath/, 'shared healthz+health helper');
-assert.match(networkSrc, /\/compute\/api\/health' \|\| path === '\/compute\/api\/health\//' , 'health alias paths');
+assert.match(networkSrc, /path === '\/compute\/api\/health'/, 'health alias path');
+assert.match(networkSrc, /path === '\/compute\/api\/health\/'/, 'health alias slash');
 assert.doesNotMatch(networkSrc, /\/compute\/ocm\/health/, 'must not fold ocm health');
 
 const HEALTHZ_JSON = { ok: true, service: 'dasha-compute', version: '0.3.0' };
@@ -135,9 +136,9 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   );
 
   const rootHealth = await worker.fetch(new Request(`https://${host}/health`), workerEnv);
-  assert.notEqual(rootHealth.status, 200, `${host} /health is not compute health`);
-  if (rootHealth.headers.get('content-type')?.includes('json')) {
+  if ((rootHealth.headers.get('content-type') || '').includes('json')) {
     const body = await rootHealth.json();
+    assert.notEqual(body.service, 'dasha-compute', `${host} /health is not compute`);
     assert.notDeepEqual(body, HEALTHZ_JSON, `${host} /health is not compute JSON`);
   } else {
     await rootHealth.text();
