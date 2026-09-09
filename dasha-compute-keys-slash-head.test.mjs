@@ -2,7 +2,7 @@
 /** GET+HEAD+POST /compute/api/keys and /keys/; origin/auth gates; empty HEAD; slash parity. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, ORIGIN_REQUIRED } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'keys-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
@@ -37,7 +37,7 @@ async function pair(host, path, init = {}, fetchImpl) {
 for (const path of ['/compute/api/keys', '/compute/api/keys/']) {
   const noOrigin = await pair('lobby.getdasha.com', path, {}, (req) => network.fetch(req, null));
   assert.equal(noOrigin.status, 403, `${path} no origin`);
-  assert.deepEqual(noOrigin.body, { error: 'origin required' });
+  assert.deepEqual(noOrigin.body, ORIGIN_REQUIRED);
   const headNoOrigin = await network.fetch(new Request(`https://lobby.getdasha.com${path}`, { method: 'HEAD' }), null);
   assert.equal(headNoOrigin.status, 403, `${path} HEAD no origin`);
   assert.match(headNoOrigin.headers.get('content-type') || '', /application\/json/);

@@ -2,7 +2,7 @@
 /** GET+HEAD /compute/api/night/summary and /summary/; origin/auth gates; empty HEAD; slash parity. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, ORIGIN_REQUIRED } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'night-summary-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
@@ -45,7 +45,7 @@ for (const path of ['/compute/api/night/summary', '/compute/api/night/summary/']
   const noOrigin = await pair('lobby.getdasha.com', path, {}, (req) => network.fetch(req, null));
   assert.equal(noOrigin.status, 403, `${path} no origin`);
   assert.notEqual(noOrigin.status, 404, `${path} must not 404`);
-  assert.deepEqual(noOrigin.body, { error: 'origin required' });
+  assert.deepEqual(noOrigin.body, ORIGIN_REQUIRED);
   const headNoOrigin = await network.fetch(new Request(`https://lobby.getdasha.com${path}`, { method: 'HEAD' }), null);
   assert.equal(headNoOrigin.status, 403, `${path} HEAD no origin`);
   assert.notEqual(headNoOrigin.status, 404, `${path} HEAD must not 404`);
@@ -107,7 +107,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const wNoOrigin = await pair(host, '/compute/api/night/summary', {}, (request) => worker.fetch(request, workerEnv));
   assert.equal(wNoOrigin.status, 403, `${host} summary no origin`);
   assert.notEqual(wNoOrigin.status, 404);
-  assert.deepEqual(wNoOrigin.body, { error: 'origin required' });
+  assert.deepEqual(wNoOrigin.body, ORIGIN_REQUIRED);
   const wHead = await worker.fetch(new Request(`https://${host}/compute/api/night/summary/`, { method: 'HEAD' }), workerEnv);
   assert.equal(wHead.status, 403, `${host} summary/ HEAD`);
   assert.notEqual(wHead.status, 404);
