@@ -114,6 +114,9 @@ details.build[open]>summary{color:var(--acid)}
 footer{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-top:40px;color:var(--paper-muted);font-size:12px}
 footer a{color:var(--acid)}
 footer a:hover{color:var(--paper)}
+footer.listed-on{justify-content:flex-start;align-items:center;gap:10px;padding-top:16px;color:var(--muted);font-size:12px}
+footer.listed-on[hidden]{display:none!important}
+footer.listed-on img{display:block;height:32px;width:auto}
 :focus-visible{outline:2px solid var(--acid);outline-offset:2px}
 .tf-choice.primary:focus-visible,.primary:focus-visible,.tf-choice[aria-pressed=true]:focus-visible{outline-width:2px;outline-offset:2px;outline-color:color-mix(in srgb,var(--acid) 65%,var(--ink))}
 @keyframes tf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -600,6 +603,7 @@ https://lobby.getdasha.com/compute/api/v1</pre>
   <a href="/privacy">Privacy</a>
   <span>local-first</span>
 </footer>
+<footer id="listed-on" class="listed-on" hidden>Listed on <a href="https://aitoolslist.tools" target="_blank" rel="dofollow"><img src="https://aitoolslist.tools/badges/aitoolslist-listed-light.svg" alt="Listed on AiToolsList.Tools" width="220" height="58" /></a></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -2377,6 +2381,8 @@ function paintHonestyPanel(){
   if(!panel)return;
   const onGate=tfStep==='gate';
   panel.hidden=onGate;
+  const listed=$('listed-on');
+  if(listed)listed.hidden=onGate;
   if(onGate)return;
   const hosted=$('honesty-hosted');
   if(hosted){
