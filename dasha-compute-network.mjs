@@ -83,6 +83,9 @@ export { X402_BILLING_DOCS, x402BillingDocsLine };
 
 export { HOSTED_ASK_PRICE_CENTS };
 
+/** Buyer SSE hold: close cleanly in the 30–45s window (FRESH_MS=45s) so CF/browser idle kill is not a Failed to fetch. */
+export const SSE_BUYER_HOLD_MS = 35_000;
+export const SSE_KEEPALIVE_MS = 10_000;
 
 const MODELS = new Set(['qwen3-8b', 'gemma3-12b', 'gpt-oss-20b', 'qwen3-30b-a3b', 'gemma3-27b', 'gpt-oss-120b']);
 const FRESH_MS = 45_000;
@@ -543,6 +546,14 @@ function providerServesModel(provider, model, now) {
   return now - Number(provider.lastSeenAt || 0) < FRESH_MS && Array.isArray(provider.models) && provider.models.includes(model);
 }
 
+/** Buyer SSE drop while a Mac is still advertising: keep queued/leased so the client can resume the same job. */
+export function keepBuyerJobOnStreamDrop(job, providers = [], now = Date.now()) {
+  if (!job || !['queued', 'leased'].includes(String(job.status || ''))) return false;
+  const model = String(job.model || '');
+  if (!model) return false;
+  return (Array.isArray(providers) ? providers : []).some((provider) => providerServesModel(provider, model, now));
+}
+
 /** Resolve community-path route: self | community | mixture (+ prefer_self Darkbloom-style). */
 export function resolveJobRoute(owner, input = {}, providers = [], now = Date.now()) {
   const model = String(input.model || '');
@@ -845,12 +856,23 @@ export class ComputeNetwork {
     return { job };
   }
 
-  streamResponse(job, origin = null, extra = {}) {
+  streamResponse(job, origin = null, extra = {}, opts = {}) {
     const encoder = new TextEncoder(), storage = this.state.storage, key = `compute:job:${job.id}`;
+    const holdMs = Number.isFinite(Number(opts.holdMs)) ? Math.max(0, Number(opts.holdMs)) : SSE_BUYER_HOLD_MS;
+    const keepaliveMs = Number.isFinite(Number(opts.keepaliveMs)) ? Math.max(0, Number(opts.keepaliveMs)) : SSE_KEEPALIVE_MS;
     let stopped = false;
+    const listProviders = async () => {
+      try { return [...(await storage.list({ prefix: 'compute:provider:' })).values()]; } catch { return []; }
+    };
     return new Response(new ReadableStream({ async start(controller) {
       let sent = 0;
+      const started = Date.now();
+      let lastPing = 0;
       const emit = value => controller.enqueue(encoder.encode(`data: ${typeof value === 'string' ? value : JSON.stringify(value)}\n\n`));
+      const ping = () => controller.enqueue(encoder.encode(`: keepalive\n\n`));
+      // First byte immediately — silent queued SSE was dying ~30–45s (browser Failed to fetch / CF idle).
+      ping();
+      lastPing = Date.now();
       while (!stopped) {
         const current = await storage.get(key);
         if (stopped) return;
@@ -879,6 +901,16 @@ export class ComputeNetwork {
           controller.close();
           return;
         }
+        // No first token by ~35s and Mac still fresh: close SSE, keep job, client resumes same id.
+        if (sent === 0 && Date.now() - started >= holdMs && keepBuyerJobOnStreamDrop(current, await listProviders(), Date.now())) {
+          emit({ resume: true, id: current.id, status: current.status });
+          controller.close();
+          return;
+        }
+        if (keepaliveMs > 0 && Date.now() - lastPing >= keepaliveMs) {
+          ping();
+          lastPing = Date.now();
+        }
         await new Promise(resolve => setTimeout(resolve, 250));
       }
       if (stopped) return;
@@ -888,7 +920,9 @@ export class ComputeNetwork {
     }, async cancel() {
       stopped = true;
       const current = await storage.get(key);
-      if (current) await cancelJob(storage, key, current);
+      if (!current) return;
+      if (keepBuyerJobOnStreamDrop(current, await listProviders(), Date.now())) return;
+      await cancelJob(storage, key, current);
     } }), { headers: { ...SECURITY, ...cors(origin, Boolean(origin)), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', ...extra } });
   }
 

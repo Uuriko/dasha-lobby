@@ -793,6 +793,97 @@ function scheduleSameEngineRetry(engine){
     if(run&&!run.disabled)run.click();
   });
 }
+function paintCommunityNoReply(jobId){
+  paintCommunityMissFace();
+  const job=String(jobId||activeJob||lastPaidReceipt?.job_id||'').trim();
+  $('answer').textContent=job?('No reply.\n'+job):'No reply.';
+}
+function paintCommunityStillOnline(){
+  const model=String($('model')?.value||lastPaidReceipt?.model||'').trim();
+  const bits=['Community'];
+  if(model)bits.push(model);
+  $('answer-title').textContent=bits.join(' · ');
+  $('answer').textContent='Still online.';
+}
+function isAskNetworkDrop(error){
+  if(jobCancelled)return false;
+  const name=String(error?.name||'');
+  const msg=String(error?.message||error||'');
+  const code=String(error?.code||'');
+  if(name==='AbortError')return false;
+  return code==='stream_drop'||name==='TypeError'||/Failed to fetch|NetworkError|network error|Load failed|stream resume/i.test(msg);
+}
+async function refreshCommunityOnline(){
+  try{
+    const network=await api('/compute/api/network');
+    if(network&&typeof network==='object'){
+      if(Array.isArray(network.models_available))networkModels=new Set(network.models_available);
+      if(Number.isInteger(network.providers_online))providersOnline=network.providers_online;
+      if(Array.isArray(network.capacity))networkCapacity=network.capacity;
+    }
+  }catch{}
+  const model=String($('model')?.value||'').trim();
+  return providersOnline>=1&&(!model||networkModels.has(model));
+}
+async function pollSameCommunityJob(jobId){
+  let data;
+  for(let attempt=0;attempt<900&&!jobCancelled;attempt++){
+    await new Promise(resolve=>setTimeout(resolve,400));
+    if(jobCancelled)break;
+    data=await api('/compute/api/jobs/'+jobId);
+    if(data.answer){$('answer').textContent=data.answer;onFirstToken()}
+    else if(data.status==='leased')$('answer').textContent='A Mac is generating…';
+    else $('answer').textContent=data.queue_position?`Queued · ${data.queue_position}`:'Still online.';
+    if(data.status==='complete'||data.status==='failed')break;
+  }
+  return data;
+}
+async function resumeSameCommunityJob(jobId){
+  // Same Community/self/mixture job. Never Hosted /compute/api/chat.
+  let id=String(jobId||activeJob||'').trim();
+  if(!id){
+    try{
+      const listed=await api('/compute/api/jobs');
+      const jobs=Array.isArray(listed?.jobs)?listed.jobs:[];
+      const open=jobs.find(row=>row&&(row.status==='queued'||row.status==='leased'));
+      id=String(open?.id||'').trim();
+    }catch{id=''}
+  }
+  if(!id)return null;
+  activeJob=id;
+  window.__dashaStreamResumeOnce=true;
+  return pollSameCommunityJob(id);
+}
+function applyCommunityJobReceipt(data,eng){
+  const u=data?.usage&&typeof data.usage==='object'?data.usage:null;
+  const tot=Number(u?.total_tokens);
+  const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
+  lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||data?.id||''),model:String($('model').value||''),...settleFieldsFrom(data?.settle),...((data?.route==='self'||data?.route==='community'||data?.route==='mixture')?{route:data.route}:{}),...honestyFieldsFrom(data?.receipt)};
+}
+async function recoverCommunityStream(err,eng){
+  const online=await refreshCommunityOnline();
+  if(!online)throw err;
+  paintCommunityStillOnline();
+  if(window.__dashaStreamResumeOnce){
+    const miss=Error('No reply.');
+    miss.code='community_stream_miss';
+    throw miss;
+  }
+  const data=await resumeSameCommunityJob(activeJob);
+  if(jobCancelled)throw Error('Request cancelled. Prompt deleted.');
+  if(data?.status==='complete'){
+    applyCommunityJobReceipt(data,eng);
+    return String(data.answer||'');
+  }
+  if(data?.status==='failed'){
+    const fail=Error(data.error||'Provider failed');
+    if(/provider inference failed|provider cut|URLError|stream ended before completion|empty completion/i.test(String(data.error||'')))fail.code='provider_cut';
+    throw fail;
+  }
+  const miss=Error('No reply.');
+  miss.code='community_stream_miss';
+  throw miss;
+}
 function fleetCapacityRow(){
   if(!(providersOnline>=1))return null;
   const eng=$('engine')?.value||'hosted';
@@ -1626,7 +1717,7 @@ async function readSse(response){
     throw Error('Request failed');
   }
   const reader=response.body.getReader(),decoder=new TextDecoder();
-  let buf='',out='',saw=false;const node=$('answer');
+  let buf='',out='',saw=false,sawDone=false;const node=$('answer');
   lastSseUsage=null;lastSseSettle=null;lastSseReceipt=null;
   while(true){
     const {done,value}=await reader.read();
@@ -1637,8 +1728,9 @@ async function readSse(response){
       for(const line of part.split(/\n/)){
         if(!line.startsWith('data:'))continue;
         const raw=line.slice(5).trimStart();
-        if(raw==='[DONE]')return out;
+        if(raw==='[DONE]'){sawDone=true;return out}
         let payload;try{payload=JSON.parse(raw)}catch{continue}
+        if(payload?.resume){const e=Error('stream resume');e.code='stream_drop';throw e;}
         if(payload?.error){const e=Error(payload.error.message||payload.error||'stream error');e.code=payload.error.code||null;throw e;}
         if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;if(payload?.settle&&typeof payload.settle==='object')lastSseSettle=payload.settle;if(payload?.receipt&&typeof payload.receipt==='object')lastSseReceipt=payload.receipt;
         const delta=typeof payload?.choices?.[0]?.delta?.content==='string'?payload.choices[0].delta.content:typeof payload?.choices?.[0]?.delta==='string'?payload.choices[0].delta:typeof payload?.response==='string'?payload.response:typeof payload?.delta==='string'?payload.delta:'';
@@ -1647,6 +1739,8 @@ async function readSse(response){
     }
   }
   if(jobCancelled)throw Error('Request cancelled. Prompt deleted.');
+  // Community job SSE that dies without [DONE] (~30–45s idle) is a drop, not a Hosted miss.
+  if(!sawDone&&activeJob){const e=Error('Failed to fetch');e.name='TypeError';e.code='stream_drop';throw e;}
   return out;
 }
 $('queue-night').addEventListener('click',()=>queueForMac());
@@ -1684,6 +1778,7 @@ $('run-demo').addEventListener('click',async()=>{
   $('after-answer').hidden=true;
   {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
   jobCancelled=false;
+  window.__dashaStreamResumeOnce=false;
   if(runAbort){try{runAbort.abort()}catch{}}
   runAbort=new AbortController();
   $('cancel-job').hidden=false;$('cancel-job').disabled=false;
@@ -1700,13 +1795,25 @@ $('run-demo').addEventListener('click',async()=>{
       // Soft Prefer my Mac: try own Mac first; fall to community/mixture — never invent free unless route resolves self.
       lastPreferAttempted=!!(preferSelf&&!selfRoute);
       if(lastPreferAttempted)body.prefer_self=true;
-      const res=await fetch(API+'/compute/api/jobs',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:runAbort.signal});
-      const ct=res.headers.get('content-type')||'';
-      if(ct.includes('event-stream')){
+      let res;
+      try{
+        res=await fetch(API+'/compute/api/jobs',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:runAbort.signal});
+      }catch(err){
+        if(!isAskNetworkDrop(err))throw err;
+        answer=await recoverCommunityStream(err,mixture?'mixture':selfRoute?'self':'community');
+        res=null;
+      }
+      const ct=res? (res.headers.get('content-type')||'') : '';
+      if(res&&ct.includes('event-stream')){
         activeJob=res.headers.get('X-Dasha-Job')||'';
         $('cancel-job').hidden=false;
-        answer=await readSse(res);
-        {
+        try{
+          answer=await readSse(res);
+        }catch(err){
+          if(!isAskNetworkDrop(err))throw err;
+          answer=await recoverCommunityStream(err,mixture?'mixture':selfRoute?'self':'community');
+        }
+        if(!window.__dashaStreamResumeOnce){
           const u=lastSseUsage;
           const tot=Number(u?.total_tokens);
           const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
@@ -1728,7 +1835,7 @@ $('run-demo').addEventListener('click',async()=>{
           }
         }
       }
-      else{
+      else if(res){
         if(!res.ok){
           const err=await res.json().catch(()=>({}));
           const msg=err?.error||'Request failed';
@@ -1741,25 +1848,24 @@ $('run-demo').addEventListener('click',async()=>{
         }
         const job=await res.json();activeJob=job.id;$('cancel-job').hidden=false;
         let data;
-        for(let attempt=0;attempt<900&&!jobCancelled;attempt++){
-          await new Promise(resolve=>setTimeout(resolve,400));
-          if(jobCancelled)break;
-          data=await api('/compute/api/jobs/'+job.id);
-          if(data.answer){$('answer').textContent=data.answer;onFirstToken()}
-          else if(data.status==='leased')$('answer').textContent='A Mac is generating…';
-          else $('answer').textContent=data.queue_position?`Queued · ${data.queue_position}`:'Queued';
-          if(data.status==='complete')break;
-          if(data.status==='failed')throw Error(data.error||'Provider failed');
-        }
-        if(jobCancelled)throw Error('Request cancelled. Prompt deleted.');
-        if(data?.status!=='complete')throw Error('Community request timed out. Try again.');
-        answer=String(data.answer||'');
-        {
-          const u=data?.usage&&typeof data.usage==='object'?data.usage:null;
-          const tot=Number(u?.total_tokens);
-          const tok=Math.max(0,Math.floor((Number.isFinite(tot)&&tot>0)?tot:((Number(u?.prompt_tokens)||0)+(Number(u?.completion_tokens)||0))));
-          const eng=mixture?'mixture':selfRoute?'self':'community';
-          lastPaidReceipt={tokens:tok,cents:0,engine:eng,job_id:String(activeJob||job.id||''),model:String($('model').value||''),...settleFieldsFrom(data?.settle),...((data?.route==='self'||data?.route==='community'||data?.route==='mixture')?{route:data.route}:{}),...honestyFieldsFrom(data?.receipt)};
+        try{
+          for(let attempt=0;attempt<900&&!jobCancelled;attempt++){
+            await new Promise(resolve=>setTimeout(resolve,400));
+            if(jobCancelled)break;
+            data=await api('/compute/api/jobs/'+job.id);
+            if(data.answer){$('answer').textContent=data.answer;onFirstToken()}
+            else if(data.status==='leased')$('answer').textContent='A Mac is generating…';
+            else $('answer').textContent=data.queue_position?`Queued · ${data.queue_position}`:'Queued';
+            if(data.status==='complete')break;
+            if(data.status==='failed')throw Error(data.error||'Provider failed');
+          }
+          if(jobCancelled)throw Error('Request cancelled. Prompt deleted.');
+          if(data?.status!=='complete')throw Error('Community request timed out. Try again.');
+          answer=String(data.answer||'');
+          applyCommunityJobReceipt(data,mixture?'mixture':selfRoute?'self':'community');
+        }catch(err){
+          if(!isAskNetworkDrop(err))throw err;
+          answer=await recoverCommunityStream(err,mixture?'mixture':selfRoute?'self':'community');
         }
       }
     }else{
@@ -1854,6 +1960,12 @@ $('run-demo').addEventListener('click',async()=>{
       $('answer').textContent='Hosted cut out.'+note;
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
       paintAnswerMoney();paintAnswerReceipt();
+    }else if(community&&(error?.code==='community_stream_miss'||isAskNetworkDrop(error))){
+      // Dropped Community SSE is not "the network is down" while a Mac still advertises.
+      paintCommunityNoReply(activeJob);
+      const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      clearAnswerMoney();
+      lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
     }else{
       {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
       if(msg==='login required'){clearAnswerMoney();$('answer').textContent='Sign in.';}
