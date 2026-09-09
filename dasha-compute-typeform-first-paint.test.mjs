@@ -75,9 +75,10 @@ function assertMarkup(html, label) {
   assert.match(html, /sub-24GB specialists/, `${label} mixture chip capability`);
   assert.match(html, /id=["']eng-mixture["']/, `${label} mixture engine chip`);
   assert.match(html, /Promise\.allSettled/, `${label} resilient auth`);
-  assert.match(html, /else if\(id==='ask'\)\{cameFromHow=false;cameFromGate=true;setComputeIntent\('ask'\);setEngine\('hosted',true\)\}/, `${label} #ask hash stays Hosted`);
+  assert.match(html, /else if\(id==='ask'\)\{setComputeIntent\('ask'\);enterAskEngine\(true\)\}/, `${label} #ask hash enterAskEngine`);
   assert.match(html, /ask-community['"]\)\?\.addEventListener\(['"]click['"],\(\)=>\{if\(providersOnline<1\)return;preferSelf=false;cameFromHow=true;cameFromGate=false;setEngine\('community',true\)/, `${label} Community door is click-only`);
-  assert.doesNotMatch(html, /id==='ask'[\s\S]{0,160}setEngine\(['"]community/, `${label} no auto Community yank on #ask`);
+  assert.match(html, /function enterAskEngine\(/, `${label} enterAskEngine`);
+  assert.match(html, /function maybeAdoptCommunityDefault\(/, `${label} maybeAdoptCommunityDefault`);
   assert.match(html, /id=["']answer-api["'][^>]*hidden/, `${label} answer-api hidden first paint`);
   assert.match(html, /id=["']answer-api["'][^>]*>API key</, `${label} answer-api label`);
   assert.match(html, /function paintAnswerApi\(/, `${label} paintAnswerApi`);
@@ -226,7 +227,7 @@ function assertMarkup(html, label) {
   assert.doesNotMatch(html, /Waiting for heartbeat…/, `${label} no waiting essay`);
   assert.match(html, /tf-done['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearAnswerMoney\(\);)?(?:const retry=\$\(['"]answer-retry['"]\); if\(retry\)\{retry\.hidden=true;retry\.setAttribute\(['"]hidden['"],['"]['"]\)\};)?cameFromHow=false;cameFromGate=false;showTf\(['"]ask['"]\)/, `${label} Done → Ask`);
   assert.match(html, /data-back=["']ask["']/, `${label} How Back → Ask`);
-  assert.match(html, /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?cameFromHow=false;cameFromGate=false;setEngine\(['"]hosted['"],true\)/, `${label} Provide Done → Ask`);
+  assert.match(html, /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?enterAskEngine\(true\)/, `${label} Provide Done → Ask`);
   assert.doesNotMatch(html, /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>showTf\(['"]gate['"]\)/, `${label} Provide Done not gate`);
   assert.match(html, /id=["']provide-name-back["'][^>]*data-back=["']ask["']/, `${label} Provide name Back default ask`);
   assert.match(html, /id=["']gate-signin["'][^>]*class=["']tf-quiet["'][^>]*href=["']\/login\?return=\/compute["'][^>]*>Sign in</, `${label} gate-signin quiet Sign in`);
