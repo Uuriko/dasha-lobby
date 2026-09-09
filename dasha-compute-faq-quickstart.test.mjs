@@ -30,7 +30,7 @@ const PROVIDER_LINES = [
   '$0.05/job is Provider Earn. Not the buyer price.',
   'Mac · Apple Silicon · Ollama ≥0.33.1 · python3 · 15–30 min.',
   'Sign in. Name it. Register. Run Setup.',
-  'USDC · $dasha +10% · wallet to get paid · X enrolls first.',
+  'USDC · $dasha +10% · wallet to get paid.',
   'No inbound. Token 0600. You revoke it.',
   "Jobs cross your Mac. Don't put secrets. No attestation in alpha.",
   'Offline: drop from advertise. No penalty. Earn only for served jobs.',
@@ -108,7 +108,7 @@ function assertFaqQuickstart(html, label) {
   assert.match(provide, /id=["']provide-faq-earn["'][^>]*>\$0\.05\/job is Provider Earn\. Not the buyer price\.</, `${label} Earn distinction`);
   assert.match(provide, /id=["']provide-faq-need["'][^>]*>Mac · Apple Silicon · Ollama ≥0\.33\.1 · python3 · 15–30 min\.</, `${label} need`);
   assert.match(provide, /id=["']provide-faq-enroll["'][^>]*>Sign in\. Name it\. Register\. Run Setup\.</, `${label} enroll`);
-  assert.match(provide, /id=["']provide-faq-wallet["'][^>]*>USDC · \$dasha \+10% · wallet to get paid · X enrolls first\.</, `${label} wallet`);
+  assert.match(provide, /id=["']provide-faq-wallet["'][^>]*>USDC · \$dasha \+10% · wallet to get paid\.</, `${label} wallet`);
   assert.match(provide, /id=["']provide-faq-safe["'][^>]*>No inbound\. Token 0600\. You revoke it\.</, `${label} safe`);
   assert.match(provide, /id=["']provide-faq-jobs["'][^>]*>Jobs cross your Mac\. Don't put secrets\. No attestation in alpha\.</, `${label} jobs`);
   assert.match(provide, /id=["']provide-faq-offline["'][^>]*>Offline: drop from advertise\. No penalty\. Earn only for served jobs\.</, `${label} offline`);
