@@ -104,7 +104,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 #step-night .tf-q{margin-bottom:28px}
 .panel{margin-top:12px}
 .panel[hidden],[hidden]{display:none!important}
-#answer-receipt:not([hidden]){display:block!important}#answer-receipt-note:not([hidden]){display:block!important}#answer-mac-line:not([hidden]),#ask-mac-line:not([hidden]){display:block!important}
+#answer-receipt:not([hidden]){display:block!important}#ask-receipt:not([hidden]){display:block!important}#answer-receipt-note:not([hidden]){display:block!important}#answer-mac-line:not([hidden]),#ask-mac-line:not([hidden]){display:block!important}
 #answer-mac-line a,#ask-mac-line a{color:inherit;text-decoration:underline;text-underline-offset:2px}#answer-mac-line a:hover,#ask-mac-line a:hover{color:var(--paper)}
 #buyer-first-job a,#buyer-gateways a{color:inherit;text-decoration:underline;text-underline-offset:2px}#buyer-first-job a:hover,#buyer-gateways a:hover{color:var(--paper)}
 .field{display:grid;gap:7px;margin-top:16px;font-size:12px;font-weight:900;text-transform:uppercase}
@@ -214,6 +214,8 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <h1 class="tf-q">Ask.</h1>
   <div class="ask-thread" id="ask-thread" hidden></div>
   <p class="fine" id="ask-mac-line" hidden></p>
+  <!-- mac-receipt-tps:2026-09-09 -->
+  <p class="fine" id="ask-receipt" hidden aria-live="polite"></p>
   <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Write a function. Fix a bug. Do the thing." aria-label="Prompt" title="Enter to run · Esc back"></textarea></label>
   <p class="fine" id="ask-hint" hidden aria-hidden="true"></p>
   <div class="ask-starters" id="ask-starters" role="group" aria-label="Starter prompts">
@@ -2667,8 +2669,10 @@ function paintAnswerMacLine(routeFace){
 }
 function paintAnswerReceipt(){
   const el=$('answer-receipt');
+  const askEl=$('ask-receipt');
   if(!el)return;
-  const hide=()=>{el.hidden=true;el.setAttribute('hidden','');el.textContent='';paintAnswerReceiptNote('');paintAnswerMacLine('');};
+  const hideOne=(node)=>{if(!node)return;node.hidden=true;node.setAttribute('hidden','');node.textContent='';};
+  const hide=()=>{hideOne(el);hideOne(askEl);paintAnswerReceiptNote('');paintAnswerMacLine('');};
   const show=(text,routeFace)=>{
     // Keep Answer step open so receipt is actually visible (not only textContent under a hidden step).
     if(tfStep!=='answer'&&!stayAskChat)showTf('answer');
@@ -2678,6 +2682,13 @@ function paintAnswerReceipt(){
     }
     el.hidden=false;el.removeAttribute('hidden');
     el.textContent=text;
+    // Ask keeps the quiet receipt after stayAskChat hides #step-answer. Mac routes only — Hosted never borrows Mac tok/s.
+    if(askEl){
+      if(routeFace==='community'||routeFace==='mixture'||routeFace==='self'){
+        askEl.hidden=false;askEl.removeAttribute('hidden');
+        askEl.textContent=text;
+      }else hideOne(askEl);
+    }
     paintAnswerReceiptNote(routeFace);
     paintAnswerMacLine(routeFace);
   };
@@ -2695,17 +2706,21 @@ function paintAnswerReceipt(){
   const model=String(r.model||$('model')?.value||'').trim();
   const job=String(r.job_id||'').trim();
   const shortJob=job?(job.length>18?job.slice(0,14)+'…':job):'';
-  // tok/s only when measured on capacity[] (receipt or live network) — never invent.
-  let tps=Number(r.tokens_per_second);
-  if(!(Number.isFinite(tps)&&tps>0)){
-    const live=measuredTpsForModel(model);
-    tps=live==null?NaN:live;
+  // tok/s only on Mac routes, only when measured on capacity[] (receipt or live network) — never invent, never Hosted.
+  const macFace=routeFace==='community'||routeFace==='mixture'||routeFace==='self';
+  let tps=NaN;
+  if(macFace){
+    tps=Number(r.tokens_per_second);
+    if(!(Number.isFinite(tps)&&tps>0)){
+      const live=measuredTpsForModel(model);
+      tps=live==null?NaN:live;
+    }
   }
   const tpsLabel=(Number.isFinite(tps)&&tps>0)?('~'+formatTokPerSec(tps)+' tok/s'):'';
   // Community / Mixture / self — job receipt; never show provider-earn cents as user $.
   // Quiet settle face only when job/usage JSON provided settle_cents + settle_state (fail closed).
   // Self: assert charge:0; omit settle ¢ (no-earn/no-settle on self).
-  if(routeFace==='community'||routeFace==='mixture'||routeFace==='self'){
+  if(macFace){
     const label=routeFace==='mixture'?'Mixture':routeFace==='self'?'Your Mac':'Community';
     const parts=[label];
     if(model)parts.push(model);
@@ -2728,10 +2743,11 @@ function paintAnswerReceipt(){
     return;
   }
   // Hosted paid settle only (user charged). Free floor stays quiet. Attestation omitted in Phase 0.
+  // Never stamp Mac tok/s on Hosted — live network capacity is community fleet speed.
   if(!(tok>0||cents>0)){hide();return}
   const hostedCore=cents>0
-    ?('Settled · '+formatSettledTok(tok)+' tok'+(tpsLabel?(' · '+tpsLabel):'')+' · '+formatUsdCents(cents)+' credits')
-    :('Settled · '+formatSettledTok(tok)+' tok'+(tpsLabel?(' · '+tpsLabel):''));
+    ?('Settled · '+formatSettledTok(tok)+' tok · '+formatUsdCents(cents)+' credits')
+    :('Settled · '+formatSettledTok(tok)+' tok');
   show(hostedCore,'hosted');
 }
 async function loadSettled24h(){

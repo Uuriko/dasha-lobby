@@ -22,13 +22,16 @@ assert.equal(disk, COMPUTE_PAGE_HTML, "embed matches dasha-compute.html");
 
 function assertReceiptUx(html, label) {
   assert.match(html, /id=["']answer-receipt["'][^>]*aria-live=["']polite["']/, `${label} #answer-receipt aria-live`);
+  assert.match(html, /id=["']ask-receipt["'][^>]*aria-live=["']polite["']/, `${label} #ask-receipt aria-live`);
+  assert.match(html, /<!-- mac-receipt-tps:2026-09-09 -->/, `${label} mac receipt tps marker`);
   assert.match(html, /#answer-receipt:not\(\[hidden\]\)\{display:block!important\}/, `${label} receipt CSS override`);
+  assert.match(html, /#ask-receipt:not\(\[hidden\]\)\{display:block!important\}/, `${label} ask-receipt CSS override`);
   assert.match(html, /\.panel\[hidden\],\[hidden\]\{display:none!important\}/, `${label} hidden CSS`);
   assert.match(html, /function paintAnswerReceipt\(/, `${label} paintAnswerReceipt`);
   assert.match(html, /Keep Answer step open so receipt is actually visible/, `${label} keep-open comment`);
-  assert.match(html, /if\(tfStep!=='answer'\)showTf\('answer'\)/, `${label} keep Answer step open`);
+  assert.match(html, /if\(tfStep!=='answer'&&!stayAskChat\)showTf\('answer'\)/, `${label} keep Answer step open unless Ask stay`);
   assert.match(html, /el\.removeAttribute\(['"]hidden['"]\)/, `${label} removeAttribute hidden`);
-  assert.match(html, /el\.setAttribute\(['"]hidden['"],['"]['"]\)/, `${label} setAttribute hidden`);
+  assert.match(html, /(?:el|node|askEl)\.setAttribute\(['"]hidden['"],['"]['"]\)/, `${label} setAttribute hidden`);
   assert.match(html, /paintAnswerMoney\(\);paintAnswerReceipt\(\);updateRun\(\)/, `${label} finally re-paint`);
   assert.match(html, /never show provider-earn cents as user \$/, `${label} never provider-earn cents as user $`);
   assert.match(html, /selected\/routed model id from client\/job only \(never trust answer self-description\)/, `${label} never trust answer self-description`);
@@ -37,9 +40,10 @@ function assertReceiptUx(html, label) {
   assert.match(html, /parts\.join\(' · '\)/, `${label} · joined receipt`);
   assert.match(html, /if\(routeFace==='community'\|\|routeFace==='mixture'\|\|routeFace==='self'\)/, `${label} community/mixture/self branch`);
   assert.match(html, /Hosted paid settle only \(user charged\)/, `${label} hosted paid settle comment`);
-  assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok'\+\(tpsLabel\?\(' \u00b7 '\+tpsLabel\):''\)\+' \u00b7 '\+formatUsdCents\(cents\)\+' credits'/, `${label} hosted Settled · tok · $ credits`);
+  assert.match(html, /Never stamp Mac tok\/s on Hosted/, `${label} hosted never Mac tok/s`);
+  assert.match(html, /Settled \u00b7 '\+formatSettledTok\(tok\)\+' tok · '\+formatUsdCents\(cents\)\+' credits'/, `${label} hosted Settled · tok · $ credits`);
   assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(lastSseSettle\),\.\.\.honestyFieldsFrom\(lastSseReceipt\)\}/, `${label} SSE community receipt cents:0 + settleFieldsFrom`);
-  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|job\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\),\.\.\.\(\(data\?\.route==='self'\|\|data\?\.route==='community'\|\|data\?\.route==='mixture'\)\?\{route:data\.route\}:\{\}\),\.\.\.honestyFieldsFrom\(data\?\.receipt\)\}/, `${label} poll community receipt cents:0 + settle`);
+  assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:0,engine:eng,job_id:String\(activeJob\|\|data\?\.id\|\|''\),model:String\(\$\(['"]model['"]\)\.value\|\|''\),\.\.\.settleFieldsFrom\(data\?\.settle\),\.\.\.\(\(data\?\.route==='self'\|\|data\?\.route==='community'\|\|data\?\.route==='mixture'\)\?\{route:data\.route\}:\{\}\),\.\.\.honestyFieldsFrom\(data\?\.receipt\)\}/, `${label} poll community receipt cents:0 + settle`);
   assert.doesNotMatch(html, /data\?\.model\|\|\$\(['"]model['"]\)\.value/, `${label} never trust data?.model`);
   assert.match(html, /lastPaidReceipt=\{tokens:tok,cents:5,engine:'hosted',provider_class:'hosted',settle_cents:5,settle_state:'settled',attestation:null\}/, `${label} hosted paid cents:5 settled`);
   assert.match(html, /function settleFieldsFrom\(/, `${label} settleFieldsFrom`);
@@ -189,6 +193,33 @@ if (puppeteer && existsSync(chrome)) {
         hostedPaid: run({ tokens: 33, cents: 5, engine: "hosted" }),
         hostedTokOnly: run({ tokens: 8, cents: 0, engine: "hosted" }),
         hostedFree: run({ tokens: 0, cents: 0, engine: "hosted" }),
+        liveTps: (() => {
+          networkCapacity = [{ model: "gemma3-27b", measured_providers: 1, tokens_per_second: 2.93 }];
+          const out = run({ tokens: 40, cents: 0, engine: "community", job_id: "job_abc123xyz", model: "gemma3-27b" });
+          stayAskChat = true;
+          showTf("ask");
+          const ask = document.getElementById("ask-receipt");
+          return {
+            ...out,
+            askHidden: ask?.hidden === true,
+            askText: (ask?.textContent || "").trim(),
+            askVisible: !!(ask && !ask.hidden && !ask.closest("[hidden]") && ask.offsetParent),
+            step: document.body.dataset.step,
+          };
+        })(),
+        hostedMacSpeed: (() => {
+          networkCapacity = [{ model: "gemma3-27b", measured_providers: 1, tokens_per_second: 2.93 }];
+          const modelEl = document.getElementById("model");
+          const prev = modelEl.value;
+          modelEl.value = "gemma3-27b";
+          const out = run({
+            tokens: 33, cents: 5, engine: "hosted", provider_class: "hosted",
+            model: "gemma3-27b", tokens_per_second: 2.93,
+          });
+          const ask = document.getElementById("ask-receipt");
+          modelEl.value = prev;
+          return { ...out, askHidden: ask?.hidden === true, askText: (ask?.textContent || "").trim() };
+        })(),
       };
     });
 
@@ -234,6 +265,16 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.hostedTokOnly.text, "Settled · 8 tok");
     assert.equal(painted.hostedFree.hidden, true, "hosted free floor stays quiet");
     assert.equal(painted.hostedFree.text, "");
+
+    assert.equal(painted.liveTps.text, "Community · gemma3-27b · 40 tok · ~2.93 tok/s · job_abc123xyz");
+    assert.equal(painted.liveTps.askText, painted.liveTps.text, "Ask receipt mirrors Community receipt");
+    assert.equal(painted.liveTps.askHidden, false);
+    assert.equal(painted.liveTps.step, "ask");
+    assert.equal(painted.liveTps.askVisible, true, "Ask receipt visible after Community stay");
+    assert.equal(painted.hostedMacSpeed.text, "Settled · 33 tok · $0.05 credits");
+    assert.doesNotMatch(painted.hostedMacSpeed.text, /tok\/s/);
+    assert.equal(painted.hostedMacSpeed.askHidden, true, "Hosted does not keep an Ask Mac receipt");
+    assert.equal(painted.hostedMacSpeed.askText, "");
   } finally {
     await browser.close();
   }
