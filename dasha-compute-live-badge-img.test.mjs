@@ -2,7 +2,7 @@
 /**
  * Quiet live Mac-count badge on /compute honesty strip.
  * Locks lobby src — www /compute/badge.svg is still 404 until Worker deploy.
- * Not on first-paint Start. gate. No stork / aitoolslist footer.
+ * Not on first-paint Start. gate. Listed-on footer is a separate cut.
  */
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -35,7 +35,6 @@ function assertLiveBadge(html, label) {
   const gate = html.slice(html.indexOf('id="step-gate"'), html.indexOf('id="step-how"'));
   assert.doesNotMatch(gate, /compute-live-badge|badge\.svg/, `${label} not Start. gate`);
 
-  assert.doesNotMatch(html, /aitoolslist|stork\.ai|Listed on (AI|aitools)/i, `${label} no listed-on footer`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 }
 
