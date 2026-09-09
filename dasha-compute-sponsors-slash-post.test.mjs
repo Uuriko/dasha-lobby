@@ -2,7 +2,7 @@
 /** POST /compute/api/sponsors and /sponsors/ same origin 403; GET/HEAD slash stay 200. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, ORIGIN_REQUIRED } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'sponsors-slash-post-secret', AI: { run: async () => ({ response: 'ok' }) } };
@@ -49,7 +49,7 @@ for (const path of ['/compute/api/sponsors', '/compute/api/sponsors/']) {
 const noOrigin = await pair('lobby.getdasha.com', '/compute/api/sponsors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, (req, allowed) => network.fetch(req, allowed), null);
 assert.equal(noOrigin.status, 403);
 assert.notEqual(noOrigin.status, 404);
-assert.deepEqual(noOrigin.body, { error: 'origin required' });
+assert.deepEqual(noOrigin.body, ORIGIN_REQUIRED);
 
 const unauth = await pair('lobby.getdasha.com', '/compute/api/sponsors', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: '{}' }, (req) => network.fetch(req, origin));
 assert.equal(unauth.status, 401);
@@ -90,7 +90,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const wPost = await pair(host, '/compute/api/sponsors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, (request) => worker.fetch(request, workerEnv));
   assert.equal(wPost.status, 403, `${host} POST no origin`);
   assert.notEqual(wPost.status, 404);
-  assert.deepEqual(wPost.body, { error: 'origin required' });
+  assert.deepEqual(wPost.body, ORIGIN_REQUIRED);
 
   const wPostOrigin = await pair(host, '/compute/api/sponsors/', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: '{}' }, (request) => worker.fetch(request, workerEnv));
   assert.equal(wPostOrigin.status, 401, `${host} POST origin unauth`);

@@ -2,7 +2,7 @@
 /** GET+HEAD+POST /compute/api/night and /night/; origin/auth gates; empty HEAD. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, ORIGIN_REQUIRED } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'night-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
@@ -39,7 +39,7 @@ async function pair(host, path, init = {}, fetchImpl = (req) => network.fetch(re
 for (const path of ['/compute/api/night', '/compute/api/night/']) {
   const noOrigin = await pair('lobby.getdasha.com', path, {}, (req) => network.fetch(req, null));
   assert.equal(noOrigin.status, 403, `${path} no origin`);
-  assert.deepEqual(noOrigin.body, { error: 'origin required' });
+  assert.deepEqual(noOrigin.body, ORIGIN_REQUIRED);
   const headNoOrigin = await network.fetch(new Request(`https://lobby.getdasha.com${path}`, { method: 'HEAD' }), null);
   assert.equal(headNoOrigin.status, 403, `${path} HEAD no origin`);
   assert.match(headNoOrigin.headers.get('content-type') || '', /application\/json/);
@@ -109,7 +109,7 @@ async function workerPair(host, path, init = {}) {
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const wNoOrigin = await workerPair(host, '/compute/api/night');
   assert.equal(wNoOrigin.status, 403, `${host} night no origin`);
-  assert.deepEqual(wNoOrigin.body, { error: 'origin required' });
+  assert.deepEqual(wNoOrigin.body, ORIGIN_REQUIRED);
   const wHead = await worker.fetch(new Request(`https://${host}/compute/api/night/`, { method: 'HEAD' }), workerEnv);
   assert.equal(wHead.status, 403, `${host} night/ HEAD`);
   assert.match(wHead.headers.get('content-type') || '', /application\/json/);
