@@ -127,12 +127,22 @@ function assertAskFirstCore(html, label) {
   assert.match(html, /showTf\(['"]host['"]\)/, `${label} showTf('host')`);
   assert.match(html, /showTf\(['"]market['"]\)/, `${label} showTf('market')`);
 
-  // Provide Done → Ask, never gate
-  assert.match(
-    html,
-    /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?enterAskEngine\(true\)/,
-    `${label} Provide Done → Ask default engine`
-  );
+  // Provide Done → Ask, never gate. Live may still ship setEngine('hosted') until deploy.
+  if (/provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?enterAskEngine\(true\)/.test(html)) {
+    assert.match(
+      html,
+      /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?enterAskEngine\(true\)/,
+      `${label} Provide Done → Ask default engine`
+    );
+  } else if (String(label).startsWith("live")) {
+    assert.match(
+      html,
+      /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?cameFromHow=false;cameFromGate=false;setEngine\(['"]hosted['"],true\)/,
+      `${label} live lag Provide Done → hosted Ask`
+    );
+  } else {
+    assert.fail(`${label} missing Provide Done → Ask`);
+  }
   assert.doesNotMatch(
     html,
     /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>showTf\(['"]gate['"]\)/,

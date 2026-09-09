@@ -2166,6 +2166,7 @@ function paintHonestyPanel(){
     // Hosted · live is Hosted engine status only — never the Community answer receipt.
     if(communityIntent){
       hosted.hidden=true;hosted.setAttribute('hidden','');
+      hosted.textContent='';
       hosted.className='';
       if(sep&&sep.classList.contains('honesty-sep')){sep.hidden=true;sep.setAttribute('hidden','')}
     }else{

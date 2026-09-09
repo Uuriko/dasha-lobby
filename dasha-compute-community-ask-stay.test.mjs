@@ -76,7 +76,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(adopted.model, "gemma3-27b", "prefer advertised gemma3-27b");
     assert.equal(adopted.change, "Community · gemma3-27b");
     assert.equal(adopted.hostedHidden, true, "Hosted · live hidden on Community");
-    assert.notEqual(adopted.hostedChip, "Hosted · live");
+    assert.equal(adopted.hostedChip, "", "Hosted chip text cleared on Community");
 
     const explicit = await page.evaluate(() => {
       hostedChosenThisSession = true;
