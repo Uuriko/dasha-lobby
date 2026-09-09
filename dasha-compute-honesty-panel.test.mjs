@@ -83,6 +83,9 @@ assert.match(refreshSrc, /paintHonestyPanel\(\)/);
 const panelStart = html.indexOf('id="honesty-panel"');
 const panel = html.slice(panelStart, html.indexOf('</aside>', panelStart) + 8);
 assert.match(panel, /id=["']honesty-macs["'][\s\S]*?id=["']honesty-enrolled-sep["'][\s\S]*?id=["']honesty-enrolled["']/);
+assert.match(panel, /<img id=["']compute-live-badge["'][^>]*src=["']https:\/\/lobby\.getdasha\.com\/compute\/badge\.svg["']/);
+assert.match(panel, /id=["']compute-live-badge["'][^>]*alt=["']Dasha Compute · live Macs["']/);
+assert.match(panel, /id=["']compute-live-badge["'][^>]*loading=["']lazy["']/);
 assert.doesNotMatch(panel, /Prefer MLX|provide-prefer-mlx/);
 assert.match(html, /id=["']provide-prefer-mlx["'][^>]*>Prefer MLX when you can/);
 

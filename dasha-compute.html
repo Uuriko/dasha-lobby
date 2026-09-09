@@ -125,6 +125,7 @@ footer a:hover{color:var(--paper)}
 .honesty-panel .honesty-ok{color:var(--acid)}
 .honesty-panel .honesty-sep{color:var(--line);user-select:none}
 .honesty-panel #presence-strip,.honesty-panel #act-tape{display:inline}
+.honesty-panel #compute-live-badge{display:block;flex:1 1 100%;margin:8px 0 0;height:32px;width:auto}
 .presence-act-boot{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
 .presence-act-boot[hidden]{display:none!important}
 .presence-act-boot .honesty-sep{color:var(--line);user-select:none}
@@ -589,6 +590,7 @@ https://lobby.getdasha.com/compute/api/v1</pre>
   <span id="act-tape" data-act="settled" title="Visible acts · settled paid-inference · 24h">
     <span id="honesty-settled" title="Settled paid-inference · last 24h">0 tok · 24h</span>
   </span>
+  <img id="compute-live-badge" src="https://lobby.getdasha.com/compute/badge.svg" alt="Dasha Compute · live Macs" width="180" height="32" loading="lazy">
 </aside>
 
 <footer>
