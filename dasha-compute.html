@@ -104,8 +104,8 @@ button:disabled{opacity:.5;cursor:not-allowed}
 #step-night .tf-q{margin-bottom:28px}
 .panel{margin-top:12px}
 .panel[hidden],[hidden]{display:none!important}
-#answer-receipt:not([hidden]){display:block!important}#answer-receipt-note:not([hidden]){display:block!important}#answer-mac-line:not([hidden]){display:block!important}
-#answer-mac-line a{color:inherit;text-decoration:underline;text-underline-offset:2px}#answer-mac-line a:hover{color:var(--paper)}
+#answer-receipt:not([hidden]){display:block!important}#answer-receipt-note:not([hidden]){display:block!important}#answer-mac-line:not([hidden]),#ask-mac-line:not([hidden]){display:block!important}
+#answer-mac-line a,#ask-mac-line a{color:inherit;text-decoration:underline;text-underline-offset:2px}#answer-mac-line a:hover,#ask-mac-line a:hover{color:var(--paper)}
 #buyer-first-job a,#buyer-gateways a{color:inherit;text-decoration:underline;text-underline-offset:2px}#buyer-first-job a:hover,#buyer-gateways a:hover{color:var(--paper)}
 .field{display:grid;gap:7px;margin-top:16px;font-size:12px;font-weight:900;text-transform:uppercase}
 .field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);background:#09080b;color:var(--paper)}
@@ -213,6 +213,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <button type="button" class="tf-back" id="back-ask" data-back="" hidden>← Back</button>
   <h1 class="tf-q">Ask.</h1>
   <div class="ask-thread" id="ask-thread" hidden></div>
+  <p class="fine" id="ask-mac-line" hidden></p>
   <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Write a function. Fix a bug. Do the thing." aria-label="Prompt" title="Enter to run · Esc back"></textarea></label>
   <p class="fine" id="ask-hint" hidden aria-hidden="true"></p>
   <div class="ask-starters" id="ask-starters" role="group" aria-label="Starter prompts">
@@ -661,7 +662,21 @@ function threadKeepsCommunity(){
   const route=threadRoute||($('engine')?.value||'');
   return conversation.some(m=>m.role==='assistant')&&(route==='community'||route==='mixture'||route==='self');
 }
-function threadSpeaker(role){return role==='user'?'You':'Mac'}
+function threadSpeaker(role){
+  if(role==='user')return 'You';
+  const route=threadRoute||($('engine')?.value||'');
+  if(route==='hosted')return 'Hosted';
+  if(route==='self')return 'Your Mac';
+  if(route==='mixture'){
+    const model=String(lastPaidReceipt?.model||'').trim();
+    return model?('Mixture · '+model):'Mixture';
+  }
+  if(route==='community'){
+    const model=String(lastPaidReceipt?.model||'').trim();
+    return model?('Mac · '+model):'Mac';
+  }
+  return 'Mac';
+}
 function askHasReply(){return conversation.some(m=>m.role==='assistant')}
 function paintAskTurn(message){
   const turn=document.createElement('div');
@@ -2633,19 +2648,22 @@ function paintAnswerReceiptNote(routeFace){
   }
 }
 function paintAnswerMacLine(routeFace){
-  const el=$('answer-mac-line');
-  if(!el)return;
-  // Community completed reply only — same routeFace the receipt uses (job route / provider_class / engine).
-  // Never Hosted, Mixture, self, fail, clear, or offline. No invented Mac count / tok/s / users.
-  if(routeFace!=='community'||!lastPaidReceipt||lastAskFailKind){
-    el.hidden=true;el.setAttribute('hidden','');el.replaceChildren();
-    return;
-  }
-  el.hidden=false;el.removeAttribute('hidden');
-  const a=document.createElement('a');
-  a.href='https://www.getdasha.com/compute#provide';
-  a.textContent='Join a Mac';
-  el.replaceChildren(document.createTextNode('A Mac answered. '),a);
+  const paint=(el)=>{
+    if(!el)return;
+    // Community completed reply only — same routeFace the receipt uses (job route / provider_class / engine).
+    // Ask keeps this line after stayAskChat hides #step-answer. Never Hosted, Mixture, self, fail, clear, or offline.
+    if(routeFace!=='community'||!lastPaidReceipt||lastAskFailKind){
+      el.hidden=true;el.setAttribute('hidden','');el.replaceChildren();
+      return;
+    }
+    el.hidden=false;el.removeAttribute('hidden');
+    const a=document.createElement('a');
+    a.href='https://www.getdasha.com/compute#provide';
+    a.textContent='Join a Mac';
+    el.replaceChildren(document.createTextNode('A Mac answered. '),a);
+  };
+  paint($('answer-mac-line'));
+  paint($('ask-mac-line'));
 }
 function paintAnswerReceipt(){
   const el=$('answer-receipt');
