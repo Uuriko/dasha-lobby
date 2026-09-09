@@ -127,12 +127,22 @@ function assertAskFirstCore(html, label) {
   assert.match(html, /showTf\(['"]host['"]\)/, `${label} showTf('host')`);
   assert.match(html, /showTf\(['"]market['"]\)/, `${label} showTf('market')`);
 
-  // Provide Done → Ask, never gate
-  assert.match(
-    html,
-    /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?cameFromHow=false;cameFromGate=false;setEngine\(['"]hosted['"],true\)/,
-    `${label} Provide Done → hosted Ask`
-  );
+  // Provide Done → Ask, never gate. Live may still ship setEngine('hosted') until deploy.
+  if (/provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?enterAskEngine\(true\)/.test(html)) {
+    assert.match(
+      html,
+      /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?enterAskEngine\(true\)/,
+      `${label} Provide Done → Ask default engine`
+    );
+  } else if (String(label).startsWith("live")) {
+    assert.match(
+      html,
+      /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>\{(?:clearProvideExpecting\(\);)?cameFromHow=false;cameFromGate=false;setEngine\(['"]hosted['"],true\)/,
+      `${label} live lag Provide Done → hosted Ask`
+    );
+  } else {
+    assert.fail(`${label} missing Provide Done → Ask`);
+  }
   assert.doesNotMatch(
     html,
     /provide-done-gate['"]\)\.addEventListener\(['"]click['"],\(\)=>showTf\(['"]gate['"]\)/,
@@ -260,7 +270,7 @@ assertCreditsAuthGate(COMPUTE_PAGE_HTML, "embed");
 assertGateYou(COMPUTE_PAGE_HTML, "embed");
 
 // USE.md / USE_SKILL Ask-first lockstep
-assert.match(useDisk, /Ask \(Hosted\)|Ask → Hosted Ask/, "USE.md Ask (Hosted)");
+assert.match(useDisk, /Ask \(Hosted\)|Ask → Hosted Ask|Ask → Community/, "USE.md Ask door");
 assert.match(useDisk, /quiet Provide \/ Marketplace \/ Host/, "USE.md quiet doors");
 assert.match(useDisk, /cold boot → Start\./, "USE.md cold boot gate-first");
 assert.match(useDisk, /Ask \/ Provide \/ Pay \/ Credits/, "USE.md gate choices");
@@ -350,7 +360,7 @@ await live("/compute", {
 await live("/compute/skill/use.md", {
   expectEdge: "compute-skill-use",
   expectBody(text) {
-    assert.match(text, /Ask \(Hosted\)|Ask → Hosted Ask/);
+    assert.match(text, /Ask \(Hosted\)|Ask → Hosted Ask|Ask → Community/);
     assert.match(text, /quiet Provide \/ Marketplace \/ Host/);
     if (/Start\./.test(text)) {
       assert.match(text, /Ask \/ Provide \/ Pay \/ Credits/);

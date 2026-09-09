@@ -136,7 +136,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(asked.engine, "community", "preferred Community engine");
     assert.equal(asked.model, "gemma3-27b", "preferred live model");
     assert.equal(asked.ask, true);
-    assert.equal(asked.change, "Community · 2");
+    assert.equal(asked.change, "Community · gemma3-27b");
   } finally {
     await browser.close();
   }

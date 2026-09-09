@@ -55,7 +55,7 @@ function assertAskUnavailableHonesty(html, label) {
   assert.match(html, /engHost\.textContent='Hosted'/, `${label} #eng-hosted restore Hosted`);
   assert.match(
     html,
-    /engines \[data-engine\]['"]\)\.forEach\(b=>b\.addEventListener\(['"]click['"],\(\)=>\{if\(b\.dataset\.engine==='hosted'&&window\.__dashaAuthReady&&hostedLive===false\)return;setEngine\(b\.dataset\.engine,true\)\}\)/,
+    /engines \[data-engine\]['"]\)\.forEach\(b=>b\.addEventListener\(['"]click['"],\(\)=>\{if\(b\.dataset\.engine==='hosted'&&window\.__dashaAuthReady&&hostedLive===false\)return;(?:if\(b\.dataset\.engine==='hosted'\)hostedChosenThisSession=true;)?setEngine\(b\.dataset\.engine,true\)\}\)/,
     `${label} How click does not setEngine into dead Run`,
   );
   assert.match(html, /if\(tfStep==='night'\)paintNightAuth\(\)/, `${label} Night re-paint stays`);

@@ -2,7 +2,8 @@
 /**
  * Live Worker e094f268: Ask Community capacity when providersOnline≥1.
  * Quiet #ask-community door (Community · N), measured model/tok/s on How
- * #eng-community title, #how-floor-fine live capacity, Hosted stays default.
+ * #eng-community title, #how-floor-fine live capacity.
+ * Community is the Ask default when providersOnline≥1; explicit Hosted stays.
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -27,7 +28,9 @@ function assertCapacity(html, label) {
   assert.match(html, /function fleetMeasuredLabel\(/, `${label} fleetMeasuredLabel`);
   assert.match(html, /engCom\.title=tpsLabel\?\(model\?`\$\{model\} · \$\{tpsLabel\} tok\/s measured`/, `${label} How #eng-community measured title`);
   assert.match(html, /paintAskEngine\(\);paintAskMyMac\(\);paintAskCommunity\(\);paintHowFloorFine\(\);paintAskFreeFine\(\)/, `${label} paint chain`);
-  assert.match(html, /else if\(id==='ask'\)\{cameFromHow=false;cameFromGate=true;setComputeIntent\('ask'\);setEngine\('hosted',true\)\}/, `${label} #ask Hosted default`);
+  assert.match(html, /else if\(id==='ask'\)\{setComputeIntent\('ask'\);enterAskEngine\(true\)\}/, `${label} #ask enterAskEngine`);
+  assert.match(html, /function enterAskEngine\(/, `${label} enterAskEngine`);
+  assert.match(html, /function maybeAdoptCommunityDefault\(/, `${label} maybeAdoptCommunityDefault`);
   assert.match(html, /id=["']change-engine["'][^>]*>Hosted</, `${label} change-engine Hosted`);
   assert.match(html, /ask-community['"]\)\?\.addEventListener\(['"]click['"],\(\)=>\{if\(providersOnline<1\)return/, `${label} door requires providersOnline≥1`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
@@ -35,8 +38,8 @@ function assertCapacity(html, label) {
 
 assertCapacity(disk, "disk");
 assertCapacity(COMPUTE_PAGE_HTML, "embed");
-assert.match(USE_SKILL_MD, /quiet Community · N door/);
-assert.match(USE_SKILL_MD, /Hosted stays the default/);
+assert.match(USE_SKILL_MD, /Ask defaults to Community and the live advertised model/);
+assert.match(USE_SKILL_MD, /Explicit Hosted click stays Hosted/);
 
 const res = await worker.fetch(new Request("https://www.getdasha.com/compute"), {});
 assert.equal(res.status, 200);
@@ -68,7 +71,7 @@ if (puppeteer && existsSync(chrome)) {
         change: (document.getElementById("change-engine")?.textContent || "").trim(),
       };
     });
-    assert.equal(idle.engine, "hosted", "Hosted stays default");
+    assert.equal(idle.engine, "hosted", "Hosted default at 0 Macs");
     assert.equal(idle.door, false, "Community door hidden at 0");
     assert.equal(idle.doorText, "Community");
     assert.equal(idle.change, "Hosted");
@@ -89,9 +92,11 @@ if (puppeteer && existsSync(chrome)) {
         howText: (com?.textContent || "").trim(),
         floor: (document.getElementById("how-floor-fine")?.textContent || "").trim(),
         engine: document.getElementById("engine")?.value || "",
+        model: document.getElementById("model")?.value || "",
       };
     });
-    assert.equal(live.engine, "hosted", "capacity paint does not yank Hosted");
+    assert.equal(live.engine, "community", "Macs up + no Hosted click → Community");
+    assert.equal(live.model, "qwen3-8b", "selects live advertised model");
     assert.equal(live.door, false, "Community door lives on Ask, not How");
     assert.equal(live.doorText, "Community · 2");
     assert.match(live.doorTitle, /qwen3-8b · 42\.5 tok\/s measured/);
@@ -118,6 +123,16 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(onAsk.hidden, false, "Community door not hidden attr");
     assert.equal(onAsk.door, true, "Community door on Ask when Macs up");
     assert.equal(onAsk.text, "Community · 2");
+
+    const explicit = await page.evaluate(() => {
+      hostedChosenThisSession = true;
+      $("engine").value = "hosted";
+      providersOnline = 2;
+      networkModels = new Set(["gemma3-27b", "qwen3-8b"]);
+      updateRun();
+      return document.getElementById("engine")?.value || "";
+    });
+    assert.equal(explicit, "hosted", "explicit Hosted click stays Hosted");
   } finally {
     await browser.close();
   }
