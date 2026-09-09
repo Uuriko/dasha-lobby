@@ -21,6 +21,7 @@ function assertMacLine(html, label) {
   assert.match(html, /<!-- mac-answered-honesty:2026-09-08 -->/, `${label} marker`);
   assert.match(html, /<p class=["']fine["'] id=["']answer-mac-line["'] hidden><\/p>/, `${label} #answer-mac-line empty+hidden`);
   assert.match(html, /<p class=["']fine["'] id=["']ask-mac-line["'] hidden><\/p>/, `${label} #ask-mac-line empty+hidden`);
+  assert.match(html, /<p class=["']fine["'] id=["']ask-receipt["'] hidden aria-live=["']polite["']><\/p>/, `${label} #ask-receipt empty+hidden`);
   assert.match(html, /#answer-mac-line:not\(\[hidden\]\),#ask-mac-line:not\(\[hidden\]\)\{display:block!important\}/, `${label} mac line CSS`);
   assert.match(html, /function paintAnswerMacLine\(/, `${label} paintAnswerMacLine`);
   assert.match(html, /paint\(\$\(['"]ask-mac-line['"]\)\)/, `${label} paints Ask line`);
@@ -65,12 +66,15 @@ if (puppeteer && existsSync(chrome)) {
     const first = await page.evaluate(() => {
       const el = document.getElementById("answer-mac-line");
       const ask = document.getElementById("ask-mac-line");
+      const receipt = document.getElementById("ask-receipt");
       return {
         hidden: el?.hidden === true,
         text: (el?.textContent || "").trim(),
         html: el?.innerHTML || "",
         askHidden: ask?.hidden === true,
         askText: (ask?.textContent || "").trim(),
+        receiptHidden: receipt?.hidden === true,
+        receiptText: (receipt?.textContent || "").trim(),
       };
     });
     assert.equal(first.hidden, true, "gate first paint hides mac line");
@@ -78,6 +82,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(first.html, "");
     assert.equal(first.askHidden, true, "gate first paint hides Ask mac line");
     assert.equal(first.askText, "");
+    assert.equal(first.receiptHidden, true, "gate first paint hides Ask receipt");
+    assert.equal(first.receiptText, "");
 
     const painted = await page.evaluate(() => {
       const read = () => {
@@ -158,18 +164,22 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.communityBare.askHidden, true, "bare community hides Ask mac line");
 
     const stayAsk = await page.evaluate(() => {
+      networkCapacity = [{ model: "gemma3-27b", measured_providers: 1, tokens_per_second: 2.93 }];
       lastPaidReceipt = { tokens: 40, cents: 0, engine: "community", job_id: "job_stay", model: "gemma3-27b" };
       lastAskFailKind = null;
       stayAskChat = true;
       paintAnswerReceipt();
       showTf("ask");
       const ask = document.getElementById("ask-mac-line");
+      const receipt = document.getElementById("ask-receipt");
       const answer = document.getElementById("answer-mac-line");
       return {
         step: document.body.dataset.step,
         answerStepHidden: document.getElementById("step-answer")?.hidden === true,
         askHidden: ask?.hidden === true,
         askText: (ask?.textContent || "").trim(),
+        receiptHidden: receipt?.hidden === true,
+        receiptText: (receipt?.textContent || "").trim(),
         answerHidden: answer?.hidden === true || !!answer?.closest("[hidden]"),
       };
     });
@@ -177,6 +187,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(stayAsk.answerStepHidden, true, "stayAskChat hides Answer step");
     assert.equal(stayAsk.askHidden, false, "Ask still shows A Mac answered");
     assert.equal(stayAsk.askText, "A Mac answered. Join a Mac");
+    assert.equal(stayAsk.receiptHidden, false, "Ask keeps measured tok/s receipt");
+    assert.equal(stayAsk.receiptText, "Community · gemma3-27b · 40 tok · ~2.93 tok/s · job_stay");
     assert.equal(stayAsk.answerHidden, true, "Answer-step line is not the buyer face");
   } finally {
     await browser.close();

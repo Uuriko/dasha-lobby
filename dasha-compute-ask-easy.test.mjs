@@ -51,6 +51,7 @@ function assertAskEasy(html, label) {
   assert.match(html, /if\(route==='hosted'\)return 'Hosted'/, `${label} Hosted speaker`);
   assert.match(html, /return model\?\('Mac · '\+model\):'Mac'/, `${label} Community speaker names the Mac`);
   assert.match(html, /id=["']ask-mac-line["']/, `${label} Ask keeps A Mac answered`);
+  assert.match(html, /id=["']ask-receipt["']/, `${label} Ask keeps Community receipt`);
   assert.match(html, /paint\(\$\(['"]ask-mac-line['"]\)\)/, `${label} mac-line paints on Ask`);
   assert.match(html, /\$\(['"]run-demo['"]\)\.textContent=askHasReply\(\)\?'Send':'Run'/, `${label} Run then Send`);
   assert.match(html, /function paintCommunityWorkingFace\(/, `${label} Community working face`);
@@ -169,6 +170,7 @@ if (puppeteer && existsSync(chrome)) {
       showTf("ask");
       const who = [...document.querySelectorAll("#ask-thread .ask-who")].map((el) => el.textContent.trim());
       const askMac = document.getElementById("ask-mac-line");
+      const askReceipt = document.getElementById("ask-receipt");
       const answerMac = document.getElementById("answer-mac-line");
       return {
         step: document.body.dataset.step,
@@ -176,6 +178,8 @@ if (puppeteer && existsSync(chrome)) {
         who,
         askMacHidden: askMac?.hidden === true,
         askMac: (askMac?.textContent || "").trim(),
+        askReceiptHidden: askReceipt?.hidden === true,
+        askReceipt: (askReceipt?.textContent || "").trim(),
         answerStepHidden: document.getElementById("step-answer")?.hidden === true,
         answerMacHidden: answerMac?.hidden === true || !!answerMac?.closest("[hidden]"),
         run: (document.getElementById("run-demo")?.textContent || "").trim(),
@@ -189,6 +193,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.match(thread.thread, /Mac · gemma3-27b\s+def sort_xs/);
     assert.equal(thread.askMacHidden, false, "Ask keeps A Mac answered");
     assert.equal(thread.askMac, "A Mac answered. Join a Mac");
+    assert.equal(thread.askReceiptHidden, false, "Ask keeps Community receipt");
+    assert.equal(thread.askReceipt, "Community · gemma3-27b · 40 tok · job_who");
     assert.equal(thread.answerStepHidden, true, "Answer step stays hidden on Ask");
     assert.equal(thread.answerMacHidden, true, "Answer-step mac line is not the buyer face");
     assert.equal(thread.run, "Send", "next message is Send");
@@ -207,11 +213,16 @@ if (puppeteer && existsSync(chrome)) {
         who,
         askMacHidden: document.getElementById("ask-mac-line")?.hidden === true,
         askMac: (document.getElementById("ask-mac-line")?.textContent || "").trim(),
+        askReceiptHidden: document.getElementById("ask-receipt")?.hidden === true,
+        askReceipt: (document.getElementById("ask-receipt")?.textContent || "").trim(),
       };
     });
     assert.deepEqual(hostedWho.who, ["You", "Hosted"], "Hosted reply is not a Mac");
     assert.equal(hostedWho.askMacHidden, true, "Hosted hides A Mac answered");
     assert.equal(hostedWho.askMac, "");
+    assert.equal(hostedWho.askReceiptHidden, true, "Hosted hides Ask Mac receipt");
+    assert.equal(hostedWho.askReceipt, "");
+    assert.doesNotMatch(hostedWho.askReceipt, /tok\/s/);
 
     const inflight = await page.evaluate(async () => {
       hostedChosenThisSession = false;

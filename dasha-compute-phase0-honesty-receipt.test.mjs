@@ -184,7 +184,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.merged.settle_cents, 6);
     assert.equal(painted.note, "no enclave · attestation N/A");
     assert.equal(painted.noteHidden, false);
-    assert.match(painted.text, /Community · gemma3-27b/);
+    assert.match(painted.text, /Community · gemma3-27b · 40 tok · ~2\.93 tok\/s/);
     assert.doesNotMatch(painted.text, /Caution-verifiable/);
   } finally {
     await browser.close();
