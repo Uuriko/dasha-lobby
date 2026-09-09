@@ -27,12 +27,19 @@ function assertMarkup(html, label) {
   assert.doesNotMatch(html, /id=["']ocm-door["']/, `${label} no Marketplace primary on gate`);
   assert.doesNotMatch(html, /id=["']ask-example["']/, `${label} no ask-example chip`);
   assert.match(html, /id=["']ask-starters["']/, `${label} ask-starters row`);
-  assert.match(html, /id=["']ask-starter["'][^>]*>Welcome note</, `${label} Welcome note chip`);
-  assert.match(html, /id=["']ask-starter-2["'][^>]*>Summarize this</, `${label} Summarize this chip`);
-  assert.match(html, /id=["']ask-starter-3["'][^>]*>Draft a curl</, `${label} Draft a curl chip`);
-  assert.match(html, /data-prompt=["']Write a short welcome for a new teammate\.["']/, `${label} Welcome prompt`);
-  assert.match(html, /data-prompt=["']Summarize this in three short bullets:["']/, `${label} Summarize prompt`);
-  assert.match(html, /data-prompt=["']Draft a curl that POSTs JSON to an HTTPS API\.["']/, `${label} Draft curl prompt`);
+  assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code chip`);
+  assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug chip`);
+  assert.match(html, /id=["']ask-starter-3["'][^>]*>Do the thing</, `${label} Do the thing chip`);
+  assert.match(html, /placeholder=["']Write a function\. Fix a bug\. Do the thing\.["']/, `${label} Ask placeholder`);
+  assert.doesNotMatch(html, /Welcome note/, `${label} no welcome-note toy`);
+  assert.doesNotMatch(html, /welcome for a new teammate/, `${label} no welcome-note prompt`);
+  assert.match(html, /id=["']ask-thread["']/, `${label} ask-thread`);
+  assert.match(html, /function paintAskThread\(/, `${label} paintAskThread`);
+  assert.match(html, /function threadKeepsCommunity\(/, `${label} threadKeepsCommunity`);
+  assert.match(html, /stayAskChat/, `${label} stayAskChat`);
+  assert.match(html, /data-prompt=["']Write a Python function that reads a CSV and prints the column names\.["']/, `${label} Write code prompt`);
+  assert.match(html, /data-prompt=["']This while loop never ends\. Find the bug and write the fix\.["']/, `${label} Fix a bug prompt`);
+  assert.match(html, /data-prompt=["']Write the working curl that POSTs this JSON to an HTTPS API\.["']/, `${label} Do the thing prompt`);
   assert.match(html, /querySelectorAll\(['"]#ask-starters \[data-prompt\]['"]\)/, `${label} starter click wiring`);
   assert.match(html, /id=["']pick-pay["'][^>]*title=["']Top up or sponsor["']/, `${label} Pay title`);
   assert.match(html, /id=["']pick-credits["'][^>]*title=["']Use prepaid["']/, `${label} Credits title`);
@@ -434,11 +441,11 @@ if (puppeteer && existsSync(chrome)) {
       draft: (() => { try { return sessionStorage.getItem("dasha-compute-ask-draft") || ""; } catch { return ""; } })(),
     };
   });
-  assert.match(afterStarter.prompt, /welcome for a new teammate/i, "starter fills prompt");
+  assert.match(afterStarter.prompt, /Python function that reads a CSV/i, "starter fills prompt");
   assert.equal(afterStarter.loginText, "Sign in to run", "starter → Sign in to run");
   assert.equal(afterStarter.loginVis, true, "starter keeps Log in primary");
   assert.equal(afterStarter.runVis, false, "starter still hides Run");
-  assert.match(afterStarter.draft, /welcome for a new teammate/i, "starter stashes draft");
+  assert.match(afterStarter.draft, /Python function that reads a CSV/i, "starter stashes draft");
   await page.evaluate(() => { saveAskDraftForLogin(); document.getElementById("prompt").value=""; showTf("gate"); });
   await page.evaluate(() => {
     const draft = takeAskResumeDraft();
@@ -455,7 +462,7 @@ if (puppeteer && existsSync(chrome)) {
     loginText: (document.getElementById("login")?.textContent || "").trim(),
   }));
   assert.equal(resumed.step, "ask", "resume opens Ask");
-  assert.match(resumed.prompt, /welcome for a new teammate/i, "resume restores draft");
+  assert.match(resumed.prompt, /Python function that reads a CSV/i, "resume restores draft");
   assert.equal(resumed.loginText, "Sign in to run", "resume keeps Sign in to run");
   assert.equal(afterAsk.askProvide, true);
   assert.equal(afterAsk.askOcm, true);
