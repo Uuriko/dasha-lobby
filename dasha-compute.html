@@ -784,12 +784,22 @@ function maybeAdoptCommunityDefault(){
   $('engine').value='community';
   document.querySelectorAll('.engines [data-engine]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.engine==='community'?'true':'false'));
 }
-function paintCommunityMissFace(){
+function paintCommunityRunTitle(){
   const model=String($('model')?.value||lastPaidReceipt?.model||'').trim();
   const bits=['Community'];
   if(model)bits.push(model);
   $('answer-title').textContent=bits.join(' · ');
+}
+function paintCommunityWorkingFace(){
+  // In-flight Community/Mixture/self — the run, not Hosted · live.
+  paintCommunityRunTitle();
+  $('answer').textContent='A Mac is working.';
+  paintHonestyPanel();
+}
+function paintCommunityMissFace(){
+  paintCommunityRunTitle();
   $('answer').textContent='No reply.';
+  paintHonestyPanel();
 }
 function scheduleSameEngineRetry(engine){
   if(window.__dashaEmptyRetryOnce){window.__dashaEmptyRetryOnce=false;return}
@@ -806,11 +816,15 @@ function paintCommunityNoReply(jobId){
   $('answer').textContent=job?('No reply.\n'+job):'No reply.';
 }
 function paintCommunityStillOnline(){
-  const model=String($('model')?.value||lastPaidReceipt?.model||'').trim();
-  const bits=['Community'];
-  if(model)bits.push(model);
-  $('answer-title').textContent=bits.join(' · ');
+  paintCommunityRunTitle();
   $('answer').textContent='Still online.';
+  paintHonestyPanel();
+}
+function paintCommunityJobProgress(data){
+  if(data?.answer){$('answer').textContent=data.answer;onFirstToken();return}
+  const cur=String($('answer')?.textContent||'').trim();
+  if(cur==='Still online.')return;
+  $('answer').textContent='A Mac is working.';
 }
 function isAskNetworkDrop(error){
   if(jobCancelled)return false;
@@ -838,9 +852,7 @@ async function pollSameCommunityJob(jobId){
     await new Promise(resolve=>setTimeout(resolve,400));
     if(jobCancelled)break;
     data=await api('/compute/api/jobs/'+jobId);
-    if(data.answer){$('answer').textContent=data.answer;onFirstToken()}
-    else if(data.status==='leased')$('answer').textContent='A Mac is generating…';
-    else $('answer').textContent=data.queue_position?`Queued · ${data.queue_position}`:'Still online.';
+    paintCommunityJobProgress(data);
     if(data.status==='complete'||data.status==='failed')break;
   }
   return data;
@@ -1654,7 +1666,11 @@ function clearRunTick(){if(runTickTimer){clearInterval(runTickTimer);runTickTime
 function startRunTick(waiting){
   clearRunTick();
   runStartedAt=Date.now();
-  const label=waiting?'Waiting for a Mac':'Thinking';
+  if(waiting){
+    paintCommunityWorkingFace();
+    return;
+  }
+  const label='Thinking';
   const tick=()=>{
     if(noMacHostedFallback){paintNoMacHostedFace();return}
     const s=Math.floor((Date.now()-runStartedAt)/1000);$('answer-title').textContent=label+' · '+s+'s'
@@ -1839,8 +1855,9 @@ $('run-demo').addEventListener('click',async()=>{
   hideNightOffer();
   if(!loggedIn){$('answer').textContent='Sign in.';$('answer-title').textContent=noMacHostedFallback?'No Mac online. Hosted.':'Ask.';showTf('answer');return}
   button.disabled=true;$('clear-chat').disabled=true;
-  button.textContent=community?'Waiting for Mac…':'Running…';
-  $('answer').textContent=community?'Waiting for a Mac…':'Thinking…';
+  button.textContent=community?'A Mac is working.':'Running…';
+  if(community)paintCommunityWorkingFace();
+  else $('answer').textContent='Thinking…';
   if(noMacHostedFallback)paintNoMacHostedFace();
   showTf('answer');
   beacon('ask','start');
@@ -1922,9 +1939,7 @@ $('run-demo').addEventListener('click',async()=>{
             await new Promise(resolve=>setTimeout(resolve,400));
             if(jobCancelled)break;
             data=await api('/compute/api/jobs/'+job.id);
-            if(data.answer){$('answer').textContent=data.answer;onFirstToken()}
-            else if(data.status==='leased')$('answer').textContent='A Mac is generating…';
-            else $('answer').textContent=data.queue_position?`Queued · ${data.queue_position}`:'Queued';
+            paintCommunityJobProgress(data);
             if(data.status==='complete')break;
             if(data.status==='failed')throw Error(data.error||'Provider failed');
           }
@@ -1978,7 +1993,7 @@ $('run-demo').addEventListener('click',async()=>{
     if(jobCancelled||error?.name==='AbortError'){
       // Keep partial tokens already painted; only replace waiting placeholders.
       const cur=String($('answer')?.textContent||'');
-      const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|Queued)/.test(cur);
+      const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|A Mac is working\.|Still online\.|Queued)/.test(cur);
       if(waiting||!cur.trim()){$('answer').textContent='Request cancelled. Prompt deleted.';}
       $('answer-title').textContent='Answer.';
       clearAnswerMoney();

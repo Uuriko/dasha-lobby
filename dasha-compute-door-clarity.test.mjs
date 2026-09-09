@@ -37,7 +37,7 @@ function assertDoorClarity(html, label) {
   assert.match(html, /No reply\./, `${label} No reply. face`);
   assert.match(html, /__dashaEmptyRetryOnce/, `${label} one auto-retry`);
   assert.match(html, /empty completion/i, `${label} empty completion catch`);
-  assert.match(html, /Waiting for a Mac…\|Waiting for Mac…\|Thinking…\|A Mac is generating…\|Queued/, `${label} cancel keeps partial`);
+  assert.match(html, /Waiting for a Mac…\|Waiting for Mac…\|Thinking…\|A Mac is generating…\|A Mac is working\\\.\|Still online\\\.\|Queued/, `${label} cancel keeps partial`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/);
 }
 

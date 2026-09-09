@@ -5,6 +5,7 @@
  * explicit Hosted stays; Community POST /compute/api/jobs includes route community;
  * Community/Mixture/self never call /compute/api/chat; empty Community completion
  * does not paint Hosted as the receipt (Community · model + No reply.).
+ * In-flight Community face is A Mac is working. — never Hosted · live as the run receipt.
  * Disk == embed == worker.fetch. No wrangler. No invented Macs/prices.
  */
 import assert from "node:assert/strict";
@@ -25,7 +26,9 @@ function assertCommunityStay(html, label) {
   assert.match(html, /function defaultAskEngine\(/, `${label} defaultAskEngine`);
   assert.match(html, /function enterAskEngine\(/, `${label} enterAskEngine`);
   assert.match(html, /function maybeAdoptCommunityDefault\(/, `${label} maybeAdoptCommunityDefault`);
+  assert.match(html, /function paintCommunityWorkingFace\(/, `${label} paintCommunityWorkingFace`);
   assert.match(html, /function paintCommunityMissFace\(/, `${label} paintCommunityMissFace`);
+  assert.match(html, /A Mac is working\./, `${label} A Mac is working.`);
   assert.match(html, /function scheduleSameEngineRetry\(/, `${label} scheduleSameEngineRetry`);
   assert.match(html, /else body\.route='community'/, `${label} Community job body route community`);
   assert.match(html, /if\(lastPreferAttempted\)body\.prefer_self=true/, `${label} prefer_self only when Prefer`);
@@ -96,6 +99,88 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(explicit.model, "gpt-oss-20b");
     assert.equal(explicit.hostedHidden, false, "Hosted chip is Hosted engine status");
     assert.equal(explicit.hostedChip, "Hosted · live");
+
+    const inflight = await page.evaluate(async () => {
+      hostedChosenThisSession = false;
+      loggedIn = true;
+      hostedLive = true;
+      providersOnline = 1;
+      networkModels = new Set(["gemma3-27b"]);
+      networkCapacity = [{ model: "gemma3-27b", measured_providers: 1, tokens_per_second: 2.93 }];
+      $("engine").value = "community";
+      $("model").value = "gemma3-27b";
+      $("prompt").value = "Stay on the Mac.";
+      updateRun();
+      window.__dashaFetchLog = [];
+      window.__dashaChatCalled = false;
+      const orig = window.fetch;
+      window.fetch = async (url, opts = {}) => {
+        const href = String(url);
+        window.__dashaFetchLog.push({ url: href });
+        if (href.includes("/compute/api/chat")) {
+          window.__dashaChatCalled = true;
+          return new Response(JSON.stringify({ answer: "hosted slip", model: "gpt-4o-mini" }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        if (href.includes("/compute/api/network")) {
+          return new Response(JSON.stringify({
+            providers_online: 1,
+            models_available: ["gemma3-27b"],
+            capacity: [{ model: "gemma3-27b", measured_providers: 1, tokens_per_second: 2.93 }],
+          }), { status: 200, headers: { "content-type": "application/json" } });
+        }
+        if (href.includes("/compute/api/jobs")) {
+          return new Promise((_, reject) => {
+            const signal = opts.signal;
+            const fail = () => {
+              const err = new Error("Aborted");
+              err.name = "AbortError";
+              reject(err);
+            };
+            if (signal?.aborted) { fail(); return; }
+            if (signal) signal.addEventListener("abort", fail, { once: true });
+          });
+        }
+        return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
+      };
+      $("run-demo").disabled = false;
+      $("run-demo").hidden = false;
+      $("run-demo").click();
+      const started = Date.now();
+      while (Date.now() - started < 2500) {
+        const answer = ($("answer")?.textContent || "").trim();
+        if (answer === "A Mac is working.") break;
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      paintHonestyPanel();
+      const chats = (window.__dashaFetchLog || []).filter((row) => row.url.includes("/compute/api/chat"));
+      const snap = {
+        engine: $("engine")?.value || "",
+        title: ($("answer-title")?.textContent || "").trim(),
+        answer: ($("answer")?.textContent || "").trim(),
+        receipt: ($("answer-receipt")?.textContent || "").trim(),
+        hostedChip: ($("honesty-hosted")?.textContent || "").trim(),
+        hostedHidden: $("honesty-hosted")?.hidden === true,
+        chatCalled: window.__dashaChatCalled === true,
+        chats: chats.length,
+      };
+      if (runAbort) try { runAbort.abort(); } catch {}
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      window.fetch = orig;
+      return snap;
+    });
+    assert.equal(inflight.engine, "community", "in-flight stays Community");
+    assert.equal(inflight.answer, "A Mac is working.", "in-flight face is the run");
+    assert.equal(inflight.title, "Community · gemma3-27b", "in-flight title is Community · model");
+    assert.equal(inflight.chatCalled, false, "in-flight does not call Hosted chat");
+    assert.equal(inflight.chats, 0, "in-flight no /compute/api/chat");
+    assert.doesNotMatch(inflight.receipt, /Hosted/, "in-flight receipt is not Hosted");
+    assert.equal(inflight.hostedHidden, true, "Hosted · live is not the in-flight receipt");
+    assert.notEqual(inflight.answer, "Hosted · live");
+    assert.notEqual(inflight.title, "Hosted · live");
+    assert.equal(inflight.hostedChip, "", "Hosted chip text cleared while Community runs");
 
     const run = await page.evaluate(async () => {
       hostedChosenThisSession = false;
