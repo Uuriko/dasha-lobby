@@ -5,7 +5,7 @@
  * Not on first-paint Start. gate. No stork / aitoolslist footer.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import worker from './dasha-lobby-worker.mjs';
@@ -46,5 +46,60 @@ const res = await worker.fetch(new Request('https://www.getdasha.com/compute'), 
 assert.equal(res.status, 200);
 assert.equal(res.headers.get('x-dasha-edge'), 'compute');
 assertLiveBadge(await res.text(), 'worker.fetch');
+
+const chrome = process.env.CHROME_BIN || '/usr/bin/google-chrome';
+let puppeteer;
+try { puppeteer = (await import('puppeteer-core')).default; } catch {}
+if (puppeteer && existsSync(chrome)) {
+  const browser = await puppeteer.launch({ executablePath: chrome, headless: true, args: ['--no-sandbox'] });
+  try {
+    const page = await browser.newPage();
+    await page.goto(new URL('./dasha-compute.html', import.meta.url).href, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.__dashaAuthReady === true, { timeout: 8000 }).catch(() => {});
+
+    const gate = await page.evaluate(() => {
+      const panel = document.getElementById('honesty-panel');
+      const badge = document.getElementById('compute-live-badge');
+      const vis = (el) => !!(el && !el.hidden && !el.closest('[hidden]') && el.offsetParent);
+      return {
+        step: document.body.dataset.step,
+        panelHidden: panel?.hidden === true,
+        badgeSrc: badge?.getAttribute('src') || '',
+        badgeAlt: badge?.getAttribute('alt') || '',
+        badgeLazy: badge?.getAttribute('loading') || '',
+        badgeVisible: vis(badge),
+        inGate: !!document.querySelector('#step-gate #compute-live-badge'),
+      };
+    });
+    assert.equal(gate.step, 'gate', 'cold boot Start.');
+    assert.equal(gate.panelHidden, true, 'honesty strip hidden on Start.');
+    assert.equal(gate.badgeSrc, LOBBY_BADGE, 'lobby src on first paint');
+    assert.equal(gate.badgeAlt, 'Dasha Compute · live Macs');
+    assert.equal(gate.badgeLazy, 'lazy');
+    assert.equal(gate.badgeVisible, false, 'badge not on Start. gate');
+    assert.equal(gate.inGate, false, 'badge not inside step-gate');
+
+    const ask = await page.evaluate(() => {
+      showTf('ask');
+      const panel = document.getElementById('honesty-panel');
+      const badge = document.getElementById('compute-live-badge');
+      const vis = (el) => !!(el && !el.hidden && !el.closest('[hidden]') && el.offsetParent);
+      return {
+        step: document.body.dataset.step,
+        panelHidden: panel?.hidden === true,
+        inPanel: !!(badge && panel?.contains(badge)),
+        badgeVisible: vis(badge),
+        badgeSrc: badge?.getAttribute('src') || '',
+      };
+    });
+    assert.equal(ask.step, 'ask', 'Ask past Start.');
+    assert.equal(ask.panelHidden, false, 'honesty strip after Start.');
+    assert.equal(ask.inPanel, true, 'badge stays in honesty strip');
+    assert.equal(ask.badgeVisible, true, 'badge visible after Start.');
+    assert.equal(ask.badgeSrc, LOBBY_BADGE);
+  } finally {
+    await browser.close();
+  }
+}
 
 console.log('dasha-compute-live-badge-img: PASS');
