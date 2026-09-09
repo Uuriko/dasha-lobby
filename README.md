@@ -27,8 +27,8 @@ Designer-publish · `plugin.jup.ag` · rewriting Graham OCM `#44` from this tree
 
 ## Compute status badge
 
-Live provider count as an embeddable SVG (60s cache, aggregate only):
+Live provider count as an embeddable SVG (60s cache, aggregate only). Lobby serves it today. www `/compute/badge.svg` lands with Worker deploy.
 
 ```md
-[![Dasha Compute status](https://www.getdasha.com/compute/badge.svg)](https://www.getdasha.com/compute)
+[![Dasha Compute status](https://lobby.getdasha.com/compute/badge.svg)](https://www.getdasha.com/compute)
 ```
