@@ -58,7 +58,7 @@ const html = `<!doctype html>
     <div><b>What does ANCHORED add?</b><p>A receipt alone is the signer's word. Anchored means the network's own signed heads log covered it within the hour - a second, independent signature over the chain tip.</p></div>
     <div><b>What does it NOT prove?</b><p>That the named engine literally produced the output. That is the attestation layer (confidential compute), which we are building toward - and we would rather say that plainly than imply otherwise.</p></div>
     <div><b>Do I need an account?</b><p>No. Verification is client-side against the published key (/keys.json) and the public heads log (/heads).</p></div>
-    <div><b>What if verification fails?</b><p>The page names the failed check. A failure on a real receipt is an incident - report it to potter@trydemigod.com.</p></div>
+    <div><b>What if verification fails?</b><p>The page names the failed check. A failure on a real receipt is an incident - report it on <a href="https://t.me/+xB7S8mIQaKFiZjRh" target="_blank" rel="noopener noreferrer">Telegram</a>.</p></div>
   </div>
 </main>
 <script>${client}</script>
