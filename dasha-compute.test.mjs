@@ -114,6 +114,7 @@ const disconnectedStorage = {
   async get() { disconnectReads++; return structuredClone(disconnectedJob); },
   async put(_key, value) { disconnectWrites++; disconnectedJob = structuredClone(value); },
   async delete() { disconnectWrites++; disconnectedJob = null; },
+  async list() { return new Map(); },
 };
 const disconnectedReader = new ComputeNetwork({ storage: disconnectedStorage }, {}).streamResponse(disconnectedJob).body.getReader();
 await disconnectedReader.cancel();
