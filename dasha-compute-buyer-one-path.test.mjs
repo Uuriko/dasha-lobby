@@ -56,6 +56,9 @@ function assertBuyerOnePath(html, label) {
   const block = buyerBlock(html);
   assert.match(block, /OpenAI-compatible\. Change the base URL\./, `${label} lead`);
   assert.match(block, /id=["']build-free-fine["'][^>]*>3 free \/ 10 min · then credits\./, `${label} 3-free near snippets`);
+  assert.match(block, /id=["']compat-openai-label["'][^>]*>OpenAI</, `${label} OpenAI label`);
+  assert.ok(block.includes(`OpenAI(base_url="${BASE}", api_key=os.environ["DASHA_API_KEY"])`), `${label} OpenAI base_url`);
+  assert.match(block, /data-copy=["']code-openai["'][^>]*>Copy OpenAI</, `${label} Copy OpenAI`);
   assert.match(block, /id=["']compat-litellm-label["'][^>]*>LiteLLM</, `${label} LiteLLM label`);
   assert.ok(block.includes(`api_base = "${BASE}"`), `${label} LiteLLM api_base`);
   assert.match(block, /data-copy=["']code-litellm["'][^>]*>Copy LiteLLM</, `${label} Copy LiteLLM`);
@@ -97,6 +100,11 @@ function assertBuyerOnePath(html, label) {
 
   assert.match(
     html,
+    /const openai=\$\(['"]code-openai['"]\);if\(openai\)openai\.textContent='from openai import OpenAI\\nOpenAI\(base_url="'\+base\+'", api_key=os\.environ\["DASHA_API_KEY"\]\)'/,
+    `${label} paintCode OpenAI`,
+  );
+  assert.match(
+    html,
     /const litellm=\$\(['"]code-litellm['"]\);if\(litellm\)litellm\.textContent='api_base = "'\+base\+'"'/,
     `${label} paintCode LiteLLM`,
   );
@@ -132,6 +140,7 @@ if (puppeteer && existsSync(chrome)) {
       lead: document.getElementById('compat-lead')?.textContent || '',
       free: document.getElementById('build-free-fine')?.textContent || '',
       ask: document.getElementById('ask-free-fine')?.textContent || '',
+      openai: document.getElementById('code-openai')?.textContent || '',
       litellm: document.getElementById('code-litellm')?.textContent || '',
       langchain: document.getElementById('code-langchain')?.textContent || '',
       n8n: document.getElementById('code-n8n')?.textContent || '',
@@ -150,6 +159,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.doesNotMatch(first.job, /\d+\s*Mac/);
     assert.equal(first.free, '3 free / 10 min · then credits.');
     assert.equal(first.ask, '3 free / 10 min · then credits.');
+    assert.equal(first.openai, `from openai import OpenAI\nOpenAI(base_url="${BASE}", api_key=os.environ["DASHA_API_KEY"])`);
     assert.equal(first.litellm, `api_base = "${BASE}"`);
     assert.equal(first.langchain, `ChatOpenAI(openai_api_base="${BASE}")`);
     assert.equal(first.n8n, `OpenAI node · base URL\n${BASE}`);
@@ -166,12 +176,14 @@ if (puppeteer && existsSync(chrome)) {
       paintCode();
       return {
         curl: document.getElementById('code')?.textContent || '',
+        openai: document.getElementById('code-openai')?.textContent || '',
         litellm: document.getElementById('code-litellm')?.textContent || '',
         langchain: document.getElementById('code-langchain')?.textContent || '',
         n8n: document.getElementById('code-n8n')?.textContent || '',
       };
     });
     assert.match(painted.curl, /curl https:\/\/example\.test\/v1\/chat\/completions/);
+    assert.equal(painted.openai, 'from openai import OpenAI\nOpenAI(base_url="https://example.test/v1", api_key=os.environ["DASHA_API_KEY"])');
     assert.equal(painted.litellm, 'api_base = "https://example.test/v1"');
     assert.equal(painted.langchain, 'ChatOpenAI(openai_api_base="https://example.test/v1")');
     assert.equal(painted.n8n, 'OpenAI node · base URL\nhttps://example.test/v1');

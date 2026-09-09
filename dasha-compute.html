@@ -470,6 +470,16 @@ footer a:hover{color:var(--paper)}
   <p class="fine" id="provide-keepalive">Keep Ollama warm · OLLAMA_KEEP_ALIVE=-1 on launch agent · advertise ≠ mid-Ask inference.</p>
   <p class="fine" id="provide-softdoctor">Doctor soft-warns · battery / Low Power / thermal / SIP · never fails solely · not attestation.</p>
   <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion · min $1 · pending operator settle</p>
+  <section id="provider-faq">
+    <p class="fine" id="provide-faq-earn">$0.05/job is Provider Earn. Not the buyer price.</p>
+    <p class="fine" id="provide-faq-need">Mac · Apple Silicon · Ollama ≥0.33.1 · python3 · 15–30 min.</p>
+    <p class="fine" id="provide-faq-enroll">Sign in. Name it. Register. Run Setup.</p>
+    <p class="fine" id="provide-faq-wallet">USDC · $dasha +10% · wallet to get paid · X enrolls first.</p>
+    <p class="fine" id="provide-faq-safe">No inbound. Token 0600. You revoke it.</p>
+    <p class="fine" id="provide-faq-jobs">Jobs cross your Mac. Don't put secrets. No attestation in alpha.</p>
+    <p class="fine" id="provide-faq-offline">Offline: drop from advertise. No penalty. Earn only for served jobs.</p>
+    <p class="fine" id="provide-faq-cmds">dasha-compute status · doctor · benchmark · logs · restart · uninstall</p>
+  </section>
   <pre class="setup" id="setup" aria-live="polite">curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
 tar -xzf dasha-compute-open-alpha.tar.gz
 cd dasha-compute-open-alpha
@@ -516,9 +526,20 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
         <p class="fine">Create a key.</p>
         <p class="fine">Change the base URL.</p>
       </div>
+      <div id="buyer-faq">
+        <p class="fine" id="buyer-faq-ask">How do I ask? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1</p>
+        <p class="fine" id="buyer-faq-live">What is live? The Mac that is advertising. Read /compute/api/network.</p>
+        <p class="fine" id="buyer-faq-hosted">What if no Mac is online? Hosted is still there.</p>
+        <p class="fine" id="buyer-faq-credits">Community spends credits. Your Mac is free.</p>
+        <p class="fine" id="buyer-faq-cap">Key cap $5 / month · 402 after.</p>
+      </div>
       <p class="fine" id="buyer-live-line-build" aria-live="polite">No Mac online.</p>
       <p class="fine" id="compat-lead">OpenAI-compatible. Change the base URL.</p>
       <p class="fine" id="build-free-fine">3 free / 10 min · then credits.</p>
+      <p class="fine" id="compat-openai-label">OpenAI</p>
+      <pre class="setup" id="code-openai">from openai import OpenAI
+OpenAI(base_url="https://lobby.getdasha.com/compute/api/v1", api_key=os.environ["DASHA_API_KEY"])</pre>
+      <button class="copy tf-quiet" data-copy="code-openai" type="button">Copy OpenAI</button>
       <p class="fine" id="compat-litellm-label">LiteLLM</p>
       <pre class="setup" id="code-litellm">api_base = "https://lobby.getdasha.com/compute/api/v1"</pre>
       <button class="copy tf-quiet" data-copy="code-litellm" type="button">Copy LiteLLM</button>
@@ -1870,6 +1891,7 @@ function paintCode(){
     if(hit)model=hit[0];
   }
   $('code').textContent=`curl ${base}/chat/completions \\\n  -H "Authorization: Bearer $DASHA_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify({model,messages:[{role:'user',content:'hello'}],stream:true})}'`;
+  const openai=$('code-openai');if(openai)openai.textContent='from openai import OpenAI\nOpenAI(base_url="'+base+'", api_key=os.environ["DASHA_API_KEY"])';
   const litellm=$('code-litellm');if(litellm)litellm.textContent='api_base = "'+base+'"';
   const langchain=$('code-langchain');if(langchain)langchain.textContent='ChatOpenAI(openai_api_base="'+base+'")';
   const n8n=$('code-n8n');if(n8n)n8n.textContent='OpenAI node · base URL\n'+base;
