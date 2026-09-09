@@ -70,12 +70,12 @@ function assertBuyerOnePath(html, label) {
   assert.match(block, /data-copy=["']code-n8n["'][^>]*>Copy n8n</, `${label} Copy n8n`);
   assert.match(
     block,
-    /id=["']buyer-gateways["'][^>]*>For gateways\. <a href=["']mailto:potter@trydemigod\.com["']>potter@trydemigod\.com<\/a><\/p>/,
-    `${label} For gateways. potter@trydemigod.com`,
+    /id=["']buyer-gateways["'][^>]*>For gateways\. <a href=["']https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh["'] target=["']_blank["'] rel=["']noopener noreferrer["']>Telegram<\/a><\/p>/,
+    `${label} For gateways. Telegram`,
   );
-  assert.equal((block.match(/potter@trydemigod\.com/g) || []).length, 2, `${label} potter email once (href + text)`);
+  assert.doesNotMatch(block, /potter@trydemigod|mailto:potter/, `${label} no demigod mailto`);
   const emails = [...block.matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)].map((m) => m[0]);
-  assert.deepEqual([...new Set(emails)], ['potter@trydemigod.com'], `${label} no invented email`);
+  assert.deepEqual(emails, [], `${label} no email on buyer block`);
   assert.doesNotMatch(block, /<form\b/i, `${label} no form`);
 
   const askStart = html.indexOf('id="step-ask"');
@@ -147,7 +147,9 @@ if (puppeteer && existsSync(chrome)) {
       block: document.getElementById('buyer-one-path')?.innerText || '',
       job: document.getElementById('buyer-first-job')?.innerText || '',
       gateways: document.getElementById('buyer-gateways')?.textContent || '',
-      mailto: document.querySelector('#buyer-gateways a')?.getAttribute('href') || '',
+      href: document.querySelector('#buyer-gateways a')?.getAttribute('href') || '',
+      target: document.querySelector('#buyer-gateways a')?.getAttribute('target') || '',
+      rel: document.querySelector('#buyer-gateways a')?.getAttribute('rel') || '',
       signin: document.querySelector('#buyer-first-job a')?.getAttribute('href') || '',
       lines: [...document.querySelectorAll('#buyer-first-job p')].map((p) => p.textContent),
       askStep: document.getElementById('step-ask')?.innerText || '',
@@ -163,8 +165,10 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(first.litellm, `api_base = "${BASE}"`);
     assert.equal(first.langchain, `ChatOpenAI(openai_api_base="${BASE}")`);
     assert.equal(first.n8n, `OpenAI node · base URL\n${BASE}`);
-    assert.equal(first.gateways, 'For gateways. potter@trydemigod.com');
-    assert.equal(first.mailto, 'mailto:potter@trydemigod.com');
+    assert.equal(first.gateways, 'For gateways. Telegram');
+    assert.equal(first.href, 'https://t.me/+xB7S8mIQaKFiZjRh');
+    assert.equal(first.target, '_blank');
+    assert.equal(first.rel, 'noopener noreferrer');
     assert.doesNotMatch(first.job, /For gateways|potter@trydemigod/);
     assert.doesNotMatch(first.askStep, /\$0\.05\/job/);
     assert.doesNotMatch(first.askStep, /For gateways|potter@trydemigod/);
