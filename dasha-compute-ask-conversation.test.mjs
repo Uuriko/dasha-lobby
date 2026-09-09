@@ -18,6 +18,7 @@ assert.equal(disk, COMPUTE_PAGE_HTML, "embed matches dasha-compute.html");
 function assertAskConversation(html, label) {
   assert.match(html, /function pendingMessages\(/, `${label} pendingMessages`);
   assert.match(html, /function paintAskThread\(/, `${label} paintAskThread`);
+  assert.match(html, /function threadSpeaker\(/, `${label} threadSpeaker`);
   assert.match(html, /function threadKeepsCommunity\(/, `${label} threadKeepsCommunity`);
   assert.match(html, /stayAskChat/, `${label} stayAskChat`);
   assert.match(html, /threadRoute/, `${label} threadRoute`);
@@ -104,8 +105,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(followUp.payload[0].content, "Write a sort in Python.");
     assert.match(followUp.payload[1].content, /def sort_xs/);
     assert.equal(followUp.payload[2].content, "Now reverse it.");
-    assert.match(followUp.thread, /You:\nWrite a sort in Python\./);
-    assert.match(followUp.thread, /Assistant:\ndef sort_xs/);
+    assert.match(followUp.thread, /You\s+Write a sort in Python\./);
+    assert.match(followUp.thread, /Mac\s+def sort_xs/);
     assert.equal(followUp.threadHidden, false, "thread visible");
     assert.equal(followUp.startersHidden, true, "starters hide once a thread exists");
     assert.equal(followUp.welcomeHidden, true, "Write code chip hides once a thread exists");
