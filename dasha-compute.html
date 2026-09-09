@@ -33,7 +33,9 @@ button,input,select,textarea{font:inherit}
 .tf-choices{display:grid;gap:12px}
 .tf-choice,.primary,.secondary{min-height:60px;border:1px solid var(--paper);border-radius:12px;padding:0 20px;font-weight:900;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:100%;background:transparent;color:var(--paper);font-size:20px;letter-spacing:.02em}
 .tf-choice.primary,.primary{background:var(--acid);border-color:var(--acid);color:var(--ink)}
+.tf-choice.primary:hover,.primary:hover,.tf-choice.primary:focus-visible,.primary:focus-visible{background:var(--acid);border-color:var(--acid);color:var(--ink)}
 .tf-choice[aria-pressed=true]{background:var(--acid);border-color:var(--acid);color:var(--ink)}
+.tf-choice[aria-pressed=true]:hover,.tf-choice[aria-pressed=true]:focus-visible{background:var(--acid);border-color:var(--acid);color:var(--ink)}
 .tf-choice.secondary,.secondary{border-color:var(--line);color:var(--paper);font-size:17px;font-weight:800}
 .tf-choice.is-dim{border-color:var(--line);color:var(--muted);cursor:pointer}
 .tf-choice.is-dim:hover,.tf-choice.is-dim:focus-visible{color:var(--paper);border-color:color-mix(in srgb,var(--paper) 45%,var(--line))}
@@ -56,12 +58,16 @@ button,input,select,textarea{font:inherit}
 #provide-beat.acid::before{background:var(--acid);box-shadow:0 0 10px var(--acid);margin-right:.45em}
 @keyframes beat-pulse{0%,100%{opacity:.35}50%{opacity:1}}
 @media(prefers-reduced-motion:reduce){#provide-beat.waiting::before,#provide-beat.acid::before{animation:none}}
-#ask-starters{margin:0 0 10px;display:flex;flex-wrap:wrap;gap:0 14px}#ask-starters .tf-quiet{padding:6px 0}
-.ask-thread{margin:0 0 20px;color:#d8cfe0;font:16px/1.55 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+#ask-starters{margin:0 0 18px;display:grid;justify-items:start;gap:2px}#ask-starters .tf-quiet{padding:10px 0;font-size:15px;color:var(--paper-muted)}
+.ask-thread{margin:0 0 28px;display:grid;gap:22px}
 .ask-thread[hidden]{display:none!important}
-body.has-chat #ask-starters{display:none!important}
+.ask-turn{display:grid;gap:8px}
+.ask-who{color:var(--paper);font:800 13px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em}
+.ask-said{margin:0;padding:0;border:0;background:transparent;color:var(--paper);font:18px/1.5 Arial,Helvetica,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
+.ask-turn.mac .ask-said{color:var(--paper);font:16px/1.55 ui-monospace,monospace}
+body.has-chat #ask-starters,body.has-chat #ask-free-fine,body.has-chat #buyer-live-line{display:none!important}
 body.has-chat #prompt{min-height:5.5rem}
-body.has-chat #step-ask .tf-q{margin-bottom:18px}
+body.has-chat #step-ask .tf-q{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .tf-quiet{border:0;background:transparent;color:var(--paper-muted);font:400 13px/1.35 Arial,Helvetica,sans-serif;cursor:pointer;padding:10px 0;text-decoration:none;display:inline-flex}
 .tf-quiet:hover{color:var(--paper)}
 /* Gate / Pay / Credits: quiet under choices share one top gap */
@@ -75,16 +81,19 @@ body.has-chat #step-ask .tf-q{margin-bottom:18px}
 .tf-micro{color:var(--muted);font:400 12px/1.3 Arial,Helvetica,sans-serif}
 #step-gate>.ask-links .tf-quiet{font-size:14px;color:var(--paper-muted)}
 .ask-links .tf-quiet{padding:6px 0}
-.ask-doors{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:2px;margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
-.ask-doors .tf-quiet{padding:4px 0;font-size:12px}
+.ask-doors{display:grid;justify-items:start;gap:2px;margin-top:18px;padding-top:18px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.ask-doors .tf-quiet{padding:10px 0;font-size:15px}
+#step-ask .ask-links{display:grid;justify-items:start;gap:2px;margin-top:14px}
+#step-ask .ask-links .tf-quiet{padding:10px 0;font-size:15px}
 #ask-prefer-mymac[aria-pressed=true]{color:var(--acid);font-weight:700}
 #ask-prefer-mymac[data-mac=offline]{color:var(--paper-muted);opacity:.72;font-weight:400}
+#step-ask .ask-door-sep{display:none}
 .ask-doors .ask-door-sep{color:var(--line);font-size:12px;user-select:none;line-height:1;padding:0 2px}
-#prompt{display:block;width:100%;min-height:9rem;max-height:42vh;font-size:clamp(24px,4.5vw,36px);line-height:1.28;font-weight:500;background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:16px 0 14px;caret-color:var(--acid);color:var(--paper);resize:vertical;margin:0 0 18px}
+#prompt{display:block;width:100%;min-height:9rem;max-height:42vh;font-size:clamp(24px,4.5vw,36px);line-height:1.28;font-weight:500;background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:16px 0 14px;caret-color:var(--acid);color:var(--paper);resize:vertical;margin:0 0 22px}
 #prompt:focus{border-bottom-color:var(--paper);outline:none}
-#prompt::placeholder{color:var(--muted);opacity:.7;font-weight:400}
-#step-ask .actions{gap:10px;margin-top:6px}
-#step-ask .primary:disabled{background:transparent;border-color:var(--line);color:var(--muted);opacity:1}
+#prompt::placeholder{color:var(--paper-muted);opacity:1;font-weight:500}
+#step-ask .actions{gap:14px;margin-top:8px}
+#step-ask .primary:disabled,#step-ask .primary:disabled:hover{background:transparent;border-color:var(--line);color:var(--paper-muted);opacity:1}
 #run-demo[hidden],#run-demo[hidden]:disabled{display:none!important}
 #provider-name{display:block;width:100%;font-size:clamp(24px,5vw,40px);background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:12px 0;color:var(--paper);margin:0 0 22px;caret-color:var(--acid)}
 #provider-name:focus{border-bottom-color:var(--paper);outline:none}
@@ -121,7 +130,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
 .tf-choice.primary:focus-visible,.primary:focus-visible,.tf-choice[aria-pressed=true]:focus-visible{outline-width:2px;outline-offset:2px;outline-color:color-mix(in srgb,var(--acid) 65%,var(--ink))}
 @keyframes tf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.tf-step{animation:none!important}}
-@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:7rem}#ask-starters{gap:0 12px;margin-bottom:8px}.ask-doors{column-gap:4px;row-gap:4px;margin-top:6px;padding-top:6px}.ask-doors .tf-quiet{padding:6px 4px 6px 0}.ask-links{gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}}
+@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:7rem}#step-ask #run-demo,#step-ask #login{min-height:56px}#ask-starters{margin-bottom:12px}#step-ask .ask-doors,#step-ask .ask-links{display:grid;gap:2px;margin-top:12px;padding-top:12px}#step-ask .ask-doors .tf-quiet,#step-ask .ask-links .tf-quiet,#ask-starters .tf-quiet{padding:12px 0;font-size:15px}#step-gate>.ask-links{display:flex;flex-wrap:wrap;gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}}
 
 .honesty-panel{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
 .honesty-panel[hidden]{display:none!important}
@@ -211,14 +220,10 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <button type="button" class="tf-quiet" id="ask-starter-2" data-prompt="This while loop never ends. Find the bug and write the fix.">Fix a bug</button>
     <button type="button" class="tf-quiet" id="ask-starter-3" data-prompt="Write the working curl that POSTs this JSON to an HTTPS API.">Do the thing</button>
   </div>
-  <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
-  <!-- buyer-live-models:2026-09-08 -->
-  <p class="fine" id="buyer-live-line" aria-live="polite">No Mac online.</p>
   <div class="actions">
     <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
     <a class="primary" id="login" href="/login?return=/compute%23ask">Sign in</a>
     <div class="ask-links">
-      <button class="tf-quiet" id="copy-skill-use" type="button">Copy AI skill</button>
       <button class="tf-quiet" id="change-engine" type="button" title="Change engine" aria-label="Change engine">Hosted</button>
       <button class="tf-quiet" id="clear-chat" type="button" hidden disabled>Clear</button>
     </div>
@@ -229,6 +234,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
       <span class="ask-door-sep" id="ask-mymac-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="ask-community" title="Community Mac online" aria-label="Community" hidden>Community</button>
       <span class="ask-door-sep" id="ask-community-sep" aria-hidden="true" hidden>·</span>
+      <button type="button" class="tf-quiet" id="copy-skill-use">Copy AI skill</button>
       <button type="button" class="tf-quiet" id="ask-provide" title="Join with a Mac" aria-label="Provide · Join with a Mac">Provide</button>
       <span class="ask-door-sep" aria-hidden="true">·</span>
       <button type="button" class="tf-quiet" id="ask-ocm" title="OCM console" aria-label="Marketplace · OCM console">Marketplace</button>
@@ -237,6 +243,9 @@ footer.listed-on img{display:block;height:32px;width:auto}
       <span class="ask-door-sep" id="ask-credits-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="ask-credits" title="Credits" aria-label="Credits" hidden></button>
     </div>
+    <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
+    <!-- buyer-live-models:2026-09-08 -->
+    <p class="fine" id="buyer-live-line" aria-live="polite">No Mac online.</p>
   </div>
 </section>
 
@@ -652,6 +661,20 @@ function threadKeepsCommunity(){
   const route=threadRoute||($('engine')?.value||'');
   return conversation.some(m=>m.role==='assistant')&&(route==='community'||route==='mixture'||route==='self');
 }
+function threadSpeaker(role){return role==='user'?'You':'Mac'}
+function askHasReply(){return conversation.some(m=>m.role==='assistant')}
+function paintAskTurn(message){
+  const turn=document.createElement('div');
+  turn.className='ask-turn '+(message.role==='user'?'you':'mac');
+  const who=document.createElement('div');
+  who.className='ask-who';
+  who.textContent=threadSpeaker(message.role)+'\n';
+  const said=document.createElement('pre');
+  said.className='ask-said';
+  said.textContent=message.content;
+  turn.append(who,said);
+  return turn;
+}
 function paintAskThread(){
   const thread=$('ask-thread'),starters=$('ask-starters'),welcome=$('ask-starter'),clear=$('clear-chat');
   const open=conversation.length>0;
@@ -660,10 +683,10 @@ function paintAskThread(){
     thread.hidden=!open;
     if(open){
       thread.removeAttribute('hidden');
-      thread.textContent=conversation.map(message=>`${message.role==='user'?'You':'Assistant'}:\n${message.content}`).join('\n\n');
+      thread.replaceChildren(...conversation.map(paintAskTurn));
     }else{
       thread.setAttribute('hidden','');
-      thread.textContent='';
+      thread.replaceChildren();
     }
   }
   if(starters){
@@ -685,7 +708,7 @@ function paintAskThread(){
 }
 function renderConversation(){
   const answer=$('answer');
-  if(answer)answer.textContent=conversation.length?conversation.map(message=>`${message.role==='user'?'You':'Assistant'}:\n${message.content}`).join('\n\n'):'';
+  if(answer)answer.textContent=conversation.length?conversation.map(message=>`${threadSpeaker(message.role)}\n${message.content}`).join('\n\n'):'';
   paintAskThread();
 }
 function hasSuccessfulAnswer(){return sent>=1||conversation.some(m=>m.role==='assistant')}
@@ -1232,6 +1255,7 @@ function showTf(step){
     const backHidden=!!$('back-ask')?.hidden;
     if(prompt){
       if(nightQueueIntent)prompt.title=backHidden?'Enter to queue':'Enter to queue · Esc back';
+      else if(askHasReply())prompt.title=backHidden?'Enter to send':'Enter to send · Esc back';
       else prompt.title=backHidden?'Enter to run':'Enter to run · Esc back';
     }
     setTimeout(()=>$('prompt')?.focus(),40);
@@ -1547,7 +1571,7 @@ function updateRun(){
   const noMac=community&&!available;
   const communityOption=[...$('engine').options].find(option=>option.value==='community');
   if(communityOption){communityOption.hidden=false;communityOption.text=providersOnline>=1?`Community · ${providersOnline}`:'Community'}
-  $('run-demo').textContent='Run';
+  $('run-demo').textContent=askHasReply()?'Send':'Run';
   // Guest + Mac/hosted available: hide Run so Sign in is the only primary (no dual CTA muddle).
   // Guest + noMac: one primary Run (Hosted Ask miss); hide Ask #login.
   // Logged-in Community/Mixture with a Mac: Run. Miss (no Mac / model gone): Run still on if Hosted can take it.
