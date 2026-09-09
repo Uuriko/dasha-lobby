@@ -32,11 +32,15 @@ function assertAskFirstCore(html, label) {
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} pick-credits`);
   assert.doesNotMatch(html, /id=["']ask-example["']/, `${label} no ask-example`);
   assert.doesNotMatch(html, /say something strange/, `${label} no strange`);
-  assert.match(html, /id=["']ask-starter["'][^>]*>Welcome note</, `${label} Welcome note`);
-  // Multi starters (X6) — soft on live until edge catches up
-  if (/id=["']ask-starters["']/.test(html)) {
-    assert.match(html, /id=["']ask-starter-2["'][^>]*>Summarize this</, `${label} Summarize this`);
-    assert.match(html, /id=["']ask-starter-3["'][^>]*>Draft a curl</, `${label} Draft a curl`);
+  if (!String(label).startsWith("live")) {
+    assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code`);
+    if (/id=["']ask-starters["']/.test(html)) {
+      assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug`);
+      assert.match(html, /id=["']ask-starter-3["'][^>]*>Do the thing</, `${label} Do the thing`);
+    }
+    assert.doesNotMatch(html, /Welcome note/, `${label} no welcome-note toy`);
+  } else if (/id=["']ask-starter["']/.test(html)) {
+    assert.match(html, /Welcome note|Write code/, `${label} starter chip (live may lag)`);
   }
   assert.match(html, /title=["']Top up or sponsor["']/, `${label} Pay top-up`);
   assert.match(html, /title=["']Use prepaid["']/, `${label} Credits prepaid`);
@@ -207,10 +211,15 @@ function assertProvideTto(html, label) {
 
 function assertAskStarters(html, label) {
   assert.match(html, /id=["']ask-starters["']/, `${label} ask-starters`);
-  assert.match(html, /id=["']ask-starter["'][^>]*>Welcome note</, `${label} Welcome note`);
-  assert.match(html, /id=["']ask-starter-2["'][^>]*>Summarize this</, `${label} Summarize this`);
-  assert.match(html, /id=["']ask-starter-3["'][^>]*>Draft a curl</, `${label} Draft a curl`);
-  assert.match(html, /data-prompt=["']Write a short welcome for a new teammate\.["']/, `${label} Welcome prompt`);
+  if (String(label).startsWith("live") && /Welcome note/.test(html) && !/Write code/.test(html)) {
+    assert.match(html, /id=["']ask-starter["'][^>]*>Welcome note</, `${label} live lag Welcome note`);
+    return;
+  }
+  assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code`);
+  assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug`);
+  assert.match(html, /id=["']ask-starter-3["'][^>]*>Do the thing</, `${label} Do the thing`);
+  assert.match(html, /placeholder=["']Write a function\. Fix a bug\. Do the thing\.["']/, `${label} Ask placeholder`);
+  assert.doesNotMatch(html, /welcome for a new teammate/, `${label} no welcome-note prompt`);
   assert.match(html, /querySelectorAll\(['"]#ask-starters \[data-prompt\]['"]\)/, `${label} starter wiring`);
 }
 

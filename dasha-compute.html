@@ -57,6 +57,11 @@ button,input,select,textarea{font:inherit}
 @keyframes beat-pulse{0%,100%{opacity:.35}50%{opacity:1}}
 @media(prefers-reduced-motion:reduce){#provide-beat.waiting::before,#provide-beat.acid::before{animation:none}}
 #ask-starters{margin:0 0 10px;display:flex;flex-wrap:wrap;gap:0 14px}#ask-starters .tf-quiet{padding:6px 0}
+.ask-thread{margin:0 0 20px;color:#d8cfe0;font:16px/1.55 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.ask-thread[hidden]{display:none!important}
+body.has-chat #ask-starters{display:none!important}
+body.has-chat #prompt{min-height:5.5rem}
+body.has-chat #step-ask .tf-q{margin-bottom:18px}
 .tf-quiet{border:0;background:transparent;color:var(--paper-muted);font:400 13px/1.35 Arial,Helvetica,sans-serif;cursor:pointer;padding:10px 0;text-decoration:none;display:inline-flex}
 .tf-quiet:hover{color:var(--paper)}
 /* Gate / Pay / Credits: quiet under choices share one top gap */
@@ -194,12 +199,13 @@ footer a:hover{color:var(--paper)}
 <section class="tf-step" id="step-ask" data-tf="ask" hidden>
   <button type="button" class="tf-back" id="back-ask" data-back="" hidden>← Back</button>
   <h1 class="tf-q">Ask.</h1>
-  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Write a short welcome for a new teammate." aria-label="Prompt" title="Enter to run · Esc back"></textarea></label>
+  <div class="ask-thread" id="ask-thread" hidden></div>
+  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Write a function. Fix a bug. Do the thing." aria-label="Prompt" title="Enter to run · Esc back"></textarea></label>
   <p class="fine" id="ask-hint" hidden aria-hidden="true"></p>
   <div class="ask-starters" id="ask-starters" role="group" aria-label="Starter prompts">
-    <button type="button" class="tf-quiet" id="ask-starter" data-prompt="Write a short welcome for a new teammate.">Welcome note</button>
-    <button type="button" class="tf-quiet" id="ask-starter-2" data-prompt="Summarize this in three short bullets:">Summarize this</button>
-    <button type="button" class="tf-quiet" id="ask-starter-3" data-prompt="Draft a curl that POSTs JSON to an HTTPS API.">Draft a curl</button>
+    <button type="button" class="tf-quiet" id="ask-starter" data-prompt="Write a Python function that reads a CSV and prints the column names.">Write code</button>
+    <button type="button" class="tf-quiet" id="ask-starter-2" data-prompt="This while loop never ends. Find the bug and write the fix.">Fix a bug</button>
+    <button type="button" class="tf-quiet" id="ask-starter-3" data-prompt="Write the working curl that POSTs this JSON to an HTTPS API.">Do the thing</button>
   </div>
   <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
   <!-- buyer-live-models:2026-09-08 -->
@@ -604,9 +610,9 @@ const MODELS=[
 ];
 const SUB24=new Set(['qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b']);
 const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\n\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\n\n## Goal\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\n\n## Facts (do not invent others)\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\n- Coordinator: https://lobby.getdasha.com/compute/api\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\n- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)\n- Token goes in `.dasha-provider-key` mode 0600 \u2014 never put the provider key on argv or shell history\n- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens \u00b7 min $1 payout \u00b7 pending operator settle \u00b7 not auto \u00b7 $dasha payout +10% \u00b7 never invent balances\n\n## Steps for the AI to run with the human\n1. Open https://www.getdasha.com/compute \u2192 Provide (quiet link) \u2192 name the Mac \u2192 Sign in (X) if needed \u2192 Register.\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once \u2014 refresh loses it. Prefer that block over this template.\n3. On the Mac, run the Setup command \u2014 or this template with the pasted values:\n\n```bash\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\n# install Ollama from https://ollama.com/download if missing\nollama pull qwen3:8b\numask 077\ncat > .dasha-provider-key <<'TOKEN'\nPASTE_ONE_TIME_TOKEN_HERE\nTOKEN\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\nDASHA_MODEL_MAP=qwen3-8b=qwen3:8b \\\n./install.sh\n```\n\n4. Verify after install (`install.sh` already ran doctor and moved the key):\n\n```bash\ndasha-compute doctor\ndasha-compute status\n```\n\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\n\n## Prefer MLX (Apple Silicon, optional)\n- Prefer MLX when you can \u2014 often faster on Apple Silicon; Ollama still works.\n- Recommend Ollama \u22650.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\n- Keep models on internal SSD \u2014 slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\n- Official Ollama path (live docs): Ollama \u22650.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\n- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks \u2014 never invent.\n- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.\n\n## Host power / thermal / SIP (soft)\n- `dasha-compute doctor` soft-warns when on battery, Low Power Mode, elevated thermal pressure, or SIP disabled/unreadable (Darwin best-effort).\n- Never fails solely for battery / AC / Low Power / thermal / SIP.\n- Local OS health only \u2014 never claims Secure Enclave, TEE, Nitro, or network `sip_enabled` attestation.\n\n## Keep-alive (sub-24GB)\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service \u2014 a shell export alone is not enough for the macOS app).\n- A sleeping Mac is offline to buyers: the agent holds `caffeinate -is` while it runs (system sleep prevented on AC; battery can still sleep). For an always-on server Mac, also `sudo pmset -a sleep 0`. Doctor soft-warns when system sleep is enabled.\n- Do not pin 27B on a 16\u201324GB Air for interactive chat; use 8B/12B.\n- `dasha-compute doctor` soft-hints when a mapped model looks \u226527B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.\n- Advertising/heartbeat OK while mid-Ask fails with `provider inference failed: URLError` \u2192 localhost Ollama on `127.0.0.1:11434` was refused/reset. Soft doctor does not block advertise alone \u2014 fix Ollama keep-alive / restart service.\n\n## Success\n- dasha-compute doctor exits 0\n- Heartbeats succeed\n- A Community Run from another session can complete on this Mac\n\n## If stuck\n- Re-register for a fresh token\n- Check dasha-compute logs\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\n- Mid-Ask `URLError` / partial stream while still online \u2192 `curl -sS http://127.0.0.1:11434/api/ps` (and `/api/tags`); set OLLAMA_KEEP_ALIVE=-1 on the Ollama launch agent; restart Ollama; re-run `dasha-compute doctor` (keepalive soft is OK \u2014 exit should still be 0)\n";
-const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\n\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute — Hosted demo or community Macs — without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Community when a Mac is advertising · else Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Hosted/Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login · quiet named tip credits when signed in). Credits → balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b · 3 free / 10 min · then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- API billing: non-self `v1/chat/completions` spends prepaid credits via USDC/$dasha ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits · no card.\n- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.\n- Ask top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.\n- When Macs are online, Ask defaults to Community and the live advertised model (prefer gemma3-27b). Explicit Hosted click stays Hosted. Change engine still opens How.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. — Ask → Community when a Mac is up, else Hosted. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Ask · Top up → Buy). Optional on Ask: quiet starter chips (Welcome note / Summarize this / Draft a curl) fill the prompt; Change engine for Hosted, Community, or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\n4. Sign in if prompted\n5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available\n\n## Optional API\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n- On stream, read `usage` from the final stop chunk (not earlier deltas)\n\n## If stuck\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n";
+const USE_SKILL="# Skill: Use Dasha Compute (ask the network)\n\nPaste this into your AI assistant so it can help you ask https://www.getdasha.com/compute — Hosted demo or community Macs — without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot → Start. (Ask / Provide / Pay / Credits). Ask → Community when a Mac is advertising · else Hosted Ask · quiet Provide / Marketplace / Host · Change engine for Hosted/Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login · quiet named tip credits when signed in). Credits → balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b · 3 free / 10 min · then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- API billing: non-self `v1/chat/completions` spends prepaid credits via USDC/$dasha ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits · no card.\n- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.\n- Ask top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.\n- When Macs are online, Ask defaults to Community and the live advertised model (prefer gemma3-27b). Explicit Hosted click stays Hosted. Change engine still opens How.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. — Ask → Community when a Mac is up, else Hosted. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Ask · Top up → Buy). Optional on Ask: quiet starter chips (Write code / Fix a bug / Do the thing) fill the prompt; after a reply the thread stays and Enter sends a follow-up; Change engine for Hosted, Community, or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)\n4. Sign in if prompted\n5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available\n\n## Optional API\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n- On stream, read `usage` from the final stop chunk (not earlier deltas)\n\n## If stuck\n- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs\n- Telegram: https://t.me/+xB7S8mIQaKFiZjRh\n";
 const API='https://lobby.getdasha.com';
-let conversation=[],loggedIn=false,sessionLabel='',hostedLive=false,hostedChosenThisSession=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,cardAvailable=false,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacKnown=0,ownMacIds=new Set(),ownMacModels=new Set(),ownMacTps=0,preferSelf=false,lastPreferAttempted=false,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask',provideExpectingNew=false,provideExpectingIds=new Set(),provideExpectingNewId='',provideExpectingOnline=0;
+let conversation=[],threadRoute='',stayAskChat=false,loggedIn=false,sessionLabel='',hostedLive=false,hostedChosenThisSession=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,cardAvailable=false,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacKnown=0,ownMacIds=new Set(),ownMacModels=new Set(),ownMacTps=0,preferSelf=false,lastPreferAttempted=false,networkCapacity=[],ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask',provideExpectingNew=false,provideExpectingIds=new Set(),provideExpectingNewId='',provideExpectingOnline=0;
 
 // Funnel telemetry (task 22): aggregate counters only. anon id is a local UUID, never an identity.
 function anonId(){let id='';try{id=localStorage.getItem('dasha-anon-id')||''}catch(e){}if(!id){try{id=crypto.randomUUID()}catch(e){id='00000000-0000-4000-8000-'+String(Math.random()).slice(2,14).padEnd(12,'0')}try{localStorage.setItem('dasha-anon-id',id)}catch(e){}}return id}
@@ -636,11 +642,45 @@ function modelIdentityFraming(messages,modelId){
   return[{role:'system',content:tip},...messages];
 }
 function paintRequest(){/* character chrome cut from typeform flow */}
+function threadKeepsCommunity(){
+  const route=threadRoute||($('engine')?.value||'');
+  return conversation.some(m=>m.role==='assistant')&&(route==='community'||route==='mixture'||route==='self');
+}
+function paintAskThread(){
+  const thread=$('ask-thread'),starters=$('ask-starters'),welcome=$('ask-starter'),clear=$('clear-chat');
+  const open=conversation.length>0;
+  document.body.classList.toggle('has-chat',open);
+  if(thread){
+    thread.hidden=!open;
+    if(open){
+      thread.removeAttribute('hidden');
+      thread.textContent=conversation.map(message=>`${message.role==='user'?'You':'Assistant'}:\n${message.content}`).join('\n\n');
+    }else{
+      thread.setAttribute('hidden','');
+      thread.textContent='';
+    }
+  }
+  if(starters){
+    starters.hidden=open;
+    if(open)starters.setAttribute('hidden','');
+    else starters.removeAttribute('hidden');
+  }
+  if(welcome){
+    welcome.hidden=open;
+    if(open)welcome.setAttribute('hidden','');
+    else welcome.removeAttribute('hidden');
+  }
+  if(clear){
+    clear.hidden=!open;
+    clear.disabled=!open;
+    if(open)clear.removeAttribute('hidden');
+    else clear.setAttribute('hidden','');
+  }
+}
 function renderConversation(){
   const answer=$('answer');
-  answer.textContent=conversation.length?conversation.map(message=>`${message.role==='user'?'You':'Assistant'}:\n${message.content}`).join('\n\n'):'';
-  $('clear-chat').disabled=!conversation.length;
-  document.body.classList.toggle('has-chat',conversation.length>0);
+  if(answer)answer.textContent=conversation.length?conversation.map(message=>`${message.role==='user'?'You':'Assistant'}:\n${message.content}`).join('\n\n'):'';
+  paintAskThread();
 }
 function hasSuccessfulAnswer(){return sent>=1||conversation.some(m=>m.role==='assistant')}
 function paintAnswerApi(){
@@ -678,7 +718,7 @@ function paintAnswerMoney(){
   paintAnswerReceipt();
 }
 function clearAnswerMoney(){lastAskFailKind=null;lastPreferAttempted=false;lastPaidReceipt=null;paintAnswerMoney();paintAnswerReceipt()}
-function clearConversation(){conversation=[];renderConversation();paintRequest();hideNightOffer();clearAnswerMoney();paintAnswerApi()}
+function clearConversation(){conversation=[];threadRoute='';stayAskChat=false;renderConversation();paintRequest();hideNightOffer();clearAnswerMoney();paintAnswerApi()}
 $('prompt').addEventListener('input',()=>{paintRequest();updateRun();});
 $('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const run=$('run-demo');if(run&&!run.hidden){run.click();return}const login=$('login');if(login&&!login.hidden)login.click()}});
 $('clear-chat').addEventListener('click',clearConversation);
@@ -707,6 +747,13 @@ function defaultAskEngine(){
   return 'hosted';
 }
 function enterAskEngine(advance=true){
+  if(threadKeepsCommunity()){
+    const keep=threadRoute||$('engine')?.value||'community';
+    cameFromHow=true;cameFromGate=false;
+    setEngine(keep,false);
+    if(advance!==false)showTf('ask');
+    return;
+  }
   const want=defaultAskEngine();
   if(want==='community'){
     cameFromHow=true;cameFromGate=false;
@@ -1020,6 +1067,7 @@ function showTf(step){
     login.href='/login?return=/compute'+ret;
   }
   if(step==='ask'){
+    paintAskThread();
     paintAskBack();
     updateRun();
     const hint=$('ask-hint');
@@ -1606,6 +1654,11 @@ $('night-use-hosted')?.addEventListener('click',()=>{if(window.__dashaAuthReady&
 $('night-use-community')?.addEventListener('click',()=>{if(providersOnline<1)return;nightQueueIntent=false;cameFromHow=true;cameFromGate=false;preferOnlineModel($('model'),false);setEngine('community',false);showTf('ask');});
 $('run-demo').addEventListener('click',async()=>{
   if(nightQueueIntent){queueForMac();return}
+  stayAskChat=false;
+  if(threadKeepsCommunity()&&!hostedChosenThisSession&&($('engine')?.value||'')==='hosted'){
+    const keep=threadRoute||'community';
+    $('engine').value=keep;
+  }
   const prompt=$('prompt').value.trim();
   let messages=pendingMessages();
   const button=$('run-demo'),eng=$('engine').value,community=eng==='community'||eng==='mixture'||eng==='self',mixture=eng==='mixture',selfRoute=eng==='self';
@@ -1752,6 +1805,7 @@ $('run-demo').addEventListener('click',async()=>{
       const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}
       beacon('ask','complete');
       conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
+      threadRoute=eng;stayAskChat=true;
       renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
     }
   }catch(error){
@@ -1818,7 +1872,7 @@ $('run-demo').addEventListener('click',async()=>{
       else {clearAnswerMoney();$('answer').textContent=msg||'Request failed';}
     }
   }
-  finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();$('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
+  finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();if(stayAskChat)showTf('ask');else $('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
 });
 document.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.engine==='hosted'&&window.__dashaAuthReady&&hostedLive===false)return;if(b.dataset.engine==='hosted')hostedChosenThisSession=true;setEngine(b.dataset.engine,true)}));
 $('model').addEventListener('change',updateRun);
@@ -2388,7 +2442,7 @@ function paintAnswerReceipt(){
   const hide=()=>{el.hidden=true;el.setAttribute('hidden','');el.textContent='';paintAnswerReceiptNote('');paintAnswerMacLine('');};
   const show=(text,routeFace)=>{
     // Keep Answer step open so receipt is actually visible (not only textContent under a hidden step).
-    if(tfStep!=='answer')showTf('answer');
+    if(tfStep!=='answer'&&!stayAskChat)showTf('answer');
     else{
       const step=$('step-answer');
       if(step){step.hidden=false;step.removeAttribute('hidden')}

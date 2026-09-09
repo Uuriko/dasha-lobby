@@ -33,9 +33,10 @@ function assertLess(html, label) {
   assert.doesNotMatch(html, /Marketplace · \$\{ocmHosts\}/, `${label} no Marketplace · N template`);
   assert.doesNotMatch(html, /say something strange/, `${label} no strange phrase`);
   assert.match(html, /id=["']ask-starters["']/, `${label} ask-starters row`);
-  assert.match(html, /id=["']ask-starter["'][^>]*>Welcome note</, `${label} Welcome note chip`);
-  assert.match(html, /id=["']ask-starter-2["'][^>]*>Summarize this</, `${label} Summarize this chip`);
-  assert.match(html, /id=["']ask-starter-3["'][^>]*>Draft a curl</, `${label} Draft a curl chip`);
+  assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code chip`);
+  assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug chip`);
+  assert.match(html, /id=["']ask-starter-3["'][^>]*>Do the thing</, `${label} Do the thing chip`);
+  assert.doesNotMatch(html, /Welcome note/, `${label} no welcome-note toy`);
   assert.match(html, /id=["']pick-pay["'][^>]*title=["']Top up or sponsor["']/, `${label} Pay = top-up/sponsor`);
   assert.match(html, /id=["']pick-credits["'][^>]*title=["']Use prepaid["']/, `${label} Credits = prepaid`);
   assert.match(html, /id=["']step-pay["']/, `${label} step-pay`);

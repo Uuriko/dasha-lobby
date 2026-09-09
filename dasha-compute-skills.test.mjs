@@ -124,7 +124,7 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(ask.skill, true, 'Copy AI skill on Ask after gate');
   assert.equal(ask.label, 'Copy AI skill');
   assert.equal(ask.doors, true);
-  assert.equal(ask.starter, 'Welcome note');
+  assert.equal(ask.starter, 'Write code');
   await p.goto(file + '#provide', { waitUntil: 'domcontentloaded' });
   await p.waitForFunction(() => document.body.dataset.step === 'provide-name' || document.getElementById('step-provide-name')?.hidden === false);
   // ensure provide-name visible then next
