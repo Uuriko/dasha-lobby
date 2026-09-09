@@ -48,7 +48,10 @@ function assertAskEasy(html, label) {
   assert.ok(html.includes("#step-ask .ask-door-sep{display:none}"), `${label} no tiny · row`);
   assert.match(html, /#ask-starters\{[^}]*display:grid/, `${label} starters stack`);
   assert.match(html, /function threadSpeaker\(/, `${label} threadSpeaker`);
-  assert.match(html, /return role==='user'\?'You':'Mac'/, `${label} You then the Mac`);
+  assert.match(html, /if\(route==='hosted'\)return 'Hosted'/, `${label} Hosted speaker`);
+  assert.match(html, /return model\?\('Mac · '\+model\):'Mac'/, `${label} Community speaker names the Mac`);
+  assert.match(html, /id=["']ask-mac-line["']/, `${label} Ask keeps A Mac answered`);
+  assert.match(html, /paint\(\$\(['"]ask-mac-line['"]\)\)/, `${label} mac-line paints on Ask`);
   assert.match(html, /\$\(['"]run-demo['"]\)\.textContent=askHasReply\(\)\?'Send':'Run'/, `${label} Run then Send`);
   assert.match(html, /function paintCommunityWorkingFace\(/, `${label} Community working face`);
   assert.match(html, /\$\(['"]answer['"]\)\.textContent='A Mac is working\.'/, `${label} A Mac is working.`);
@@ -155,27 +158,60 @@ if (puppeteer && existsSync(chrome)) {
         { role: "assistant", content: "def sort_xs(xs):\n    return sorted(xs)" },
       ];
       threadRoute = "community";
+      lastPaidReceipt = { tokens: 40, cents: 0, engine: "community", job_id: "job_who", model: "gemma3-27b" };
+      lastAskFailKind = null;
       $("engine").value = "community";
+      $("model").value = "gemma3-27b";
       $("prompt").value = "";
       renderConversation();
+      paintAnswerReceipt();
       updateRun();
       showTf("ask");
+      const who = [...document.querySelectorAll("#ask-thread .ask-who")].map((el) => el.textContent.trim());
+      const askMac = document.getElementById("ask-mac-line");
+      const answerMac = document.getElementById("answer-mac-line");
       return {
         step: document.body.dataset.step,
         thread: (document.getElementById("ask-thread")?.textContent || "").trim(),
+        who,
+        askMacHidden: askMac?.hidden === true,
+        askMac: (askMac?.textContent || "").trim(),
+        answerStepHidden: document.getElementById("step-answer")?.hidden === true,
+        answerMacHidden: answerMac?.hidden === true || !!answerMac?.closest("[hidden]"),
         run: (document.getElementById("run-demo")?.textContent || "").trim(),
         clearHidden: document.getElementById("clear-chat")?.hidden === true,
         startersHidden: document.getElementById("ask-starters")?.hidden === true,
-        youThenMac: false,
       };
     });
     assert.equal(thread.step, "ask", "reply stays on Ask");
+    assert.deepEqual(thread.who, ["You", "Mac · gemma3-27b"], "You, then the Mac that answered");
     assert.match(thread.thread, /You\s+Write a sort in Python\./);
-    assert.match(thread.thread, /Mac\s+def sort_xs/);
-    assert.ok(thread.thread.indexOf("You") < thread.thread.indexOf("Mac"), "You, then the Mac");
+    assert.match(thread.thread, /Mac · gemma3-27b\s+def sort_xs/);
+    assert.equal(thread.askMacHidden, false, "Ask keeps A Mac answered");
+    assert.equal(thread.askMac, "A Mac answered. Join a Mac");
+    assert.equal(thread.answerStepHidden, true, "Answer step stays hidden on Ask");
+    assert.equal(thread.answerMacHidden, true, "Answer-step mac line is not the buyer face");
     assert.equal(thread.run, "Send", "next message is Send");
     assert.equal(thread.clearHidden, false, "Clear quiet-visible");
     assert.equal(thread.startersHidden, true);
+
+    const hostedWho = await page.evaluate(() => {
+      threadRoute = "hosted";
+      lastPaidReceipt = { tokens: 12, cents: 0, engine: "hosted", provider_class: "hosted" };
+      $("engine").value = "hosted";
+      renderConversation();
+      paintAnswerReceipt();
+      showTf("ask");
+      const who = [...document.querySelectorAll("#ask-thread .ask-who")].map((el) => el.textContent.trim());
+      return {
+        who,
+        askMacHidden: document.getElementById("ask-mac-line")?.hidden === true,
+        askMac: (document.getElementById("ask-mac-line")?.textContent || "").trim(),
+      };
+    });
+    assert.deepEqual(hostedWho.who, ["You", "Hosted"], "Hosted reply is not a Mac");
+    assert.equal(hostedWho.askMacHidden, true, "Hosted hides A Mac answered");
+    assert.equal(hostedWho.askMac, "");
 
     const inflight = await page.evaluate(async () => {
       hostedChosenThisSession = false;

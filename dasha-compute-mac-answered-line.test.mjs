@@ -20,8 +20,10 @@ assert.equal(disk, COMPUTE_PAGE_HTML, "embed matches dasha-compute.html");
 function assertMacLine(html, label) {
   assert.match(html, /<!-- mac-answered-honesty:2026-09-08 -->/, `${label} marker`);
   assert.match(html, /<p class=["']fine["'] id=["']answer-mac-line["'] hidden><\/p>/, `${label} #answer-mac-line empty+hidden`);
-  assert.match(html, /#answer-mac-line:not\(\[hidden\]\)\{display:block!important\}/, `${label} mac line CSS`);
+  assert.match(html, /<p class=["']fine["'] id=["']ask-mac-line["'] hidden><\/p>/, `${label} #ask-mac-line empty+hidden`);
+  assert.match(html, /#answer-mac-line:not\(\[hidden\]\),#ask-mac-line:not\(\[hidden\]\)\{display:block!important\}/, `${label} mac line CSS`);
   assert.match(html, /function paintAnswerMacLine\(/, `${label} paintAnswerMacLine`);
+  assert.match(html, /paint\(\$\(['"]ask-mac-line['"]\)\)/, `${label} paints Ask line`);
   assert.match(
     html,
     /if\(routeFace!==['"]community['"]\|\|!lastPaidReceipt\|\|lastAskFailKind\)/,
@@ -62,21 +64,35 @@ if (puppeteer && existsSync(chrome)) {
 
     const first = await page.evaluate(() => {
       const el = document.getElementById("answer-mac-line");
-      return { hidden: el?.hidden === true, text: (el?.textContent || "").trim(), html: el?.innerHTML || "" };
+      const ask = document.getElementById("ask-mac-line");
+      return {
+        hidden: el?.hidden === true,
+        text: (el?.textContent || "").trim(),
+        html: el?.innerHTML || "",
+        askHidden: ask?.hidden === true,
+        askText: (ask?.textContent || "").trim(),
+      };
     });
     assert.equal(first.hidden, true, "gate first paint hides mac line");
     assert.equal(first.text, "");
     assert.equal(first.html, "");
+    assert.equal(first.askHidden, true, "gate first paint hides Ask mac line");
+    assert.equal(first.askText, "");
 
     const painted = await page.evaluate(() => {
       const read = () => {
         const el = document.getElementById("answer-mac-line");
+        const ask = document.getElementById("ask-mac-line");
         const a = el?.querySelector("a");
+        const askA = ask?.querySelector("a");
         return {
           hidden: el?.hidden === true,
           text: (el?.textContent || "").trim(),
           href: a?.getAttribute("href") || "",
           link: (a?.textContent || "").trim(),
+          askHidden: ask?.hidden === true,
+          askText: (ask?.textContent || "").trim(),
+          askHref: askA?.getAttribute("href") || "",
         };
       };
       const run = (receipt, failKind = null) => {
@@ -114,6 +130,9 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.community.text, "A Mac answered. Join a Mac");
     assert.equal(painted.community.href, "https://www.getdasha.com/compute#provide");
     assert.equal(painted.community.link, "Join a Mac");
+    assert.equal(painted.community.askHidden, false, "Ask keeps A Mac answered");
+    assert.equal(painted.community.askText, "A Mac answered. Join a Mac");
+    assert.equal(painted.community.askHref, "https://www.getdasha.com/compute#provide");
     assert.doesNotMatch(painted.community.text, /\d+\s+(Mac|tok|user)/i);
 
     assert.equal(painted.communityRoute.hidden, false, "job route=community shows line");
@@ -122,6 +141,8 @@ if (puppeteer && existsSync(chrome)) {
 
     assert.equal(painted.hosted.hidden, true, "hosted paid hides line");
     assert.equal(painted.hosted.text, "");
+    assert.equal(painted.hosted.askHidden, true, "hosted hides Ask mac line");
+    assert.equal(painted.hosted.askText, "");
     assert.equal(painted.hostedTok.hidden, true, "hosted tok hides line");
     assert.equal(painted.hostedFree.hidden, true, "hosted free hides line");
 
@@ -134,6 +155,29 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.cleared.hidden, true, "cleared receipt hides line");
     assert.equal(painted.offline.hidden, true, "offline / no receipt hides line");
     assert.equal(painted.communityBare.hidden, true, "bare community without job hides line");
+    assert.equal(painted.communityBare.askHidden, true, "bare community hides Ask mac line");
+
+    const stayAsk = await page.evaluate(() => {
+      lastPaidReceipt = { tokens: 40, cents: 0, engine: "community", job_id: "job_stay", model: "gemma3-27b" };
+      lastAskFailKind = null;
+      stayAskChat = true;
+      paintAnswerReceipt();
+      showTf("ask");
+      const ask = document.getElementById("ask-mac-line");
+      const answer = document.getElementById("answer-mac-line");
+      return {
+        step: document.body.dataset.step,
+        answerStepHidden: document.getElementById("step-answer")?.hidden === true,
+        askHidden: ask?.hidden === true,
+        askText: (ask?.textContent || "").trim(),
+        answerHidden: answer?.hidden === true || !!answer?.closest("[hidden]"),
+      };
+    });
+    assert.equal(stayAsk.step, "ask");
+    assert.equal(stayAsk.answerStepHidden, true, "stayAskChat hides Answer step");
+    assert.equal(stayAsk.askHidden, false, "Ask still shows A Mac answered");
+    assert.equal(stayAsk.askText, "A Mac answered. Join a Mac");
+    assert.equal(stayAsk.answerHidden, true, "Answer-step line is not the buyer face");
   } finally {
     await browser.close();
   }
