@@ -2,7 +2,7 @@
 /**
  * Live Worker e094f268: Ask Community capacity when providersOnline≥1.
  * Quiet #ask-community door (Community · N), measured model/tok/s on How
- * #eng-community title, #how-floor-fine live capacity.
+ * #eng-community title, #how-floor-fine live capacity (Community settle when Community is active).
  * Community is the Ask default when providersOnline≥1; Hosted is a quieter door.
  * How: Community ink-on-acid primary when Macs up; Hosted secondary.
  * Warm/keepalive Hosted Run adopts Community unless Hosted was chosen. Explicit Hosted stays.
@@ -32,8 +32,10 @@ function assertCapacity(html, label) {
   assert.match(html, /if\(!onGate\)updateRun\(\)/, `${label} honesty adopt via updateRun`);
   assert.match(html, /chip\.textContent=`Community · \$\{providersOnline\}`/, `${label} Community · N`);
   assert.match(html, /function paintHowFloorFine\(/, `${label} paintHowFloorFine`);
+  assert.match(html, /function howFloorFineText\(/, `${label} howFloorFineText`);
   assert.match(html, /id=["']how-floor-fine["'][^>]*>Local Macs \+ Hosted floor\.</, `${label} how-floor-fine idle copy`);
-  assert.match(html, /el\.textContent=`\$\{n\} · \$\{model\} · \$\{tpsLabel\} tok\/s · Hosted floor\.`/, `${label} how-floor-fine measured`);
+  assert.match(html, /macRoute\?'Community settle\.':'Hosted floor\.'/, `${label} how-floor-fine Community tail`);
+  assert.match(html, /tok\/s · \$\{tail\}/, `${label} how-floor-fine measured uses route tail`);
   assert.match(html, /function fleetMeasuredLabel\(/, `${label} fleetMeasuredLabel`);
   assert.match(html, /engCom\.title=tpsLabel\?\(model\?`\$\{model\} · \$\{tpsLabel\} tok\/s measured`/, `${label} How #eng-community measured title`);
   assert.match(html, /paintAskEngine\(\);paintAskMyMac\(\);paintAskCommunity\(\);paintHowFloorFine\(\);paintAskFreeFine\(\)/, `${label} paint chain`);
@@ -118,7 +120,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.match(live.doorTitle, /qwen3-8b · 42\.5 tok\/s measured/);
     assert.equal(live.howText, "Community · 2");
     assert.match(live.howTitle, /qwen3-8b · 42\.5 tok\/s measured/);
-    assert.equal(live.floor, "2 · qwen3-8b · 42.5 tok/s · Hosted floor.");
+    assert.equal(live.floor, "2 · qwen3-8b · 42.5 tok/s · Community settle.");
+    assert.doesNotMatch(live.floor, /Hosted floor/);
 
     const onAsk = await page.evaluate(() => {
       const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
@@ -139,6 +142,9 @@ if (puppeteer && existsSync(chrome)) {
         hostText: (host?.textContent || "").trim(),
         howComPrimary: document.getElementById("eng-community")?.classList.contains("primary") === true,
         howHostSecondary: document.getElementById("eng-hosted")?.classList.contains("secondary") === true,
+        floor: (document.getElementById("how-floor-fine")?.textContent || "").trim(),
+        freeFine: (document.getElementById("ask-free-fine")?.textContent || "").trim(),
+        change: (document.getElementById("change-engine")?.textContent || "").trim(),
         n: providersOnline,
       };
     });
@@ -151,6 +157,10 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(onAsk.hostText, "Hosted");
     assert.equal(onAsk.howComPrimary, true, "How Community is the one primary");
     assert.equal(onAsk.howHostSecondary, true, "How Hosted is secondary");
+    assert.match(onAsk.change, /Community/, "Do route selector names Community");
+    assert.doesNotMatch(onAsk.floor, /Hosted floor/, "Community Do paint drops Hosted-floor lede");
+    assert.match(onAsk.freeFine, /Community settle/, "Do helper is Community-honest");
+    assert.doesNotMatch(onAsk.freeFine, /Hosted floor/);
 
     await page.evaluate(() => {
       hostedChosenThisSession = false;
@@ -181,6 +191,7 @@ if (puppeteer && existsSync(chrome)) {
         hostDoor: vis(document.getElementById("ask-hosted")),
         howHostPrimary: document.getElementById("eng-hosted")?.classList.contains("primary") === true,
         howComSecondary: document.getElementById("eng-community")?.classList.contains("secondary") === true,
+        floor: (document.getElementById("how-floor-fine")?.textContent || "").trim(),
       };
     });
     assert.equal(explicit.engine, "hosted", "explicit Hosted click stays Hosted");
@@ -188,6 +199,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(explicit.hostDoor, false, "Hosted door hidden when already Hosted");
     assert.equal(explicit.howHostPrimary, true, "How Hosted primary after explicit click");
     assert.equal(explicit.howComSecondary, true, "How Community secondary after explicit Hosted");
+    assert.match(explicit.floor, /Hosted floor\./, "explicit Hosted keeps Hosted-floor lede");
   } finally {
     await browser.close();
   }

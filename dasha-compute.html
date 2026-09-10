@@ -1471,15 +1471,22 @@ function paintAskCommunity(){
   chip.title=title;
   chip.setAttribute('aria-label',tpsLabel?(`Community · ${providersOnline} · ${tpsLabel} tok/s`):(`Community · ${providersOnline}`));
 }
+function howFloorFineText(providersOnline,eng,model,tpsLabel){
+  if(!(providersOnline>=1))return 'Local Macs + Hosted floor.';
+  const n=providersOnline;
+  const macRoute=eng==='community'||eng==='mixture'||eng==='self';
+  const tail=eng==='self'?'Your Mac.':macRoute?'Community settle.':'Hosted floor.';
+  if(model&&tpsLabel)return `${n} · ${model} · ${tpsLabel} tok/s · ${tail}`;
+  if(model)return `${n} · ${model} · ${tail}`;
+  if(macRoute)return (n===1?'1 Mac online':n+' Macs online')+' · '+tail;
+  return n+' online · Hosted floor.';
+}
 function paintHowFloorFine(){
   const el=$('how-floor-fine');
   if(!el)return;
-  if(!(providersOnline>=1)){el.textContent='Local Macs + Hosted floor.';return}
-  const {model,tpsLabel}=fleetMeasuredLabel();
-  const n=providersOnline;
-  if(model&&tpsLabel)el.textContent=`${n} · ${model} · ${tpsLabel} tok/s · Hosted floor.`;
-  else if(model)el.textContent=`${n} · ${model} · Hosted floor.`;
-  else el.textContent=`${n} online · Hosted floor.`;
+  const eng=$('engine')?.value||'hosted';
+  const live=providersOnline>=1?fleetMeasuredLabel():{model:'',tpsLabel:''};
+  el.textContent=howFloorFineText(providersOnline,eng,live.model,live.tpsLabel);
 }
 function paintAskFreeFine(){
   const el=$('ask-free-fine');
