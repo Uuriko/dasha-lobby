@@ -30,9 +30,10 @@ function provideName(html) {
 }
 
 function provideDone(html) {
-  const m = html.match(/<section[^>]*id=["']step-provide-done["'][^>]*>[\s\S]*?<\/section>/);
-  assert.ok(m, 'provide-done section');
-  return m[0];
+  const start = html.indexOf('id="step-provide-done"');
+  const end = html.indexOf('id="step-build"', start);
+  assert.ok(start >= 0 && end > start, 'provide-done section');
+  return html.slice(start, end);
 }
 
 function hostBlock(html) {
