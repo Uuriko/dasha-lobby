@@ -99,7 +99,7 @@ function assertComputeHonestyHtml(html, label) {
 function assertWhichComputeDoors(html, label) {
   assert.match(
     html,
-    /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Provide<\/a><\/p>/,
+    /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">(Ask|Use a Mac|Do)<\/a>( — Hosted when no Mac\.)?( ·)? <a href="https:\/\/www\.getdasha\.com\/compute#provide">Provide<\/a><\/p>/,
     `${label} quiet Compute Ask/Provide doors`,
   );
   assert.match(html, /href="https:\/\/www\.getdasha\.com\/compute#ask"/, `${label} /compute#ask`);

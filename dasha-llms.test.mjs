@@ -71,16 +71,16 @@ for (const url of BUYER_URLS) {
   assert.ok(llms.includes(url), `llms.txt buyer one-path ${url}`);
   assert.ok(full.includes(url), `llms-full buyer one-path ${url}`);
 }
-assert.match(llms, /Ask a Mac/, 'llms.txt names Ask a Mac');
+assert.match(llms, /Use a Mac/, 'llms.txt names Use a Mac');
 assert.match(llms, /Join a Mac/, 'llms.txt names Join a Mac');
 assert.match(llms, /OpenAI-compatible base URL/, 'llms.txt names OpenAI-compatible base URL');
 assert.match(llms, /First path: Sign in, create a key, change the base URL\./, 'llms.txt first path');
-assert.match(full, /Ask a Mac:/, 'llms-full names Ask a Mac');
+assert.match(full, /Use a Mac:/, 'llms-full names Use a Mac');
 assert.match(full, /Join a Mac:/, 'llms-full names Join a Mac');
 assert.match(full, /OpenAI-compatible base URL:/, 'llms-full names OpenAI-compatible base URL');
 assert.match(full, /First path: Sign in, create a key, change the base URL\./, 'llms-full first path');
 assert.match(full, /^## Compute buyer FAQ$/m, 'llms-full Compute buyer FAQ');
-assert.match(full, /^How do I ask\? Sign in\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1$/m, 'llms-full FAQ how');
+assert.match(full, /^How do I start\? Sign in\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1$/m, 'llms-full FAQ how');
 assert.match(full, /^What is live\? The Mac that is advertising\. Read \/compute\/api\/network\.$/m, 'llms-full FAQ live');
 assert.match(full, /^What if no Mac is online\? Hosted is still there\.$/m, 'llms-full FAQ hosted');
 assert.match(full, /^What does \$0\.05\/job mean\? Provider Earn\. Not the buyer price\.$/m, 'llms-full FAQ earn');
@@ -139,9 +139,9 @@ assert.ok(
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/crew</loc>'), 'worker sitemap lists /crew');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/digest</loc>'), 'worker sitemap lists /digest');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/compute</loc>'), 'worker sitemap lists /compute');
-assert.match(worker, /Compute: Start\. \(Ask \/ Provide \/ Pay \/ Credits\)\. Pay → Top up USDC\/\$dasha \/ Sponsor\b/, 'llms-full gate-first Compute');
+assert.match(worker, /Compute: Start\. \(Do \/ Provide \/ Pay \/ Credits\)\. Pay → Top up USDC\/\$dasha \/ Sponsor\b/, 'llms-full gate-first Compute');
 assert.doesNotMatch(worker, /Use \/ Provide \/ Night \/ Build \/ Sponsor/, 'no stale Use/Provide/Night/Sponsor blurb');
-assert.match(extractConst('LLMS_FULL_TXT'), /Compute: Start\. \(Ask \/ Provide \/ Pay \/ Credits\)\. Pay → Top up USDC\/\$dasha \/ Sponsor\b/, 'LLMS_FULL gate-first');
+assert.match(extractConst('LLMS_FULL_TXT'), /Compute: Start\. \(Do \/ Provide \/ Pay \/ Credits\)\. Pay → Top up USDC\/\$dasha \/ Sponsor\b/, 'LLMS_FULL gate-first');
 assert.doesNotMatch(extractConst('LLMS_FULL_TXT'), /Use \/ Provide \/ Night \/ Build \/ Sponsor/, 'LLMS_FULL no stale Use/Provide');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/contribute</loc>'), 'worker sitemap lists /contribute');
 assert.ok(sitemap.includes('<loc>https://www.getdasha.com/bounties</loc>'), 'worker sitemap lists /bounties');

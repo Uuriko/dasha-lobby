@@ -32,12 +32,13 @@ function isWhite(rgb) {
 function assertAskEasy(html, label) {
   assert.match(html, /data-step=["']gate["']/, `${label} body starts on gate`);
   assert.match(html, /<h1 class=["']tf-q["']>Start\.<\/h1>/, `${label} Start. first paint`);
-  assert.match(html, /id=["']pick-ask["'][^>]*>Ask</, `${label} Ask`);
+  assert.match(html, /id=["']pick-ask["'][^>]*>Do</, `${label} Do`);
   assert.match(html, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide`);
   assert.match(html, /id=["']pick-pay["'][^>]*>Pay</, `${label} Pay`);
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits`);
   assert.match(html, /id=["']step-ask["'][^>]*hidden/, `${label} ask hidden default`);
-  assert.match(html, /placeholder=["']Write a function\. Fix a bug\. Do the thing\.["']/, `${label} code-range placeholder`);
+  assert.match(html, /placeholder=["']Message Dasha["']/, `${label} Message Dasha placeholder`);
+  assert.match(html, /id=["']ask-range["'][^>]*>code · text · whatever</, `${label} quiet range`);
   assert.doesNotMatch(html, /Welcome note/, `${label} no welcome-note toy`);
   assert.doesNotMatch(html, /hamburger/i, `${label} no hamburger`);
   assert.doesNotMatch(html, /overlay menu|dashboard/i, `${label} no overlay/dashboard`);
@@ -141,8 +142,8 @@ if (puppeteer && existsSync(chrome)) {
       };
     });
     assert.equal(askPaint.step, "ask");
-    assert.equal(askPaint.askQ, "Ask.");
-    assert.equal(askPaint.placeholder, "Write a function. Fix a bug. Do the thing.");
+    assert.equal(askPaint.askQ, "Do.");
+    assert.equal(askPaint.placeholder, "Message Dasha");
     assert.equal(askPaint.prompt, true);
     assert.equal(askPaint.login, true, "guest primary is Sign in");
     assert.equal(askPaint.displayDoors, "grid", "doors stack");

@@ -49,7 +49,7 @@ function assertEarnCard(html, label) {
   const host = hostBlock(html);
 
   assert.match(html, /<h1 class=["']tf-q["']>Start\.<\/h1>/, `${label} first paint Start.`);
-  assert.match(gate, /class=["']tf-choice primary["'][^>]*id=["']pick-ask["'][^>]*>Ask</, `${label} Ask stays the one Start primary`);
+  assert.match(gate, /class=["']tf-choice primary["'][^>]*id=["']pick-ask["'][^>]*>Do</, `${label} Do stays the one Start primary`);
   assert.match(gate, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide stays`);
   assert.doesNotMatch(gate, /\$0\.05\/job/, `${label} no earn rate on Start`);
   assert.doesNotMatch(gate, /\$dasha payout/, `${label} no payout lecture on Start`);

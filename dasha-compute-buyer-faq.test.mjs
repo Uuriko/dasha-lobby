@@ -16,7 +16,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const worker = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 
 const FAQ_LINES = [
-  'How do I ask? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1',
+  'How do I start? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1',
   'What is live? The Mac that is advertising. Read /compute/api/network.',
   'What if no Mac is online? Hosted is still there.',
   'What does $0.05/job mean? Provider Earn. Not the buyer price.',
@@ -53,7 +53,7 @@ const full = extractConst('LLMS_FULL_TXT');
 const llms = extractConst('LLMS_TXT');
 assertBuyerFaq(full, 'LLMS_FULL_TXT');
 assert.doesNotMatch(llms, /## Compute buyer FAQ/, 'FAQ stays off llms.txt');
-assert.doesNotMatch(llms, /How do I ask\?/, 'FAQ Qs stay off llms.txt');
+assert.doesNotMatch(llms, /How do I start\?/, 'FAQ Qs stay off llms.txt');
 assert.doesNotMatch(llms, /\$0\.05\/job/, 'llms.txt has no $0.05/job');
 
 for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com']) {

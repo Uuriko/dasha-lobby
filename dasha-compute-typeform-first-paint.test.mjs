@@ -20,7 +20,7 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']step-ask["'][^>]*hidden/, `${label} ask hidden default`);
   assert.match(html, /<h1 class=["']tf-q["']>Start\.<\/h1>/, `${label} gate H1`);
   assert.match(html, /aria-label=["']Start\.["']/, `${label} gate aria`);
-  assert.match(html, /id=["']pick-ask["'][^>]*>Ask</, `${label} Ask gate`);
+  assert.match(html, /id=["']pick-ask["'][^>]*>Do</, `${label} Do gate`);
   assert.match(html, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide gate`);
   assert.match(html, /id=["']pick-pay["'][^>]*>Pay</, `${label} Pay gate`);
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits gate`);
@@ -30,7 +30,8 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code chip`);
   assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug chip`);
   assert.match(html, /id=["']ask-starter-3["'][^>]*>Do the thing</, `${label} Do the thing chip`);
-  assert.match(html, /placeholder=["']Write a function\. Fix a bug\. Do the thing\.["']/, `${label} Ask placeholder`);
+  assert.match(html, /placeholder=["']Message Dasha["']/, `${label} Message Dasha placeholder`);
+  assert.match(html, /id=["']ask-range["'][^>]*>code · text · whatever</, `${label} quiet range`);
   assert.doesNotMatch(html, /Welcome note/, `${label} no welcome-note toy`);
   assert.doesNotMatch(html, /welcome for a new teammate/, `${label} no welcome-note prompt`);
   assert.match(html, /id=["']ask-thread["']/, `${label} ask-thread`);
@@ -75,8 +76,8 @@ function assertMarkup(html, label) {
   assert.match(html, /ask-doors/, `${label} ask-doors row`);
   assert.match(html, /id=["']prompt["']/, `${label} #prompt`);
   assert.match(html, /id=["']run-demo["']/, `${label} Run`);
-  assert.match(html, /aria-label=["']Prompt["']/, `${label} prompt aria`);
-  assert.match(html, /<h1 class=["']tf-q["']>Ask\.<\/h1>/, `${label} Ask heading`);
+  assert.match(html, /aria-label=["']Message Dasha["']/, `${label} prompt aria`);
+  assert.match(html, /<h1 class=["']tf-q["']>Do\.<\/h1>/, `${label} Do heading`);
   assert.doesNotMatch(html, /Ask Dasha/, `${label} no dual Ask Dasha`);
   assert.match(html, /id=["']eng-mixture["'][^>]*>Mixture</, `${label} mixture option`);
   assert.match(html, /sub-24GB specialists/, `${label} mixture chip capability`);
@@ -300,7 +301,7 @@ const served = await res.text();
 assertMarkup(served, "worker.fetch /compute");
 assert.match(served, /<h1 class="tf-q">Start\.<\/h1>/);
 assert.match(served, /aria-label="Start\."/);
-assert.match(served, /<h1 class="tf-q">Ask\.<\/h1>/);
+assert.match(served, /<h1 class="tf-q">Do\.<\/h1>/);
 assert.match(served, /https:\/\/lobby\.getdasha\.com\/compute\/api\/v1/);
 
 const chrome = process.env.CHROME_BIN || "/usr/bin/google-chrome";
@@ -421,7 +422,7 @@ if (puppeteer && existsSync(chrome)) {
     };
   });
   assert.equal(afterAsk.step, "ask");
-  assert.equal(afterAsk.askQ, "Ask.");
+  assert.equal(afterAsk.askQ, "Do.");
   assert.equal(afterAsk.prompt, true);
   // Guest hosted Ask: hide Run so Log in is the only primary (no dual CTA muddle).
   assert.equal(afterAsk.run, false, "guest Ask hides Run");

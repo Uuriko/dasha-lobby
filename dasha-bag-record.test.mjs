@@ -57,7 +57,7 @@ assert.match(bag, /<input id="mint" name="mint"/);
 assert.match(bag, /<button type="submit">Look<\/button>/);
 assert.match(
   bag,
-  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
+  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Use a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
   'quiet Compute Ask/Provide doors',
 );
 assert.match(bag, /fetch\('\/bag\/api\/record\?mint=' /);

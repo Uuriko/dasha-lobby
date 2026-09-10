@@ -154,7 +154,7 @@ assert.equal(route.status, 200);
 assert.equal(route.headers.get('x-dasha-edge'), 'compute');
 const routeHtml = await route.text();
 assert.match(routeHtml, /Start\./);
-assert.match(routeHtml, /<h1 class="tf-q">Ask\.<\/h1>/);
+assert.match(routeHtml, /<h1 class="tf-q">Do\.<\/h1>/);
 const indexRedirect = await worker.fetch(new Request('https://www.getdasha.com/compute/index.html'), {}, {});
 assert.equal(indexRedirect.status, 308, '/compute/index.html canonicalizes');
 assert.equal(indexRedirect.headers.get('location'), 'https://www.getdasha.com/compute');

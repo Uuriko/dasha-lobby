@@ -2,7 +2,7 @@
 /**
  * /contribute: stronger Join a Mac CTA only when /compute/api/network
  * advertising says a Mac is online. First paint stays hidden.
- * Quiet Ask · Join · Benchmarks line stays. No invented Mac count.
+ * Quiet Use a Mac · Join · Benchmarks line stays. No invented Mac count.
  * Contribute is not stripHomeCompute / stripRetiredProductDoors
  * (those eat /compute on home + howto). Disk only. No Designer.
  * Never plugin.jup.ag. No wrangler.
@@ -51,7 +51,7 @@ assert.match(
 assert.match(block[0], /<p id="join-mac-note" hidden>A Mac is online\.<\/p>/, 'honest note hidden first paint');
 assert.match(
   block[0],
-  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/benchmarks">Benchmarks<\/a><\/p>/,
+  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Use a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/benchmarks">Benchmarks<\/a><\/p>/,
   'quiet Compute line stays',
 );
 assert.doesNotMatch(block[0], /\b\d+\s+Macs?\b/i, 'no invented Mac count on disk');

@@ -20,7 +20,7 @@ function assertHonesty(html, label) {
   assert.match(html, /<h1 class=["']tf-q["']>Start\.<\/h1>/, `${label} Start. cold paint`);
   assert.match(html, /aria-label=["']Start\.["']/, `${label} Start. aria`);
   assert.match(html, /id=["']step-gate["'][^>]*data-tf=["']gate["'](?![^>]*hidden)/, `${label} gate visible default`);
-  assert.match(html, /id=["']pick-ask["'][^>]*>Ask</, `${label} Ask gate`);
+  assert.match(html, /id=["']pick-ask["'][^>]*>Do</, `${label} Do gate`);
   assert.match(html, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide gate`);
   assert.match(html, /id=["']pick-pay["'][^>]*>Pay</, `${label} Pay gate`);
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits gate`);

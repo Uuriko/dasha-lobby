@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** /compute share card: Ask a Mac + OpenAI-compatible API. Title stays Dasha Compute. */
+/** /compute share card: Use a Mac + OpenAI-compatible API. Title stays Dasha Compute. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -10,7 +10,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
 const TITLE = 'Dasha Compute';
-const DESC = 'Ask a Mac. OpenAI-compatible. https://lobby.getdasha.com/compute/api/v1';
+const DESC = 'Use a Mac. OpenAI-compatible. https://lobby.getdasha.com/compute/api/v1';
 const OLD_DESC = 'Start. Ask. Provide. Pay. Credits.';
 
 assert.equal(html, COMPUTE_PAGE_HTML, 'html ↔ page.mjs');
@@ -50,6 +50,6 @@ assert.equal(res.status, 200);
 assert.equal(res.headers.get('x-dasha-edge'), 'compute');
 const served = await res.text();
 assertShare(served, 'served /compute');
-assert.match(served, /name="description" content="Start\. Ask\. Provide\. Pay\. Credits\."/, 'page meta stays doors line');
+assert.match(served, /name="description" content="Start\. Do\. Provide\. Pay\. Credits\."/, 'page meta stays doors line');
 
-console.log('dasha-compute-og: PASS (Dasha Compute / Ask a Mac. OpenAI-compatible. API v1)');
+console.log('dasha-compute-og: PASS (Dasha Compute / Use a Mac. OpenAI-compatible. API v1)');

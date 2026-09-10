@@ -17,7 +17,7 @@ assert.equal(res.headers.get("x-dasha-edge"), "compute");
 const html = await res.text();
 
 assert.match(html, /<h1 class=["']tf-q["']>Start\.<\/h1>/);
-assert.match(html, /id=["']pick-ask["'][^>]*>Ask</);
+assert.match(html, /id=["']pick-ask["'][^>]*>Do</);
 assert.match(html, /id=["']prompt["']/);
 assert.match(html, /id=["']run-demo["']/);
 assert.match(html, />Run</);
@@ -33,7 +33,7 @@ assert.doesNotMatch(html, /id=["']tab-night["']|id=["']pick-night["']|Schedule N
 assert.match(html, /id=["']night-offer["'] hidden/);
 assert.match(html, /id=["']queue-night["'][^>]*>Queue</);
 assert.doesNotMatch(html, /Queue for when a Mac is up/);
-assert.match(html, /Start\. Ask\. Provide\. Pay\. Credits\./);
+assert.match(html, /Start\. Do\. Provide\. Pay\. Credits\./);
 assert.match(html, /value=["']qwen3-8b["'] selected/);
 assert.match(html, /route=['"]mixture['"]|route:"mixture"/);
 assert.doesNotMatch(html, /Hosted when idle/);

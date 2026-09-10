@@ -5,7 +5,7 @@
  * /listing /listings/ /coins /coin /listed /list /dex /dexscreener /cmc /coingecko
  * (+slash / Title-case) → /listings. /market stays → /compute. /ca stays → /which.
  * Featured only $dasha / dash_eats. Venues from buy-sheet. Quiet #list-door after #grwm.
- * Quiet Compute Ask a Mac / Join a Mac doors. Disk only. No Designer. Never plugin.jup.ag.
+ * Quiet Compute Use a Mac / Join a Mac doors. Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -65,7 +65,7 @@ assert.match(listings, /We list <code[^>]*>\$dasha<\/code>\./);
 assert.match(listings, /Solana, live\./);
 assert.match(
   listings,
-  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
+  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Use a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
   'quiet Compute Ask/Provide doors',
 );
 assert.match(listings, /href="\/how-to-buy">Buy \$dasha →/, 'Buy lock stays');
@@ -196,7 +196,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       assert.match(html, /<!-- listings-board:2026-09-08 -->/);
       assert.match(html, /<section id="board"/);
       assert.match(html, /<th>#<\/th><th>Coin<\/th><th>Price<\/th><th>24h<\/th><th>Volume<\/th><th>Mcap<\/th><th>Liq<\/th>/);
-      assert.match(html, /href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac/, `${host} Ask a Mac`);
+      assert.match(html, /href="https:\/\/www\.getdasha\.com\/compute#ask">Use a Mac/, `${host} Use a Mac`);
       assert.match(html, /href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac/, `${host} Join a Mac`);
       {
         const computeLine = html.match(/<p>Compute\.[\s\S]*?<\/p>/);

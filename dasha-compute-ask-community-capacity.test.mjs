@@ -47,7 +47,7 @@ function assertCapacity(html, label) {
 
 assertCapacity(disk, "disk");
 assertCapacity(COMPUTE_PAGE_HTML, "embed");
-assert.match(USE_SKILL_MD, /Ask defaults to Community and the live advertised model/);
+assert.match(USE_SKILL_MD, /Do defaults to Community and the live advertised model/);
 assert.match(USE_SKILL_MD, /Hosted stays a quieter door/);
 assert.match(USE_SKILL_MD, /Explicit Hosted click stays Hosted/);
 
