@@ -58,6 +58,7 @@ assert.match(workerSrc, /COMPUTE_FIRST_CALL_TXT/, 'worker mirrors shared First c
 assert.match(workerSrc, /\$\{COMPUTE_FIRST_CALL_TXT\}/, 'llms-full interpolates shared First call');
 
 assert.equal(COMPUTE_AGENT_JSON.docs.llms, COMPUTE_LLMS_URL, 'agent.json docs.llms is the packet');
+assert.equal(COMPUTE_AGENT_JSON.docs.skill, 'https://www.getdasha.com/compute/skill.md', 'agent.json docs.skill is the face');
 assert.equal('examples' in COMPUTE_AGENT_JSON, false, 'agent.json has no examples field (schema)');
 assert.equal('quickstart' in COMPUTE_AGENT_JSON, false, 'agent.json has no quickstart field (schema)');
 assert.equal('examples' in COMPUTE_AGENT_JSON.docs, false, 'docs has no examples URL field');

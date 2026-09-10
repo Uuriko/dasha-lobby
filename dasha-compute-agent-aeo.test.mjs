@@ -20,6 +20,7 @@ import {
   COMPUTE_LLMS_TXT,
   COMPUTE_LLMS_URL,
   COMPUTE_NETWORK,
+  COMPUTE_SKILL_URL,
   attachComputeLlmsHtmlLinks,
   computeAgentAeoResponse,
 } from './dasha-compute-agent.mjs';
@@ -49,6 +50,7 @@ assert.equal(
 );
 assert.match(workerSrc, /attachComputeLlmsHtmlLinks/, 'compute page attaches packet door');
 assert.match(workerSrc, /POTTER_COMPUTE_LLMS_AEO_308_PATHS/, 'leftover /compute/llms → packet');
+assert.match(workerSrc, /POTTER_COMPUTE_SKILL_FACE_308_PATHS/, 'leftover pretty skill → face');
 
 assert.match(COMPUTE_LLMS_TXT, /^# Dasha Compute/m, 'packet H1');
 assert.match(COMPUTE_LLMS_TXT, /run factory, not a ledger/, 'packet names run factory');
@@ -86,6 +88,7 @@ assert.equal(COMPUTE_AGENT_JSON.endpoints.models, `${COMPUTE_API_BASE}/models`);
 assert.equal(COMPUTE_AGENT_JSON.endpoints.healthz, COMPUTE_HEALTHZ);
 assert.equal(COMPUTE_AGENT_JSON.endpoints.network, COMPUTE_NETWORK);
 assert.equal(COMPUTE_AGENT_JSON.docs.llms, COMPUTE_LLMS_URL);
+assert.equal(COMPUTE_AGENT_JSON.docs.skill, COMPUTE_SKILL_URL);
 assert.doesNotMatch(JSON.stringify(COMPUTE_AGENT_JSON), /plugin\.jup\.ag/);
 assert.doesNotMatch(JSON.stringify(COMPUTE_AGENT_JSON), /secret|password|potter/i);
 
@@ -93,6 +96,7 @@ const llms = extractConst('LLMS_TXT');
 const full = extractConst('LLMS_FULL_TXT');
 for (const [name, body] of [['LLMS_TXT', llms], ['LLMS_FULL_TXT', full]]) {
   assert.ok(body.includes(COMPUTE_LLMS_URL), `${name} points at /compute/llms.txt`);
+  assert.ok(body.includes(COMPUTE_SKILL_URL), `${name} points at /compute/skill.md`);
   assert.ok(body.includes(COMPUTE_AGENT_JSON_URL), `${name} points at /.well-known/agent.json`);
   assert.ok(body.includes(MINT), `${name} keeps associated mint`);
   assert.ok(body.includes(PAIR), `${name} keeps pair`);
@@ -104,6 +108,9 @@ assert.equal(potterHome308Dest('/compute/llms'), COMPUTE_LLMS_URL, '/compute/llm
 assert.equal(potterHome308Dest('/compute/llms/'), COMPUTE_LLMS_URL, '/compute/llms/ → packet');
 assert.equal(potterHome308Dest('/Compute/Llms'), COMPUTE_LLMS_URL, 'Title-case /compute/llms');
 assert.equal(potterHome308Dest('/compute/llms.txt'), null, '/compute/llms.txt stays 200');
+assert.equal(potterHome308Dest('/compute/skill.md'), null, '/compute/skill.md stays 200');
+assert.equal(potterHome308Dest('/compute/skill.md/'), COMPUTE_SKILL_URL, '/compute/skill.md/ → face');
+assert.equal(potterHome308Dest('/skill.md'), COMPUTE_SKILL_URL, '/skill.md → face');
 assert.equal(potterHome308Dest('/.well-known/agent.json'), null, '/.well-known/agent.json stays 200');
 assert.equal(potterHome308Dest('/compute/.well-known/agent.json'), null, '/compute/.well-known/agent.json stays 200');
 assert.equal(potterHome308Dest('/.well-known/Agent.json'), COMPUTE_AGENT_JSON_URL, 'Title-case site agent.json');
@@ -155,6 +162,7 @@ for (const origin of ORIGINS) {
   assert.equal(index.status, 200, `${origin}/llms.txt`);
   const indexBody = await index.text();
   assert.ok(indexBody.includes(COMPUTE_LLMS_URL), `${origin}/llms.txt links compute packet`);
+  assert.ok(indexBody.includes(COMPUTE_SKILL_URL), `${origin}/llms.txt links compute skill`);
   assert.ok(indexBody.includes(COMPUTE_AGENT_JSON_URL), `${origin}/llms.txt links agent.json`);
   assert.ok(indexBody.includes(MINT), `${origin}/llms.txt keeps mint`);
   assert.match(indexBody, /First path: Sign in, create a key, change the base URL\./);
@@ -164,6 +172,7 @@ for (const origin of ORIGINS) {
   assert.equal(fullRes.status, 200, `${origin}/llms-full.txt`);
   const fullBody = await fullRes.text();
   assert.ok(fullBody.includes(COMPUTE_LLMS_URL), `${origin}/llms-full.txt links compute packet`);
+  assert.ok(fullBody.includes(COMPUTE_SKILL_URL), `${origin}/llms-full.txt links compute skill`);
   assert.ok(fullBody.includes(COMPUTE_AGENT_JSON_URL), `${origin}/llms-full.txt links agent.json`);
   assert.ok(fullBody.includes(MINT), `${origin}/llms-full.txt keeps mint`);
   assert.match(fullBody, /First path: Sign in, create a key, change the base URL\./);
