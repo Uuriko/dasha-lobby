@@ -6641,12 +6641,31 @@ function proxyChessApi(request, env) {
   return env.LOBBY.get(room).fetch(request);
 }
 
+/** Honest Join CTA on /contribute. True only when network advertising says a Mac is online. No invented count. */
+export function contributeJoinMacOnline(providersOnline) {
+  const n = Number(providersOnline);
+  return Number.isFinite(n) && n >= 1;
+}
+
+/** First paint stays hidden. Unhide Join a Mac + "A Mac is online." when advertising is honest. */
+export function paintContributeJoinMacCta(html, providersOnline) {
+  const src = String(html || '');
+  if (!contributeJoinMacOnline(providersOnline)) return src;
+  return src
+    .replace(/<p(\s+)id=["']join-mac-cta["'](\s+)hidden>/i, '<p$1id="join-mac-cta">')
+    .replace(/<p(\s+)id=["']join-mac-note["'](\s+)hidden>/i, '<p$1id="join-mac-note">');
+}
+
 const CONTRIBUTE_HTML = htmlPage('Contribute to Dasha', `<h1>Build Dasha.</h1>
 <p>Open a pull request.</p>
 <p><a class="cta" href="https://github.com/Uuriko/dasha-desk/contribute" target="_blank" rel="noopener noreferrer">Pick a first issue ↗</a></p>
+<!-- contribute-join-mac-cta:2026-09-10 -->
+<p id="join-mac-cta" hidden><a class="cta" href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
+<p id="join-mac-note" hidden>A Mac is online.</p>
 <p><a href="https://github.com/Uuriko/dasha-desk/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Read the guide ↗</a> · <a href="https://github.com/Uuriko/dasha-desk/discussions/categories/ideas" target="_blank" rel="noopener noreferrer">Propose an idea ↗</a></p>
 <p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a> · <a href="https://www.getdasha.com/benchmarks">Benchmarks</a></p>
-<p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/lobby">Lobby</a></p>`, { path: '/contribute', description: 'Build Dasha. Open a pull request.' });
+<p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/lobby">Lobby</a></p>
+<script>(function(){fetch('/compute/api/network',{credentials:'omit',cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!(Number(d.providers_online)>=1))return;var c=document.getElementById('join-mac-cta');var n=document.getElementById('join-mac-note');if(c)c.removeAttribute('hidden');if(n)n.removeAttribute('hidden')}).catch(function(){})})();</script>`, { path: '/contribute', description: 'Build Dasha. Open a pull request.' });
 
 function contributePageResponse(request) {
   /* Leftover /contribute dropped-selector CSS after <code> was never in the contribute DOM. Keep a color + .cta. */
