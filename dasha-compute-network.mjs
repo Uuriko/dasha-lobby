@@ -1747,8 +1747,6 @@ export class ComputeNetwork {
       if (!allowedOrigin) return originRequired();
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
-      const mine = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(p => p && p.owner === owner);
-      if (!mine.length) return json({ error: 'register a Mac first' }, 400, allowedOrigin, true);
       const input = await body(request);
       const norm = normalizePayoutPref(input);
       if (!norm.ok) return json({ error: norm.error }, 400, allowedOrigin, true);

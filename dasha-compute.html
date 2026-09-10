@@ -424,6 +424,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
   </div>
   <p class="fine" id="earn-compare" hidden></p>
   <label class="field" id="earn-wallet-wrap" hidden>Wallet<input id="earn-wallet" type="text" maxlength="64" autocomplete="off" spellcheck="false" aria-label="Solana wallet" placeholder="Solana address"></label>
+  <button type="button" class="tf-quiet" id="earn-wallet-cta" hidden>Add wallet so you can get paid</button>
   <div class="actions" id="earn-actions" hidden>
     <button class="primary" id="earn-payout" type="button" hidden disabled title="Queues for operator settle · not auto" aria-label="Request payout · operator settles · not auto">Request payout</button>
   </div>
@@ -474,8 +475,12 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <p class="fine" id="provide-name-fine" hidden>Join with a Mac · keeps capacity warm.</p>
   <p class="fine" id="provide-name-earn">$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%</p>
   <input id="provider-name" maxlength="64" value="My Mac" required aria-label="Mac name">
+  <!-- provide-wallet-on-file:2026-09-10 -->
+  <label class="field" id="provide-wallet-wrap">Payout wallet<input id="provide-wallet" type="text" maxlength="64" autocomplete="off" spellcheck="false" aria-label="Solana wallet" placeholder="Solana address"></label>
+  <p class="fine" id="provide-wallet-fine">On file · jobs clear here.</p>
   <div class="actions">
     <button class="primary" id="provide-next" type="button">Next</button>
+    <button class="tf-quiet" id="provide-wallet-save" type="button">Save</button>
   </div>
 </section>
 
@@ -1324,6 +1329,7 @@ function showTf(step){
     const fine=$('provide-name-fine');
     if(fine)fine.hidden=provideBack!=='pay';
     paintEarnRates(earnRates);
+    if(loggedIn)loadEarn();
     setTimeout(()=>$('provider-name')?.focus(),40);
   }else if(step==='gate'||step==='how'||step==='model'||step==='night'||step==='answer'||step==='provide-done'||step==='market'||step==='host'||step==='pay'||step==='pay-buy'||step==='pay-send'||step==='pay-done'||step==='sponsor'||step==='sponsor-buy'||step==='sponsor-send'||step==='sponsor-done'||step==='credits'||step==='you'||step==='earn'){
     setTimeout(()=>{
@@ -2180,8 +2186,11 @@ function defaultSetup(){
 $('provide-next').addEventListener('click',()=>{
   const name=$('provider-name').value.trim();
   if(!name){$('provider-name').focus();return}
+  const wallet=String($('provide-wallet')?.value||'').trim();
+  if(loggedIn&&solanaWalletOk(wallet))saveProvideWallet();
   showTf('provide-reg');
 });
+$('provide-wallet-save')?.addEventListener('click',()=>{saveProvideWallet();});
 $('register-provider').addEventListener('click',async()=>{
   const button=$('register-provider'),name=$('provider-name').value.trim();
   const models=MODELS.filter(m=>SUB24.has(m[0])||m[0]==='gemma3-27b').map(m=>m[0]);
@@ -2195,6 +2204,7 @@ $('register-provider').addEventListener('click',async()=>{
     $('provider-status').textContent='';
     button.textContent='Register another Mac';
     if(provideExpectingNew||ownMacKnown>=1||ownMacIds.size>=1)noteProvideExpectingRegister(credentials.provider_id);
+    if(solanaWalletOk(String($('provide-wallet')?.value||'').trim()))await saveProvideWallet();
     showTf('provide-done');await auth();
   }catch(error){$('provider-status').textContent=error.message;button.textContent=registeredSetup?'Register another Mac':'Register';button.disabled=!loggedIn}
 });
@@ -2857,11 +2867,32 @@ function paintEarnRates(rates){
   const pn=$('provide-name-earn');
   if(pn)pn.textContent=line;
 }
+function solanaWalletOk(value){
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(String(value||'').trim());
+}
+function walletInputValue(){
+  const earn=String($('earn-wallet')?.value||'').trim();
+  const provide=String($('provide-wallet')?.value||'').trim();
+  const pref=String(earnPref?.wallet||'').trim();
+  return earn||provide||pref;
+}
+function syncWalletInputs(value){
+  const v=String(value||'').trim();
+  if(!v)return;
+  const earn=$('earn-wallet');
+  if(earn&&!earn.value)earn.value=v;
+  const provide=$('provide-wallet');
+  if(provide&&!provide.value)provide.value=v;
+}
+function walletOnFile(){
+  return solanaWalletOk(walletInputValue());
+}
 function provideEarnReceiptLine(){
   // Same /compute/api/provider/earnings fields as Earn. — never invent.
   if(!loggedIn||!earnLoaded||earnTotalUsdc==null)return '';
   const jobs=Math.max(0,Math.floor(Number(earnTotalJobs)||0));
   const face=Math.max(0,Math.floor(Number(earnTotalUsdc)||0));
+  if((jobs>0||face>0)&&!walletOnFile())return 'Wallet needed · pending won’t clear';
   if(jobs<=0&&face<=0)return 'No jobs yet · $0 pending';
   return (jobs===1?'1 job':jobs+' jobs')+' completed · '+formatUsdCents(face)+' pending';
 }
@@ -2876,7 +2907,7 @@ function paintProvideEarnReceipt(){
 function paintEarn(){
   const bal=$('earn-balance'),jobs=$('earn-jobs'),methods=$('earn-methods'),wrap=$('earn-wallet-wrap');
   const actions=$('earn-actions'),btn=$('earn-payout'),status=$('earn-status'),login=$('earn-login');
-  const compare=$('earn-compare'),pending=$('earn-pending');
+  const compare=$('earn-compare'),pending=$('earn-pending'),cta=$('earn-wallet-cta');
   const usdc=$('earn-usdc'),dasha=$('earn-dasha');
   if(login){login.hidden=loggedIn;login.textContent='Sign in'}
   paintEarnRates(earnRates);
@@ -2887,6 +2918,7 @@ function paintEarn(){
     if(jobs){jobs.hidden=true;jobs.textContent=''}
     if(methods)methods.hidden=true;
     if(wrap)wrap.hidden=true;
+    if(cta)cta.hidden=true;
     if(actions)actions.hidden=true;
     if(btn){btn.hidden=true;btn.disabled=true}
     if(compare){compare.hidden=true;compare.textContent=''}
@@ -2900,6 +2932,7 @@ function paintEarn(){
     if(jobs){jobs.hidden=true;jobs.textContent=''}
     if(methods)methods.hidden=true;
     if(wrap)wrap.hidden=true;
+    if(cta)cta.hidden=true;
     if(actions)actions.hidden=true;
     if(btn){btn.hidden=true;btn.disabled=true}
     if(compare){compare.hidden=true;compare.textContent=''}
@@ -2923,9 +2956,12 @@ function paintEarn(){
       :('Payout '+formatUsdCents(face)+' USDC · $dasha would be '+formatUsdCents(dashaCents));
   }
   const canPay=face>=100;
+  const haveWallet=walletOnFile();
+  const needWallet=(face>0||earnTotalJobs>0)&&!haveWallet;
+  if(cta)cta.hidden=!needWallet;
   if(btn){
-    btn.hidden=!canPay;
-    btn.disabled=!canPay;
+    btn.hidden=!(canPay||needWallet);
+    btn.disabled=!canPay||!haveWallet;
     btn.textContent='Request payout';btn.title='Queues for operator settle · not auto';btn.setAttribute('aria-label','Request payout · operator settles · not auto');
   }
   paintProvideEarnReceipt();
@@ -2966,8 +3002,7 @@ async function loadEarn(){
     earnPref=data?.pref||null;
     if(data?.rates&&typeof data.rates==='object')earnRates=data.rates;
     if(earnPref?.method==='dasha'||earnPref?.method==='usdc')earnMethod=earnPref.method;
-    const wallet=$('earn-wallet');
-    if(wallet&&earnPref?.wallet&&!wallet.value)wallet.value=earnPref.wallet;
+    if(earnPref?.wallet)syncWalletInputs(earnPref.wallet);
     earnLoaded=true;
   }catch{
     earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;
@@ -2975,10 +3010,35 @@ async function loadEarn(){
   paintEarn();
 }
 async function saveEarnPref(){
-  const wallet=String($('earn-wallet')?.value||'').trim();
+  const wallet=walletInputValue();
   const data=await api('/compute/api/provider/payout-pref',{method:'POST',body:JSON.stringify({method:earnMethod,wallet})});
   earnPref={method:data.method,wallet:data.wallet};
+  syncWalletInputs(data.wallet);
   return data;
+}
+async function saveProvideWallet(){
+  const fine=$('provide-wallet-fine');
+  const wallet=String($('provide-wallet')?.value||'').trim();
+  if(!loggedIn){
+    if(fine)fine.textContent='Sign in to save.';
+    syncWalletInputs(wallet);
+    return;
+  }
+  if(wallet&&!solanaWalletOk(wallet)){
+    if(fine)fine.textContent='Need a Solana address.';
+    return;
+  }
+  if(!wallet){
+    if(fine)fine.textContent='On file · jobs clear here.';
+    return;
+  }
+  try{
+    syncWalletInputs(wallet);
+    await saveEarnPref();
+    if(fine)fine.textContent='On file · jobs clear here.';
+  }catch(e){
+    if(fine)fine.textContent=e?.message||'Save failed';
+  }
 }
 async function requestEarnPayout(){
   const status=$('earn-status');
@@ -3330,6 +3390,12 @@ $('earn-usdc')?.addEventListener('click',()=>{earnMethod='usdc';paintEarn();});
 $('earn-dasha')?.addEventListener('click',()=>{earnMethod='dasha';paintEarn();});
 $('earn-payout')?.addEventListener('click',()=>{requestEarnPayout();});
 $('earn-wallet')?.addEventListener('change',()=>{/* pref saved on payout */});
+$('earn-wallet-cta')?.addEventListener('click',()=>{
+  const wrap=$('earn-wallet-wrap'),wallet=$('earn-wallet');
+  if(wrap)wrap.hidden=false;
+  wallet?.focus();
+  wallet?.scrollIntoView({block:'center'});
+});
 $('you-api')?.addEventListener('click',()=>{buildBack='you';showTf('build')});
 $('pick-api')?.addEventListener('click',()=>{
   buildBack='gate';

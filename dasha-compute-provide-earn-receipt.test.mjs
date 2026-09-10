@@ -53,6 +53,7 @@ function assertReceiptFace(html, label) {
   assert.match(html, /function provideEarnReceiptLine\(/, `${label} provideEarnReceiptLine`);
   assert.match(html, /function paintProvideEarnReceipt\(/, `${label} paintProvideEarnReceipt`);
   assert.match(html, /No jobs yet · \$0 pending/, `${label} honest empty copy`);
+  assert.match(html, /Wallet needed · pending won.t clear/, `${label} wallet-needed copy`);
   assert.match(html, /jobs'\)\+' completed · '\+formatUsdCents\(face\)\+' pending'/, `${label} jobs + \$ pending from Worker fields`);
   assert.match(html, /api\('\/compute\/api\/provider\/earnings'\)/, `${label} same earnings API`);
   assert.match(html, /if\(step==='provide-done'\)[\s\S]*?paintProvideEarnReceipt\(\)/, `${label} Setup paints receipt`);
@@ -142,10 +143,31 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(empty.line, EMPTY, 'line helper empty');
     assert.equal(empty.card, CARD, 'empty keeps rates');
 
+    const needWallet = await page.evaluate(() => {
+      const vis = (el) => !!(el && !el.hidden && !el.closest('[hidden]') && el.offsetParent);
+      earnTotalUsdc = 15;
+      earnTotalJobs = 3;
+      earnPref = null;
+      const w = document.getElementById('earn-wallet');
+      const p = document.getElementById('provide-wallet');
+      if (w) w.value = '';
+      if (p) p.value = '';
+      paintProvideEarnReceipt();
+      return {
+        receipt: (document.getElementById('provide-earn-receipt')?.textContent || '').trim(),
+        receiptVis: vis(document.getElementById('provide-earn-receipt')),
+        line: provideEarnReceiptLine(),
+      };
+    });
+    assert.equal(needWallet.receipt, 'Wallet needed · pending won’t clear', 'no wallet + pending');
+    assert.equal(needWallet.receiptVis, true, 'wallet-needed visible');
+    assert.equal(needWallet.line, 'Wallet needed · pending won’t clear', 'line helper wallet-needed');
+
     const paid = await page.evaluate(() => {
       const vis = (el) => !!(el && !el.hidden && !el.closest('[hidden]') && el.offsetParent);
       earnTotalUsdc = 15;
       earnTotalJobs = 3;
+      earnPref = { method: 'usdc', wallet: '3KNdL8kYP6ynpspjBgASfyKv2G5exQeQPStyTyS8eaqN' };
       paintProvideEarnReceipt();
       return {
         receipt: (document.getElementById('provide-earn-receipt')?.textContent || '').trim(),
@@ -160,6 +182,7 @@ if (puppeteer && existsSync(chrome)) {
     const one = await page.evaluate(() => {
       earnTotalUsdc = 5;
       earnTotalJobs = 1;
+      earnPref = { method: 'usdc', wallet: '3KNdL8kYP6ynpspjBgASfyKv2G5exQeQPStyTyS8eaqN' };
       return provideEarnReceiptLine();
     });
     assert.equal(one, '1 job completed · $0.05 pending', 'singular job');
