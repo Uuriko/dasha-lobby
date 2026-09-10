@@ -416,6 +416,8 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <button type="button" class="tf-back" data-back="you">← Back</button>
   <h1 class="tf-q">Earn.</h1>
   <p class="fine" id="earn-rates">$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%</p>
+  <!-- provide-invite-second:2026-09-10 -->
+  <p class="fine" id="earn-invite-second">Invite a second Mac. <a href="https://www.getdasha.com/compute#provide">Join a Mac</a>.</p>
   <p class="fine" id="earn-balance" hidden></p>
   <p class="fine" id="earn-jobs" hidden></p>
   <div class="tf-choices" role="group" aria-label="Payout." id="earn-methods" hidden>
@@ -536,6 +538,8 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
   <p class="fine" id="provide-earn-vibe">Leave it on. Earn.</p>
   <p class="fine" id="provide-earn-receipt" hidden aria-live="polite"></p>
   <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%</p>
+  <!-- provide-invite-second:2026-09-10 -->
+  <p class="fine" id="provide-invite-second">Invite a second Mac. <a href="https://www.getdasha.com/compute#provide">Join a Mac</a>.</p>
   <div class="tf-choices" style="margin-top:14px">
     <button type="button" class="tf-choice primary" id="provide-add-mac" title="Community Register · not Host / OCM enroll">Add another Mac</button>
     <button type="button" class="tf-choice secondary" id="provide-done-gate">Done</button>
@@ -1528,7 +1532,7 @@ function paintAskEngine(){
     if(model)bits.push(model);
     if(tpsLabel)bits.push(tpsLabel+' tok/s');
     btn.title='Change engine · '+bits.join(' · ')+' available';
-  else btn.title='Change engine';
+  }else btn.title='Change engine';
   paintAskPlaceholder();
 }
 function paintAskMyMac(){
@@ -2904,6 +2908,18 @@ function paintProvideEarnReceipt(){
   el.hidden=false;
   el.textContent=line;
 }
+function earnInviteEmpty(){
+  // Guest / unloaded / $0 · 0 jobs. Hide once jobs or $ land. Never invent a Mac count.
+  if(!loggedIn||!earnLoaded||earnTotalUsdc==null)return true;
+  const jobs=Math.max(0,Math.floor(Number(earnTotalJobs)||0));
+  const face=Math.max(0,Math.floor(Number(earnTotalUsdc)||0));
+  return jobs<=0&&face<=0;
+}
+function paintEarnInvite(){
+  const el=$('earn-invite-second');
+  if(!el)return;
+  el.hidden=!earnInviteEmpty();
+}
 function paintEarn(){
   const bal=$('earn-balance'),jobs=$('earn-jobs'),methods=$('earn-methods'),wrap=$('earn-wallet-wrap');
   const actions=$('earn-actions'),btn=$('earn-payout'),status=$('earn-status'),login=$('earn-login');
@@ -2924,6 +2940,7 @@ function paintEarn(){
     if(compare){compare.hidden=true;compare.textContent=''}
     if(pending){pending.hidden=true;pending.textContent=''}
     if(status){status.hidden=true;status.textContent=''}
+    paintEarnInvite();
     paintProvideEarnReceipt();
     return;
   }
@@ -2937,6 +2954,7 @@ function paintEarn(){
     if(btn){btn.hidden=true;btn.disabled=true}
     if(compare){compare.hidden=true;compare.textContent=''}
     if(pending){pending.hidden=true;pending.textContent=''}
+    paintEarnInvite();
     paintProvideEarnReceipt();
     return;
   }
@@ -2964,6 +2982,7 @@ function paintEarn(){
     btn.disabled=!canPay||!haveWallet;
     btn.textContent='Request payout';btn.title='Queues for operator settle · not auto';btn.setAttribute('aria-label','Request payout · operator settles · not auto');
   }
+  paintEarnInvite();
   paintProvideEarnReceipt();
   if(pending){
     const rows=(earnPending||[]);
