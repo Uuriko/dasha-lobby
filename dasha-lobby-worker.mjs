@@ -490,7 +490,7 @@ const WHICH_HTML = `<!doctype html>
     <p>Pair: <code>9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code></p>
     <p>CoinGecko: <a href="https://www.coingecko.com/en/coins/dash_eats">dash_eats</a></p>
     <p><a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Open the associated mint on Jupiter</a></p>
-    <p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask</a> · <a href="https://www.getdasha.com/compute#provide">Provide</a></p>
+    <p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask</a> — Hosted when no Mac. <a href="https://www.getdasha.com/compute#provide">Provide</a></p>
     <p><a href="https://www.getdasha.com/">getdasha.com</a></p>
   </main>
 </body>
