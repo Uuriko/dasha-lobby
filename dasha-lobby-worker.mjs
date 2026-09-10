@@ -312,6 +312,7 @@ crew https://www.getdasha.com/crew
 compute https://www.getdasha.com/compute
 compute packet https://www.getdasha.com/compute/llms.txt
 agent.json https://www.getdasha.com/.well-known/agent.json
+compute skill https://www.getdasha.com/compute/skill.md
 Use a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
 Live benchmarks https://www.getdasha.com/benchmarks
@@ -336,6 +337,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Compute](https://www.getdasha.com/compute)
 - [Compute packet](https://www.getdasha.com/compute/llms.txt)
 - [Compute agent.json](https://www.getdasha.com/.well-known/agent.json)
+- [Compute skill](https://www.getdasha.com/compute/skill.md)
 - [Use a Mac](https://www.getdasha.com/compute#ask)
 - [Join a Mac](https://www.getdasha.com/compute#provide)
 - [Live benchmarks](https://www.getdasha.com/benchmarks)
@@ -445,6 +447,7 @@ Crew: five jobs. You keep the keys. https://www.getdasha.com/crew
 Compute: Start. (Do / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Sponsor. Credits → balance + Use. Do → Hosted. Quiet Marketplace / Host. https://www.getdasha.com/compute
 Agent packet: https://www.getdasha.com/compute/llms.txt
 Agent JSON: https://www.getdasha.com/.well-known/agent.json
+Agent skill: https://www.getdasha.com/compute/skill.md
 Use a Mac: https://www.getdasha.com/compute#ask
 Join a Mac: https://www.getdasha.com/compute#provide
 Live benchmarks: https://www.getdasha.com/benchmarks
@@ -467,6 +470,7 @@ Login: Grok Bot first, then X, then wallet. https://www.getdasha.com/login
 - https://www.getdasha.com/llms.txt
 - https://www.getdasha.com/llms-full.txt
 - https://www.getdasha.com/compute/llms.txt
+- https://www.getdasha.com/compute/skill.md
 - https://www.getdasha.com/.well-known/agent.json
 - https://www.getdasha.com/sitemap.xml
 - https://www.getdasha.com/robots.txt
@@ -3524,18 +3528,17 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/faucet/compute",
   "/faucet/compute/",
   // Pasteable AI skills live on /compute Typeform + /compute/skill/*.md.
+  // Agent first-call skill is GET /compute/skill.md (200). Leftover pretty
+  // /skill.md /compute/skill.md/ /compute/agents/skill.md 308 there.
   // Live /skills /skill /ai-skills /compute/skills (+slash) html-404; /compute/skills/
-  // even 301→/compute/skills 404. Fold to /compute (Copy AI skill). Do NOT fold
-  // /compute/skill/*.md (200 markdown). Bare /skill.md (+ /compute/skill.md) were
-  // html-404 while /skill already 308→/compute — fold the .md doors too.
+  // even 301→/compute/skills 404. Fold those to /compute (Copy AI skill). Do NOT fold
+  // /compute/skill/*.md (200 markdown) or exact /compute/skill.md (agent face).
   // Redo: /skills.md|/compute/skills.md (+slash) still html-404 while singular
-  // /skill.md peers already 308 — fold the plural .md doors too.
+  // /skill.md peers 308 → /compute/skill.md — fold the plural .md doors to /compute.
   "/skills",
   "/skills/",
   "/skill",
   "/skill/",
-  "/skill.md",
-  "/skill.md/",
   "/skills.md",
   "/skills.md/",
   "/ai-skills",
@@ -3547,8 +3550,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/skills/",
   "/compute/skill",
   "/compute/skill/",
-  "/compute/skill.md",
-  "/compute/skill.md/",
   "/compute/skills.md",
   "/compute/skills.md/",
   // Show HN / launch doors: live /Show /hn /show-hn /showhn /launch /demo
@@ -4638,6 +4639,13 @@ const POTTER_AI_TXT_WELLKNOWN_308_PATHS = new Set([
 const POTTER_COMPUTE_LLMS_AEO_308_PATHS = new Set([
   '/compute/llms', '/compute/llms/',
 ]);
+/** Leftover pretty skill doors → /compute/skill.md. Exact /compute/skill.md stays 200. */
+const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
+  '/skill.md', '/skill.md/',
+  '/compute/skill.md/',
+  '/compute/agents/skill.md', '/compute/agents/skill.md/',
+  '/compute/agent/skill.md', '/compute/agent/skill.md/',
+]);
 /** /jobs /job /compute/jobs /compute/job /api/jobs /api/job → /compute/api/jobs. */
 const POTTER_COMPUTE_API_JOBS_308_PATHS = new Set([
   '/jobs', '/jobs/',
@@ -4715,6 +4723,7 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
   ['/ai.txt', 'https://www.getdasha.com/ai.txt'],
   ['/compute/llms.txt', 'https://www.getdasha.com/compute/llms.txt'],
+  ['/compute/skill.md', 'https://www.getdasha.com/compute/skill.md'],
   ['/.well-known/agent.json', 'https://www.getdasha.com/.well-known/agent.json'],
   ['/compute/.well-known/agent.json', 'https://www.getdasha.com/compute/.well-known/agent.json'],
   ['/robots.txt', 'https://www.getdasha.com/robots.txt'],
@@ -4791,6 +4800,9 @@ export function potterHome308Dest(path) {
   }
   if (POTTER_COMPUTE_LLMS_AEO_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/llms.txt";
+  }
+  if (POTTER_COMPUTE_SKILL_FACE_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/skill.md";
   }
   if (p === "/llms-full" || p === "/llms-full/" || p === "/llms_full" || p === "/llms_full/") {
     return "https://www.getdasha.com/llms-full.txt";

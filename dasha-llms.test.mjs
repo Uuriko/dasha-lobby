@@ -77,6 +77,7 @@ assert.match(llms, /Join a Mac/, 'llms.txt names Join a Mac');
 assert.match(llms, /OpenAI-compatible base URL/, 'llms.txt names OpenAI-compatible base URL');
 assert.match(llms, /First path: Sign in, create a key, change the base URL\./, 'llms.txt first path');
 assert.ok(llms.includes('https://www.getdasha.com/compute/llms.txt'), 'llms.txt points at Compute packet');
+assert.ok(llms.includes('https://www.getdasha.com/compute/skill.md'), 'llms.txt points at Compute skill');
 assert.ok(llms.includes('https://www.getdasha.com/.well-known/agent.json'), 'llms.txt points at agent.json');
 assert.match(full, /Use a Mac:/, 'llms-full names Use a Mac');
 assert.match(full, /Join a Mac:/, 'llms-full names Join a Mac');
@@ -84,6 +85,7 @@ assert.match(full, /OpenAI-compatible base URL:/, 'llms-full names OpenAI-compat
 assert.match(full, /First path: Sign in, create a key, change the base URL\./, 'llms-full first path');
 assert.match(worker, /\$\{COMPUTE_FIRST_CALL_TXT\}/, 'llms-full interpolates shared First call');
 assert.ok(full.includes('https://www.getdasha.com/compute/llms.txt'), 'llms-full points at Compute packet');
+assert.ok(full.includes('https://www.getdasha.com/compute/skill.md'), 'llms-full points at Compute skill');
 assert.ok(full.includes('https://www.getdasha.com/.well-known/agent.json'), 'llms-full points at agent.json');
 assert.match(full, /^## Compute buyer FAQ$/m, 'llms-full Compute buyer FAQ');
 assert.match(full, /^How do I start\? Sign in\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1$/m, 'llms-full FAQ how');
