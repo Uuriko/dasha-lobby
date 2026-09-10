@@ -33,6 +33,10 @@ export const MAX_THREADS = 100;
 export const THREAD_TTL_MS = 180 * 24 * 60 * 60 * 1000;
 export const EDIT_WINDOW_MS = 15 * 60 * 1000;
 export const REPORT_REASONS = ['scam', 'spam', 'harassment', 'off-topic'];
+/* Quiet Discord-style topic chips on lobby threads only. Fixed list — no freeform,
+   no people-data, no Room merge. Optional on create. */
+export const FORUM_TAGS = Object.freeze(['trade', 'meme', 'help', 'play', 'news']);
+export const FORUM_TAG_ERROR = 'tag must be trade, meme, help, play, or news';
 /* In-thread quote, not a nested tree. A snippet is enough to show what was answered. */
 export const QUOTE_SNIP = 140;
 /* Bounded opener preview kept on the index so the thread list and search can see a little body
@@ -67,23 +71,45 @@ export function validateBody(raw) {
   return { ok: true, text: checked.text };
 }
 
+/** Optional topic chip. Empty is fine. Anything outside FORUM_TAGS is refused. */
+export function validateForumTag(raw) {
+  if (raw == null || raw === '') return { ok: true, tag: null };
+  if (typeof raw !== 'string') return { ok: false, error: FORUM_TAG_ERROR };
+  const tag = raw.trim().toLowerCase();
+  if (!tag) return { ok: true, tag: null };
+  if (!FORUM_TAGS.includes(tag)) return { ok: false, error: FORUM_TAG_ERROR };
+  return { ok: true, tag };
+}
+
+/** Index filter. Invalid / unknown tags match nothing so freeform cannot scan. */
+export function filterThreadsByTag(index, tag) {
+  const list = Array.isArray(index) ? index : [];
+  const checked = validateForumTag(tag);
+  if (!checked.ok) return [];
+  if (!checked.tag) return list;
+  return list.filter((t) => t && t.tag === checked.tag);
+}
+
 /** Refuse anything the worker could not attribute to a linked session. */
 function requireAuthor(handle) {
   return String(handle || '').trim() ? null : { ok: false, error: 'link X to post' };
 }
 
-export function newThread({ title, text, handle, avatar = null, holder = false, now, id }) {
+export function newThread({ title, text, handle, avatar = null, holder = false, now, id, tag } = {}) {
   const anon = requireAuthor(handle);
   if (anon) return anon;
   const t = validateTitle(title);
   if (!t.ok) return t;
   const b = validateBody(text);
   if (!b.ok) return b;
+  const topic = validateForumTag(tag);
+  if (!topic.ok) return topic;
 
   const opener = { id: `${id}-0`, handle, avatar, text: b.text, ts: now };
   if (holder) opener.holder = true;
   const summary = { id, title: t.title, handle, avatar, ts: now, lastTs: now, replies: 0, reactions: 0, snippet: b.text.slice(0, SNIPPET_MAX) };
   if (holder) summary.holder = true;
+  if (topic.tag) summary.tag = topic.tag;
   return {
     ok: true,
     summary,
@@ -134,7 +160,8 @@ export function searchThreads(index, q) {
     const title = String(t.title || '');
     const handle = String(t.handle || '');
     const snippet = String(t.snippet || '');
-    if (!`${title} ${handle} ${snippet}`.toLowerCase().includes(needle)) return false;
+    const topic = String(t.tag || '');
+    if (!`${title} ${handle} ${snippet} ${topic}`.toLowerCase().includes(needle)) return false;
     return validateMessage(title, { maxText: MAX_TITLE }).ok;
   });
 }
@@ -264,11 +291,13 @@ export function threadReactionCount(posts) {
    instead of shipping the first time someone adds a field. */
 export function publicThread(t) {
   const reactions = Number(t.reactions);
+  const topic = validateForumTag(t.tag);
   return {
     id: t.id, title: t.title, handle: t.handle, avatar: t.avatar ?? null,
     ts: t.ts, lastTs: t.lastTs, replies: t.replies ?? 0, locked: Boolean(t.locked),
     reactions: Number.isInteger(reactions) && reactions >= 0 && reactions <= MAX_POSTS * MAX_REACTORS ? reactions : 0,
     snippet: t.snippet ?? null, holder: Boolean(t.holder),
+    tag: topic.ok ? topic.tag : null,
   };
 }
 
