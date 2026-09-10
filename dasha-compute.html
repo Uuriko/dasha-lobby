@@ -1906,8 +1906,13 @@ $('run-demo').addEventListener('click',async()=>{
   }
   if(eng==='hosted'&&!hostedChosenThisSession){
     await refreshCommunityOnline();
-    maybeAdoptCommunityDefault();
-    eng=$('engine').value;
+    if(providersOnline>=1&&!noMacHostedFallback){
+      preferAdvertisedCommunityModel($('model'));
+      cameFromHow=true;cameFromGate=false;
+      $('engine').value='community';
+      document.querySelectorAll('.engines [data-engine]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.engine==='community'?'true':'false'));
+      eng='community';
+    }
   }
   if(eng==='community'||eng==='mixture'){
     await refreshCommunityOnline();
