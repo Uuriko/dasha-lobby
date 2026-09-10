@@ -20,8 +20,9 @@ assert.equal(disk, COMPUTE_PAGE_HTML, "embed matches dasha-compute.html");
 assert.equal(PROVIDE_SKILL_MD, provideDisk, "PROVIDE skill embed matches disk");
 
 function assertSettle(html, label) {
-  assert.match(html, /id="earn-rates">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle/, `${label} earn-rates`);
-  assert.match(html, /id="provide-earn-fine">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle/, `${label} provide-earn-fine`);
+  assert.match(html, /id="earn-rates">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%/, `${label} earn-rates`);
+  assert.match(html, /id="provide-earn-fine">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%/, `${label} provide-earn-fine`);
+  assert.match(html, /id="provide-name-earn">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%/, `${label} provide-name-earn`);
   assert.match(html, /pending operator settle/, `${label} formatEarnRatesLine`);
   assert.match(html, /title="Queues for operator settle · not auto"/, `${label} Request payout title`);
   assert.match(html, /aria-label="Request payout · operator settles · not auto"/, `${label} Request payout aria`);
@@ -70,14 +71,16 @@ if (puppeteer && existsSync(chrome)) {
       return {
         rates: (document.getElementById("earn-rates")?.textContent || "").trim(),
         provide: (document.getElementById("provide-earn-fine")?.textContent || "").trim(),
+        nameEarn: (document.getElementById("provide-name-earn")?.textContent || "").trim(),
         pending: (document.getElementById("earn-pending")?.textContent || "").trim(),
         btnTitle: btn?.title || "",
         btnAria: btn?.getAttribute("aria-label") || "",
         btnText: (btn?.textContent || "").trim(),
       };
     });
-    assert.equal(painted.rates, "$0.05/job + $0.01/1k completion · min $1 · pending operator settle");
-    assert.equal(painted.provide, "$0.05/job + $0.01/1k completion · min $1 · pending operator settle");
+    assert.equal(painted.rates, "$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%");
+    assert.equal(painted.provide, "$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%");
+    assert.equal(painted.nameEarn, "$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%");
     assert.match(painted.pending, /Pending · operator settles/);
     assert.match(painted.pending, /\$2\.50/);
     assert.doesNotMatch(painted.pending, /auto treasury/i);
