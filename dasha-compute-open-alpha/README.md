@@ -16,7 +16,11 @@ It has real request routing, streaming and end-to-end tests. The live queue inst
 
 ## Join the live community network
 
-Sign in at `https://www.getdasha.com/compute`, open **Provide**, name the Mac, and choose **Register**. The page returns a Setup command with the one-time provider token already filled in. Dasha stores only the token hash; live provider tokens and developer keys are account-bound and owner-revocable. The live queue supports complete and SSE-streamed responses. Ordinary queued and leased prompts are stored in the Durable Object until completion, failure, cancellation or expiry; terminal paths clear or delete prompt text, while completed answers, errors or chunks receive a ten-minute expiry and are removed by a subsequent prune. Night Shift retains its assignment prompt and up to five artifacts until the task is deleted.
+Enroll code first. Sign in at `https://www.getdasha.com/compute`, then **Host** or **Provide**. Take the code from the page. Never paste a `provider_token` into chat, issues, or Discord/TG.
+
+Then `./install.sh`, `dasha-compute doctor`, advertise. Soft doctor: battery / Low Power / thermal / SIP / older Ollama — warn only, never fails solely for those.
+
+Open **Provide**, name the Mac, and choose **Register**. The page returns a Setup command with the one-time provider token already filled in. Dasha stores only the token hash; live provider tokens and developer keys are account-bound and owner-revocable. The live queue supports complete and SSE-streamed responses. Ordinary queued and leased prompts are stored in the Durable Object until completion, failure, cancellation or expiry; terminal paths clear or delete prompt text, while completed answers, errors or chunks receive a ten-minute expiry and are removed by a subsequent prune. Night Shift retains its assignment prompt and up to five artifacts until the task is deleted.
 
 On macOS, the generated command writes the one-time token to `.dasha-provider-key` (chmod 0600) and runs `./install.sh` without putting `DASHA_PROVIDER_KEY=` on the command line. `install.sh` reads that file (or `DASHA_PROVIDER_KEY_FILE`), copies it 0600 into Application Support, optionally stores it in Keychain, and starts `launchd`. The agent reads the file (or Keychain) inside the process; the token is never exported into the child environment (`ps e`) or argv.
 

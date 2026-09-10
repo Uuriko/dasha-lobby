@@ -77,6 +77,11 @@ assert.doesNotMatch(kitReadme, /Register this Mac/);
 assert.doesNotMatch(kitReadme, /\*\*Build\*\* tab/);
 assert.match(kitReadme, /name the Mac/);
 assert.match(kitReadme, /choose \*\*Register\*\*/);
+assert.match(
+  kitReadme,
+  /Enroll code first[\s\S]*Never paste a `provider_token` into chat, issues, or Discord\/TG[\s\S]*Then `\.\/install\.sh`, `dasha-compute doctor`, advertise[\s\S]*battery \/ Low Power \/ thermal \/ SIP \/ older Ollama/,
+  "kit README enroll-code primacy + soft doctor",
+);
 
 // defaultSetup() in page JS must match the static #setup body (pre-register).
 const ds = COMPUTE_PAGE_HTML.match(/function defaultSetup\(\)\{\s*return `([\s\S]*?)`;\s*\}/);
