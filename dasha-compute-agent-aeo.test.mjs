@@ -15,6 +15,7 @@ import {
   COMPUTE_AGENT_JSON_URL,
   COMPUTE_API_BASE,
   COMPUTE_API_BASE_WWW,
+  COMPUTE_FIRST_CALL_TXT,
   COMPUTE_HEALTHZ,
   COMPUTE_LLMS_TXT,
   COMPUTE_LLMS_URL,
@@ -58,6 +59,10 @@ assert.match(COMPUTE_LLMS_TXT, new RegExp(`^network ${COMPUTE_NETWORK.replace(/\
 assert.match(COMPUTE_LLMS_TXT, /auth Bearer API key/, 'packet names Bearer auth');
 assert.match(COMPUTE_LLMS_TXT, /^no key needed for healthz \+ network \+ models; key needed for chat$/m, 'packet soft-guest line');
 assert.match(COMPUTE_LLMS_TXT, /First path: Sign in, create a key, change the base URL\./, 'packet first path');
+assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_FIRST_CALL_TXT), true, 'packet embeds First call');
+assert.match(COMPUTE_LLMS_TXT, /^## First call$/m, 'packet First call heading');
+assert.match(COMPUTE_LLMS_TXT, /Authorization: Bearer \$DASHA_API_KEY/, 'packet keyed curl');
+assert.match(COMPUTE_LLMS_TXT, /"model":"gemma3-27b"/, 'packet first-call model');
 assert.match(COMPUTE_LLMS_TXT, /^Community: a peer Mac runs the job\.$/m, 'Community one-liner');
 assert.match(COMPUTE_LLMS_TXT, /^Hosted: still there when no Mac is online\.$/m, 'Hosted one-liner');
 assert.match(COMPUTE_LLMS_TXT, /https:\/\/www\.getdasha\.com\/llms\.txt/, 'packet links site llms');
@@ -162,6 +167,8 @@ for (const origin of ORIGINS) {
   assert.ok(fullBody.includes(COMPUTE_AGENT_JSON_URL), `${origin}/llms-full.txt links agent.json`);
   assert.ok(fullBody.includes(MINT), `${origin}/llms-full.txt keeps mint`);
   assert.match(fullBody, /First path: Sign in, create a key, change the base URL\./);
+  assert.equal(fullBody.includes(COMPUTE_FIRST_CALL_TXT), true, `${origin}/llms-full.txt First call`);
+  assert.match(fullBody, /^## First call$/m, `${origin}/llms-full.txt First call heading`);
   assert.doesNotMatch(fullBody, /plugin\.jup\.ag/);
 
   const page = await edgeWorker.fetch(new Request(`${origin}/compute`), {});
