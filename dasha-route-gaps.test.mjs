@@ -25,7 +25,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     assert.equal(response.status, 200, `${host} healthz ${method}`);
     assert.equal(response.headers.get('content-type'), 'application/json; charset=utf-8');
     if (method === 'GET') {
-      assert.deepEqual(await response.json(), { ok: true, service: 'dasha-compute', version: '0.3.0' });
+      assert.deepEqual(await response.json(), { ok: true, service: 'dasha-compute', version: '0.3.1' });
     } else {
       assert.equal(await response.text(), '');
     }

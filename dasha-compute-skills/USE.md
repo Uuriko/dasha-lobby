@@ -17,7 +17,7 @@ Get a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Commu
 - Do not paste secrets into prompts. Community Mac operators can read assigned prompts.
 - Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.
 - Ask top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.
-- When Macs are online, Ask defaults to Community and the live advertised model (prefer gemma3-27b). Explicit Hosted click stays Hosted. Change engine still opens How.
+- When Macs are online, Ask defaults to Community and the live advertised model (prefer gemma3-27b). Hosted stays a quieter door. Explicit Hosted click stays Hosted. Change engine still opens How.
 
 ## Steps for the AI to guide
 1. Open https://www.getdasha.com/compute

@@ -26,6 +26,8 @@ function assertCommunityStay(html, label) {
   assert.match(html, /function defaultAskEngine\(/, `${label} defaultAskEngine`);
   assert.match(html, /function enterAskEngine\(/, `${label} enterAskEngine`);
   assert.match(html, /function maybeAdoptCommunityDefault\(/, `${label} maybeAdoptCommunityDefault`);
+  assert.match(html, /function paintHowEngineDoors\(/, `${label} paintHowEngineDoors`);
+  assert.match(html, /if\(eng==='hosted'&&!hostedChosenThisSession\)/, `${label} warm Hosted Run adopts Community`);
   assert.match(html, /function paintCommunityWorkingFace\(/, `${label} paintCommunityWorkingFace`);
   assert.match(html, /function paintCommunityMissFace\(/, `${label} paintCommunityMissFace`);
   assert.match(html, /A Mac is working\./, `${label} A Mac is working.`);
@@ -73,11 +75,17 @@ if (puppeteer && existsSync(chrome)) {
         change: ($("change-engine")?.textContent || "").trim(),
         hostedChip: ($("honesty-hosted")?.textContent || "").trim(),
         hostedHidden: $("honesty-hosted")?.hidden === true,
+        howComPrimary: $("eng-community")?.classList.contains("primary") === true,
+        howHostSecondary: $("eng-hosted")?.classList.contains("secondary") === true,
+        askHosted: $("ask-hosted")?.hidden !== true,
       };
     });
     assert.equal(adopted.engine, "community", "Mac online → Community default");
     assert.equal(adopted.model, "gemma3-27b", "prefer advertised gemma3-27b");
     assert.equal(adopted.change, "Community · gemma3-27b");
+    assert.equal(adopted.howComPrimary, true, "How Community ink-on-acid primary");
+    assert.equal(adopted.howHostSecondary, true, "How Hosted quieter secondary");
+    assert.equal(adopted.askHosted, true, "Ask Hosted quieter door");
     assert.equal(adopted.hostedHidden, true, "Hosted · live hidden on Community");
     assert.equal(adopted.hostedChip, "", "Hosted chip text cleared on Community");
 

@@ -199,7 +199,7 @@ try {
     headers: { Origin: 'https://www.getdasha.com' },
   }), { AI: { run: async () => ({ response: 'ok' }) }, ALLOWED_ORIGINS: 'https://www.getdasha.com' });
   assert.equal(apiStill.status, 200);
-  assert.deepEqual(await apiStill.json(), { ok: true, service: 'dasha-compute', version: '0.3.0' });
+  assert.deepEqual(await apiStill.json(), { ok: true, service: 'dasha-compute', version: '0.3.1' });
 
   const viaProvider = await worker.fetch(new Request('https://www.getdasha.com/compute/ocm/provider'), {});
   assert.equal(viaProvider.status, 200);
