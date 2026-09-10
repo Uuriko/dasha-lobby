@@ -128,6 +128,11 @@ import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import { isComputeOcmPath, proxyComputeOcm } from './dasha-compute-ocm-proxy.mjs';
+import {
+  COMPUTE_LLMS_DESCRIBEDBY,
+  attachComputeLlmsHtmlLinks,
+  computeAgentAeoResponse,
+} from './dasha-compute-agent.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
 import { applyCrewShareOg, crewApi, isCrewPagePath } from './dasha-crew.mjs';
 import { bagRecordApi, isBagRecordPath, lookupRecord, normalizeMint, renderBagShareHtml } from './dasha-bag-record.mjs';
@@ -304,6 +309,8 @@ contribute https://www.getdasha.com/contribute
 bounties https://www.getdasha.com/bounties
 crew https://www.getdasha.com/crew
 compute https://www.getdasha.com/compute
+compute packet https://www.getdasha.com/compute/llms.txt
+agent.json https://www.getdasha.com/.well-known/agent.json
 Use a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
 Live benchmarks https://www.getdasha.com/benchmarks
@@ -326,6 +333,8 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Bounties](https://www.getdasha.com/bounties)
 - [Crew](https://www.getdasha.com/crew)
 - [Compute](https://www.getdasha.com/compute)
+- [Compute packet](https://www.getdasha.com/compute/llms.txt)
+- [Compute agent.json](https://www.getdasha.com/.well-known/agent.json)
 - [Use a Mac](https://www.getdasha.com/compute#ask)
 - [Join a Mac](https://www.getdasha.com/compute#provide)
 - [Live benchmarks](https://www.getdasha.com/benchmarks)
@@ -433,6 +442,8 @@ Contribute: Build Dasha. Open a pull request. https://www.getdasha.com/contribut
 Crew: five jobs. You keep the keys. https://www.getdasha.com/crew
 
 Compute: Start. (Do / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Sponsor. Credits → balance + Use. Do → Hosted. Quiet Marketplace / Host. https://www.getdasha.com/compute
+Agent packet: https://www.getdasha.com/compute/llms.txt
+Agent JSON: https://www.getdasha.com/.well-known/agent.json
 Use a Mac: https://www.getdasha.com/compute#ask
 Join a Mac: https://www.getdasha.com/compute#provide
 Live benchmarks: https://www.getdasha.com/benchmarks
@@ -453,6 +464,8 @@ Login: Grok Bot first, then X, then wallet. https://www.getdasha.com/login
 - https://www.getdasha.com/ai.txt
 - https://www.getdasha.com/llms.txt
 - https://www.getdasha.com/llms-full.txt
+- https://www.getdasha.com/compute/llms.txt
+- https://www.getdasha.com/.well-known/agent.json
 - https://www.getdasha.com/sitemap.xml
 - https://www.getdasha.com/robots.txt
 `;
@@ -4619,6 +4632,10 @@ const POTTER_LLMS_AEO_308_PATHS = new Set([
 const POTTER_AI_TXT_WELLKNOWN_308_PATHS = new Set([
   '/.well-known/ai.txt',
 ]);
+/** Leftover /compute/llms (+slash / Title-case) → /compute/llms.txt. Exact /compute/llms.txt stays 200. */
+const POTTER_COMPUTE_LLMS_AEO_308_PATHS = new Set([
+  '/compute/llms', '/compute/llms/',
+]);
 /** /jobs /job /compute/jobs /compute/job /api/jobs /api/job → /compute/api/jobs. */
 const POTTER_COMPUTE_API_JOBS_308_PATHS = new Set([
   '/jobs', '/jobs/',
@@ -4695,6 +4712,9 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/llms.txt', 'https://www.getdasha.com/llms.txt'],
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
   ['/ai.txt', 'https://www.getdasha.com/ai.txt'],
+  ['/compute/llms.txt', 'https://www.getdasha.com/compute/llms.txt'],
+  ['/.well-known/agent.json', 'https://www.getdasha.com/.well-known/agent.json'],
+  ['/compute/.well-known/agent.json', 'https://www.getdasha.com/compute/.well-known/agent.json'],
   ['/robots.txt', 'https://www.getdasha.com/robots.txt'],
   ['/sitemap.xml', 'https://www.getdasha.com/sitemap.xml'],
   // Digest: Title-case /Digest /DIGEST /Digest.json html-404 while lowercase already 200.
@@ -4766,6 +4786,9 @@ export function potterHome308Dest(path) {
   }
   if (p === "/llms" || p === "/llms/") {
     return "https://www.getdasha.com/llms.txt";
+  }
+  if (POTTER_COMPUTE_LLMS_AEO_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/llms.txt";
   }
   if (p === "/llms-full" || p === "/llms-full/" || p === "/llms_full" || p === "/llms_full/") {
     return "https://www.getdasha.com/llms-full.txt";
@@ -6558,12 +6581,13 @@ export function stripComputeLeftoverEmptyNightModelSelect(html) {
 function computePageResponse(request) {
   /* Leftover /compute empty #night-model after MODELS.forEach overwrite. */
   const page = stripComputeLeftoverEmptyNightModelSelect(stripComputeLeftoverEmptyRamSelect(stripComputeLeftoverEmptyChipSelect(stripComputeLeftoverEmptyModelSelect(stripComputeLeftoverStaleRouteNote(stripComputeLeftoverStaleCount(stripComputeLeftoverEmptyRequestJsonCode(stripComputeLeftoverEmptyRecommendSetup(stripComputeLeftoverEmptyProvideMounts(stripComputeLeftoverFactsCheckingPlaceholder(stripComputeLeftoverDupNavButtonStrongCss(stripComputeLeftoverCodePythonJavascriptId(COMPUTE_PAGE_HTML))))))))))));
-  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(page), {
+  return new Response(request.method === 'HEAD' ? null : attachComputeLlmsHtmlLinks(attachLlmsHtmlLinks(page)), {
     status: 200,
-    headers: htmlLlmsHeaders({
+    headers: htmlHeaders({
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'public, max-age=120',
       'X-Dasha-Edge': 'compute',
+      Link: `${LLMS_DESCRIBEDBY}, ${COMPUTE_LLMS_DESCRIBEDBY}`,
     }),
   });
 }
@@ -10406,6 +10430,10 @@ async function productEdge(request, url, env) {
     }
     return grokBotWellKnownResponse(request);
   }
+  {
+    const computeAeo = computeAgentAeoResponse(request);
+    if (computeAeo) return computeAeo;
+  }
   if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/.well-known/security.txt') {
     return securityTxtResponse(request, url.hostname);
   }
@@ -11509,6 +11537,10 @@ export default {
         });
       }
       return grokBotWellKnownResponse(request);
+    }
+    {
+      const computeAeo = computeAgentAeoResponse(request);
+      if (computeAeo) return computeAeo;
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/factory.json' || url.pathname === '/factory.json/')) {
       return factoryCatalogResponse(request);
