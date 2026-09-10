@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** /bag is the health page: mint-dead, freeze-dead, burned Raydium LP. Listed on llms. */
+/** /bag is the health page: mint-dead, freeze-dead, burned Raydium LP. Quiet Compute Ask a Mac / Join a Mac doors. Listed on llms. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -36,6 +36,16 @@ assert.match(bag, /Mint-dead/);
 assert.match(bag, /Freeze-dead/);
 assert.match(bag, /Burned Raydium LP/);
 assert.match(bag, /jup\.ag\/tokens\/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/);
+assert.match(
+  bag,
+  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
+  'quiet Compute Ask/Provide doors',
+);
+{
+  const computeLine = bag.match(/<p>Compute\.[\s\S]*?<\/p>/);
+  assert.ok(computeLine, 'Compute line present');
+  assert.doesNotMatch(computeLine[0], /lobby/i, 'Compute line does not stuff Room');
+}
 assert.doesNotMatch(bag, /plugin\.jup\.ag/);
 assert.doesNotMatch(bag, /t\.me/);
 assert.doesNotMatch(bag, /\bstake\b|\btax\b/i);
@@ -95,6 +105,8 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.match(body, /Freeze-dead/);
   assert.match(body, /Burned Raydium LP/);
   assert.match(body, /jup\.ag\/tokens\/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/);
+  assert.match(body, /href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac/, `${origin} Ask a Mac`);
+  assert.match(body, /href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac/, `${origin} Join a Mac`);
   assert.doesNotMatch(body, /plugin\.jup\.ag/);
   assert.doesNotMatch(body, /mintAuthority|freezeAuthority/);
   assert.doesNotMatch(body, /No new supply can be created/);
@@ -103,4 +115,4 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.doesNotMatch(body, /t\.me/);
 }
 
-console.log('dasha-bag-leftover: PASS (/bag 200 health, llms lists /bag, links kept, dest-by-path 308s)');
+console.log('dasha-bag-leftover: PASS (/bag 200 health, quiet Compute Ask/Join doors, llms lists /bag, links kept, dest-by-path 308s)');

@@ -55,6 +55,11 @@ assert.match(bag, /jup\.ag\/tokens\/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump
 assert.match(bag, /<form id="record" action="\/bag\/api\/record" method="get">/);
 assert.match(bag, /<input id="mint" name="mint"/);
 assert.match(bag, /<button type="submit">Look<\/button>/);
+assert.match(
+  bag,
+  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
+  'quiet Compute Ask/Provide doors',
+);
 assert.match(bag, /fetch\('\/bag\/api\/record\?mint=' /);
 assert.doesNotMatch(bag, /ansem\.io\/api/);
 assert.doesNotMatch(bag, /plugin\.jup\.ag/);
