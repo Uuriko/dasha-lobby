@@ -302,6 +302,7 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
     chat_completions: '/compute/api/v1/chat/completions',
     network: '/compute/api/v1/network',
     healthz: '/compute/api/healthz',
+    errors: 'openai + status/reason/hint/next',
     // OpenRouter apply bar + Hosted UI parity: usage on stream stop + non-stream JSON.
     usage: {
       chat_completions: 'OpenAI-style usage on non-stream JSON and on the SSE final finish_reason=stop chunk',
@@ -317,8 +318,154 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
   return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
 }
 
+const V1_PUBLIC = 'https://lobby.getdasha.com/compute/api/v1';
+
+/** AX next-step for agents. OpenAI {error.message,type,code} stays. */
+export function openaiErrorAx(message, status = 400, type = 'invalid_request_error') {
+  const msg = String(message || '');
+  if (type === 'authentication_error' || /invalid API key/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'invalid_api_key',
+      hint: 'Mint a key at /compute#build. Then Authorization: Bearer.',
+      next: [
+        { path: '/compute#build' },
+        { command: `curl -sS -H 'Authorization: Bearer $DASHA_KEY' ${V1_PUBLIC}/models` },
+      ],
+    };
+  }
+  if (/top up credits/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'credits_required',
+      hint: 'Prepaid $0.05/job. Pay at /compute#pay.',
+      next: [
+        { path: '/compute#pay' },
+        { path: '/compute/api/credits' },
+      ],
+    };
+  }
+  if (/key spend limit/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'key_spend_limit',
+      hint: 'Raise the key cap at /compute#build.',
+      next: [{ path: '/compute#build' }],
+    };
+  }
+  if (/No Mac is online/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'no_mac_online',
+      hint: 'Join a Mac or poll GET /compute/api/network.',
+      next: [
+        { path: '/compute/api/network' },
+        { path: '/compute#provide' },
+      ],
+    };
+  }
+  if (/Your Mac is offline/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'self_offline',
+      hint: 'Bring your Mac online, or drop route=self.',
+      next: [
+        { path: '/compute#provide' },
+        { path: '/compute/api/network' },
+      ],
+    };
+  }
+  if (/finish your current community request first/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'job_in_flight',
+      hint: 'Wait. Then GET /compute/api/jobs.',
+      next: [{ path: '/compute/api/jobs' }],
+    };
+  }
+  if (/community limit reached/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'rate_limited',
+      hint: 'Wait, then POST /compute/api/v1/chat/completions again.',
+      next: [{ path: '/compute/api/v1/chat/completions' }],
+    };
+  }
+  if (/unsupported model/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'unsupported_model',
+      hint: 'GET /compute/api/v1/models for live ids.',
+      next: [{ path: '/compute/api/v1/models' }],
+    };
+  }
+  if (/send 1–12 user\/assistant messages/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'invalid_messages',
+      hint: 'POST 1–12 user/assistant messages.',
+      next: [{ path: '/compute/api/v1/chat/completions' }],
+    };
+  }
+  if (/does not exist/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'unknown_model',
+      hint: 'GET /compute/api/v1/models for live ids.',
+      next: [
+        { path: '/compute/api/v1/models' },
+        { command: `curl -sS -H 'Authorization: Bearer $DASHA_KEY' ${V1_PUBLIC}/models` },
+      ],
+    };
+  }
+  if (/embeddings are not supported|legacy completions are not supported|responses are not supported/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'use_chat_completions',
+      hint: 'POST /compute/api/v1/chat/completions.',
+      next: [{ path: '/compute/api/v1/chat/completions' }],
+    };
+  }
+  if (/Only POST is supported/i.test(msg)) {
+    const short = /Use POST (\S+)/.exec(msg)?.[1] || '/v1/chat/completions';
+    const path = short.startsWith('/compute/') ? short : `/compute/api${short.startsWith('/v1') ? short : `/v1${short}`}`;
+    return {
+      status: 'action_required',
+      reason: 'method_not_allowed',
+      hint: 'POST only.',
+      next: [{ path }, { command: `Use POST ${path}` }],
+    };
+  }
+  if (/job expired|request timed out|request cancelled|provider failed/i.test(msg)) {
+    const reason = /cancelled/i.test(msg) ? 'cancelled' : /timed out/i.test(msg) ? 'timeout' : /expired/i.test(msg) ? 'job_expired' : 'provider_failed';
+    return {
+      status: 'action_required',
+      reason,
+      hint: 'POST /compute/api/v1/chat/completions again.',
+      next: [{ path: '/compute/api/v1/chat/completions' }],
+    };
+  }
+  return {
+    status: status >= 500 ? 'failed' : 'action_required',
+    reason: type === 'server_error' ? 'server_error' : 'invalid_request',
+    hint: msg.slice(0, 120) || 'Check the request.',
+    next: [{ path: '/compute/api/v1/models' }],
+  };
+}
+
+export function openaiErrorBody(message, status = 400, type = 'invalid_request_error') {
+  const ax = openaiErrorAx(message, status, type);
+  return {
+    error: { message, type, code: null },
+    status: ax.status,
+    reason: ax.reason,
+    hint: ax.hint,
+    next: ax.next,
+  };
+}
+
 function openaiError(message, status = 400, type = 'invalid_request_error') {
-  return json({ error: { message, type, code: null } }, status);
+  return json(openaiErrorBody(message, status, type), status);
 }
 
 async function body(request, limit = 4096) {

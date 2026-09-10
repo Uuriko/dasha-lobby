@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'v1-models-retrieve-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -97,7 +97,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
 const list = await worker.fetch(new Request('https://www.getdasha.com/compute/api/v1/models'), workerEnv);
 assert.equal(list.status, 401);
-assert.deepEqual(await list.json(), { error: { message: 'invalid API key', type: 'authentication_error', code: null } });
+assert.deepEqual(await list.json(), openaiErrorBody('invalid API key', 401, 'authentication_error'));
 const foo = await worker.fetch(new Request('https://www.getdasha.com/compute/api/foo'), workerEnv);
 assert.equal(foo.status, 404);
 assert.deepEqual(await foo.json(), { error: 'not found' });
