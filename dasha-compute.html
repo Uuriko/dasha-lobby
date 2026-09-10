@@ -139,9 +139,12 @@ footer.listed-on img{display:block;height:32px;width:auto}
 .ux-triad{grid-template-columns:repeat(3,minmax(0,1fr))}
 .ux-tech{grid-template-columns:repeat(2,minmax(0,1fr))}
 .ux-card{border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;background:color-mix(in srgb,var(--panel) 80%,transparent)}
-.ux-card:hover{border-color:color-mix(in srgb,var(--paper) 45%,var(--line))}
+.ux-card:hover,.ux-card:focus-within{border-color:color-mix(in srgb,var(--paper) 45%,var(--line))}
 .ux-demo-line{margin:0;color:var(--paper);font:700 14px/1.4 Arial,Helvetica,sans-serif}
 .ux-demo-line span{color:var(--acid)}
+.ux-demo-pair,.ux-demo-ex{margin:6px 0 0;color:var(--muted);font:400 13px/1.4 Arial,Helvetica,sans-serif}
+.ux-card .ux-reveal{margin:6px 0 0;color:var(--paper-muted);font:400 12px/1.35 Arial,Helvetica,sans-serif;max-height:0;overflow:hidden}
+.ux-card:hover .ux-reveal,.ux-card:focus-within .ux-reveal{max-height:3em}
 .ux-card h2{margin:0 0 6px;font:800 16px/1.2 Arial,Helvetica,sans-serif;color:var(--paper)}
 .ux-card p{margin:0;color:var(--muted);font:400 13px/1.4 Arial,Helvetica,sans-serif}
 .ux-card .tf-quiet,.ux-card .ux-more{padding:8px 0 0}
@@ -156,8 +159,8 @@ footer.listed-on img{display:block;height:32px;width:auto}
 :focus-visible{outline:2px solid var(--acid);outline-offset:2px}
 .tf-choice.primary:focus-visible,.primary:focus-visible,.tf-choice[aria-pressed=true]:focus-visible{outline-width:2px;outline-offset:2px;outline-color:color-mix(in srgb,var(--acid) 65%,var(--ink))}
 @keyframes tf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.tf-step{animation:none!important}}
-@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:7rem}#step-ask #run-demo,#step-ask #login{min-height:56px}#ask-starters{margin-bottom:12px}#step-ask .ask-doors,#step-ask .ask-links{display:grid;gap:2px;margin-top:12px;padding-top:12px}#step-ask .ask-doors .tf-quiet,#step-ask .ask-links .tf-quiet,#ask-starters .tf-quiet{padding:12px 0;font-size:15px}#step-gate>.ask-links{display:flex;flex-wrap:wrap;gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}.ux-triad,.ux-tech,.ux-foot-cols{grid-template-columns:1fr 1fr}.ux-triad{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.tf-step{animation:none!important}.ux-reveal{max-height:3em}}
+@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:7rem}#step-ask #run-demo,#step-ask #login{min-height:56px}#ask-starters{margin-bottom:12px}#step-ask .ask-doors,#step-ask .ask-links{display:grid;gap:2px;margin-top:12px;padding-top:12px}#step-ask .ask-doors .tf-quiet,#step-ask .ask-links .tf-quiet,#ask-starters .tf-quiet{padding:12px 0;font-size:15px}#step-gate>.ask-links{display:flex;flex-wrap:wrap;gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}.ux-triad,.ux-tech,.ux-foot-cols{grid-template-columns:1fr 1fr}.ux-triad{grid-template-columns:1fr}.ux-reveal{max-height:3em}}
 
 .honesty-panel{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
 .honesty-panel[hidden]{display:none!important}
@@ -211,25 +214,30 @@ footer.listed-on img{display:block;height:32px;width:auto}
 
   <div class="ux-band" id="ux-demo">
     <p class="ux-kicker">See.</p>
-    <p class="ux-demo-line" id="ux-demo-line"><span>Prompt</span> → <span>Receipt</span> · Hosted · Community</p>
+    <p class="ux-demo-line" id="ux-demo-line"><span>Prompt</span> → <span>Receipt</span></p>
+    <p class="ux-demo-pair" id="ux-demo-pair">Hosted vs Community</p>
+    <p class="ux-demo-ex" id="ux-demo-ex">Explain this. → Hosted.</p>
   </div>
 
   <div class="ux-band" id="ux-triad-band">
     <p class="ux-kicker">For.</p>
     <div class="ux-triad" id="ux-triad">
-      <article class="ux-card" id="ux-card-ask">
+      <article class="ux-card" id="ux-card-ask" title="Do. Type. Run.">
         <h2>Ask</h2>
         <p>Run work.</p>
+        <p class="ux-reveal">Do. Type. Run.</p>
         <a class="tf-quiet" href="#ask">Learn more</a>
       </article>
-      <article class="ux-card" id="ux-card-provide">
+      <article class="ux-card" id="ux-card-provide" title="Name the Mac. Kit. Doctor.">
         <h2>Provide</h2>
         <p>Enroll a Mac.</p>
+        <p class="ux-reveal">Name the Mac. Kit. Doctor.</p>
         <a class="tf-quiet" href="#provide">Learn more</a>
       </article>
-      <article class="ux-card" id="ux-card-agents">
+      <article class="ux-card" id="ux-card-agents" title="OpenAI-compatible base URL.">
         <h2>Agents</h2>
         <p>API · llms.txt · skill.</p>
+        <p class="ux-reveal">Change the base URL.</p>
         <div class="ux-more">
           <a class="tf-quiet" href="/compute/llms.txt">llms.txt</a>
           <a class="tf-quiet" href="/compute/api">API</a>
@@ -241,13 +249,15 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <div class="ux-band" id="ux-tech-band">
     <p class="ux-kicker">On.</p>
     <div class="ux-tech" id="ux-tech">
-      <article class="ux-card" id="ux-card-community">
+      <article class="ux-card" id="ux-card-community" title="Advertising only. Never invent a count.">
         <h2>Community Macs</h2>
         <p>Used when a Mac is advertising.</p>
+        <p class="ux-reveal">Read /compute/api/network.</p>
       </article>
-      <article class="ux-card" id="ux-card-hosted">
+      <article class="ux-card" id="ux-card-hosted" title="Still there when no Mac is online.">
         <h2>Hosted floor</h2>
         <p>Used when no Mac is online.</p>
+        <p class="ux-reveal">3 free / 10 min · then credits.</p>
       </article>
     </div>
   </div>
