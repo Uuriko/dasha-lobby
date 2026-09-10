@@ -67,6 +67,13 @@ function assertAxNext(body, { message, type, reason, status = 'action_required' 
   assert.equal(nomac.next.some(s => s.path === '/compute/api/network'), true);
   assert.equal(nomac.next.some(s => s.path === '/compute#provide'), true);
 
+  const inflight = openaiErrorBody('finish your current community request first', 409, 'invalid_request_error');
+  assertAxNext(inflight, { message: 'finish your current community request first', type: 'invalid_request_error', reason: 'job_in_flight' });
+  assert.equal(inflight.next[0].path, '/compute/api/jobs');
+
+  const limited = openaiErrorBody('community limit reached; try again shortly', 429, 'invalid_request_error');
+  assertAxNext(limited, { message: 'community limit reached; try again shortly', type: 'invalid_request_error', reason: 'rate_limited' });
+
   const miss = openaiErrorBody("The model 'nope' does not exist", 404, 'invalid_request_error');
   assertAxNext(miss, { message: "The model 'nope' does not exist", type: 'invalid_request_error', reason: 'unknown_model' });
 
@@ -194,6 +201,41 @@ assert.equal(noCredits.status, 402);
 const noCreditsBody = await noCredits.json();
 assertAxNext(noCreditsBody, { message: 'top up credits', type: 'invalid_request_error', reason: 'credits_required' });
 assert.equal([...rows.keys()].some(k => k.startsWith('compute:job:')), false, 'no ghost job');
+
+const token2 = 'dsk_errornext2xx.abcdefghijklmnopqrstuvwx';
+const id2 = 'key_errornext2xx';
+await storage.put(`compute:api-key:${id2}`, {
+  id: id2,
+  owner: 'x:errornext2',
+  name: 'Developer key',
+  prefix: token2.slice(0, 12),
+  tokenHash: createHash('sha256').update(token2).digest('hex'),
+  createdAt: Date.now(),
+  lastUsedAt: 0,
+});
+await storage.put('compute:credit-balance:x:errornext2', { owner: 'x:errornext2', cents: 1000, updatedAt: Date.now() });
+await storage.put('compute:provider:mac_errornext', {
+  id: 'mac_errornext',
+  owner: 'x:other',
+  name: 'Online Mac',
+  models: ['qwen3-8b'],
+  lastSeenAt: Date.now(),
+});
+const auth2 = { Authorization: `Bearer ${token2}`, 'Content-Type': 'application/json' };
+const stream = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/chat/completions', {
+  method: 'POST', headers: auth2, body: JSON.stringify({ model: 'qwen3-8b', messages: [{ role: 'user', content: 'hi' }], stream: true }),
+}));
+assert.equal(stream.status, 200);
+await stream.body?.cancel().catch(() => {});
+const inflightRes = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/chat/completions', {
+  method: 'POST', headers: auth2, body: chatBody,
+}));
+assert.equal(inflightRes.status, 409);
+assertAxNext(await inflightRes.json(), {
+  message: 'finish your current community request first',
+  type: 'invalid_request_error',
+  reason: 'job_in_flight',
+});
 
 assert.equal([...rows.keys()].some(k => /email|phone|ssn/i.test(k)), false, 'no people-data keys');
 console.log('dasha-compute-v1-error-next: PASS (openai + status/reason/hint/next; no plugin.jup.ag)');

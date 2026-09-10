@@ -364,6 +364,49 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
       ],
     };
   }
+  if (/Your Mac is offline/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'self_offline',
+      hint: 'Bring your Mac online, or drop route=self.',
+      next: [
+        { path: '/compute#provide' },
+        { path: '/compute/api/network' },
+      ],
+    };
+  }
+  if (/finish your current community request first/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'job_in_flight',
+      hint: 'Wait. Then GET /compute/api/jobs.',
+      next: [{ path: '/compute/api/jobs' }],
+    };
+  }
+  if (/community limit reached/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'rate_limited',
+      hint: 'Wait, then POST /compute/api/v1/chat/completions again.',
+      next: [{ path: '/compute/api/v1/chat/completions' }],
+    };
+  }
+  if (/unsupported model/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'unsupported_model',
+      hint: 'GET /compute/api/v1/models for live ids.',
+      next: [{ path: '/compute/api/v1/models' }],
+    };
+  }
+  if (/send 1–12 user\/assistant messages/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'invalid_messages',
+      hint: 'POST 1–12 user/assistant messages.',
+      next: [{ path: '/compute/api/v1/chat/completions' }],
+    };
+  }
   if (/does not exist/i.test(msg)) {
     return {
       status: 'action_required',
