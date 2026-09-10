@@ -279,12 +279,14 @@ import {
   settleChessRatings,
 } from './dasha-chess.mjs';
 import {
+  FORUM_TAGS,
   MAX_POSTS,
   MAX_REACTORS,
   addReply,
   assertWritable,
   deletePost,
   editPost,
+  filterThreadsByTag,
   lockThread,
   newThread,
   paginateIndex,
@@ -294,6 +296,7 @@ import {
   searchThreads,
   threadReactionCount,
   toggleReaction,
+  validateForumTag,
   validateReport,
   visibleReplies,
 } from './dasha-forum.mjs';
@@ -5289,6 +5292,30 @@ export function stripLobbyLeftoverForumPinACss(html) {
 }
 
 
+/** Quiet Discord-style topic chips. Lobby threads only — not Room, not people-data. */
+export const LOBBY_FORUM_TAG_STYLE = '<style id="dasha-forum-tags">.df-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin:.45rem 0 .2rem}.df-tag{display:inline-flex;align-items:center;min-height:32px;padding:0 .55rem;border:1px solid rgba(244,237,219,.28);background:transparent;color:var(--muted,#c8bea8);font:800 .72rem/1 Arial,Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer}.df-tag[aria-pressed="true"],.df-tag[aria-current="page"],.df-tag.is-on{border-color:var(--acid,#dfff00);color:var(--acid,#dfff00)}</style>';
+
+export function injectLobbyForumTagCss(html) {
+  const src = String(html || '');
+  if (/id=["']dasha-forum-tags["']/.test(src)) return src;
+  if (/<\/head>/i.test(src)) return src.replace(/<\/head>/i, `${LOBBY_FORUM_TAG_STYLE}</head>`);
+  return src + LOBBY_FORUM_TAG_STYLE;
+}
+
+export function forumTagFilterHtml(active) {
+  const checked = validateForumTag(active);
+  const on = checked.ok ? checked.tag : null;
+  const chip = (tag) => {
+    const name = tag || 'all';
+    const href = tag ? `/lobby?tag=${encodeURIComponent(tag)}#threads` : '/lobby#threads';
+    const pressed = (tag || null) === on;
+    const cls = pressed ? 'df-tag is-on' : 'df-tag';
+    const cur = pressed ? ' aria-current="page"' : '';
+    return `<a class="${cls}" href="${href}"${cur}>${escapeHtml(name)}</a>`;
+  };
+  return `<nav class="df-tags" aria-label="Thread tags">${chip('')}${FORUM_TAGS.map(chip).join('')}</nav>`;
+}
+
 export function rewriteLobbyForumChrome(html) {
   let out = String(html || '');
   out = out.replace(/<title>[^<]*<\/title>/i, `<title>${LOBBY_TITLE}</title>`);
@@ -5347,6 +5374,8 @@ export function rewriteLobbyForumChrome(html) {
   out = stripLobbyLeftoverForumPinACss(out);
   out = out.replace(/\s*·\s*<a href="https:\/\/www\.getdasha\.com\/chess">Chess<\/a>/g, '');
   out = out.replace(/\s*·\s*<a href="\/chess">Chess<\/a>/g, '');
+  /* Quiet forum-style topic chips on /lobby threads. Fixed 5 tags. No Room merge. */
+  out = injectLobbyForumTagCss(out);
   return out;
 }
 
@@ -6831,7 +6860,9 @@ export function forumThreadPageHtml(html, thread, posts) {
   const title = escapeHtml(`${thread.title} — $dasha Lobby`);
   const description = escapeHtml(String(opener.text).replace(/\s+/g, ' ').trim().slice(0, 160));
   const imageUrl = `https://www.getdasha.com/lobby/card/${encodeURIComponent(id)}.png`;
-  const firstPaint = `<div class="df-tools"><a class="df-back" href="/lobby?pane=threads#threads">← All threads</a></div><h2 class="df-title">${escapeHtml(thread.title)}</h2><div class="df-posts">${list.map(renderPost).join('')}</div>`;
+  const topic = validateForumTag(thread.tag);
+  const tagChip = topic.ok && topic.tag ? `<span class="df-tag" aria-label="Tag ${escapeHtml(topic.tag)}">${escapeHtml(topic.tag)}</span>` : '';
+  const firstPaint = `<div class="df-tools"><a class="df-back" href="/lobby?pane=threads#threads">← All threads</a></div><h2 class="df-title">${escapeHtml(thread.title)}</h2>${tagChip}<div class="df-posts">${list.map(renderPost).join('')}</div>`;
   const json = JSON.stringify(data).replace(/</g, '\\u003c');
   return String(html)
     .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
@@ -6849,13 +6880,15 @@ export function forumThreadPageHtml(html, thread, posts) {
     .replace('class="lp-hold" data-pane="now"', 'class="lp-hold" data-pane="threads"')
     .replace('id="tab-now" role="tab" aria-controls="dasha-lobby" aria-selected="true"', 'id="tab-now" role="tab" aria-controls="dasha-lobby" aria-selected="false"')
     .replace('id="tab-threads" role="tab" aria-controls="dasha-forum" aria-selected="false"', 'id="tab-threads" role="tab" aria-controls="dasha-forum" aria-selected="true"')
-    .replace(/<div id="dasha-forum"([^>]*)><\/div>/, `<div id="dasha-forum"$1>${firstPaint}</div>`);
+    .replace(/<div id="dasha-forum"([^>]*)>(?:<p class="forum-empty">None yet\.<\/p>)?<\/div>/, `<div id="dasha-forum"$1>${firstPaint}</div>`);
 }
 
 /** Crawlable first page for the existing Lobby forum pane; the client takes over after load. */
-export function forumIndexPageHtml(html, threads) {
-  const list = (Array.isArray(threads) ? threads : [])
-    .filter(thread => /^[A-Za-z0-9_-]{1,40}$/.test(String(thread?.id || '')) && thread?.title)
+export function forumIndexPageHtml(html, threads, { tag } = {}) {
+  const checked = validateForumTag(tag);
+  const active = checked.ok ? checked.tag : null;
+  const list = filterThreadsByTag((Array.isArray(threads) ? threads : [])
+    .filter(thread => /^[A-Za-z0-9_-]{1,40}$/.test(String(thread?.id || '')) && thread?.title), active)
     .slice(0, 50);
   const rows = list.map(thread => {
     const pageUrl = `https://www.getdasha.com/lobby?t=${encodeURIComponent(thread.id)}`;
@@ -6865,10 +6898,16 @@ export function forumIndexPageHtml(html, threads) {
     const date = isoDate(thread.lastTs ?? thread.ts);
     const holder = thread.holder ? '<span class="lobby-holder-badge" title="Holder proof was current when posted">$dasha holder</span>' : '';
     const snippet = thread.snippet ? `<p class="df-snippet">${escapeHtml(String(thread.snippet).slice(0, 180))}</p>` : '';
-    return `<article class="df-row"><div class="df-row-main"><a class="df-open" href="${pageUrl}">${escapeHtml(thread.title)}</a><p class="df-meta">${xAuthorHtml(thread.handle, thread.simpUrl)} · ${replies} ${replies === 1 ? 'reply' : 'replies'}${reactions}${date ? ` · <time datetime="${date}">${date.slice(0, 10)}</time>` : ''}${holder}</p>${snippet}</div></article>`;
+    const topic = validateForumTag(thread.tag);
+    const tagChip = topic.ok && topic.tag ? `<span class="df-tag" aria-label="Tag ${escapeHtml(topic.tag)}">${escapeHtml(topic.tag)}</span>` : '';
+    return `<article class="df-row"><div class="df-row-main"><a class="df-open" href="${pageUrl}">${escapeHtml(thread.title)}</a>${tagChip}<p class="df-meta">${xAuthorHtml(thread.handle, thread.simpUrl)} · ${replies} ${replies === 1 ? 'reply' : 'replies'}${reactions}${date ? ` · <time datetime="${date}">${date.slice(0, 10)}</time>` : ''}${holder}</p>${snippet}</div></article>`;
   }).join('');
-  const firstPaint = `<div class="df-head"><h2 class="df-title">Lobby</h2><p class="df-note">Official room. Read freely. Link X in the lobby to post. · <a class="df-feed" href="https://www.getdasha.com/lobby/feed.xml" type="application/rss+xml" aria-label="Subscribe to public forum threads with RSS">RSS</a></p></div>${rows ? `<div class="df-list">${rows}</div>` : '<p class="df-empty">Start the first thread: meme, question, or build idea.</p>'}`;
-  return String(html).replace(/<div id="dasha-forum"([^>]*)><\/div>/, `<div id="dasha-forum"$1>${firstPaint}</div>`);
+  const filters = forumTagFilterHtml(active);
+  const empty = active
+    ? '<p class="df-empty">Nothing matches that tag.</p>'
+    : '<p class="df-empty">Start the first thread: meme, question, or build idea.</p>';
+  const firstPaint = `<div class="df-head"><h2 class="df-title">Lobby</h2><p class="df-note">Official room. Read freely. Link X in the lobby to post. · <a class="df-feed" href="https://www.getdasha.com/lobby/feed.xml" type="application/rss+xml" aria-label="Subscribe to public forum threads with RSS">RSS</a></p></div>${filters}${rows ? `<div class="df-list">${rows}</div>` : empty}`;
+  return String(html).replace(/<div id="dasha-forum"([^>]*)>(?:<p class="forum-empty">None yet\.<\/p>)?<\/div>/, `<div id="dasha-forum"$1>${firstPaint}</div>`);
 }
 
 /** RSS 2.0 over the same bounded public index used by first paint and the sitemap. */
@@ -9232,7 +9271,11 @@ export class DashaLobby {
       const evicted = this.forumPrune(this.forumIndex, now);
       if (evicted.length) await this.persistForumIndex(evicted);
       const q = url.searchParams.get('q') || '';
-      const list = q ? searchThreads(this.forumIndex, q) : this.forumIndex;
+      const tagParam = url.searchParams.get('tag') || '';
+      const topic = validateForumTag(tagParam);
+      if (tagParam && !topic.ok) return json({ error: topic.error }, 400, allowedOrigin, cred);
+      const found = q ? searchThreads(this.forumIndex, q) : this.forumIndex;
+      const list = topic.tag ? filterThreadsByTag(found, topic.tag) : found;
       const page = paginateIndex(list, {
         cursor: url.searchParams.get('cursor') || '',
         limit: url.searchParams.get('limit') || 50,
@@ -9251,7 +9294,7 @@ export class DashaLobby {
       if (!rate.ok) return json({ error: 'posting too fast', waitMs: rate.waitMs }, 429, allowedOrigin, cred);
       const input = await requestJson(request);
       const id = `t${now.toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-      const created = newThread({ title: input?.title, text: input?.text, handle, avatar, holder, now, id });
+      const created = newThread({ title: input?.title, text: input?.text, tag: input?.tag, handle, avatar, holder, now, id });
       if (!created.ok) return json({ error: created.error }, 400, allowedOrigin, cred);
       const evicted = this.forumPrune([created.summary, ...this.forumIndex], now);
       await this.state.storage.put(this.forumKey(id), created.posts);
@@ -10649,7 +10692,7 @@ async function productEdge(request, url, env) {
         html = forumThreadPageHtml(html, data.thread, data.posts);
       } catch {}
     } else if (request.method === 'GET') {
-      try { html = forumIndexPageHtml(html, await publicForumThreads(env)); } catch {}
+      try { html = forumIndexPageHtml(html, await publicForumThreads(env), { tag: url.searchParams.get('tag') || '' }); } catch {}
     }
     try { html = applyDigestTape(html, (await publicDigest(env)).items); } catch {}
     return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(injectXConnectPrompt(polishServedSlim(html))), {
