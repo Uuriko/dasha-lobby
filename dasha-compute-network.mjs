@@ -79,6 +79,7 @@ import {
   makeHead,
 } from './dasha-compute-heads.mjs';
 import { X402_BILLING_DOCS, x402BillingDocsLine } from './dasha-compute-x402.mjs';
+import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
 
 export { HOSTED_ASK_PRICE_CENTS };
@@ -283,6 +284,8 @@ function computeApiRootBody(env) {
     limit: '3 free / 10 min · then credits',
     session_chat: ORIGIN_REQUIRED_HINT,
     usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)',
+    guest_keys: '/compute/api/guest-keys',
+    guest_key_mint: 'deferred',
     billing: {
       chat_completions: "Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card",
       keys: `Create-time spend cap default $${API_KEY_LIMIT_DEFAULT_CENTS / 100}/month · 402 on exceed · see /caps`,
@@ -327,10 +330,12 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
     return {
       status: 'action_required',
       reason: 'invalid_api_key',
-      hint: 'Mint a key at /compute#build. See /compute/llms.txt.',
+      hint: 'Mint a key at /compute#build. See /compute/llms.txt and /compute/skill.md.',
       next: [
         { path: '/compute#build' },
         { path: '/compute/llms.txt' },
+        { path: '/compute/skill.md' },
+        { path: '/compute/api/guest-keys' },
         { command: `curl -sS -H 'Authorization: Bearer $DASHA_KEY' ${V1_PUBLIC}/chat/completions` },
       ],
     };
@@ -1092,6 +1097,8 @@ export class ComputeNetwork {
 
   async fetch(request, allowedOrigin) {
     const path = new URL(request.url).pathname, now = Date.now(), credentials = Boolean(allowedOrigin);
+    const guestKey = computeGuestKeyResponse(request);
+    if (guestKey) return guestKey;
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const res = json(computeApiRootBody(this.env), 200, allowedOrigin || '*', credentials);
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
@@ -2625,6 +2632,8 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 
 export async function computeApi(request, env, allowedOrigin) {
   const path = new URL(request.url).pathname, credentials = Boolean(allowedOrigin);
+  const guestKey = computeGuestKeyResponse(request);
+  if (guestKey) return guestKey;
   if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
     const res = json(computeApiRootBody(env), 200, allowedOrigin || '*', credentials);
     return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
