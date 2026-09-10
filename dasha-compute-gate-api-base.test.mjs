@@ -27,7 +27,7 @@ function gateBlock(html) {
 function assertGateApi(html, label) {
   const gate = gateBlock(html);
   assert.match(html, /<h1 class=["']tf-q["']>Start\.<\/h1>/, `${label} first paint Start.`);
-  assert.match(gate, /id=["']pick-ask["'][^>]*class=["']tf-choice primary["'][^>]*>Ask</, `${label} Ask stays the one primary`);
+  assert.match(gate, /class=["']tf-choice primary["'][^>]*id=["']pick-ask["'][^>]*>Ask</, `${label} Ask stays the one primary`);
   assert.match(gate, /id=["']pick-pay["'][^>]*>Pay</, `${label} Pay stays`);
   assert.match(gate, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits stays`);
   assert.match(gate, /id=["']pick-api["'][^>]*>API</, `${label} quiet API door`);
