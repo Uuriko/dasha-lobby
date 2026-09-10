@@ -43,6 +43,15 @@ assert.equal(emptyBody.total_jobs, 0);
 assert.equal(emptyBody.payout_mode, 'pending');
 assert.deepEqual(emptyBody.providers, []);
 
+const earlyWallet = '3KNdL8kYP6ynpspjBgASfyKv2G5exQeQPStyTyS8eaqN';
+const earlyPref = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/provider/payout-pref', {
+  method: 'POST', headers, body: JSON.stringify({ method: 'usdc', wallet: earlyWallet }),
+}), origin);
+assert.equal(earlyPref.status, 200, 'payout-pref before Mac register');
+const earlyPrefBody = await earlyPref.json();
+assert.equal(earlyPrefBody.wallet, earlyWallet);
+assert.equal(earlyPrefBody.method, 'usdc');
+
 // Register provider via storage (skip full register rate/body)
 await storage.put('compute:provider:mac_earn1', {
   id: 'mac_earn1', owner: 'x:42', name: 'Earn Mac', allowedModels: ['qwen3-8b'], models: ['qwen3-8b'],

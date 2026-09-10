@@ -9939,8 +9939,43 @@ export function bountiesHtml(feed) {
   return htmlPage('Bounties — $dasha', `<h1>Bounties</h1>
 <p>USDC on Solana. We don’t hold it.</p>
 <p><a href="https://github.com/Uuriko/dasha-desk/contribute" target="_blank" rel="noopener noreferrer">Pick a good first issue ↗</a> · <a id="bb-x" href="/oauth/x/start?continue=1">Connect X</a></p>
+<div id="bb-wallet" hidden>
+<style>#bb-wallet label{display:block;margin:.75rem 0 .35rem}#bb-wallet input{display:block;width:100%;box-sizing:border-box;padding:.55rem .6rem;background:#09080b;color:#f4eddb;border:1px solid #f4eddb}#bb-wallet button{margin:.45rem 0 0;padding:0;border:0;background:none;color:#dfff00;font:inherit;cursor:pointer}#bb-wallet-fine{margin:.35rem 0 0}</style>
+<label>Payout wallet<input id="bb-wallet-input" type="text" maxlength="64" autocomplete="off" spellcheck="false" aria-label="Solana wallet" placeholder="Solana address"></label>
+<button type="button" id="bb-wallet-save">Save</button>
+<p id="bb-wallet-fine">On file · USDC lands here.</p>
+</div>
 <section id="bb-app" aria-label="Funded bounties">${inventory}</section>
-<p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/how-to-buy">How to buy</a> · <a href="https://www.getdasha.com/privacy">Privacy</a></p>`, { path: '/bounties', description: 'USDC on Solana. We don’t hold it.' });
+<p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/how-to-buy">How to buy</a> · <a href="https://www.getdasha.com/privacy">Privacy</a></p>
+<script>
+(function(){
+  var box=document.getElementById('bb-wallet');
+  var input=document.getElementById('bb-wallet-input');
+  var save=document.getElementById('bb-wallet-save');
+  var fine=document.getElementById('bb-wallet-fine');
+  if(!box||!input||!save)return;
+  var ok=/^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  function api(path,opt){
+    return fetch(path,Object.assign({credentials:'include',headers:{'Content-Type':'application/json'}},opt||{})).then(function(r){
+      return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'fail');return d});
+    });
+  }
+  api('/auth/status').then(function(s){
+    if(!s||!s.loggedIn){box.hidden=true;return}
+    box.hidden=false;
+    return api('/compute/api/provider/earnings').then(function(e){
+      if(e&&e.pref&&e.pref.wallet){input.value=e.pref.wallet;if(fine)fine.textContent='On file · USDC lands here.'}
+    }).catch(function(){});
+  }).catch(function(){box.hidden=true});
+  save.addEventListener('click',function(){
+    var w=String(input.value||'').trim();
+    if(!ok.test(w)){if(fine)fine.textContent='Need a Solana address.';return}
+    api('/compute/api/provider/payout-pref',{method:'POST',body:JSON.stringify({method:'usdc',wallet:w})}).then(function(){
+      if(fine)fine.textContent='On file · USDC lands here.';
+    }).catch(function(e){if(fine)fine.textContent=e.message||'Save failed'});
+  });
+})();
+</script>`, { path: '/bounties', description: 'USDC on Solana. We don’t hold it.' });
 }
 
 async function loadBountiesFeed() {
