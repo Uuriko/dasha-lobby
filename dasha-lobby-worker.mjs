@@ -129,6 +129,7 @@ import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import { isComputeOcmPath, proxyComputeOcm } from './dasha-compute-ocm-proxy.mjs';
 import {
+  COMPUTE_FIRST_CALL_TXT,
   COMPUTE_LLMS_DESCRIBEDBY,
   attachComputeLlmsHtmlLinks,
   computeAgentAeoResponse,
@@ -450,6 +451,7 @@ Live benchmarks: https://www.getdasha.com/benchmarks
 OpenAI-compatible base URL: https://lobby.getdasha.com/compute/api/v1
 First path: Sign in, create a key, change the base URL.
 
+${COMPUTE_FIRST_CALL_TXT}
 ## Compute buyer FAQ
 
 How do I start? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1

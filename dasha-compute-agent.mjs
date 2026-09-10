@@ -12,6 +12,27 @@ export const COMPUTE_LLMS_URL = 'https://www.getdasha.com/compute/llms.txt';
 export const COMPUTE_AGENT_JSON_URL = 'https://www.getdasha.com/.well-known/agent.json';
 export const COMPUTE_LLMS_DESCRIBEDBY = '</compute/llms.txt>; rel="describedby"';
 
+/** Copy-paste first call. Shared by /compute/llms.txt and site /llms-full.txt. */
+export const COMPUTE_FIRST_CALL_TXT = `## First call
+
+base ${COMPUTE_API_BASE}
+www ${COMPUTE_API_BASE_WWW}
+
+curl -sS ${COMPUTE_HEALTHZ}
+curl -sS ${COMPUTE_NETWORK}
+curl -sS ${COMPUTE_API_BASE}/models
+
+curl -sS ${COMPUTE_API_BASE}/chat/completions \\
+  -H "Authorization: Bearer $DASHA_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"gemma3-27b","messages":[{"role":"user","content":"hi"}]}'
+
+from openai import OpenAI
+OpenAI(base_url="${COMPUTE_API_BASE}", api_key=os.environ["DASHA_API_KEY"])
+
+new OpenAI({ baseURL: "${COMPUTE_API_BASE}", apiKey: process.env.DASHA_API_KEY })
+`;
+
 export const COMPUTE_LLMS_TXT = `# Dasha Compute
 
 Mac Ask / Provide / OpenAI-compatible API. A run factory, not a ledger.
@@ -25,6 +46,7 @@ no key needed for healthz + network + models; key needed for chat
 
 First path: Sign in, create a key, change the base URL.
 
+${COMPUTE_FIRST_CALL_TXT}
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
 

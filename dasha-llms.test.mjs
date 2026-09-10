@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import edgeWorker from './dasha-lobby-worker.mjs';
 import { ROBOTS_TXT, SITEMAP_XML } from './dasha-lobby-static-gen.mjs';
+import { COMPUTE_FIRST_CALL_TXT } from './dasha-compute-agent.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const worker = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
@@ -81,6 +82,7 @@ assert.match(full, /Use a Mac:/, 'llms-full names Use a Mac');
 assert.match(full, /Join a Mac:/, 'llms-full names Join a Mac');
 assert.match(full, /OpenAI-compatible base URL:/, 'llms-full names OpenAI-compatible base URL');
 assert.match(full, /First path: Sign in, create a key, change the base URL\./, 'llms-full first path');
+assert.match(worker, /\$\{COMPUTE_FIRST_CALL_TXT\}/, 'llms-full interpolates shared First call');
 assert.ok(full.includes('https://www.getdasha.com/compute/llms.txt'), 'llms-full points at Compute packet');
 assert.ok(full.includes('https://www.getdasha.com/.well-known/agent.json'), 'llms-full points at agent.json');
 assert.match(full, /^## Compute buyer FAQ$/m, 'llms-full Compute buyer FAQ');
@@ -236,6 +238,10 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.doesNotMatch(fullBody, /plugin\.jup\.ag/);
   assert.doesNotMatch(fullBody, /t\.me/);
   assert.match(fullBody, /^What does \$0\.05\/job mean\? Provider Earn\. Not the buyer price\.$/m, `${origin}/llms-full.txt FAQ earn`);
+  assert.equal(fullBody.includes(COMPUTE_FIRST_CALL_TXT), true, `${origin}/llms-full.txt First call`);
+  assert.match(fullBody, /^## First call$/m, `${origin}/llms-full.txt First call heading`);
+  assert.match(fullBody, /Authorization: Bearer \$DASHA_API_KEY/, `${origin}/llms-full.txt keyed curl`);
+  assert.match(fullBody, /"model":"gemma3-27b"/, `${origin}/llms-full.txt first-call model`);
   assert.doesNotMatch(fullBody.split('## Compute buyer FAQ')[0], /\$0\.05\/job/, `${origin}/llms-full.txt buyer lines have no Earn rate`);
   assert.doesNotMatch(fullBody, /Show HN/);
 
