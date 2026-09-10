@@ -915,6 +915,7 @@ const LISTINGS_HTML = `<!doctype html>
       <div class="row"><span title="Raydium pool">Pair</span><code id="pair">9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code><button type="button" class="copy" data-copy="pair">Copy</button></div>
       <p>Status: <span class="status">Listed</span> <span class="quiet">(on getdasha)</span></p>
       <p class="cta"><a class="primary" href="/how-to-buy">Buy $dasha →</a><a href="/which">Which</a><a href="/bag">Bag</a><a href="/lobby">Lobby</a></p>
+      <p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
     </article>
     <h2>Buy &amp; charts</h2>
     <div class="venues">

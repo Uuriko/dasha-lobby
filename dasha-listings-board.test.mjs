@@ -128,6 +128,7 @@ assert.doesNotMatch(html, /COIN3/);
 assert.match(html, /<h2 id="feat-name">\$dasha \/ dash_eats<\/h2>/);
 assert.match(html, /Status: <span class="status">Listed<\/span>/);
 assert.match(html, /href="\/how-to-buy">Buy \$dasha →/);
+assert.match(html, /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/);
 assert.doesNotMatch(html, /plugin\.jup\.ag/);
 
 const quiet = renderListingsHtml([], '');
