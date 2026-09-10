@@ -3375,6 +3375,9 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // while Provide/Night/Sponsor already 308→/compute (Start. Do. Provide. Pay. Credits.).
   "/compute/ask",
   "/compute/ask/",
+  // Compact FAQ lives on /compute#faq. Leftover /compute/faq (+slash) 308→/compute.
+  "/compute/faq",
+  "/compute/faq/",
   "/compute/pay",
   "/compute/pay/",
   "/compute/credits",

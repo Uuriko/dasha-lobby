@@ -47,7 +47,7 @@ function assertAskEasy(html, label) {
   assert.ok(html.includes("#step-ask .primary:disabled,#step-ask .primary:disabled:hover{background:transparent;border-color:var(--line);color:var(--paper-muted);opacity:1}"), `${label} disabled readable`);
   assert.ok(html.includes(".ask-doors{display:grid"), `${label} Ask doors stack`);
   assert.ok(html.includes("#step-ask .ask-door-sep{display:none}"), `${label} no tiny · row`);
-  assert.match(html, /#ask-starters\{[^}]*display:grid/, `${label} starters stack`);
+  assert.match(html, /#ask-starters\{[^}]*display:flex;flex-wrap:wrap/, `${label} starter chips wrap`);
   assert.match(html, /function threadSpeaker\(/, `${label} threadSpeaker`);
   assert.match(html, /if\(route==='hosted'\)return 'Hosted'/, `${label} Hosted speaker`);
   assert.match(html, /return model\?\('Mac · '\+model\):'Mac'/, `${label} Community speaker names the Mac`);

@@ -36,6 +36,9 @@ function assertLess(html, label) {
   assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code chip`);
   assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug chip`);
   assert.match(html, /id=["']ask-starter-3["'][^>]*>Do the thing</, `${label} Do the thing chip`);
+  assert.match(html, /id=["']ask-starter-4["'][^>]*>Explain this</, `${label} Explain this chip`);
+  assert.match(html, /id=["']ask-starter-5["'][^>]*>Summarize</, `${label} Summarize chip`);
+  assert.match(html, /id=["']ask-starter-6["'][^>]*>Review a PR</, `${label} Review a PR chip`);
   assert.doesNotMatch(html, /Welcome note/, `${label} no welcome-note toy`);
   assert.match(html, /id=["']pick-pay["'][^>]*title=["']Top up or sponsor["']/, `${label} Pay = top-up/sponsor`);
   assert.match(html, /id=["']pick-credits["'][^>]*title=["']Use prepaid["']/, `${label} Credits = prepaid`);
