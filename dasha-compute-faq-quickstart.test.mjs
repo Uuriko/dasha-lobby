@@ -19,7 +19,7 @@ assert.equal(disk, COMPUTE_PAGE_HTML, 'embed matches dasha-compute.html');
 const BASE = 'https://lobby.getdasha.com/compute/api/v1';
 
 const BUYER_LINES = [
-  'How do I ask? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1',
+  'How do I start? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1',
   'What is live? The Mac that is advertising. Read /compute/api/network.',
   'What if no Mac is online? Hosted is still there.',
   'Community spends credits. Your Mac is free.',
@@ -80,7 +80,7 @@ function assertFaqQuickstart(html, label) {
   assert.doesNotMatch(ask, /id=["']buyer-faq["']/, `${label} FAQ not a new Ask wall`);
   assert.doesNotMatch(gate, /buyer-faq|provider-faq/, `${label} FAQ off gate first paint`);
 
-  assert.match(faq, /id=["']buyer-faq-ask["'][^>]*>How do I ask\? Sign in\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1</, `${label} buyer how`);
+  assert.match(faq, /id=["']buyer-faq-ask["'][^>]*>How do I start\? Sign in\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1</, `${label} buyer how`);
   assert.match(faq, /id=["']buyer-faq-live["'][^>]*>What is live\? The Mac that is advertising\. Read \/compute\/api\/network\.</, `${label} buyer live`);
   assert.match(faq, /id=["']buyer-faq-hosted["'][^>]*>What if no Mac is online\? Hosted is still there\.</, `${label} buyer hosted`);
   assert.match(faq, /id=["']buyer-faq-credits["'][^>]*>Community spends credits\. Your Mac is free\.</, `${label} buyer credits`);

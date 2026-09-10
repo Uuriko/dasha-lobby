@@ -43,7 +43,7 @@ const contribute = worker.match(/const CONTRIBUTE_HTML = htmlPage\([\s\S]*?\);\n
 assert.ok(contribute, 'CONTRIBUTE_HTML');
 assert.match(
   contribute[0],
-  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/benchmarks">Benchmarks<\/a><\/p>/,
+  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Use a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/benchmarks">Benchmarks<\/a><\/p>/,
   'contribute quiet Benchmarks beside Ask/Provide',
 );
 assertQuietBenchmarks(contribute[0], 'CONTRIBUTE_HTML');

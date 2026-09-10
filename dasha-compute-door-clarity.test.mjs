@@ -23,9 +23,9 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.equal(disk, COMPUTE_PAGE_HTML, 'embed matches dasha-compute.html');
 
 function assertDoorClarity(html, label) {
-  assert.match(html, /class=["']tf-door-hint["']>Run a prompt\.<\/p>/, `${label} Ask hint`);
+  assert.match(html, /class=["']tf-door-hint["']>code · text · whatever<\/p>/, `${label} Do hint`);
   assert.match(html, /class=["']tf-door-hint["']>Join a Mac\.<\/p>/, `${label} Provide hint`);
-  assert.match(html, /id=["']pick-ask["'][^>]*>Ask</, `${label} Ask button stays Ask`);
+  assert.match(html, /id=["']pick-ask["'][^>]*>Do</, `${label} Do button is Do`);
   assert.match(html, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide button stays Provide`);
   assert.match(html, /id=["']pick-pay["'][^>]*>Pay</, `${label} Pay button stays Pay`);
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits button stays Credits`);

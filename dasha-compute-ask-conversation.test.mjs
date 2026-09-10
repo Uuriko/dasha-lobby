@@ -24,8 +24,9 @@ function assertAskConversation(html, label) {
   assert.match(html, /threadRoute/, `${label} threadRoute`);
   assert.match(html, /if\(stayAskChat\)showTf\(['"]ask['"]\)/, `${label} success stays on Ask`);
   assert.match(html, /id=["']ask-thread["']/, `${label} ask-thread`);
-  assert.match(html, /<h1 class=["']tf-q["']>Ask\.<\/h1>/, `${label} Ask H1`);
-  assert.match(html, /placeholder=["']Write a function\. Fix a bug\. Do the thing\.["']/, `${label} code-range placeholder`);
+  assert.match(html, /<h1 class=["']tf-q["']>Do\.<\/h1>/, `${label} Do H1`);
+  assert.match(html, /placeholder=["']Message Dasha["']/, `${label} Message Dasha placeholder`);
+  assert.match(html, /id=["']ask-range["'][^>]*>code · text · whatever</, `${label} quiet range`);
   assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code`);
   assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug`);
   assert.match(html, /id=["']ask-starter-3["'][^>]*>Do the thing</, `${label} Do the thing`);
@@ -65,8 +66,19 @@ if (puppeteer && existsSync(chrome)) {
         startersHidden: document.getElementById("ask-starters")?.hidden === true,
       };
     });
-    assert.equal(firstPaint.h1, "Ask.", "first-paint H1 Ask.");
-    assert.equal(firstPaint.placeholder, "Write a function. Fix a bug. Do the thing.");
+    assert.equal(firstPaint.h1, "Do.", "first-paint H1 Do.");
+    assert.equal(firstPaint.placeholder, "Message Dasha");
+    const faces = await page.evaluate(() => {
+      $("engine").value = "community";
+      paintAskPlaceholder();
+      const community = document.getElementById("prompt")?.getAttribute("placeholder") || "";
+      $("engine").value = "hosted";
+      paintAskPlaceholder();
+      const hosted = document.getElementById("prompt")?.getAttribute("placeholder") || "";
+      return { community, hosted };
+    });
+    assert.equal(faces.community, "Message a Mac");
+    assert.equal(faces.hosted, "Message Dasha");
     assert.equal(firstPaint.starter, "Write code");
     assert.equal(firstPaint.threadHidden, true, "thread hidden before reply");
     assert.equal(firstPaint.startersHidden, false, "starters visible first paint");

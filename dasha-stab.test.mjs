@@ -193,7 +193,7 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   const body = await compute.text();
   assert.match(body, /Dasha Compute/);
   assert.match(body, />Start\.</);
-  assert.match(body, />Ask</);
+  assert.match(body, />Do</);
   assert.match(body, />Provide</);
   assert.match(body, /provide-prefer-mlx/);
   assert.match(body, /href=["']\/privacy["']/);

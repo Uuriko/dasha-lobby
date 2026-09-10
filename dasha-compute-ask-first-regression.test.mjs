@@ -27,7 +27,7 @@ function assertAskFirstCore(html, label) {
   assert.match(html, /id=["']step-gate["'][^>]*data-tf=["']gate["'](?![^>]*hidden)/, `${label} gate not hidden`);
   assert.match(html, /id=["']step-ask["'][^>]*hidden/, `${label} ask hidden first paint`);
   assert.match(html, /else showTf\(['"]gate['"]\)/, `${label} bootHash → gate`);
-  assert.match(html, /id=["']pick-ask["'][^>]*>Ask</, `${label} pick-ask`);
+  assert.match(html, String(label).startsWith("live") ? /id=["']pick-ask["'][^>]*>(Ask|Do)</ : /id=["']pick-ask["'][^>]*>Do</, `${label} pick-ask`);
   assert.match(html, /id=["']pick-pay["'][^>]*>Pay</, `${label} pick-pay`);
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} pick-credits`);
   assert.doesNotMatch(html, /id=["']ask-example["']/, `${label} no ask-example`);
@@ -218,7 +218,7 @@ function assertAskStarters(html, label) {
   assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code`);
   assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug`);
   assert.match(html, /id=["']ask-starter-3["'][^>]*>Do the thing</, `${label} Do the thing`);
-  assert.match(html, /placeholder=["']Write a function\. Fix a bug\. Do the thing\.["']/, `${label} Ask placeholder`);
+  assert.match(html, String(label).startsWith("live") ? /placeholder=["'](Message Dasha|Write a function\. Fix a bug\. Do the thing\.)["']/ : /placeholder=["']Message Dasha["']/, `${label} Message Dasha placeholder`);
   assert.doesNotMatch(html, /welcome for a new teammate/, `${label} no welcome-note prompt`);
   assert.match(html, /querySelectorAll\(['"]#ask-starters \[data-prompt\]['"]\)/, `${label} starter wiring`);
 }
@@ -279,10 +279,10 @@ assertCreditsAuthGate(COMPUTE_PAGE_HTML, "embed");
 assertGateYou(COMPUTE_PAGE_HTML, "embed");
 
 // USE.md / USE_SKILL Ask-first lockstep
-assert.match(useDisk, /Ask \(Hosted\)|Ask → Hosted Ask|Ask → Community/, "USE.md Ask door");
+assert.match(useDisk, /Do → Community|Do → Hosted|Do defaults to Community/, "USE.md Do door");
 assert.match(useDisk, /quiet Provide \/ Marketplace \/ Host/, "USE.md quiet doors");
 assert.match(useDisk, /cold boot → Start\./, "USE.md cold boot gate-first");
-assert.match(useDisk, /Ask \/ Provide \/ Pay \/ Credits/, "USE.md gate choices");
+assert.match(useDisk, /Do \/ Provide \/ Pay \/ Credits/, "USE.md gate choices");
 assert.match(useDisk, /Pay → Top up|Pay → Pay\./, "USE.md Pay door");
 assert.match(useDisk, /Credits → Use credits|Credits → Credits\./, "USE.md Credits door");
 assert.doesNotMatch(useDisk, /pick Ask \(or Pay \/ Credits\)\. Then Ask/, "USE.md Pay/Credits not straight Ask");
@@ -313,7 +313,7 @@ assertCreditsAuthGate(served, "worker.fetch");
 const lobby = readFileSync(join(root, "dasha-lobby-worker.mjs"), "utf8");
 assert.match(
   lobby,
-  /Compute: Start\. \(Ask \/ Provide \/ Pay \/ Credits\)\. Pay → Top up USDC\/\$dasha \/ Sponsor\b/,
+  /Compute: Start\. \(Do \/ Provide \/ Pay \/ Credits\)\. Pay → Top up USDC\/\$dasha \/ Sponsor\b/,
   "llms-full gate-first Compute line in worker"
 );
 
@@ -369,10 +369,10 @@ await live("/compute", {
 await live("/compute/skill/use.md", {
   expectEdge: "compute-skill-use",
   expectBody(text) {
-    assert.match(text, /Ask \(Hosted\)|Ask → Hosted Ask|Ask → Community/);
+    assert.match(text, /Ask \(Hosted\)|Ask → Hosted Ask|Ask → Community|Do → Community|Do → Hosted|Do defaults to Community/);
     assert.match(text, /quiet Provide \/ Marketplace \/ Host/);
     if (/Start\./.test(text)) {
-      assert.match(text, /Ask \/ Provide \/ Pay \/ Credits/);
+      assert.match(text, /Ask \/ Provide \/ Pay \/ Credits|Do \/ Provide \/ Pay \/ Credits/);
       assert.doesNotMatch(text, /say something strange/);
       if (/Pay →/.test(text)) assert.match(text, /Pay → Top up|Pay → Pay\./);
     }

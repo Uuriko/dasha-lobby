@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** /bag is the health page: mint-dead, freeze-dead, burned Raydium LP. Quiet Compute Ask a Mac / Join a Mac doors. Listed on llms. */
+/** /bag is the health page: mint-dead, freeze-dead, burned Raydium LP. Quiet Compute Use a Mac / Join a Mac doors. Listed on llms. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -38,7 +38,7 @@ assert.match(bag, /Burned Raydium LP/);
 assert.match(bag, /jup\.ag\/tokens\/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/);
 assert.match(
   bag,
-  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
+  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Use a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
   'quiet Compute Ask/Provide doors',
 );
 {
@@ -105,7 +105,7 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.match(body, /Freeze-dead/);
   assert.match(body, /Burned Raydium LP/);
   assert.match(body, /jup\.ag\/tokens\/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/);
-  assert.match(body, /href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac/, `${origin} Ask a Mac`);
+  assert.match(body, /href="https:\/\/www\.getdasha\.com\/compute#ask">Use a Mac/, `${origin} Use a Mac`);
   assert.match(body, /href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac/, `${origin} Join a Mac`);
   assert.doesNotMatch(body, /plugin\.jup\.ag/);
   assert.doesNotMatch(body, /mintAuthority|freezeAuthority/);

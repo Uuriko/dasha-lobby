@@ -304,7 +304,7 @@ contribute https://www.getdasha.com/contribute
 bounties https://www.getdasha.com/bounties
 crew https://www.getdasha.com/crew
 compute https://www.getdasha.com/compute
-Ask a Mac https://www.getdasha.com/compute#ask
+Use a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
 Live benchmarks https://www.getdasha.com/benchmarks
 OpenAI-compatible base URL https://lobby.getdasha.com/compute/api/v1
@@ -326,7 +326,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Bounties](https://www.getdasha.com/bounties)
 - [Crew](https://www.getdasha.com/crew)
 - [Compute](https://www.getdasha.com/compute)
-- [Ask a Mac](https://www.getdasha.com/compute#ask)
+- [Use a Mac](https://www.getdasha.com/compute#ask)
 - [Join a Mac](https://www.getdasha.com/compute#provide)
 - [Live benchmarks](https://www.getdasha.com/benchmarks)
 - [OpenAI-compatible base URL](https://lobby.getdasha.com/compute/api/v1)
@@ -432,8 +432,8 @@ Contribute: Build Dasha. Open a pull request. https://www.getdasha.com/contribut
 
 Crew: five jobs. You keep the keys. https://www.getdasha.com/crew
 
-Compute: Start. (Ask / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Sponsor. Credits → balance + Use. Ask → Hosted. Quiet Marketplace / Host. https://www.getdasha.com/compute
-Ask a Mac: https://www.getdasha.com/compute#ask
+Compute: Start. (Do / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Sponsor. Credits → balance + Use. Do → Hosted. Quiet Marketplace / Host. https://www.getdasha.com/compute
+Use a Mac: https://www.getdasha.com/compute#ask
 Join a Mac: https://www.getdasha.com/compute#provide
 Live benchmarks: https://www.getdasha.com/benchmarks
 OpenAI-compatible base URL: https://lobby.getdasha.com/compute/api/v1
@@ -441,7 +441,7 @@ First path: Sign in, create a key, change the base URL.
 
 ## Compute buyer FAQ
 
-How do I ask? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1
+How do I start? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1
 What is live? The Mac that is advertising. Read /compute/api/network.
 What if no Mac is online? Hosted is still there.
 What does $0.05/job mean? Provider Earn. Not the buyer price.
@@ -490,7 +490,7 @@ const WHICH_HTML = `<!doctype html>
     <p>Pair: <code>9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code></p>
     <p>CoinGecko: <a href="https://www.coingecko.com/en/coins/dash_eats">dash_eats</a></p>
     <p><a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Open the associated mint on Jupiter</a></p>
-    <p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask</a> — Hosted when no Mac. <a href="https://www.getdasha.com/compute#provide">Provide</a></p>
+    <p>Compute. <a href="https://www.getdasha.com/compute#ask">Use a Mac</a> — Hosted when no Mac. <a href="https://www.getdasha.com/compute#provide">Provide</a></p>
     <p><a href="https://www.getdasha.com/">getdasha.com</a></p>
   </main>
 </body>
@@ -537,7 +537,7 @@ const BAG_HTML = `<!doctype html>
       <button type="submit">Look</button>
     </form>
     <div id="out" hidden></div>
-    <p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
+    <p>Compute. <a href="https://www.getdasha.com/compute#ask">Use a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
     <p><a href="https://www.getdasha.com/">getdasha.com</a> · <a href="https://www.getdasha.com/listings">List</a> · <a href="https://www.getdasha.com/how-to-buy">Buy</a> · <a href="https://www.getdasha.com/which">Which</a></p>
   </main>
   <script>
@@ -916,7 +916,7 @@ const LISTINGS_HTML = `<!doctype html>
       <div class="row"><span title="Raydium pool">Pair</span><code id="pair">9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code><button type="button" class="copy" data-copy="pair">Copy</button></div>
       <p>Status: <span class="status">Listed</span> <span class="quiet">(on getdasha)</span></p>
       <p class="cta"><a class="primary" href="/how-to-buy">Buy $dasha →</a><a href="/which">Which</a><a href="/bag">Bag</a><a href="/lobby">Lobby</a></p>
-      <p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
+      <p>Compute. <a href="https://www.getdasha.com/compute#ask">Use a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
     </article>
     <h2>Buy &amp; charts</h2>
     <div class="venues">
@@ -3349,7 +3349,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/sponsor",
   "/compute/sponsor/",
   // Typeform doors + quiet peers: live Ask/Pay/Credits/Host/Marketplace/You html-404
-  // while Provide/Night/Sponsor already 308→/compute (Start. Ask. Provide. Pay. Credits.).
+  // while Provide/Night/Sponsor already 308→/compute (Start. Do. Provide. Pay. Credits.).
   "/compute/ask",
   "/compute/ask/",
   "/compute/pay",
@@ -6663,7 +6663,7 @@ const CONTRIBUTE_HTML = htmlPage('Contribute to Dasha', `<h1>Build Dasha.</h1>
 <p id="join-mac-cta" hidden><a class="cta" href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
 <p id="join-mac-note" hidden>A Mac is online.</p>
 <p><a href="https://github.com/Uuriko/dasha-desk/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Read the guide ↗</a> · <a href="https://github.com/Uuriko/dasha-desk/discussions/categories/ideas" target="_blank" rel="noopener noreferrer">Propose an idea ↗</a></p>
-<p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a> · <a href="https://www.getdasha.com/benchmarks">Benchmarks</a></p>
+<p>Compute. <a href="https://www.getdasha.com/compute#ask">Use a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a> · <a href="https://www.getdasha.com/benchmarks">Benchmarks</a></p>
 <p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/lobby">Lobby</a></p>
 <script>(function(){fetch('/compute/api/network',{credentials:'omit',cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!(Number(d.providers_online)>=1))return;var c=document.getElementById('join-mac-cta');var n=document.getElementById('join-mac-note');if(c)c.removeAttribute('hidden');if(n)n.removeAttribute('hidden')}).catch(function(){})})();</script>`, { path: '/contribute', description: 'Build Dasha. Open a pull request.' });
 
