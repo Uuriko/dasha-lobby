@@ -525,6 +525,9 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
     <div class="models" id="provider-list"></div>
     <button class="tf-quiet" id="refresh-providers" type="button" hidden disabled>Refresh</button>
   </details>
+  <!-- provide-earn-receipt:2026-09-10 -->
+  <p class="fine" id="provide-earn-vibe">Leave it on. Earn.</p>
+  <p class="fine" id="provide-earn-receipt" hidden aria-live="polite"></p>
   <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%</p>
   <div class="tf-choices" style="margin-top:14px">
     <button type="button" class="tf-choice primary" id="provide-add-mac" title="Community Register · not Host / OCM enroll">Add another Mac</button>
@@ -1341,9 +1344,11 @@ function showTf(step){
   if(step==='provide-done'){
     updateProvideAuth();
     paintEarnRates(earnRates);
+    paintProvideEarnReceipt();
     paintProvideBeat();
     refreshProvideDone();
     startProvideBeatPoll();
+    if(loggedIn)loadEarn();
   }else clearProvideBeatPoll();
   if(step==='pay-buy'){if(!creditPack)creditPack='5';paintPayBuy();}
   if(step==='sponsor'){paintSponsorTargets();}
@@ -2836,6 +2841,22 @@ function paintEarnRates(rates){
   const pn=$('provide-name-earn');
   if(pn)pn.textContent=line;
 }
+function provideEarnReceiptLine(){
+  // Same /compute/api/provider/earnings fields as Earn. — never invent.
+  if(!loggedIn||!earnLoaded||earnTotalUsdc==null)return '';
+  const jobs=Math.max(0,Math.floor(Number(earnTotalJobs)||0));
+  const face=Math.max(0,Math.floor(Number(earnTotalUsdc)||0));
+  if(jobs<=0&&face<=0)return 'No jobs yet · $0 pending';
+  return (jobs===1?'1 job':jobs+' jobs')+' completed · '+formatUsdCents(face)+' pending';
+}
+function paintProvideEarnReceipt(){
+  const el=$('provide-earn-receipt');
+  if(!el)return;
+  const line=provideEarnReceiptLine();
+  if(!line){el.hidden=true;el.textContent='';return}
+  el.hidden=false;
+  el.textContent=line;
+}
 function paintEarn(){
   const bal=$('earn-balance'),jobs=$('earn-jobs'),methods=$('earn-methods'),wrap=$('earn-wallet-wrap');
   const actions=$('earn-actions'),btn=$('earn-payout'),status=$('earn-status'),login=$('earn-login');
@@ -2855,6 +2876,7 @@ function paintEarn(){
     if(compare){compare.hidden=true;compare.textContent=''}
     if(pending){pending.hidden=true;pending.textContent=''}
     if(status){status.hidden=true;status.textContent=''}
+    paintProvideEarnReceipt();
     return;
   }
   if(!earnLoaded||earnTotalUsdc==null){
@@ -2866,6 +2888,7 @@ function paintEarn(){
     if(btn){btn.hidden=true;btn.disabled=true}
     if(compare){compare.hidden=true;compare.textContent=''}
     if(pending){pending.hidden=true;pending.textContent=''}
+    paintProvideEarnReceipt();
     return;
   }
   const face=Math.max(0,Math.floor(Number(earnTotalUsdc)||0));
@@ -2889,6 +2912,7 @@ function paintEarn(){
     btn.disabled=!canPay;
     btn.textContent='Request payout';btn.title='Queues for operator settle · not auto';btn.setAttribute('aria-label','Request payout · operator settles · not auto');
   }
+  paintProvideEarnReceipt();
   if(pending){
     const rows=(earnPending||[]);
     pending.replaceChildren();
