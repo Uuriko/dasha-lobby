@@ -537,6 +537,7 @@ const BAG_HTML = `<!doctype html>
       <button type="submit">Look</button>
     </form>
     <div id="out" hidden></div>
+    <p>Compute. <a href="https://www.getdasha.com/compute#ask">Ask a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
     <p><a href="https://www.getdasha.com/">getdasha.com</a> · <a href="https://www.getdasha.com/listings">List</a> · <a href="https://www.getdasha.com/how-to-buy">Buy</a> · <a href="https://www.getdasha.com/which">Which</a></p>
   </main>
   <script>
