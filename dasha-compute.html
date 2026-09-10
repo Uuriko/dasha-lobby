@@ -413,7 +413,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
 <section class="tf-step" id="step-earn" data-tf="earn" hidden>
   <button type="button" class="tf-back" data-back="you">← Back</button>
   <h1 class="tf-q">Earn.</h1>
-  <p class="fine" id="earn-rates">$0.05/job + $0.01/1k completion · min $1 · pending operator settle</p>
+  <p class="fine" id="earn-rates">$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%</p>
   <p class="fine" id="earn-balance" hidden></p>
   <p class="fine" id="earn-jobs" hidden></p>
   <div class="tf-choices" role="group" aria-label="Payout." id="earn-methods" hidden>
@@ -470,6 +470,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <button type="button" class="tf-back" id="provide-name-back" data-back="ask">← Back</button>
   <h1 class="tf-q">Name this Mac.</h1>
   <p class="fine" id="provide-name-fine" hidden>Join with a Mac · keeps capacity warm.</p>
+  <p class="fine" id="provide-name-earn">$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%</p>
   <input id="provider-name" maxlength="64" value="My Mac" required aria-label="Mac name">
   <div class="actions">
     <button class="primary" id="provide-next" type="button">Next</button>
@@ -498,7 +499,6 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <p class="fine" id="provide-prefer-mlx">Prefer MLX when you can · Ollama ≥0.33.1 · models on internal SSD.</p>
   <p class="fine" id="provide-keepalive">Keep Ollama warm · OLLAMA_KEEP_ALIVE=-1 on launch agent · advertise ≠ mid-Ask inference.</p>
   <p class="fine" id="provide-softdoctor">Doctor soft-warns · battery / Low Power / thermal / SIP · never fails solely · not attestation.</p>
-  <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion · min $1 · pending operator settle</p>
   <section id="provider-faq">
     <p class="fine" id="provide-faq-earn">$0.05/job is Provider Earn. Not the buyer price.</p>
     <p class="fine" id="provide-faq-need">Mac · Apple Silicon · Ollama ≥0.33.1 · python3 · 15–30 min.</p>
@@ -525,9 +525,10 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
     <div class="models" id="provider-list"></div>
     <button class="tf-quiet" id="refresh-providers" type="button" hidden disabled>Refresh</button>
   </details>
-  <div class="tf-choices" style="margin-top:28px">
+  <p class="fine" id="provide-earn-fine">$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%</p>
+  <div class="tf-choices" style="margin-top:14px">
+    <button type="button" class="tf-choice primary" id="provide-add-mac" title="Community Register · not Host / OCM enroll">Add another Mac</button>
     <button type="button" class="tf-choice secondary" id="provide-done-gate">Done</button>
-    <button type="button" class="tf-quiet" id="provide-add-mac" title="Community Register · not Host / OCM enroll">Add another Mac</button>
     <button type="button" class="tf-quiet" id="provide-done-earn">Earnings</button>
   </div>
 </section>
@@ -1304,6 +1305,7 @@ function showTf(step){
     if(back)back.setAttribute('data-back',dest);
     const fine=$('provide-name-fine');
     if(fine)fine.hidden=provideBack!=='pay';
+    paintEarnRates(earnRates);
     setTimeout(()=>$('provider-name')?.focus(),40);
   }else if(step==='gate'||step==='how'||step==='model'||step==='night'||step==='answer'||step==='provide-done'||step==='market'||step==='host'||step==='pay'||step==='pay-buy'||step==='pay-send'||step==='pay-done'||step==='sponsor'||step==='sponsor-buy'||step==='sponsor-send'||step==='sponsor-done'||step==='credits'||step==='you'||step==='earn'){
     setTimeout(()=>{
@@ -1338,6 +1340,7 @@ function showTf(step){
   if(step==='answer'){paintAnswerApi();paintAnswerMoney()}
   if(step==='provide-done'){
     updateProvideAuth();
+    paintEarnRates(earnRates);
     paintProvideBeat();
     refreshProvideDone();
     startProvideBeatPoll();
@@ -2822,13 +2825,16 @@ function formatEarnRatesLine(rates){
   const jobUsd='$'+(j/100).toFixed(2).replace(/\.00$/,'');
   const tokUsd='$'+(t/100).toFixed(2).replace(/\.00$/,'');
   const minUsd='$'+(m/100).toFixed(2).replace(/\.00$/,'');
-  return jobUsd+'/job + '+tokUsd+'/1k completion · min '+minUsd+' · pending operator settle';
+  return jobUsd+'/job + '+tokUsd+'/1k completion · min '+minUsd+' · pending operator settle · $dasha payout +10%';
 }
 function paintEarnRates(rates){
+  const line=formatEarnRatesLine(rates||null);
   const el=$('earn-rates');
-  if(el)el.textContent=formatEarnRatesLine(rates||null);
+  if(el)el.textContent=line;
   const pe=$('provide-earn-fine');
-  if(pe)pe.textContent=formatEarnRatesLine(rates||null);
+  if(pe)pe.textContent=line;
+  const pn=$('provide-name-earn');
+  if(pn)pn.textContent=line;
 }
 function paintEarn(){
   const bal=$('earn-balance'),jobs=$('earn-jobs'),methods=$('earn-methods'),wrap=$('earn-wallet-wrap');
