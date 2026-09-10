@@ -39,7 +39,9 @@ a{color:inherit}
 .score[data-verdict=yes] strong{background:var(--acid);color:var(--ink)}
 .score[data-verdict=no] strong{background:var(--hot);color:#fff}
 .score[data-verdict=sit] strong{background:var(--paper);color:var(--ink)}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 34px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 14px}
+.mac-door{margin:0 0 28px;color:var(--muted);font-size:14px}
+.mac-door a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
 .primary,.secondary,.copy{min-height:48px;padding:0 16px;font-weight:900;text-transform:uppercase;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--paper)}
 .primary{background:var(--acid);border-color:var(--acid);color:var(--ink);box-shadow:4px 4px 0 var(--hot)}
 .secondary,.copy{background:transparent;color:var(--paper)}
@@ -74,6 +76,8 @@ footer a{color:var(--muted)}
   <a class="primary" id="buy" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&amp;buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" target="_blank" rel="noopener noreferrer">Buy</a>
   <a class="secondary" href="/dasha-crew.tar.gz" download>Download kit</a>
 </div>
+<!-- crew-use-a-mac:2026-09-10 -->
+<p class="mac-door">Compute. <a href="https://www.getdasha.com/compute#ask">Use a Mac</a> · <a href="https://www.getdasha.com/compute#provide">Join a Mac</a></p>
 <section class="reel" id="jobs" aria-label="Five jobs">
   <article class="card" id="card-scout"><p class="kicker acid">01</p><h2 id="scout">Scout</h2><p class="job">$dasha tape only.</p><div class="vote" data-vote="sit">Sit</div><p class="note" data-note>Mint and pair. No invented candle.</p><p class="prompt" data-prompt>You are Scout. $dasha tape only. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. Read public price, liquidity, volume, change on that pair. Do not invent a candle. No tape → sit. You do not hold keys.</p><button type="button" class="copy" data-copy>Copy prompt</button></article>
   <article class="card" id="card-trace"><p class="kicker acid">02</p><h2 id="trace">Trace</h2><p class="job">Public holders / flow on that mint.</p><div class="vote" data-vote="sit">Sit</div><p class="note" data-note>Buys, sells, top accounts. Public only.</p><p class="prompt" data-prompt>You are Trace. Public holders and flow on the $dasha mint only. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Read buys, sells, top holders from public HTTP/RPC. No flow → sit. You do not hold keys. You do not invent a wallet list.</p><button type="button" class="copy" data-copy>Copy prompt</button></article>
