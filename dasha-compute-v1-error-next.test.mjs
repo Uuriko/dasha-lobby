@@ -54,6 +54,8 @@ function assertAxNext(body, { message, type, reason, status = 'action_required' 
   assertAxNext(key, { message: 'invalid API key', type: 'authentication_error', reason: 'invalid_api_key' });
   assert.equal(key.next.some(s => s.path === '/compute#build'), true);
   assert.equal(key.next.some(s => s.path === '/compute/llms.txt'), true);
+  assert.equal(key.next.some(s => s.path === '/compute/skill.md'), true);
+  assert.equal(key.next.some(s => s.path === '/compute/api/guest-keys'), true);
   assert.equal(key.next.some(s => /Authorization: Bearer \$DASHA_KEY/.test(s.command || '')), true);
 
   const credits = openaiErrorBody('top up credits', 402, 'invalid_request_error');

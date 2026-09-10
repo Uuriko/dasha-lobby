@@ -78,8 +78,11 @@ function assertAxKey(body) {
   assert.equal(body.reason, 'invalid_api_key');
   assert.match(body.hint, /\/compute#build/);
   assert.match(body.hint, /\/compute\/llms\.txt/);
+  assert.match(body.hint, /\/compute\/skill\.md/);
   assert.equal(body.next.some(s => s.path === '/compute#build'), true);
   assert.equal(body.next.some(s => s.path === '/compute/llms.txt'), true);
+  assert.equal(body.next.some(s => s.path === '/compute/skill.md'), true);
+  assert.equal(body.next.some(s => s.path === '/compute/api/guest-keys'), true);
   assert.doesNotMatch(JSON.stringify(body), /plugin\.jup\.ag/);
 }
 

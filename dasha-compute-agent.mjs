@@ -9,6 +9,7 @@ export const COMPUTE_API_BASE = 'https://lobby.getdasha.com/compute/api/v1';
 export const COMPUTE_API_BASE_WWW = 'https://www.getdasha.com/compute/api/v1';
 export const COMPUTE_HEALTHZ = 'https://lobby.getdasha.com/compute/api/healthz';
 export const COMPUTE_NETWORK = `${COMPUTE_API_BASE}/network`;
+export const COMPUTE_GUEST_KEYS_URL = 'https://lobby.getdasha.com/compute/api/guest-keys';
 export const COMPUTE_LLMS_URL = 'https://www.getdasha.com/compute/llms.txt';
 export const COMPUTE_SKILL_URL = 'https://www.getdasha.com/compute/skill.md';
 export const COMPUTE_AGENT_JSON_URL = 'https://www.getdasha.com/.well-known/agent.json';
@@ -53,6 +54,8 @@ You want a Mac to run a prompt — or Hosted when no Mac is online. Not a ledger
 
 Sign in at https://www.getdasha.com/compute#build
 
+Guest key: POST /compute/api/guest-keys (mint deferred). 501 next points at Sign in → /compute#build.
+
 ${COMPUTE_FIRST_CALL_TXT}
 Pick \`model\` from the models list.
 
@@ -78,6 +81,7 @@ healthz ${COMPUTE_HEALTHZ}
 network ${COMPUTE_NETWORK}
 auth Bearer API key
 no key needed for healthz + network + models; key needed for chat
+guest key POST /compute/api/guest-keys — mint deferred; Sign in at /compute#build
 
 First path: Sign in, create a key, change the base URL.
 
@@ -114,6 +118,7 @@ export const COMPUTE_AGENT_JSON = {
     models: `${COMPUTE_API_BASE}/models`,
     healthz: COMPUTE_HEALTHZ,
     network: COMPUTE_NETWORK,
+    guest_keys: COMPUTE_GUEST_KEYS_URL,
   },
   docs: {
     llms: COMPUTE_LLMS_URL,

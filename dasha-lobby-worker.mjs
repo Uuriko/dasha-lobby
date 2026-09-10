@@ -134,6 +134,7 @@ import {
   attachComputeLlmsHtmlLinks,
   computeAgentAeoResponse,
 } from './dasha-compute-agent.mjs';
+import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
 import { applyCrewShareOg, crewApi, isCrewPagePath } from './dasha-crew.mjs';
 import { bagRecordApi, isBagRecordPath, lookupRecord, normalizeMint, renderBagShareHtml } from './dasha-bag-record.mjs';
@@ -10359,6 +10360,8 @@ async function productEdge(request, url, env) {
       }, 200, '*', { credentials: true });
     }
     if (isComputeApiPath(url.pathname)) {
+      const guestKey = computeGuestKeyResponse(request);
+      if (guestKey) return guestKey;
       const origin = request.headers.get('Origin');
       const allowedOrigin =
         origin && originAllowed(origin, env.ALLOWED_ORIGINS || '')
@@ -11555,6 +11558,10 @@ export default {
     {
       const computeAeo = computeAgentAeoResponse(request);
       if (computeAeo) return computeAeo;
+    }
+    {
+      const guestKey = computeGuestKeyResponse(request);
+      if (guestKey) return guestKey;
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/factory.json' || url.pathname === '/factory.json/')) {
       return factoryCatalogResponse(request);

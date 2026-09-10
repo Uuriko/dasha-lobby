@@ -60,6 +60,7 @@ assert.match(COMPUTE_LLMS_TXT, new RegExp(`^healthz ${COMPUTE_HEALTHZ.replace(/\
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^network ${COMPUTE_NETWORK.replace(/\./g, '\\.')}$`, 'm'));
 assert.match(COMPUTE_LLMS_TXT, /auth Bearer API key/, 'packet names Bearer auth');
 assert.match(COMPUTE_LLMS_TXT, /^no key needed for healthz \+ network \+ models; key needed for chat$/m, 'packet soft-guest line');
+assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — mint deferred; Sign in at \/compute#build$/m, 'packet guest key deferred');
 assert.match(COMPUTE_LLMS_TXT, /First path: Sign in, create a key, change the base URL\./, 'packet first path');
 assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_FIRST_CALL_TXT), true, 'packet embeds First call');
 assert.match(COMPUTE_LLMS_TXT, /^## First call$/m, 'packet First call heading');
@@ -87,6 +88,7 @@ assert.equal(COMPUTE_AGENT_JSON.endpoints.chat_completions, `${COMPUTE_API_BASE}
 assert.equal(COMPUTE_AGENT_JSON.endpoints.models, `${COMPUTE_API_BASE}/models`);
 assert.equal(COMPUTE_AGENT_JSON.endpoints.healthz, COMPUTE_HEALTHZ);
 assert.equal(COMPUTE_AGENT_JSON.endpoints.network, COMPUTE_NETWORK);
+assert.equal(COMPUTE_AGENT_JSON.endpoints.guest_keys, 'https://lobby.getdasha.com/compute/api/guest-keys');
 assert.equal(COMPUTE_AGENT_JSON.docs.llms, COMPUTE_LLMS_URL);
 assert.equal(COMPUTE_AGENT_JSON.docs.skill, COMPUTE_SKILL_URL);
 assert.doesNotMatch(JSON.stringify(COMPUTE_AGENT_JSON), /plugin\.jup\.ag/);

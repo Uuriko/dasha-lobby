@@ -70,7 +70,8 @@ assert.ok(COMPUTE_SKILL_MD.includes(COMPUTE_AGENT_JSON_URL), 'skill links agent.
 assert.doesNotMatch(COMPUTE_SKILL_MD, /plugin\.jup\.ag/, 'skill no plugin.jup.ag');
 assert.doesNotMatch(COMPUTE_SKILL_MD, /disclaimer|not financial advice|dyor|\bnfa\b/i, 'skill no lecture');
 assert.doesNotMatch(COMPUTE_SKILL_MD, /people.?data|email|phone|seed phrase/i, 'skill no people-data');
-assert.doesNotMatch(COMPUTE_SKILL_MD, /guest-agent|guest API key/i, 'skill no guest mint');
+assert.match(COMPUTE_SKILL_MD, /Guest key: POST \/compute\/api\/guest-keys \(mint deferred\)/, 'skill names deferred guest key');
+assert.doesNotMatch(COMPUTE_SKILL_MD, /guest-agent/i, 'skill stays Compute, not Room');
 
 assert.ok(COMPUTE_LLMS_TXT.includes(COMPUTE_SKILL_URL), 'packet links skill');
 assert.equal(COMPUTE_AGENT_JSON.docs.skill, COMPUTE_SKILL_URL, 'agent.json docs.skill');
