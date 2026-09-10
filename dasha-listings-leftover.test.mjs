@@ -5,7 +5,7 @@
  * /listing /listings/ /coins /coin /listed /list /dex /dexscreener /cmc /coingecko
  * (+slash / Title-case) → /listings. /market stays → /compute. /ca stays → /which.
  * Featured only $dasha / dash_eats. Venues from buy-sheet. Quiet #list-door after #grwm.
- * Disk only. No Designer. Never plugin.jup.ag.
+ * Quiet Compute Ask a Mac / Join a Mac doors. Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -63,6 +63,18 @@ assert.match(listings, /<th>#<\/th><th>Coin<\/th><th>Price<\/th><th>24h<\/th><th
 assert.match(listings, /<!-- listings-board-rows -->/);
 assert.match(listings, /We list <code[^>]*>\$dasha<\/code>\./);
 assert.match(listings, /Solana, live\./);
+assert.match(
+  listings,
+  /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
+  'quiet Compute Ask/Provide doors',
+);
+assert.match(listings, /href="\/how-to-buy">Buy \$dasha →/, 'Buy lock stays');
+assert.match(listings, /href="\/lobby">Lobby<\/a>/, 'Lobby stays on token CTA');
+{
+  const computeLine = listings.match(/<p>Compute\.[\s\S]*?<\/p>/);
+  assert.ok(computeLine, 'Compute line present');
+  assert.doesNotMatch(computeLine[0], /lobby/i, 'Compute line does not stuff Room');
+}
 assert.doesNotMatch(listings, /plugin\.jup\.ag/);
 assert.doesNotMatch(listings, /Listed on CoinGecko/);
 assert.doesNotMatch(listings, /VVAIFU|FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8/);
@@ -184,6 +196,13 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       assert.match(html, /<!-- listings-board:2026-09-08 -->/);
       assert.match(html, /<section id="board"/);
       assert.match(html, /<th>#<\/th><th>Coin<\/th><th>Price<\/th><th>24h<\/th><th>Volume<\/th><th>Mcap<\/th><th>Liq<\/th>/);
+      assert.match(html, /href="https:\/\/www\.getdasha\.com\/compute#ask">Ask a Mac/, `${host} Ask a Mac`);
+      assert.match(html, /href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac/, `${host} Join a Mac`);
+      {
+        const computeLine = html.match(/<p>Compute\.[\s\S]*?<\/p>/);
+        assert.ok(computeLine, `${host} Compute line present`);
+        assert.doesNotMatch(computeLine[0], /lobby/i, `${host} Compute line does not stuff Room`);
+      }
       assert.doesNotMatch(html, /plugin\.jup\.ag/);
     }
 
@@ -229,4 +248,4 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 globalThis.fetch = realFetch;
 resetListingsMarketCacheForTest();
 
-console.log('dasha-listings-leftover: PASS (/listings + /listings.json 200, leftover 308s, /market+/ca locks, quiet list-door, board marker, no plugin.jup.ag)');
+console.log('dasha-listings-leftover: PASS (/listings + /listings.json 200, leftover 308s, /market+/ca locks, quiet list-door, Compute Ask/Join doors, board marker, no plugin.jup.ag)');
