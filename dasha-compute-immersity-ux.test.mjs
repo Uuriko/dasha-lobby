@@ -35,7 +35,10 @@ function assertImmersitySteal(html, label) {
   assert.ok(gate.indexOf('Start.') < gate.indexOf('id="ux-triad"'), `${label} triad after Start.`);
   assert.match(gate, /id=["']ux-demo["']/, `${label} demo-before-login strip`);
   assert.match(gate, /Prompt<\/span> → <span>Receipt/, `${label} Prompt → Receipt`);
-  assert.match(gate, /Hosted · Community/, `${label} Hosted vs Community labels`);
+  assert.match(gate, /Hosted vs Community/, `${label} Hosted vs Community labels`);
+  assert.match(gate, /Explain this\. → Hosted\./, `${label} static soft-guest example`);
+  assert.match(html, /class=["']ux-reveal["']/, `${label} card hover reveal`);
+  assert.doesNotMatch(html, /millions of users|1M\+|trusted by|social proof/i, `${label} no fake social proof`);
 
   assert.match(html, /id=["']ux-triad["']/, `${label} audience triad`);
   assert.match(html, /id=["']ux-card-ask["'][\s\S]*?>Ask</, `${label} Ask card`);
@@ -179,6 +182,15 @@ if (puppeteer && existsSync(chrome)) {
     return !!(el && !el.hidden && !el.closest('[hidden]') && el.offsetParent);
   });
   assert.equal(demoVis, true, 'demo strip visible before login');
+
+  await page.setViewport({ width: 1280, height: 800 });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  const collapsed = await page.$eval('#ux-card-ask .ux-reveal', (el) => getComputedStyle(el).maxHeight);
+  assert.equal(collapsed, '0px', 'desktop reveal collapsed until focus');
+  await page.$eval('#ux-card-ask', (el) => el.scrollIntoView({ block: 'center' }));
+  await page.focus('#ux-card-ask a');
+  const opened = await page.$eval('#ux-card-ask .ux-reveal', (el) => parseFloat(getComputedStyle(el).maxHeight));
+  assert.ok(opened > 0, 'focus-within reveals card detail');
 
   await page.click('#pick-ask');
   assert.equal(await page.$eval('body', (n) => n.dataset.step), 'ask');
