@@ -327,10 +327,11 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
     return {
       status: 'action_required',
       reason: 'invalid_api_key',
-      hint: 'Mint a key at /compute#build. Then Authorization: Bearer.',
+      hint: 'Mint a key at /compute#build. See /compute/llms.txt.',
       next: [
         { path: '/compute#build' },
-        { command: `curl -sS -H 'Authorization: Bearer $DASHA_KEY' ${V1_PUBLIC}/models` },
+        { path: '/compute/llms.txt' },
+        { command: `curl -sS -H 'Authorization: Bearer $DASHA_KEY' ${V1_PUBLIC}/chat/completions` },
       ],
     };
   }
@@ -1215,7 +1216,7 @@ export class ComputeNetwork {
     const v1cors = (res) => withV1Cors(res, v1Origin);
     const v1err = (message, status = 400, type = 'invalid_request_error') => v1cors(openaiError(message, status, type));
     if ((path === '/compute/api/v1/models' || path === '/compute/api/v1/models/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      // Soft-guest list: same advertised ids as public GET /compute/api/network.
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];

@@ -21,6 +21,7 @@ www ${COMPUTE_API_BASE_WWW}
 healthz ${COMPUTE_HEALTHZ}
 network ${COMPUTE_NETWORK}
 auth Bearer API key
+no key needed for healthz + network + models; key needed for chat
 
 First path: Sign in, create a key, change the base URL.
 
@@ -47,6 +48,8 @@ export const COMPUTE_AGENT_JSON = {
     in: 'header',
     header: 'Authorization',
     scheme: 'Bearer',
+    public_reads: ['healthz', 'network', 'models'],
+    chat: 'bearer',
   },
   endpoints: {
     chat_completions: `${COMPUTE_API_BASE}/chat/completions`,

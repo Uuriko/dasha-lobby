@@ -2,7 +2,7 @@
 /**
  * Leftover pretty path (Worker 477696ce): live /compute/v1 (+slash / Title-case)
  * html-404 → 308 https://www.getdasha.com/compute/api/v1 while /compute/api/v1
- * is 200 JSON. /compute/v1/models → /compute/api/v1/models (401 JSON handler).
+ * is 200 JSON. /compute/v1/models → /compute/api/v1/models (200 JSON handler).
  * /answer /compute/answer (+slash / Title-case) → plain /compute (no hash),
  * same as /ask /compute/ask. Lobby same-host remap for /compute/api/* dests.
  * Never fold exact /compute/api/v1* or bare /v1|/v1/models (stay 404).

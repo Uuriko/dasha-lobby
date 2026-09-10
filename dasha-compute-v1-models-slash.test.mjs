@@ -41,9 +41,9 @@ async function pair(path, init = {}) {
 }
 
 const unauth = await pair('/compute/api/v1/models');
-assert.equal(unauth.status, 401);
-assert.equal(unauth.body.error.message, 'invalid API key');
-assert.equal(unauth.body.error.type, 'authentication_error');
+assert.equal(unauth.status, 200);
+assert.equal(unauth.body.object, 'list');
+assert.deepEqual(unauth.body.data, []);
 
 const auth = { Authorization: `Bearer ${token}` };
 const empty = await pair('/compute/api/v1/models', { headers: auth });
@@ -93,7 +93,8 @@ async function workerPair(host, path, init = {}) {
 
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const wUnauth = await workerPair(host, '/compute/api/v1/models');
-  assert.equal(wUnauth.status, 401, `${host} unauth`);
+  assert.equal(wUnauth.status, 200, `${host} unauth`);
+  assert.deepEqual(wUnauth.body.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' }]);
   assert.match(wUnauth.type, /application\/json/);
   const wAuth = await workerPair(host, '/compute/api/v1/models', { headers: auth });
   assert.equal(wAuth.status, 200, `${host} authed`);

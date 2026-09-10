@@ -71,7 +71,8 @@ assertCors(await call('/compute/api/v1/embeddings'), 'GET embeddings 401');
 assert.equal((await call('/compute/api/v1/embeddings')).status, 401);
 assertCors(await call('/compute/api/v1/embeddings', { method: 'POST' }), 'POST embeddings unauth 401');
 assertCors(await call('/compute/api/v1/chat/completions'), 'GET chat 401');
-assertCors(await call('/compute/api/v1/models'), 'GET models 401');
+assertCors(await call('/compute/api/v1/models'), 'GET models 200');
+assert.equal((await call('/compute/api/v1/models')).status, 200);
 
 // 2. authed errors carry ACAO
 const notSupported = await call('/compute/api/v1/embeddings', { method: 'POST', headers: auth });

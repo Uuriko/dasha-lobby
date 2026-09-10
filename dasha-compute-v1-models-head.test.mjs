@@ -43,9 +43,9 @@ async function getHead(path, init = {}) {
 
 for (const path of ['/compute/api/v1/models', '/compute/api/v1/models/']) {
   const unauth = await getHead(path);
-  assert.equal(unauth.status, 401);
-  assert.equal(unauth.getBody.error.message, 'invalid API key');
-  assert.equal(unauth.getBody.error.type, 'authentication_error');
+  assert.equal(unauth.status, 200);
+  assert.equal(unauth.getBody.object, 'list');
+  assert.deepEqual(unauth.getBody.data, []);
 }
 
 const auth = { Authorization: `Bearer ${token}` };
@@ -75,8 +75,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   for (const path of ['/compute/api/v1/models', '/compute/api/v1/models/']) {
     const get = await worker.fetch(new Request(`https://${host}${path}`), workerEnv);
     const head = await worker.fetch(new Request(`https://${host}${path}`, { method: 'HEAD' }), workerEnv);
-    assert.equal(get.status, 401, `${host} ${path} GET`);
-    assert.equal(head.status, 401, `${host} ${path} HEAD`);
+    assert.equal(get.status, 200, `${host} ${path} GET`);
+    assert.equal(head.status, 200, `${host} ${path} HEAD`);
     assert.match(head.headers.get('content-type') || '', /application\/json/);
     assert.equal(await head.text(), '');
     const authedGet = await worker.fetch(new Request(`https://${host}${path}`, { headers: auth }), workerEnv);
