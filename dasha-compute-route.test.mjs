@@ -89,7 +89,7 @@ assert.equal(hosted.status, 200);
 const healthz = await worker.fetch(new Request('https://lobby.getdasha.com/compute/api/healthz', { headers: { Origin: 'https://www.getdasha.com' } }), env);
 assert.equal(healthz.status, 200);
 assert.equal(healthz.headers.get('access-control-allow-origin'), 'https://www.getdasha.com');
-assert.deepEqual(await healthz.json(), { ok: true, service: 'dasha-compute', version: '0.3.0' });
+assert.deepEqual(await healthz.json(), { ok: true, service: 'dasha-compute', version: '0.3.1' });
 
 async function assertGatewayRes(res, label) {
   assert.equal(res.status, 200, label);

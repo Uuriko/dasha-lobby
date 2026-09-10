@@ -55,7 +55,7 @@ for (const path of ['/compute/api/healthz', '/compute/api/healthz/', '/compute/a
   assert.equal(get.status, 200, `${path} GET`);
   assert.equal(get.body.ok, true);
   assert.equal(get.body.service, 'dasha-compute');
-  assert.equal(get.body.version, '0.3.0');
+  assert.equal(get.body.version, '0.3.1');
   const head = await network.fetch(new Request(`https://lobby.getdasha.com${path}`, { method: 'HEAD' }));
   assert.equal(head.status, 200, `${path} HEAD`);
   assert.match(head.headers.get('content-type') || '', /application\/json/);

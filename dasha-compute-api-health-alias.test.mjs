@@ -22,7 +22,7 @@ assert.match(networkSrc, /path === '\/compute\/api\/health'/, 'health alias path
 assert.match(networkSrc, /path === '\/compute\/api\/health\/'/, 'health alias slash');
 assert.doesNotMatch(networkSrc, /\/compute\/ocm\/health/, 'must not fold ocm health');
 
-const HEALTHZ_JSON = { ok: true, service: 'dasha-compute', version: '0.3.0' };
+const HEALTHZ_JSON = { ok: true, service: 'dasha-compute', version: '0.3.1' };
 const ALIAS_PATHS = ['/compute/api/health', '/compute/api/health/'];
 const HEALTHZ_PATHS = ['/compute/api/healthz', '/compute/api/healthz/'];
 const CORS_HEADERS = [
@@ -74,7 +74,7 @@ async function assertSameHealth(fetchImpl, url, healthzUrl, init = {}, label) {
   assert.deepEqual(aliasBody, healthzBody, `${label} body parity`);
   assert.equal(aliasBody.ok, true, `${label} ok`);
   assert.equal(aliasBody.service, 'dasha-compute', `${label} service`);
-  assert.equal(aliasBody.version, '0.3.0', `${label} version`);
+  assert.equal(aliasBody.version, '0.3.1', `${label} version`);
 }
 
 for (const path of [...HEALTHZ_PATHS, ...ALIAS_PATHS]) {

@@ -296,7 +296,7 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
   const res = json({
     object: 'gateway',
     service: 'dasha-compute',
-    version: '0.3.0',
+    version: '0.3.1',
     auth: 'bearer',
     models: '/compute/api/v1/models',
     chat_completions: '/compute/api/v1/chat/completions',
@@ -949,7 +949,7 @@ export class ComputeNetwork {
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
     }
     if (isComputeApiHealthzPath(path) && (request.method === 'GET' || request.method === 'HEAD')) {
-      return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.0', midstream_fail_honesty: true }, 200, allowedOrigin || '*', credentials));
+      return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.1', midstream_fail_honesty: true }, 200, allowedOrigin || '*', credentials));
     }
     if ((path === '/compute/api/night' || path === '/compute/api/night/') && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'POST')) {
       if (!allowedOrigin) return maybeHead(request, originRequired());
@@ -2484,7 +2484,7 @@ export async function computeApi(request, env, allowedOrigin) {
     return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
   }
   if (isComputeApiHealthzPath(path) && (request.method === 'GET' || request.method === 'HEAD')) {
-    return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.0' }, 200, allowedOrigin || '*', credentials));
+    return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.1' }, 200, allowedOrigin || '*', credentials));
   }
   if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && (request.method === 'GET' || request.method === 'HEAD')) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));

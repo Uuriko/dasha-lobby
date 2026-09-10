@@ -168,7 +168,7 @@ const env = {
 };
 const token = await createSessionToken(env, { xId: '123', handle: 'dasha_test' });
 assert.equal((await (await worker.fetch(new Request('https://lobby.getdasha.com/compute/api/status'), env, {})).json()).live, true);
-assert.deepEqual(await (await worker.fetch(new Request('https://lobby.getdasha.com/compute/api/healthz', { headers: { Origin: 'https://www.getdasha.com' } }), env, {})).json(), { ok: true, service: 'dasha-compute', version: '0.3.0' });
+assert.deepEqual(await (await worker.fetch(new Request('https://lobby.getdasha.com/compute/api/healthz', { headers: { Origin: 'https://www.getdasha.com' } }), env, {})).json(), { ok: true, service: 'dasha-compute', version: '0.3.1' });
 const hosted = await worker.fetch(new Request('https://lobby.getdasha.com/compute/api/chat', {
   method: 'POST',
   headers: { Cookie: `__Host-dasha_x=${token}`, Origin: 'https://www.getdasha.com', 'Content-Type': 'application/json' },

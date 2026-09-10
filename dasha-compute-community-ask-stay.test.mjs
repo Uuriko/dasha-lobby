@@ -26,6 +26,8 @@ function assertCommunityStay(html, label) {
   assert.match(html, /function defaultAskEngine\(/, `${label} defaultAskEngine`);
   assert.match(html, /function enterAskEngine\(/, `${label} enterAskEngine`);
   assert.match(html, /function maybeAdoptCommunityDefault\(/, `${label} maybeAdoptCommunityDefault`);
+  assert.match(html, /function paintHowEngineDoors\(/, `${label} paintHowEngineDoors`);
+  assert.match(html, /if\(eng==='hosted'&&!hostedChosenThisSession\)/, `${label} warm Hosted Run adopts Community`);
   assert.match(html, /function paintCommunityWorkingFace\(/, `${label} paintCommunityWorkingFace`);
   assert.match(html, /function paintCommunityMissFace\(/, `${label} paintCommunityMissFace`);
   assert.match(html, /A Mac is working\./, `${label} A Mac is working.`);
@@ -73,11 +75,17 @@ if (puppeteer && existsSync(chrome)) {
         change: ($("change-engine")?.textContent || "").trim(),
         hostedChip: ($("honesty-hosted")?.textContent || "").trim(),
         hostedHidden: $("honesty-hosted")?.hidden === true,
+        howComPrimary: $("eng-community")?.classList.contains("primary") === true,
+        howHostSecondary: $("eng-hosted")?.classList.contains("secondary") === true,
+        askHosted: $("ask-hosted")?.hidden !== true,
       };
     });
     assert.equal(adopted.engine, "community", "Mac online → Community default");
     assert.equal(adopted.model, "gemma3-27b", "prefer advertised gemma3-27b");
     assert.equal(adopted.change, "Community · gemma3-27b");
+    assert.equal(adopted.howComPrimary, true, "How Community ink-on-acid primary");
+    assert.equal(adopted.howHostSecondary, true, "How Hosted quieter secondary");
+    assert.equal(adopted.askHosted, true, "Ask Hosted quieter door");
     assert.equal(adopted.hostedHidden, true, "Hosted · live hidden on Community");
     assert.equal(adopted.hostedChip, "", "Hosted chip text cleared on Community");
 
@@ -268,6 +276,77 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(run.hostedHidden, true, "Hosted · live is not the answer receipt");
     assert.notEqual(run.answer, "Hosted · live");
     assert.notEqual(run.title, "Hosted · live");
+
+    const warm = await page.evaluate(async () => {
+      hostedChosenThisSession = false;
+      noMacHostedFallback = false;
+      loggedIn = true;
+      hostedLive = true;
+      providersOnline = 1;
+      networkModels = new Set(["gemma3-27b"]);
+      networkCapacity = [{ model: "gemma3-27b", measured_providers: 1, tokens_per_second: 2.93 }];
+      $("engine").value = "hosted";
+      $("model").value = "gpt-oss-20b";
+      $("prompt").value = "Use the warm Mac.";
+      showTf("ask");
+      updateRun();
+      window.__dashaFetchLog = [];
+      window.__dashaChatCalled = false;
+      window.__dashaJobsCalled = false;
+      const orig = window.fetch;
+      window.fetch = async (url, opts = {}) => {
+        const href = String(url);
+        let body = opts.body;
+        if (typeof body !== "string") {
+          try { body = body ? JSON.stringify(body) : ""; } catch { body = ""; }
+        }
+        window.__dashaFetchLog.push({ url: href, method: String(opts.method || "GET").toUpperCase(), body: String(body || "") });
+        if (href.includes("/compute/api/chat")) {
+          window.__dashaChatCalled = true;
+          return new Response(JSON.stringify({ answer: "hosted slip", model: "gpt-oss-20b" }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        if (href.includes("/compute/api/network")) {
+          return new Response(JSON.stringify({
+            providers_online: 1,
+            models_available: ["gemma3-27b"],
+            capacity: [{ model: "gemma3-27b", measured_providers: 1, tokens_per_second: 2.93 }],
+          }), { status: 200, headers: { "content-type": "application/json" } });
+        }
+        if (href.includes("/compute/api/jobs")) {
+          window.__dashaJobsCalled = true;
+          return new Response(JSON.stringify({ error: "No reply." }), {
+            status: 503,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
+      };
+      $("run-demo").disabled = false;
+      $("run-demo").hidden = false;
+      $("run-demo").click();
+      const started = Date.now();
+      while (Date.now() - started < 2500) {
+        if (window.__dashaJobsCalled || window.__dashaChatCalled) break;
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      window.fetch = orig;
+      const jobs = (window.__dashaFetchLog || []).filter((row) => row.url.includes("/compute/api/jobs") && row.method === "POST");
+      let jobBody = null;
+      try { jobBody = jobs[0]?.body ? JSON.parse(jobs[0].body) : null; } catch { jobBody = null; }
+      return {
+        engine: $("engine")?.value || "",
+        chatCalled: window.__dashaChatCalled === true,
+        jobs: jobs.length,
+        jobBody,
+      };
+    });
+    assert.equal(warm.engine, "community", "warm Hosted Run adopts Community");
+    assert.equal(warm.chatCalled, false, "warm Run does not quietly Hosted chat");
+    assert.ok(warm.jobs >= 1, "warm Run POSTs Community jobs");
+    assert.equal(warm.jobBody?.route, "community", "warm Run job route community");
   } finally {
     await browser.close();
   }
