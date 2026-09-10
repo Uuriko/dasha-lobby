@@ -56,6 +56,7 @@ assert.match(COMPUTE_LLMS_TXT, new RegExp(`^www ${COMPUTE_API_BASE_WWW.replace(/
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^healthz ${COMPUTE_HEALTHZ.replace(/\./g, '\\.')}$`, 'm'));
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^network ${COMPUTE_NETWORK.replace(/\./g, '\\.')}$`, 'm'));
 assert.match(COMPUTE_LLMS_TXT, /auth Bearer API key/, 'packet names Bearer auth');
+assert.match(COMPUTE_LLMS_TXT, /^no key needed for healthz \+ network \+ models; key needed for chat$/m, 'packet soft-guest line');
 assert.match(COMPUTE_LLMS_TXT, /First path: Sign in, create a key, change the base URL\./, 'packet first path');
 assert.match(COMPUTE_LLMS_TXT, /^Community: a peer Mac runs the job\.$/m, 'Community one-liner');
 assert.match(COMPUTE_LLMS_TXT, /^Hosted: still there when no Mac is online\.$/m, 'Hosted one-liner');
@@ -73,6 +74,8 @@ assert.equal(COMPUTE_AGENT_JSON.base_url, COMPUTE_API_BASE);
 assert.equal(COMPUTE_AGENT_JSON.base_url_www, COMPUTE_API_BASE_WWW);
 assert.equal(COMPUTE_AGENT_JSON.auth.type, 'api_key');
 assert.equal(COMPUTE_AGENT_JSON.auth.scheme, 'Bearer');
+assert.deepEqual(COMPUTE_AGENT_JSON.auth.public_reads, ['healthz', 'network', 'models']);
+assert.equal(COMPUTE_AGENT_JSON.auth.chat, 'bearer');
 assert.equal(COMPUTE_AGENT_JSON.endpoints.chat_completions, `${COMPUTE_API_BASE}/chat/completions`);
 assert.equal(COMPUTE_AGENT_JSON.endpoints.models, `${COMPUTE_API_BASE}/models`);
 assert.equal(COMPUTE_AGENT_JSON.endpoints.healthz, COMPUTE_HEALTHZ);

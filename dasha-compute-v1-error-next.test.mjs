@@ -53,6 +53,7 @@ function assertAxNext(body, { message, type, reason, status = 'action_required' 
   const key = openaiErrorBody('invalid API key', 401, 'authentication_error');
   assertAxNext(key, { message: 'invalid API key', type: 'authentication_error', reason: 'invalid_api_key' });
   assert.equal(key.next.some(s => s.path === '/compute#build'), true);
+  assert.equal(key.next.some(s => s.path === '/compute/llms.txt'), true);
   assert.equal(key.next.some(s => /Authorization: Bearer \$DASHA_KEY/.test(s.command || '')), true);
 
   const credits = openaiErrorBody('top up credits', 402, 'invalid_request_error');
@@ -146,8 +147,13 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     : (req) => worker.fetch(req, workerEnv);
 
   const unauth = await pair(host, '/compute/api/v1/models', {}, fetchImpl);
-  assert.equal(unauth.status, 401, `${host} models 401`);
-  assertAxNext(unauth.body, { message: 'invalid API key', type: 'authentication_error', reason: 'invalid_api_key' });
+  assert.equal(unauth.status, 200, `${host} models soft-guest`);
+  assert.equal(unauth.body.object, 'list');
+  assert.deepEqual(unauth.body.data, []);
+
+  const retrieveUnauth = await pair(host, '/compute/api/v1/models/qwen3-8b', {}, fetchImpl);
+  assert.equal(retrieveUnauth.status, 401, `${host} retrieve 401`);
+  assertAxNext(retrieveUnauth.body, { message: 'invalid API key', type: 'authentication_error', reason: 'invalid_api_key' });
 
   const chat = await pair(host, '/compute/api/v1/chat/completions', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: chatBody,

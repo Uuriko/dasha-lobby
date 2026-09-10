@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-/** OpenAI SDK GET /v1/models/{id} (models.retrieve) must auth like list, not generic {error:not found}. Empty network 404 does not invent a Mac. */
+/** OpenAI SDK GET /v1/models/{id} (models.retrieve) stays keyed. List is soft-guest. Empty network 404 does not invent a Mac. */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
+import { ComputeNetwork } from './dasha-compute-network.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'v1-models-retrieve-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -96,8 +96,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 }
 
 const list = await worker.fetch(new Request('https://www.getdasha.com/compute/api/v1/models'), workerEnv);
-assert.equal(list.status, 401);
-assert.deepEqual(await list.json(), openaiErrorBody('invalid API key', 401, 'authentication_error'));
+assert.equal(list.status, 200);
+assert.deepEqual(await list.json(), { object: 'list', data: [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' }] });
 const foo = await worker.fetch(new Request('https://www.getdasha.com/compute/api/foo'), workerEnv);
 assert.equal(foo.status, 404);
 assert.deepEqual(await foo.json(), { error: 'not found' });

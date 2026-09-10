@@ -267,7 +267,7 @@ assert.equal(JSON.stringify([...rows.values()]).includes(developerKey.api_key), 
 const listedKeys = await (await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/keys', { headers: userHeaders }))).json();
 assert.deepEqual(listedKeys.keys.map(key => key.name), ['SDK test']);
 assert.equal('tokenHash' in listedKeys.keys[0], false);
-assert.equal((await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/models', { headers: { Authorization: 'Bearer wrong' } }))).status, 401);
+assert.equal((await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/models', { headers: { Authorization: 'Bearer wrong' } }))).status, 200);
 const apiHeaders = { Authorization: `Bearer ${developerKey.api_key}`, 'Content-Type': 'application/json' };
 const apiModels = await (await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/models', { headers: apiHeaders }))).json();
 assert.deepEqual(apiModels.data.map(model => model.id), ['qwen3-8b']);
@@ -310,7 +310,8 @@ assert.match(streamText, /"content":"from Dasha"/);
 assert.match(streamText, /"finish_reason":"stop"/);
 assert.match(streamText, /data: \[DONE\]/);
 assert.equal((await lobby.fetch(new Request(`https://lobby.getdasha.com/compute/api/keys/${developerKey.id}`, { method: 'DELETE', headers: userHeaders }))).status, 200);
-assert.equal((await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/models', { headers: apiHeaders }))).status, 401);
+assert.equal((await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/models', { headers: apiHeaders }))).status, 200);
+assert.equal((await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/chat/completions', { method: 'POST', headers: apiHeaders, body: JSON.stringify({ model: 'qwen3-8b', messages: [{ role: 'user', content: 'hi' }] }) }))).status, 401);
 const nightCreated = await (await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/night', { method: 'POST', headers: userHeaders, body: JSON.stringify({ title: 'Morning research', template: 'research', model: 'qwen3-8b', repeat: 'none', prompt: 'Research community inference reliability.' }) }))).json();
 assert.equal(nightCreated.task.status, 'running');
 const nightPoll = await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/providers/poll', { method: 'POST', headers: providerHeaders, body: JSON.stringify(heartbeat) }));

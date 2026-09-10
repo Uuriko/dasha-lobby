@@ -2,7 +2,7 @@
 /** GET+HEAD /compute/api/network and /v1/network plus trailing slash; empty 0 Macs. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
+import { ComputeNetwork } from './dasha-compute-network.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'network-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -97,8 +97,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   assert.equal(jobs.status, 401);
   assert.deepEqual(await jobs.json(), { error: 'login required' });
   const models = await worker.fetch(new Request(`https://${host}/compute/api/v1/models/`), workerEnv);
-  assert.equal(models.status, 401);
-  assert.deepEqual(await models.json(), openaiErrorBody('invalid API key', 401, 'authentication_error'));
+  assert.equal(models.status, 200);
+  assert.deepEqual(await models.json(), { object: 'list', data: [] });
   const chat = await worker.fetch(new Request(`https://${host}/compute/api/v1/chat/completions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }), workerEnv);
   assert.equal(chat.status, 401);
   assert.equal((await chat.json()).error.message, 'invalid API key');
