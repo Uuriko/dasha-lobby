@@ -140,6 +140,7 @@ import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
 import { applyCrewShareOg, crewApi, isCrewPagePath } from './dasha-crew.mjs';
 import { bagRecordApi, isBagRecordPath, lookupRecord, normalizeMint, renderBagShareHtml } from './dasha-bag-record.mjs';
+import { bagExitApi, isBagExitPath } from './dasha-bag-exit.mjs';
 import { appendFill, collectInboundFills, FAUCET_TAPE_SCAN_CAP, fillShareApi, isBareFaucetFillPath, isFaucetFillPath, isFaucetTapePath, shouldScanTape, tapeApi } from './dasha-faucet-tape.mjs';
 
 import {
@@ -418,6 +419,8 @@ Mint-dead. Freeze-dead. Burned Raydium LP.
 
 LP mint 8GDvsE3NbiKuo5uUFR9zgRY76mdhXuJfeDsy8hn7h3Aj.
 
+Exit estimate on the page: Jupiter quote for a pasted amount. Mark price ≠ exit.
+
 Page: https://www.getdasha.com/bag
 
 ## Dasha List
@@ -549,6 +552,11 @@ const BAG_HTML = `<!doctype html>
     input, button { font: inherit; color: inherit; background: transparent; border: 1px solid #666; padding: 0.4rem 0.7rem; }
     button { color: #dfff00; }
     #out { margin-top: 1rem; }
+    #exit { margin: 2.5rem 0 0; }
+    #exit form { margin: 0.8rem 0 0; }
+    #exit-out, #exit-copy-row { margin-top: 1rem; }
+    .exit-one { font-weight: 800; }
+    #exit-out code { margin: 0.5rem 0; padding: 0.6rem; }
   </style>
 </head>
 <body>
@@ -561,6 +569,18 @@ const BAG_HTML = `<!doctype html>
     <code>9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code>
     <p>LP mint <code>8GDvsE3NbiKuo5uUFR9zgRY76mdhXuJfeDsy8hn7h3Aj</code></p>
     <p><a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Open the associated mint on Jupiter</a></p>
+    <section id="exit" aria-labelledby="exit-title">
+      <p id="exit-title">Exit.</p>
+      <p id="mark-line">Spot / mark <span id="mark">…</span></p>
+      <p class="exit-one">Mark price ≠ exit.</p>
+      <form id="exit-form" action="/bag/api/exit" method="get">
+        <input id="exit-amount" name="amount" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="amount" aria-label="amount">
+        <button type="submit">Estimate</button>
+      </form>
+      <p id="exit-bag" hidden></p>
+      <div id="exit-out" hidden></div>
+      <p id="exit-copy-row" hidden><a href="#exit" data-receipt="md">Copy receipt</a> · <a href="#exit" data-receipt="json">JSON</a></p>
+    </section>
     <form id="record" action="/bag/api/record" method="get">
       <input id="mint" name="mint" type="text" autocomplete="off" spellcheck="false" placeholder="mint" aria-label="mint">
       <button type="submit">Look</button>
@@ -678,6 +698,150 @@ const BAG_HTML = `<!doctype html>
       input.value = q;
       look(q.trim());
     }
+  })();
+  (function () {
+    var MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
+    var form = document.getElementById('exit-form');
+    var input = document.getElementById('exit-amount');
+    var out = document.getElementById('exit-out');
+    var bag = document.getElementById('exit-bag');
+    var copyRow = document.getElementById('exit-copy-row');
+    var markEl = document.getElementById('mark');
+    if (!form || !input || !out) return;
+    var lastMd = '';
+    var lastJson = '';
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function show(html) {
+      out.hidden = false;
+      out.innerHTML = html;
+    }
+    function copyText(text, a) {
+      function done() { a.textContent = a.getAttribute('data-receipt') === 'json' ? 'Copied' : 'Copied'; }
+      function select() {
+        try {
+          var r = document.createRange();
+          r.selectNodeContents(a);
+          var s = getSelection();
+          s.removeAllRanges();
+          s.addRange(r);
+          a.textContent = 'Select';
+        } catch (err) { a.textContent = 'Select'; }
+      }
+      function legacy() {
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+          document.body.appendChild(ta);
+          ta.select();
+          var copied = false;
+          try { copied = document.execCommand('copy'); } catch (err) {}
+          document.body.removeChild(ta);
+          return copied;
+        } catch (err) { return false; }
+      }
+      function timed(p) {
+        return Promise.race([p, new Promise(function (_, rej) { setTimeout(function () { rej(new Error('copy')); }, 600); })]);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        timed(navigator.clipboard.writeText(text)).then(done).catch(function () { legacy() ? done() : select(); });
+      } else if (legacy()) done();
+      else select();
+    }
+    function paint(j) {
+      if (!j || j.ok !== true) {
+        lastMd = '';
+        lastJson = '';
+        if (copyRow) copyRow.hidden = true;
+        show('<p>' + esc((j && j.error) || 'Quote quiet.') + '</p>');
+        return;
+      }
+      lastMd = j.receiptMd || '';
+      lastJson = j.receiptJson || '';
+      if (copyRow) copyRow.hidden = !lastMd && !lastJson;
+      var sol = j.sol && (j.sol.haircutUi || j.sol.outUi);
+      var usd = j.usdc && (j.usdc.haircutUi || j.usdc.outUi);
+      var bits = [];
+      if (sol) bits.push('<p>Exit ~' + esc(sol) + ' SOL after ' + esc(String(j.slippageBps)) + ' bps haircut.</p>');
+      if (usd) bits.push('<p>~' + esc(usd) + ' USDC.</p>');
+      bits.push('<p>' + esc(j.fee || 'Jupiter quote fee 0') + ' · slippage ' + esc(String(j.slippageBps)) + ' bps' + (j.impact ? ' · impact ' + esc(j.impact) + '%' : '') + '</p>');
+      if (j.asOf) bits.push('<p><time datetime="' + esc(j.asOf) + '">' + esc(j.asOf) + '</time></p>');
+      if (j.route && j.route.indexOf('https://jup.ag/swap?sell=' + MINT) === 0) {
+        bits.push('<p><a href="' + esc(j.route) + '" rel="noopener noreferrer">Open the route on Jupiter</a></p>');
+      }
+      show(bits.join('') || '<p>Quote quiet.</p>');
+    }
+    function estimate(amount) {
+      fetch('/bag/api/exit?amount=' + encodeURIComponent(amount), { cache: 'no-store' })
+        .then(function (r) { return r.json().then(function (j) { return j; }); })
+        .then(paint)
+        .catch(function () { paint({ ok: false, error: 'Quote quiet.' }); });
+    }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      estimate((input.value || '').trim());
+    });
+    if (copyRow) {
+      copyRow.addEventListener('click', function (e) {
+        var a = e.target.closest('[data-receipt]');
+        if (!a) return;
+        e.preventDefault();
+        var text = a.getAttribute('data-receipt') === 'json' ? lastJson : lastMd;
+        if (!text) return;
+        copyText(text, a);
+      });
+    }
+    fetch('/price', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (p) {
+        if (!markEl || !p || !p.ok || !(p.priceUsd > 0)) return;
+        var n = Number(p.priceUsd);
+        markEl.textContent = n >= 1 ? n.toFixed(4) : n.toPrecision(4);
+      })
+      .catch(function () {});
+    function connectedPk() {
+      try {
+        var p = window.solana || (window.phantom && window.phantom.solana);
+        if (!p || !p.publicKey) return '';
+        if (p.isConnected === false) return '';
+        return String(p.publicKey.toBase58 ? p.publicKey.toBase58() : p.publicKey);
+      } catch (err) { return ''; }
+    }
+    function fillBag(pk) {
+      fetch('https://api.mainnet-beta.solana.com', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'getTokenAccountsByOwner',
+          params: [pk, { mint: MINT }, { encoding: 'jsonParsed' }],
+        }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          var list = j && j.result && j.result.value;
+          if (!list || !list.length) return;
+          var total = 0;
+          for (var i = 0; i < list.length; i++) {
+            var info = list[i].account && list[i].account.data && list[i].account.data.parsed && list[i].account.data.parsed.info;
+            var amt = info && info.tokenAmount && info.tokenAmount.uiAmount;
+            if (amt > 0) total += Number(amt);
+          }
+          if (!(total > 0)) return;
+          if (!(input.value || '').trim()) input.value = String(total);
+          if (bag) {
+            bag.hidden = false;
+            bag.textContent = 'On-chain ' + total + ' $dasha';
+          }
+        })
+        .catch(function () {});
+    }
+    var pk = connectedPk();
+    if (pk) fillBag(pk);
   })();
   </script>
 </body>
@@ -10465,6 +10629,9 @@ async function productEdge(request, url, env) {
     if (isBagRecordPath(url.pathname)) {
       return bagRecordApi(request, env);
     }
+    if (isBagExitPath(url.pathname)) {
+      return bagExitApi(request, env);
+    }
     if (isFaucetTapePath(url.pathname)) {
       if (env?.FAUCET) {
         try {
@@ -11757,6 +11924,9 @@ export default {
     }
     if (isBagRecordPath(url.pathname)) {
       return bagRecordApi(request, env);
+    }
+    if (isBagExitPath(url.pathname)) {
+      return bagExitApi(request, env);
     }
     if (isFaucetTapePath(url.pathname)) {
       if (env?.FAUCET) {
