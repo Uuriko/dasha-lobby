@@ -9,7 +9,7 @@ Register this Mac on the live Dasha community network, install Ollama + the Dash
 - Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)
 - Coordinator: https://lobby.getdasha.com/compute/api
 - Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
-- Prefer sub-24GB chat models: qwen3:8b or gemma3:12b (map qwen3-8b=qwen3:8b)
+- Prefer sub-24GB chat models: qwen3:4b (fast), qwen3:8b, or gemma3:12b (map qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b)
 - Token goes in `.dasha-provider-key` mode 0600 — never put the provider key on argv or shell history
 - Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh
 - Do not send secrets in prompts. Operators can read jobs assigned to this Mac.
@@ -54,7 +54,7 @@ dasha-compute status
 - Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.
 - `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.
 - After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks — never invent.
-- Stay on sub-24GB chat (qwen3:8b / gemma3:12b). Do not require a 36GB bar.
+- Stay on sub-24GB chat (qwen3:4b / qwen3:8b / gemma3:12b). Do not require a 36GB bar.
 
 ## Host power / thermal / SIP (soft)
 - `dasha-compute doctor` soft-warns when on battery, Low Power Mode, elevated thermal pressure, or SIP disabled/unreadable (Darwin best-effort).
@@ -64,7 +64,7 @@ dasha-compute status
 ## Keep-alive (sub-24GB)
 - Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service — a shell export alone is not enough for the macOS app).
 - A sleeping Mac is offline to buyers: the agent holds `caffeinate -is` while it runs (system sleep prevented on AC; battery can still sleep). For an always-on server Mac, also `sudo pmset -a sleep 0`. Doctor soft-warns when system sleep is enabled.
-- Do not pin 27B on a 16–24GB Air for interactive chat; use 8B/12B.
+- Do not pin 27B on a 16–24GB Air for interactive chat; use 4B/8B/12B.
 - `dasha-compute doctor` soft-hints when a mapped model looks ≥27B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.
 - Advertising/heartbeat OK while mid-Ask fails with `provider inference failed: URLError` → localhost Ollama on `127.0.0.1:11434` was refused/reset. Soft doctor does not block advertise alone — fix Ollama keep-alive / restart service.
 

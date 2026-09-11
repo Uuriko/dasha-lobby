@@ -10,6 +10,7 @@ const jobTimeoutMs = Math.max(5_000, Number(process.env.JOB_TIMEOUT_MS || 120_00
 const maxBodyBytes = 256 * 1024;
 const providerFreshnessMs = 30_000;
 const models = [
+  { id: "qwen3-4b", object: "model", owned_by: "community", size_gb: 2.5, min_memory_gb: 8, status: "alpha" },
   { id: "qwen3-8b", object: "model", owned_by: "community", size_gb: 5.2, min_memory_gb: 8, status: "alpha" },
   { id: "gemma3-12b", object: "model", owned_by: "community", size_gb: 8.1, min_memory_gb: 16, status: "alpha" },
   { id: "gpt-oss-20b", object: "model", owned_by: "community", size_gb: 14, min_memory_gb: 16, status: "alpha" },
