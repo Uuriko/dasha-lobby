@@ -12,6 +12,9 @@
  * to Ask. Live GET /compute/provide/{enroll,setup,doctor,register} (+slash /
  * Title-case) were HTML 404 on www + lobby while /compute/enroll|/setup|
  * /doctor|/provide already 308 → /compute#provide. Same join family.
+ * Live GET /compute/provide/{install,onboarding,guide,bootstrap,download,
+ * token,key} (+slash / Title-case) still HTML 404 after that fold. Same
+ * join family. Do not invent /compute/provide/foo peers.
  * Fold this join family to /compute#provide.
  * After #192/#193, leftover /compute/sdk /compute/sdk-docs /compute/cli
  * /compute/api-reference still dumped to the JSON gateway. Same family,
@@ -35,6 +38,7 @@ assert.match(workerSrc, /Live GET \/compute\/doctor was 308/, 'live doctor comme
 assert.match(workerSrc, /\/compute\/documentation \+ \/compute\/openapi \(no \.json\)/, 'documentation leftover comment');
 assert.match(workerSrc, /Leftover \/provide \/enroll \/setup/, 'provide join leftover comment');
 assert.match(workerSrc, /\/compute\/provide\/\{enroll,setup,doctor,register\}/, 'nested provide leftover comment');
+assert.match(workerSrc, /\/compute\/provide\/\{install,onboarding,guide,bootstrap,download,/, 'nested provide install leftover comment');
 assert.match(workerSrc, /\/compute\/sdk \/compute\/sdk-docs \/compute\/cli \/compute\/api-reference still dumped/, 'sdk/cli leftover comment');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
@@ -169,6 +173,48 @@ const PROVIDE_JOIN = [
   '/COMPUTE/PROVIDE/REGISTER',
   '/Compute/Provide/Register',
   '/Compute/Provide/Register/',
+  '/compute/provide/install',
+  '/compute/provide/install/',
+  '/Compute/provide/install',
+  '/COMPUTE/PROVIDE/INSTALL',
+  '/Compute/Provide/Install',
+  '/Compute/Provide/Install/',
+  '/compute/provide/onboarding',
+  '/compute/provide/onboarding/',
+  '/Compute/provide/onboarding',
+  '/COMPUTE/PROVIDE/ONBOARDING',
+  '/Compute/Provide/Onboarding',
+  '/Compute/Provide/Onboarding/',
+  '/compute/provide/guide',
+  '/compute/provide/guide/',
+  '/Compute/provide/guide',
+  '/COMPUTE/PROVIDE/GUIDE',
+  '/Compute/Provide/Guide',
+  '/Compute/Provide/Guide/',
+  '/compute/provide/bootstrap',
+  '/compute/provide/bootstrap/',
+  '/Compute/provide/bootstrap',
+  '/COMPUTE/PROVIDE/BOOTSTRAP',
+  '/Compute/Provide/Bootstrap',
+  '/Compute/Provide/Bootstrap/',
+  '/compute/provide/download',
+  '/compute/provide/download/',
+  '/Compute/provide/download',
+  '/COMPUTE/PROVIDE/DOWNLOAD',
+  '/Compute/Provide/Download',
+  '/Compute/Provide/Download/',
+  '/compute/provide/token',
+  '/compute/provide/token/',
+  '/Compute/provide/token',
+  '/COMPUTE/PROVIDE/TOKEN',
+  '/Compute/Provide/Token',
+  '/Compute/Provide/Token/',
+  '/compute/provide/key',
+  '/compute/provide/key/',
+  '/Compute/provide/key',
+  '/COMPUTE/PROVIDE/KEY',
+  '/Compute/Provide/Key',
+  '/Compute/Provide/Key/',
 ];
 
 const GATEWAY_UNCHANGED = [
@@ -218,6 +264,7 @@ assert.notEqual(potterHome308Dest('/compute/swagger.json'), SKILL, 'do not inven
 assert.notEqual(potterHome308Dest('/compute/readme'), SKILL, 'do not invent /compute/readme');
 assert.notEqual(potterHome308Dest('/v1'), PROVIDE, 'do not fold bare /v1 into provide');
 assert.notEqual(potterHome308Dest('/compute/ocm'), PROVIDE, 'do not fold ocm/ into provide');
+assert.notEqual(potterHome308Dest('/compute/provide/foo'), PROVIDE, 'do not invent /compute/provide/foo');
 assert.match(potterHome308Dest('/doctor') || '', /#provide$/, 'apex /doctor hashes #provide');
 
 const env = {
@@ -282,5 +329,12 @@ assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/enroll</loc>`), 'sitemap 
 assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/setup</loc>`), 'sitemap omits leftover /compute/provide/setup');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/doctor</loc>`), 'sitemap omits leftover /compute/provide/doctor');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/register</loc>`), 'sitemap omits leftover /compute/provide/register');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/install</loc>`), 'sitemap omits leftover /compute/provide/install');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/onboarding</loc>`), 'sitemap omits leftover /compute/provide/onboarding');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/guide</loc>`), 'sitemap omits leftover /compute/provide/guide');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/bootstrap</loc>`), 'sitemap omits leftover /compute/provide/bootstrap');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/download</loc>`), 'sitemap omits leftover /compute/provide/download');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/token</loc>`), 'sitemap omits leftover /compute/provide/token');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/provide/key</loc>`), 'sitemap omits leftover /compute/provide/key');
 
-console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json)+/sdk+/sdk-docs+/cli+/api-reference 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/* + /compute/provide/{enroll,setup,doctor,register} 308 /compute#provide; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');
+console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json)+/sdk+/sdk-docs+/cli+/api-reference 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/* + /compute/provide/{enroll,setup,doctor,register,install,onboarding,guide,bootstrap,download,token,key} 308 /compute#provide; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');
