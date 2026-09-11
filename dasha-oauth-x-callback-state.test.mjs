@@ -27,6 +27,8 @@ const oauthSrc = workerSrc.slice(
 assert.ok(oauthSrc.includes('async function handleOAuth'), 'handleOAuth slice');
 assert.doesNotMatch(oauthSrc, /this\.state\.storage/, 'X OAuth must not read room DO storage (Worker isolate has none)');
 assert.doesNotMatch(oauthSrc, /bumpLobbyMetric\(this/, 'X sign-in metric must not use this');
+assert.doesNotMatch(oauthSrc, /String\(e\.message \|\| e\)/, 'callback catch must not paint raw JS messages');
+assert.match(oauthSrc, /oauthLinkErrorMessage/, 'callback catch uses the short error helper');
 assert.match(oauthSrc, /st\?\.state/, 'callback uses optional state on the signed cookie payload');
 
 const SECRET = 'oauth-x-callback-state-secret';
@@ -63,11 +65,25 @@ async function signedStateCookie(state, verifier, extra = {}) {
   return `__Host-dasha_x_oauth=${token}`;
 }
 
-function installXFetch({ tokenOk = true, userOk = true, handle = 'ihwylie' } = {}) {
+function installXFetch({
+  tokenOk = true,
+  userOk = true,
+  handle = 'dash_test',
+  tokenStatus,
+  tokenBody,
+} = {}) {
   const prev = globalThis.fetch;
   globalThis.fetch = async (url) => {
     const href = String(url);
     if (href.includes('/oauth2/token')) {
+      if (tokenBody !== undefined || tokenStatus !== undefined) {
+        const status = tokenStatus ?? 200;
+        const body = tokenBody === undefined ? { access_token: 'x-access-test' } : tokenBody;
+        return new Response(body === null ? 'null' : JSON.stringify(body), {
+          status,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
       if (!tokenOk) {
         return new Response(JSON.stringify({ error: 'invalid_grant', error_description: 'code expired' }), {
           status: 400,
@@ -90,7 +106,7 @@ function installXFetch({ tokenOk = true, userOk = true, handle = 'ihwylie' } = {
         data: {
           id: '42',
           username: handle,
-          name: 'Ian',
+          name: 'Dash',
           created_at: '2018-01-01T00:00:00.000Z',
         },
       }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -106,6 +122,11 @@ assert.equal(
   'TypeError reading state stays a short honest error',
 );
 assert.equal(oauthLinkErrorMessage(new Error('code expired')), 'code expired');
+assert.equal(
+  oauthLinkErrorMessage(new Error("token failed\n    at handleOAuth (dasha-lobby-worker.mjs:9842:13)\n    at fetch")),
+  'token failed',
+  'stacked Error keeps first line only',
+);
 
 await assert.doesNotReject(() => bumpLobbyMetric(undefined, 'signin:success:x'));
 await assert.doesNotReject(() => bumpLobbyMetric(null, 'signin:success:x'));
@@ -127,6 +148,60 @@ const missingCookieBody = await missingCookie.text();
 assert.match(missingCookieBody, /Invalid OAuth state/);
 assert.doesNotMatch(missingCookieBody, /reading ['"]state['"]/);
 
+const blobNoState = await signPayload(SECRET, {
+  v: 1,
+  kind: 'oauth_state',
+  verifier: 'verifier-nostate',
+  exp: Date.now() + 15 * 60_000,
+});
+const missingBlobState = await callback(
+  'https://lobby.getdasha.com/oauth/x/callback?code=abc&state=xyz',
+  { cookie: `__Host-dasha_x_oauth=${blobNoState}` },
+);
+assert.equal(missingBlobState.status, 400, 'PKCE blob missing state is 400 not TypeError');
+const missingBlobStateBody = await missingBlobState.text();
+assert.match(missingBlobStateBody, /Invalid OAuth state/);
+assert.doesNotMatch(missingBlobStateBody, /reading ['"]state['"]/);
+assert.doesNotMatch(missingBlobStateBody, /Cannot read propert/);
+assert.doesNotMatch(missingBlobStateBody, /\bat\s+\S+/);
+
+const restoreEmptyToken = installXFetch({ tokenBody: {}, tokenStatus: 200 });
+const emptyToken = await callback(
+  'https://lobby.getdasha.com/oauth/x/callback?code=empty&state=state-empty',
+  { cookie: await signedStateCookie('state-empty', 'verifier-empty') },
+);
+const emptyTokenBody = await emptyToken.text();
+restoreEmptyToken();
+assert.equal(emptyToken.status, 502, 'empty token payload is honest 502');
+assert.match(emptyTokenBody, /Could not link X/);
+assert.match(emptyTokenBody, /token exchange failed/);
+assert.doesNotMatch(emptyTokenBody, /reading ['"]state['"]/);
+assert.doesNotMatch(emptyTokenBody, /Cannot read propert/);
+assert.doesNotMatch(emptyTokenBody, /\bat handleOAuth\b/);
+assert.doesNotMatch(emptyTokenBody, /file:\/\//);
+
+const restoreNullToken = installXFetch({ tokenBody: null, tokenStatus: 200 });
+const nullToken = await callback(
+  'https://lobby.getdasha.com/oauth/x/callback?code=nulltok&state=state-null',
+  { cookie: await signedStateCookie('state-null', 'verifier-null') },
+);
+const nullTokenBody = await nullToken.text();
+restoreNullToken();
+assert.equal(nullToken.status, 502, 'null token JSON is honest 502');
+assert.match(nullTokenBody, /token exchange failed/);
+assert.doesNotMatch(nullTokenBody, /reading ['"]state['"]/);
+
+const restoreStateOnly = installXFetch({ tokenBody: { state: 'orphan' }, tokenStatus: 200 });
+const stateOnlyToken = await callback(
+  'https://lobby.getdasha.com/oauth/x/callback?code=statetok&state=state-only',
+  { cookie: await signedStateCookie('state-only', 'verifier-only') },
+);
+const stateOnlyBody = await stateOnlyToken.text();
+restoreStateOnly();
+assert.equal(stateOnlyToken.status, 502, 'token JSON with only state is not a crash');
+assert.match(stateOnlyBody, /token exchange failed/);
+assert.doesNotMatch(stateOnlyBody, /reading ['"]state['"]/);
+
 const restoreOk = installXFetch();
 const state = 'state-ok-1';
 const cookie = await signedStateCookie(state, 'verifier-ok-1');
@@ -137,7 +212,7 @@ const linked = await callback(
 const linkedBody = await linked.text();
 restoreOk();
 assert.equal(linked.status, 200, 'valid callback links without this.state');
-assert.match(linkedBody, /Linked @ihwylie/);
+assert.match(linkedBody, /Linked @dash_test/);
 assert.doesNotMatch(linkedBody, /Could not link X/);
 assert.doesNotMatch(linkedBody, /reading ['"]state['"]/);
 assert.match(String(linked.headers.get('set-cookie') || linked.headers.getSetCookie?.().join('\n') || ''), new RegExp(COOKIE));
@@ -170,4 +245,4 @@ assert.match(failedBody, /Could not link X/);
 assert.match(failedBody, /code expired/);
 assert.doesNotMatch(failedBody, /reading ['"]state['"]/);
 
-console.log('dasha-oauth-x-callback-state: PASS (undefined this.state no crash; missing state 400; good callback 200)');
+console.log('dasha-oauth-x-callback-state: PASS (undefined this.state no crash; missing state/token payload; short error page)');

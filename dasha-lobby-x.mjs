@@ -188,13 +188,15 @@ export async function exchangeCode(env, { code, verifier }) {
     body,
   });
   const data = await res.json().catch(() => ({}));
+  const payload = data && typeof data === 'object' && !Array.isArray(data) ? data : {};
   if (!res.ok) {
-    const err = new Error(data.error_description || data.error || 'token exchange failed');
+    const err = new Error(payload.error_description || payload.error || 'token exchange failed');
     err.status = res.status;
-    err.data = data;
+    err.data = payload;
     throw err;
   }
-  return data;
+  if (!payload.access_token) throw new Error('token exchange failed');
+  return payload;
 }
 
 export async function fetchXUser(accessToken) {

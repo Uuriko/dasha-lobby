@@ -6228,13 +6228,19 @@ export async function bumpLobbyMetric(storage, name) {
   } catch {}
 }
 
-/** Honest Link-X error for the callback page. Never leak TypeError / undefined.state. */
+/** Honest Link-X error for the callback page. First line only — no stack, no TypeError. */
 export function oauthLinkErrorMessage(err) {
-  const raw = String(err && err.message || err).replace(/\s+/g, ' ').trim().slice(0, 200);
-  if (!raw || /Cannot read propert/i.test(raw) || /reading ['"]state['"]/i.test(raw)) {
+  const raw = String(err && err.message || err).replace(/\r/g, '');
+  const first = raw.split('\n')[0].replace(/\s+/g, ' ').trim().slice(0, 160);
+  if (
+    !first
+    || err instanceof TypeError
+    || /Cannot read propert/i.test(first)
+    || /reading ['"]state['"]/i.test(first)
+  ) {
     return 'Link failed. Try again.';
   }
-  return raw;
+  return first;
 }
 
 
