@@ -83,6 +83,9 @@ assert.match(COMPUTE_SKILL_MD, /^Hosted: still there when no Mac is online\.$/m,
 assert.match(COMPUTE_SKILL_MD, /x-dasha-route/, 'skill names spend route header');
 assert.match(COMPUTE_SKILL_MD, /x-dasha-spend-usd/, 'skill names spend usd header');
 assert.match(COMPUTE_SKILL_MD, /Community omits USD when unknown/, 'skill honesty: no invented community USD');
+assert.match(COMPUTE_SKILL_MD, /^## Provide speed$/m, 'skill Provide speed');
+assert.match(COMPUTE_SKILL_MD, /OLLAMA_KEEP_ALIVE/, 'skill keepalive');
+assert.match(COMPUTE_SKILL_MD, /Hosted-only when offered/, 'skill Hosted-only Flash non-claim');
 assert.ok(COMPUTE_SKILL_MD.includes(COMPUTE_LLMS_URL), 'skill links packet');
 assert.ok(COMPUTE_SKILL_MD.includes(COMPUTE_AGENT_JSON_URL), 'skill links agent.json');
 assert.doesNotMatch(COMPUTE_SKILL_MD, /plugin\.jup\.ag/, 'skill no plugin.jup.ag');

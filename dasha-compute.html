@@ -297,6 +297,10 @@ footer.listed-on img{display:block;height:32px;width:auto}
         <p class="ux-faq-q">Is hosting safe for my Mac?</p>
         <p class="ux-faq-a">Weights stay local (Ollama). We send prompts; you return text. Keychain holds the provider key. No remote shell. Pick models; stop anytime.</p>
       </div>
+      <div class="ux-faq-item" data-faq="provide" hidden>
+        <p class="ux-faq-q">How fast is Provide?</p>
+        <p class="ux-faq-a">Network capacity. Measured tok/s when measured_providers ≥ 1. Never invent.</p>
+      </div>
       <div class="ux-faq-item" data-faq="pay" hidden>
         <p class="ux-faq-q">What is Pay?</p>
         <p class="ux-faq-a">Top up or sponsor. Goes to credits.</p>
@@ -649,6 +653,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <p class="fine" id="provide-faq-jobs">Jobs cross your Mac. Don't put secrets. No attestation in alpha.</p>
     <p class="fine" id="provide-faq-offline">Offline: drop from advertise. No penalty. Earn only for served jobs.</p>
     <p class="fine" id="provide-faq-cmds">dasha-compute status · doctor · benchmark · logs · restart · uninstall</p>
+    <p class="fine" id="provide-faq-speed">How fast is Provide? Network capacity · measured_providers. Never invent.</p>
   </section>
   <pre class="setup" id="setup" aria-live="polite">curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
 tar -xzf dasha-compute-open-alpha.tar.gz
