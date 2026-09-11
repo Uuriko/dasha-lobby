@@ -557,6 +557,17 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
       next: [{ path: '/compute/api/v1/chat/completions' }],
     };
   }
+  if (/provider inference failed/i.test(msg)) {
+    return {
+      status: 'failed',
+      reason: 'provider_failed',
+      hint: 'Provider hiccup; retry or pick another live model from /compute/api/v1/models.',
+      next: [
+        { path: '/compute/api/v1/chat/completions' },
+        { path: '/compute/api/v1/models' },
+      ],
+    };
+  }
   return {
     status: status >= 500 ? 'failed' : 'action_required',
     reason: type === 'server_error' ? 'server_error' : 'invalid_request',
