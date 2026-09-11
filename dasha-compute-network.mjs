@@ -443,6 +443,17 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
       ],
     };
   }
+  if (/invalid provider token/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'invalid_provider_token',
+      hint: 'Mac token is dcp_ from /compute#provide — not a dsk_/dgk_ chat key.',
+      next: [
+        { path: '/compute#provide' },
+        { path: '/compute/skill.md' },
+      ],
+    };
+  }
   if (type === 'authentication_error' || /invalid API key/i.test(msg)) {
     return {
       status: 'action_required',
@@ -595,6 +606,29 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
       next: [{ path }, { command: `Use POST ${path}` }],
     };
   }
+  if (/^method not allowed$/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'method_not_allowed',
+      hint: 'Wrong HTTP method for this path.',
+      next: [
+        { path: '/compute/api/v1' },
+        { path: '/compute/skill.md' },
+      ],
+    };
+  }
+  if (/^not found$/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'not_found',
+      hint: 'No such Compute API path. See /compute/api/v1.',
+      next: [
+        { path: '/compute/api/v1' },
+        { path: '/compute/skill.md' },
+        { path: '/compute/llms.txt' },
+      ],
+    };
+  }
   if (/job expired|request timed out|request cancelled|provider failed/i.test(msg)) {
     const reason = /cancelled/i.test(msg) ? 'cancelled' : /timed out/i.test(msg) ? 'timeout' : /expired/i.test(msg) ? 'job_expired' : 'provider_failed';
     return {
@@ -636,6 +670,16 @@ export function openaiErrorBody(message, status = 400, type = 'invalid_request_e
 
 function openaiError(message, status = 400, type = 'invalid_request_error', extra = {}) {
   return json(openaiErrorBody(message, status, type), status, null, false, extra);
+}
+
+/** Same fail-loud envelope as v1 chat; used for compute API 404/405/provider auth. */
+function computeApiError(message, status = 404, origin = null, credentials = false, type) {
+  const errType = type || (
+    status === 401 || /invalid provider token/i.test(message)
+      ? 'authentication_error'
+      : 'invalid_request_error'
+  );
+  return json(openaiErrorBody(message, status, errType), status, origin, credentials);
 }
 
 async function body(request, limit = 4096) {
@@ -1602,7 +1646,7 @@ export class ComputeNetwork {
     // Funnel telemetry (task 22): client beacon intake. anon_id is a client-local UUID used ONLY
     // for rate limiting - never stored. No emails, prompts, or fingerprints accepted.
     if (path === '/compute/api/event' || path === '/compute/api/event/') {
-      if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin || '*', credentials));
+      if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin || '*', credentials));
       let body = {};
       try { body = await request.json(); } catch { body = {}; }
       const eventName = String(body && body.name || '');
@@ -1673,7 +1717,7 @@ export class ComputeNetwork {
     }
 
     if (path === '/compute/api/providers/register' || path === '/compute/api/providers/register/') {
-      if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, credentials));
+      if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
       if (!allowedOrigin) return originRequired();
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
@@ -1699,21 +1743,21 @@ export class ComputeNetwork {
     }
 
     if (path === '/compute/api/providers/verify' || path === '/compute/api/providers/verify/') {
-      if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, credentials));
+      if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
       const provider = await this.provider(request, await body(request));
-      return provider ? json({ ok: true, provider_id: provider.id, name: provider.name, models: provider.allowedModels || provider.models || [] }) : json({ error: 'invalid provider token' }, 401);
+      return provider ? json({ ok: true, provider_id: provider.id, name: provider.name, models: provider.allowedModels || provider.models || [] }) : computeApiError('invalid provider token', 401);
     }
 
     if (path === '/compute/api/providers/heartbeat' || path === '/compute/api/providers/heartbeat/') {
-      if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, credentials));
+      if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
       const provider = await this.provider(request, await body(request));
-      return provider ? json({ ok: true, provider_id: provider.id, name: provider.name, models: provider.allowedModels || provider.models || [] }) : json({ error: 'invalid provider token' }, 401);
+      return provider ? json({ ok: true, provider_id: provider.id, name: provider.name, models: provider.allowedModels || provider.models || [] }) : computeApiError('invalid provider token', 401);
     }
 
     if (path === '/compute/api/providers/poll' || path === '/compute/api/providers/poll/') {
-      if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, credentials));
+      if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
       const input = await body(request), provider = await this.provider(request, input);
-      if (!provider) return json({ error: 'invalid provider token' }, 401);
+      if (!provider) return computeApiError('invalid provider token', 401);
       const firstOnline = !Number(provider.lastSeenAt || 0);
       provider.lastSeenAt = now;
       const kitVersion = String(input.version || '').trim().slice(0, 32);
@@ -1739,9 +1783,9 @@ export class ComputeNetwork {
 
     const heartbeatMatch = path.match(/^\/compute\/api\/providers\/jobs\/([A-Za-z0-9_-]{6,64})\/heartbeat\/?$/);
     if (heartbeatMatch) {
-      if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, credentials));
+      if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
       const input = await body(request), provider = await this.provider(request, input), key = `compute:job:${heartbeatMatch[1]}`, job = await this.state.storage.get(key);
-      if (!provider) return json({ error: 'invalid provider token' }, 401);
+      if (!provider) return computeApiError('invalid provider token', 401);
       if (!job || job.providerId !== provider.id) return json({ error: 'job unavailable' }, 409);
       if (job.status === 'cancelled') return json({ ok: true, cancelled: true });
       if (job.status !== 'leased' || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
@@ -1754,7 +1798,7 @@ export class ComputeNetwork {
     const resultMatch = path.match(/^\/compute\/api\/providers\/jobs\/([A-Za-z0-9_-]{6,64})\/result$/);
     if (resultMatch && request.method === 'POST') {
       const input = await body(request, 24 * 1024), provider = await this.provider(request, input), key = `compute:job:${resultMatch[1]}`, job = await this.state.storage.get(key);
-      if (!provider) return json({ error: 'invalid provider token' }, 401);
+      if (!provider) return computeApiError('invalid provider token', 401);
       if (!job || job.status !== 'leased' || job.providerId !== provider.id || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
       if (job.stream) return json({ error: 'stream jobs must use the chunk endpoint' }, 409);
       const answer = String(input.content || '').trim(), error = String(input.error || '').trim().slice(0, 300);
@@ -1793,7 +1837,7 @@ export class ComputeNetwork {
     const chunkMatch = path.match(/^\/compute\/api\/providers\/jobs\/([A-Za-z0-9_-]{6,64})\/chunk$/);
     if (chunkMatch && request.method === 'POST') {
       const input = await body(request, 8192), provider = await this.provider(request, input), key = `compute:job:${chunkMatch[1]}`, job = await this.state.storage.get(key);
-      if (!provider) return json({ error: 'invalid provider token' }, 401);
+      if (!provider) return computeApiError('invalid provider token', 401);
       if (!job || job.status !== 'leased' || !job.stream || job.providerId !== provider.id || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
       const delta = String(input.delta || '');
       if (delta && ((job.chunks || []).join('').length + delta.length > 20_000)) return json({ error: 'stream result exceeds 20000 characters' }, 400);
@@ -2029,14 +2073,14 @@ export class ComputeNetwork {
       if (!order) return maybeHead(request, json({ error: 'order not found' }, 404, allowedOrigin, true));
 
       if (isConfirm) {
-        if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, true));
+        if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, true));
         const input = await body(request);
         const result = await this.settleSponsorOrder(order, { signature: input.signature, now: Date.now() });
         if (result.error && result.status) return json({ error: result.error, status: order.status }, result.status, allowedOrigin, true);
         return json(result.body, 200, allowedOrigin, true);
       }
 
-      if (request.method !== 'GET' && request.method !== 'HEAD') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, true));
+      if (request.method !== 'GET' && request.method !== 'HEAD') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, true));
       const nowMs = Date.now();
       if (order.status === 'pending' && Number(order.expiresAt) <= nowMs) {
         order = { ...order, status: 'expired' };
@@ -2505,7 +2549,7 @@ export class ComputeNetwork {
       if (!order || order.owner !== owner) return maybeHead(request, json({ error: 'order not found' }, 404, allowedOrigin, true));
 
       if (isConfirm) {
-        if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, true));
+        if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, true));
         const input = await body(request);
         const result = order.method === 'card'
           ? await this.settleCardOrder(order, { now: Date.now() })
@@ -2514,7 +2558,7 @@ export class ComputeNetwork {
         return json(result.body, 200, allowedOrigin, true);
       }
 
-      if (request.method !== 'GET' && request.method !== 'HEAD') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, true));
+      if (request.method !== 'GET' && request.method !== 'HEAD') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, true));
       const now = Date.now();
       if (order.status === 'pending' && Number(order.expiresAt) <= now) {
         order = { ...order, status: 'expired' };
@@ -2556,7 +2600,7 @@ export class ComputeNetwork {
       return computeV1Gateway(request, allowedOrigin, credentials);
     }
 
-    return json({ error: 'not found' }, 404, allowedOrigin, credentials);
+    return computeApiError('not found', 404, allowedOrigin, credentials);
   }
 
   async debitCredits(owner, { cents = HOSTED_ASK_PRICE_CENTS, reason = 'hosted-ask', requestId = null, now = Date.now() } = {}) {
@@ -3004,8 +3048,8 @@ export async function computeApi(request, env, allowedOrigin) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     return stub ? stub.fetch(request) : json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
   }
-  if (path !== '/compute/api/chat' && path !== '/compute/api/chat/') return json({ error: 'not found' }, 404, allowedOrigin, credentials);
-  if (request.method !== 'POST') return maybeHead(request, json({ error: 'method not allowed' }, 405, allowedOrigin, credentials));
+  if (path !== '/compute/api/chat' && path !== '/compute/api/chat/') return computeApiError('not found', 404, allowedOrigin, credentials);
+  if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
   if (!allowedOrigin) return originRequired();
   if (!env.AI) return json({ error: 'hosted demo unavailable', code: 'hosted_cut' }, 503, allowedOrigin, true);
   const session = await authSessionFromRequest(env, request), owner = identity(session);

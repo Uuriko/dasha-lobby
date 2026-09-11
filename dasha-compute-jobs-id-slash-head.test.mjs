@@ -2,7 +2,7 @@
 /** GET+HEAD /compute/api/jobs/:id and /:id/; login gate; empty HEAD; slash parity. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'jobs-id-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
@@ -73,7 +73,7 @@ assert.equal(await shownHead.text(), '');
 
 const short = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/jobs/job_x'));
 assert.equal(short.status, 404);
-assert.deepEqual(await short.json(), { error: 'not found' });
+assert.deepEqual(await short.json(), openaiErrorBody('not found', 404));
 
 const lobby = {
   idFromName: () => 'public',
@@ -112,7 +112,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
   const foo = await worker.fetch(new Request(`https://${host}/compute/api/foo`), workerEnv);
   assert.equal(foo.status, 404);
-  assert.deepEqual(await foo.json(), { error: 'not found' });
+  assert.deepEqual(await foo.json(), openaiErrorBody('not found', 404));
 }
 
 const streamId = 'job_stream';

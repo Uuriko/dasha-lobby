@@ -2,7 +2,7 @@
 /** GET+HEAD /compute/api/chat and /chat/; 405 method not allowed; empty HEAD; slash parity. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { computeApi, ComputeNetwork } from './dasha-compute-network.mjs';
+import { computeApi, ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'chat-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -33,7 +33,7 @@ async function pair(host, path, init = {}, fetchImpl) {
 for (const path of ['/compute/api/chat', '/compute/api/chat/']) {
   const get = await pair('lobby.getdasha.com', path, {}, (req) => computeApi(req, env, null));
   assert.equal(get.status, 405, `${path} GET`);
-  assert.deepEqual(get.body, { error: 'method not allowed' });
+  assert.deepEqual(get.body, openaiErrorBody('method not allowed', 405));
   const head = await computeApi(new Request(`https://lobby.getdasha.com${path}`, { method: 'HEAD' }), env, null);
   assert.equal(head.status, 405, `${path} HEAD`);
   assert.match(head.headers.get('content-type') || '', /application\/json/);
@@ -49,7 +49,7 @@ const workerEnv = { ...env, LOBBY: lobby };
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const wGet = await pair(host, '/compute/api/chat', {}, (request) => worker.fetch(request, workerEnv));
   assert.equal(wGet.status, 405, `${host} /compute/api/chat GET`);
-  assert.deepEqual(wGet.body, { error: 'method not allowed' });
+  assert.deepEqual(wGet.body, openaiErrorBody('method not allowed', 405));
   const wHead = await worker.fetch(new Request(`https://${host}/compute/api/chat/`, { method: 'HEAD' }), workerEnv);
   assert.equal(wHead.status, 405, `${host} /compute/api/chat/ HEAD`);
   assert.match(wHead.headers.get('content-type') || '', /application\/json/);
@@ -57,7 +57,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
   const foo = await worker.fetch(new Request(`https://${host}/compute/api/chatx`), workerEnv);
   assert.equal(foo.status, 404);
-  assert.deepEqual(await foo.json(), { error: 'not found' });
+  assert.deepEqual(await foo.json(), openaiErrorBody('not found', 404));
 }
 
 assert.equal([...rows.keys()].some(key => key.startsWith('compute:provider:')), false, 'must not invent Macs');

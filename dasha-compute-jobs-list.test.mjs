@@ -2,7 +2,7 @@
 /** GET+HEAD /compute/api/jobs and /jobs/ list owner jobs; no cookie 401; empty {jobs:[]}. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'jobs-list-secret', AI: { run: async () => ({ response: 'ok' }) } };
@@ -118,7 +118,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   assert.deepEqual(wList.body.jobs.map(j => j.id), ['job_mine_new', 'job_mine_old']);
   const wFoo = await worker.fetch(new Request(`https://${host}/compute/api/foo`), workerEnv);
   assert.equal(wFoo.status, 404);
-  assert.deepEqual(await wFoo.json(), { error: 'not found' });
+  assert.deepEqual(await wFoo.json(), openaiErrorBody('not found', 404));
 }
 
 assert.equal([...rows.keys()].some(key => key.startsWith('compute:provider:')), false, 'must not invent Macs');
