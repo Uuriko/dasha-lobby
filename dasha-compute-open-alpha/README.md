@@ -67,9 +67,10 @@ DASHA_PROVIDER_KEY=provider-secret \
 npm start
 
 # terminal 2 · provider
+ollama pull qwen3:4b
 ollama pull qwen3:8b
 DASHA_PROVIDER_KEY=provider-secret \
-DASHA_MODEL_MAP=qwen3-8b=qwen3:8b \
+DASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b \
 python3 provider/agent.py
 
 # terminal 3 · client

@@ -25,6 +25,7 @@ curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
 tar -xzf dasha-compute-open-alpha.tar.gz
 cd dasha-compute-open-alpha
 # install Ollama from https://ollama.com/download if missing
+ollama pull qwen3:4b
 ollama pull qwen3:8b
 umask 077
 cat > .dasha-provider-key <<'TOKEN'
@@ -33,7 +34,7 @@ TOKEN
 chmod 0600 .dasha-provider-key
 DASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \
 DASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \
-DASHA_MODEL_MAP=qwen3-8b=qwen3:8b \
+DASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b \
 ./install.sh
 ```
 

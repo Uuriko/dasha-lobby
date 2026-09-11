@@ -16,11 +16,15 @@ const provideDisk = readFileSync(join(root, "dasha-compute-skills/PROVIDE.md"), 
 assert.equal(htmlDisk, COMPUTE_PAGE_HTML, "embed matches dasha-compute.html");
 assert.equal(provideDisk, PROVIDE_SKILL_MD, "PROVIDE skill embed matches disk");
 
+const DUAL_MODEL_MAP = "DASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b";
+
 const SETUP_CRITICAL = [
   "curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz",
   "tar -xzf dasha-compute-open-alpha.tar.gz",
   "cd dasha-compute-open-alpha",
+  "ollama pull qwen3:4b",
   "ollama pull qwen3:8b",
+  DUAL_MODEL_MAP,
   "python3 provider/agent.py --doctor",
 ];
 
@@ -28,7 +32,9 @@ const PROVIDE_CRITICAL = [
   "curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz",
   "tar -xzf dasha-compute-open-alpha.tar.gz",
   "cd dasha-compute-open-alpha",
+  "ollama pull qwen3:4b",
   "ollama pull qwen3:8b",
+  DUAL_MODEL_MAP,
   "./install.sh",
   "dasha-compute doctor",
   "dasha-compute status",
@@ -77,6 +83,13 @@ assert.doesNotMatch(kitReadme, /Register this Mac/);
 assert.doesNotMatch(kitReadme, /\*\*Build\*\* tab/);
 assert.match(kitReadme, /name the Mac/);
 assert.match(kitReadme, /choose \*\*Register\*\*/);
+assert.match(kitReadme, /DASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b/, "kit README dual map");
+assert.match(kitReadme, /ollama pull qwen3:4b/, "kit README fast 4b pull");
+assert.doesNotMatch(
+  kitReadme,
+  /DASHA_MODEL_MAP=qwen3-8b=qwen3:8b(?:\s|\\|$)/,
+  "kit README must not regress to 8b-only MODEL_MAP",
+);
 assert.match(
   kitReadme,
   /Enroll code first[\s\S]*Never paste a `provider_token` into chat, issues, or Discord\/TG[\s\S]*Then `\.\/install\.sh`, `dasha-compute doctor`, advertise[\s\S]*battery \/ Low Power \/ thermal \/ SIP \/ older Ollama/,
