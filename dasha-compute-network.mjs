@@ -68,6 +68,7 @@ import {
 } from './dasha-compute-referral.mjs';
 import {
   HEAD_MAX_AGE_MS,
+  anchoredVerdict,
   appendChainedReceipt,
   appendHead,
   chainTip,
@@ -794,6 +795,7 @@ export function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
     attestation: null
   };
   if (model_id) receipt.model_id = model_id;
+  if (job.request_id) receipt.request_id = String(job.request_id).slice(0, 80);
   if (provider_class) receipt.provider_class = provider_class;
   if (completed_at) receipt.completed_at = completed_at;
   const tps = Number(tokensPerSecond);
@@ -1144,7 +1146,7 @@ export class ComputeNetwork {
     const requestedTemperature = Number(input.temperature);
     const stream = input.stream === true;
     const turns = countConversationTurns(messages);
-    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
+    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(input.request_id != null && String(input.request_id).trim() ? { request_id: String(input.request_id).trim().slice(0, 80) } : {}), ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
     await this.state.storage.put(`compute:job:${job.id}`, job);
     return { job };
   }
@@ -1470,13 +1472,17 @@ export class ComputeNetwork {
         if (Number(job.expiresAt) <= Date.now()) break;
         if (job.status === 'complete') {
           const honesty = effortHonestyFromJob(job);
+          const receipt = publicPhase0Receipt(job);
           return v1cors(json({
             id: `chatcmpl_${job.id.slice(4)}`,
+            job_id: job.id,
+            ...(job.request_id ? { request_id: job.request_id } : {}),
             object: 'chat.completion',
             created: Math.floor(job.createdAt / 1000),
             model: job.model,
             choices: [{ index: 0, message: { role: 'assistant', content: job.answer }, finish_reason: 'stop' }],
             usage: job.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+            ...(receipt ? { receipt } : {}),
             ...dashaEffortExtension(honesty),
           }, 200, null, false, { ...effortResponseHeaders(honesty), ...chatSpend(job) }));
         }
@@ -1693,6 +1699,7 @@ export class ComputeNetwork {
             usage,
             cents: settleCents,
             jobId: job.id,
+            requestId: job.request_id || null,
             model: job.model,
             latencyMs: job.leasedAt ? now - job.leasedAt : null,
             ...honestLoopFields(job),
@@ -1737,6 +1744,7 @@ export class ComputeNetwork {
             usage,
             cents: settleCents,
             jobId: job.id,
+            requestId: job.request_id || null,
             model: job.model,
             latencyMs: job.leasedAt ? now - job.leasedAt : null,
             ...honestLoopFields(job),
@@ -1984,6 +1992,25 @@ export class ComputeNetwork {
       return maybeHead(request, json({
         schema: 'settled.chain.v0',
         receipts,
+      }, 200, '*', false, { 'Cache-Control': 'no-cache' }));
+    }
+    // --- Block 32: machine-readable receipt verdict for agents (mirrors /verify page) ---
+    if ((path === '/compute/api/verify' || path === '/compute/api/verify/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const key = await headsSigningKey(this.env);
+      if (!key) return maybeHead(request, json({ error: 'signing not configured' }, 503, '*'));
+      const verifyNow = Date.now();
+      const receipts = await listChain(this.state.storage);
+      const heads = await listHeads(this.state.storage, { sinceMs: verifyNow - 86400000, now: verifyNow });
+      const verdict = await anchoredVerdict(receipts, heads, { [key.signer]: key.pubPem }, HEAD_MAX_AGE_MS, verifyNow);
+      const vurl = new URL(request.url);
+      const query = String(vurl.searchParams.get('hash') || vurl.searchParams.get('job_id') || vurl.searchParams.get('request_id') || '').trim();
+      const found = query ? receipts.find((r) => r.hash === query || r.job_id === query || (r.request_id && r.request_id === query)) || null : null;
+      return maybeHead(request, json({
+        schema: 'settled.verify.v0',
+        verdict,
+        chain: { length: receipts.length, tip: receipts.length ? receipts[receipts.length - 1].hash : 'GENESIS' },
+        ...(query ? { query, found: !!found, ...(found ? { receipt: found } : {}) } : {}),
+        checked_at: new Date(verifyNow).toISOString(),
       }, 200, '*', false, { 'Cache-Control': 'no-cache' }));
     }
     if ((path === '/heads' || path === '/heads/') && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -2846,7 +2873,7 @@ export async function computeApi(request, env, allowedOrigin) {
     if (stub) return stub.fetch(request);
     return maybeHead(request, json({ error: 'login required', ...creditsCatalog(null) }, 401, allowedOrigin, Boolean(allowedOrigin)));
   }
-  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     return stub ? stub.fetch(request) : json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
   }
