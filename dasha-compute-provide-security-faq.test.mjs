@@ -17,7 +17,7 @@ assert.equal(disk, COMPUTE_PAGE_HTML, 'embed matches dasha-compute.html');
 
 const HOST_ITEM = `<div class="ux-faq-item" data-faq="provide" hidden>
         <p class="ux-faq-q">Is hosting safe for my Mac?</p>
-        <p class="ux-faq-a">Weights stay local (Ollama). We send prompts; you return text. Keychain holds the provider key. No remote shell. Pick models; stop anytime.</p>
+        <p class="ux-faq-a">Ollama local. Keychain holds the key. No remote shell.</p>
       </div>`;
 
 function faqBlock(html) {
@@ -44,6 +44,7 @@ function assertHostSafe(html, label) {
   assert.match(html, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide door`);
   assert.doesNotMatch(faq, /How is hosting secure\?/, `${label} no long Q`);
   assert.doesNotMatch(faq, /disclaimer|not financial advice|dyor|\bnfa\b|not advice/i, `${label} no lecture`);
+  assert.doesNotMatch(faq, /Never invent/, `${label} no Never invent lecture`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 }
 

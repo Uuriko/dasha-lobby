@@ -2,7 +2,7 @@
 /**
  * Provide is fast — Darkbloom-energy without 176B-on-a-Mac.
  * /compute/skill.md + /compute/llms.txt: measured tok/s, keepalive, Hosted-only Flash.
- * Quiet FAQ: How fast is Provide? Network capacity / measured_providers. Never invent.
+ * Quiet FAQ: How fast is Provide? Network capacity / measured_providers. Honesty stays in tests.
  * Test-only. No wrangler. No Designer. No plugin.jup.ag. No Room. No people-data.
  */
 import assert from 'node:assert/strict';
@@ -64,13 +64,14 @@ function assertFaqSpeed(html, label) {
   const faq = faqBlock(html);
   const item = `<div class="ux-faq-item" data-faq="provide" hidden>
         <p class="ux-faq-q">How fast is Provide?</p>
-        <p class="ux-faq-a">Network capacity. Measured tok/s when measured_providers ≥ 1. Never invent.</p>
+        <p class="ux-faq-a">Network capacity. Measured tok/s when measured_providers ≥ 1.</p>
       </div>`;
   assert.ok(faq.includes(item), `${label} quiet How fast is Provide?`);
   assert.equal((faq.match(/How fast is Provide\?/g) || []).length, 1, `${label} speed Q once`);
   assert.match(faq, /measured_providers/, `${label} FAQ measured_providers`);
   assert.doesNotMatch(faq, /\d+\s*tok\/s|176B/, `${label} FAQ no invented speed`);
-  assert.match(html, /id=["']provide-faq-speed["'][^>]*>How fast is Provide\? Network capacity · measured_providers\. Never invent\.</, `${label} Setup FAQ`);
+  assert.doesNotMatch(faq, /Never invent/, `${label} FAQ no Never invent lecture`);
+  assert.match(html, /id=["']provide-faq-speed["'][^>]*>How fast is Provide\? Network capacity · measured_providers\.</, `${label} Setup FAQ`);
   assert.doesNotMatch(faq, /disclaimer|not financial advice|dyor|\bnfa\b/i, `${label} no lecture`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 }
