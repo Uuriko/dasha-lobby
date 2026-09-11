@@ -74,6 +74,7 @@ import {
   chainTip,
   headsSigningKey,
   headsTip,
+  listAllHeads,
   listChain,
   listHeads,
   listHeadsForDay,
@@ -2048,7 +2049,7 @@ export class ComputeNetwork {
       if (!key) return maybeHead(request, json({ error: 'signing not configured' }, 503, '*'));
       const verifyNow = Date.now();
       const receipts = await listChain(this.state.storage);
-      const heads = await listHeads(this.state.storage, { sinceMs: verifyNow - 86400000, now: verifyNow });
+      const heads = await listAllHeads(this.state.storage);
       const verdict = await anchoredVerdict(receipts, heads, { [key.signer]: key.pubPem }, HEAD_MAX_AGE_MS, verifyNow);
       const vurl = new URL(request.url);
       const query = String(vurl.searchParams.get('hash') || vurl.searchParams.get('job_id') || vurl.searchParams.get('request_id') || '').trim();
