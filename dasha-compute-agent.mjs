@@ -10,6 +10,7 @@
  * Leftover /mcp|/compute/mcp stay 308 /compute.
  * Exact agents faces match before leftover /agents fold.
  * Run factory, not a ledger. No secrets. No people-data.
+ * Build on Dasha: mint + run factory. UI is yours.
  */
 
 export const COMPUTE_API_BASE = 'https://lobby.getdasha.com/compute/api/v1';
@@ -105,6 +106,22 @@ Send a recipe — MLX / Ollama / llama.cpp Apple Silicon. We pin winners.
 Hosted-only when offered: Flash-class · DGX Spark · Qwen 3.8 Flash-Next. Never a Community Mac.
 `;
 
+export const DASHA_ASSOCIATED_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
+export const DASHA_BUY_URL = 'https://www.getdasha.com/how-to-buy';
+export const DASHA_JUP_TOKEN_URL = `https://jup.ag/tokens/${DASHA_ASSOCIATED_MINT}`;
+
+/** Build on Dasha — mint + run factory. Shared by skill.md + /compute/llms.txt. UI is yours. */
+export const COMPUTE_BUILD_ON_DASHA_TXT = `## Build on Dasha
+
+mint ${DASHA_ASSOCIATED_MINT}
+Buy via site Buy — ${DASHA_BUY_URL} · ${DASHA_JUP_TOKEN_URL}
+base_url ${COMPUTE_API_BASE}
+guest-keys POST /compute/api/guest-keys
+mcp ${COMPUTE_MCP_JSON_URL}
+skill ${COMPUTE_SKILL_URL}
+UI is yours; we expose mint + run factory.
+`;
+
 /** Cursor/Claude-style skill. Stable GET /compute/skill.md. */
 export const COMPUTE_SKILL_MD = `---
 name: dasha-compute
@@ -115,6 +132,7 @@ description: First call on Dasha Compute. OpenAI-compatible chat on community Ma
 
 OpenAI-compatible inference. A run factory, not a ledger.
 
+${COMPUTE_BUILD_ON_DASHA_TXT}
 ## When to use
 
 You want a Mac to run a prompt — or Hosted when no Mac is online. Not a ledger. Not Room.
@@ -152,6 +170,7 @@ export const COMPUTE_LLMS_TXT = `# Dasha Compute
 
 Mac Ask / Provide / OpenAI-compatible API. A run factory, not a ledger.
 
+${COMPUTE_BUILD_ON_DASHA_TXT}
 base ${COMPUTE_API_BASE}
 www ${COMPUTE_API_BASE_WWW}
 healthz ${COMPUTE_HEALTHZ}
