@@ -78,9 +78,9 @@ function assertImmersitySteal(html, label) {
   assert.match(html, /How do I start\?/, `${label} FAQ start`);
   assert.match(html, /Hosted is still there\./, `${label} FAQ no-Mac`);
   assert.match(html, /Provide\. Name the Mac\. Kit\. Doctor\./, `${label} FAQ enroll`);
-  assert.match(html, /How is hosting secure\?/, `${label} FAQ host secure`);
+  assert.match(html, /Is hosting safe for my Mac\?/, `${label} FAQ host safe`);
   assert.match(html, /Keychain/, `${label} FAQ Keychain`);
-  assert.match(html, /local Ollama/, `${label} FAQ local Ollama`);
+  assert.match(html, /Ollama/, `${label} FAQ Ollama`);
   assert.match(html, /No remote shell/, `${label} FAQ no remote shell`);
   assert.match(html, /Goes to credits\./, `${label} FAQ pay`);
   assert.match(html, /Prepaid\. Use on Ask\./, `${label} FAQ credits`);
@@ -177,7 +177,7 @@ if (puppeteer && existsSync(chrome)) {
     return {
       provide: provideItems.length,
       ask: [...document.querySelectorAll('#ux-faq-items [data-faq="ask"]')].some((el) => vis(el)),
-      hostSecure: provideItems.some((el) => /How is hosting secure\?/.test(el.textContent || '') && /Keychain/.test(el.textContent || '') && /local Ollama/.test(el.textContent || '') && /No remote shell/.test(el.textContent || '')),
+      hostSecure: provideItems.some((el) => /Is hosting safe for my Mac\?/.test(el.textContent || '') && /Keychain/.test(el.textContent || '') && /Ollama/.test(el.textContent || '') && /No remote shell/.test(el.textContent || '')),
     };
   });
   assert.ok(after.provide >= 2, 'Provide FAQ after chip');
