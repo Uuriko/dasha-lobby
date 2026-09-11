@@ -246,6 +246,18 @@ export async function listHeads(storage, { sinceMs = 0, now = Date.now() } = {})
   return out;
 }
 
+/** Every retained head across all day keys, oldest first. Verdict-side reads
+ *  need the full log: a time-windowed slice cannot establish GENESIS
+ *  continuity when the window's oldest head links backward out of the window
+ *  (live break at ts 1789060654753 was exactly this - retention was intact). */
+export async function listAllHeads(storage) {
+  const rows = await storage.list({ prefix: 'compute:heads:day:' });
+  const out = [];
+  for (const day of rows.values()) for (const h of day || []) out.push(h);
+  out.sort((a, b) => Number(a.ts) - Number(b.ts));
+  return out;
+}
+
 export async function listHeadsForDay(storage, dateStr) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || ''))) return null;
   return (await storage.get(`compute:heads:day:${dateStr}`)) || [];
