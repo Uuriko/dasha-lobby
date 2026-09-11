@@ -55,6 +55,7 @@ export const COMPUTE_AGENTS_TXT = `## Agents
 base_url ${COMPUTE_AGENTS_BASE}
 OpenAI-compatible. OpenAI SDK, Aider, Goose, OpenHands (BYOK).
 Mint: POST /compute/api/guest-keys
+reasoning_effort low|medium|high (alias effort). Hosted applies it. Community may ignore — honesty on dasha.
 `;
 
 /** agents.txt (CC0 vibe: https://agents-txt.com). Short. Skills → skill.md. */

@@ -91,6 +91,16 @@ import {
   GUEST_KEY_CHAT_MAX,
   GUEST_KEY_CHAT_WINDOW_MS,
 } from './dasha-compute-guest-key.mjs';
+import {
+  attachEffortToReceipt,
+  dashaEffortExtension,
+  effortHonesty,
+  effortHonestyFromJob,
+  effortResponseHeaders,
+  hostedEffortFace,
+  hostedReasoningEffortInput,
+  parseReasoningEffort,
+} from './dasha-compute-reasoning-effort.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
 
 export { HOSTED_ASK_PRICE_CENTS };
@@ -338,6 +348,7 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
       chat_completions: 'OpenAI-style usage on non-stream JSON and on the SSE final finish_reason=stop chunk',
       hosted_chat: 'POST /compute/api/chat SSE emits usage on the final stop chunk (Hosted UI)',
       jobs: "GET /compute/api/jobs/:id returns stored usage (+ route) when present — never invent",
+      reasoning_effort: 'low|medium|high (alias effort). Hosted applies it. Community may ignore — honesty on dasha.',
     },
     billing: {
       chat_completions: "Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card",
@@ -384,6 +395,17 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
       reason: 'key_spend_limit',
       hint: 'Raise the key cap at /compute#build.',
       next: [{ path: '/compute#build' }],
+    };
+  }
+  if (/^effort must be/i.test(msg) || /^effort conflict$/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'invalid_effort',
+      hint: msg.slice(0, 80),
+      next: [
+        { path: '/compute/api/v1/chat/completions' },
+        { path: '/compute/skill.md' },
+      ],
     };
   }
   if (/No Mac is online/i.test(msg)) {
@@ -737,7 +759,7 @@ export function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
   const settle = status === 'complete' ? publicJobSettle(job) : null;
   if (settle) receipt.settled = settle;
   if (status === 'failed') receipt.ok = false;
-  return receipt;
+  return attachEffortToReceipt(receipt, effortHonestyFromJob(job));
 }
 
 async function cancelJob(storage, key, job, now = Date.now()) {
@@ -1056,6 +1078,8 @@ export class ComputeNetwork {
 
 
   async queueJob(owner, input, now) {
+    const parsedEffort = parseReasoningEffort(input);
+    if (!parsedEffort.ok) return { error: parsedEffort.error, status: 400 };
     const model = String(input.model || '');
     let messages = chatMessages(input);
     if (!messages) return { error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total', status: 400 };
@@ -1073,7 +1097,7 @@ export class ComputeNetwork {
     if ([...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].some(job => job.owner === owner && ['queued', 'leased'].includes(job.status))) return { error: 'finish your current community request first', status: 409 };
     const requestedTemperature = Number(input.temperature);
     const stream = input.stream === true;
-    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS };
+    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}) };
     await this.state.storage.put(`compute:job:${job.id}`, job);
     return { job };
   }
@@ -1105,7 +1129,7 @@ export class ComputeNetwork {
         if (current.status === 'complete') {
           const settle = publicJobSettle(current);
           const receipt = publicPhase0Receipt(current);
-          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}), ...(receipt ? { receipt } : {}) });
+          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}), ...(receipt ? { receipt } : {}), ...dashaEffortExtension(effortHonestyFromJob(current)) });
           emit('[DONE]');
           controller.close();
           return;
@@ -1384,12 +1408,25 @@ export class ComputeNetwork {
           return v1err(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error');
         }
       }
-      if (input.stream) return v1cors(this.streamResponse(queued.job));
+      if (input.stream) {
+        return v1cors(this.streamResponse(queued.job, null, effortResponseHeaders(effortHonestyFromJob(queued.job))));
+      }
       while (!request.signal.aborted) {
         const job = await this.state.storage.get(`compute:job:${queued.job.id}`);
         if (!job) return v1err('job expired', 410, 'server_error');
         if (Number(job.expiresAt) <= Date.now()) break;
-        if (job.status === 'complete') return v1cors(json({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, message: { role: 'assistant', content: job.answer }, finish_reason: 'stop' }], usage: job.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }));
+        if (job.status === 'complete') {
+          const honesty = effortHonestyFromJob(job);
+          return v1cors(json({
+            id: `chatcmpl_${job.id.slice(4)}`,
+            object: 'chat.completion',
+            created: Math.floor(job.createdAt / 1000),
+            model: job.model,
+            choices: [{ index: 0, message: { role: 'assistant', content: job.answer }, finish_reason: 'stop' }],
+            usage: job.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+            ...dashaEffortExtension(honesty),
+          }, 200, null, false, effortResponseHeaders(honesty)));
+        }
         if (job.status === 'failed') return v1err(job.error || 'provider failed', 502, 'server_error');
         await new Promise(resolve => setTimeout(resolve, 250));
       }
@@ -1687,8 +1724,13 @@ export class ComputeNetwork {
       const queued = await this.queueJob(owner, mergeRouteFromHeaders(await body(request, 12 * 1024), request), now);
       if (queued.error) return json({ error: queued.error }, queued.status, allowedOrigin, true);
       const job = queued.job;
-      if (job.stream === true) return this.streamResponse(job, allowedOrigin, { 'X-Dasha-Job': job.id, 'Access-Control-Expose-Headers': 'X-Dasha-Job' });
-      return json({ id: job.id, status: job.status, expires_at: job.expiresAt }, 202, allowedOrigin, true);
+      const honesty = effortHonestyFromJob(job);
+      const effortHeaders = effortResponseHeaders(honesty);
+      if (job.stream === true) {
+        const expose = ['X-Dasha-Job', ...Object.keys(effortHeaders)].join(', ');
+        return this.streamResponse(job, allowedOrigin, { 'X-Dasha-Job': job.id, ...effortHeaders, 'Access-Control-Expose-Headers': expose });
+      }
+      return json({ id: job.id, status: job.status, expires_at: job.expiresAt, ...dashaEffortExtension(honesty) }, 202, allowedOrigin, true, effortHeaders);
     }
 
     const jobMatch = path.match(/^\/compute\/api\/jobs\/([A-Za-z0-9_-]{6,64})\/?$/);
@@ -1716,6 +1758,7 @@ export class ComputeNetwork {
       const freshProviders = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
       const measuredTps = measuredTokPerSecForModel(freshProviders, job.model, now);
       const receipt = publicPhase0Receipt(job, { tokensPerSecond: measuredTps });
+      const honesty = effortHonestyFromJob(job);
       return maybeHead(request, json({
         id: job.id,
         status: job.status,
@@ -1728,8 +1771,9 @@ export class ComputeNetwork {
         ...(usage && (usage.total_tokens > 0 || usage.prompt_tokens > 0 || usage.completion_tokens > 0) ? { usage } : {}),
         ...(route ? { route } : {}),
         ...(settle ? { settle } : {}),
-        ...(receipt ? { receipt } : {})
-      }, 200, allowedOrigin, credentials));
+        ...(receipt ? { receipt } : {}),
+        ...dashaEffortExtension(honesty),
+      }, 200, allowedOrigin, credentials, effortResponseHeaders(honesty)));
     }
 
     if ((path === '/compute/api/sponsors' || path === '/compute/api/sponsors/') && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -2757,6 +2801,10 @@ export async function computeApi(request, env, allowedOrigin) {
   if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
   const input = await body(request, 12 * 1024), messages = chatMessages(input);
   if (!messages) return json({ error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total' }, 400, allowedOrigin, true);
+  const parsedEffort = parseReasoningEffort(input);
+  if (!parsedEffort.ok) return json({ error: parsedEffort.error }, 400, allowedOrigin, true);
+  const hostedHonesty = effortHonesty({ effort: parsedEffort.effort, route: 'hosted' });
+  const hostedEffortKnob = hostedReasoningEffortInput(parsedEffort.effort);
   let creditBalanceHeader = null;
   let hostedSpendId = null;
   let hostedChargedCents = 0;
@@ -2785,9 +2833,9 @@ export async function computeApi(request, env, allowedOrigin) {
   const system = { role: 'system', content: 'Answer directly and concisely. Do not claim to be running on a community Mac; this hosted demo uses Cloudflare Workers AI.' };
   try {
     if (input.stream === true) {
-      const run = await env.AI.run('@cf/openai/gpt-oss-20b', { stream: true, messages: [system, ...messages], max_tokens: 256, temperature: 0.6 });
+      const run = await env.AI.run('@cf/openai/gpt-oss-20b', { stream: true, messages: [system, ...messages], max_tokens: 256, temperature: 0.6, ...hostedEffortKnob });
       const encoder = new TextEncoder();
-      const headers = { ...SECURITY, ...cors(allowedOrigin, true), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Dasha-Model': 'gpt-oss-20b', ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) };
+      const headers = { ...SECURITY, ...cors(allowedOrigin, true), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Dasha-Model': 'gpt-oss-20b', ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) };
       let completionText = '';
       let upstreamUsage = null;
       const approxTokens = (text) => Math.max(0, Math.ceil(String(text || '').length / 4));
@@ -2805,7 +2853,7 @@ export async function computeApi(request, env, allowedOrigin) {
       const emitDone = (controller, failed = false) => {
         const usage = failed ? null : hostedUsage();
         if (!failed) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage })}\n\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage, ...dashaEffortExtension(hostedHonesty) })}\n\n`));
         }
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
@@ -2886,7 +2934,7 @@ export async function computeApi(request, env, allowedOrigin) {
       });
       return new Response(stream, { headers });
     }
-    const result = await env.AI.run('@cf/openai/gpt-oss-20b', { messages: [system, ...messages], max_tokens: 256, temperature: 0.6 });
+    const result = await env.AI.run('@cf/openai/gpt-oss-20b', { messages: [system, ...messages], max_tokens: 256, temperature: 0.6, ...hostedEffortKnob });
     const answer = String(result?.response || result?.result?.response || result?.choices?.[0]?.message?.content || '').trim();
     if (!answer) throw new Error('empty model response');
     const approxTokens = (t) => Math.max(0, Math.ceil(String(t || '').length / 4));
@@ -2894,7 +2942,7 @@ export async function computeApi(request, env, allowedOrigin) {
     const completion_tokens = approxTokens(answer);
     const usage = tokenUsage({ usage: { prompt_tokens, completion_tokens, total_tokens: prompt_tokens + completion_tokens } });
     await bumpHostedFactory(env, { failed: false, settled: hostedSettledPayload(usage) });
-    return json({ answer, model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, usage, ...(creditBalanceHeader != null ? { balance_cents: Number(creditBalanceHeader) } : {}) }, 200, allowedOrigin, true, { 'X-Dasha-Model': 'gpt-oss-20b', ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) });
+    return json({ answer, model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, usage, ...hostedEffortFace(hostedHonesty), ...(creditBalanceHeader != null ? { balance_cents: Number(creditBalanceHeader) } : {}) }, 200, allowedOrigin, true, { 'X-Dasha-Model': 'gpt-oss-20b', ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) });
   } catch {
     await bumpHostedFactory(env, { failed: true });
     return json({ error: 'model request failed; try again', code: 'hosted_cut' }, 502, allowedOrigin, true);

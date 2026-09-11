@@ -54,6 +54,7 @@ assert.match(COMPUTE_SKILL_MD, /^## Agents$/m, 'Agents');
 assert.match(COMPUTE_SKILL_MD, new RegExp(`^base_url ${COMPUTE_AGENTS_BASE.replace(/\./g, '\\.')}$`, 'm'), 'agents base_url');
 assert.match(COMPUTE_SKILL_MD, /OpenAI SDK, Aider, Goose, OpenHands \(BYOK\)/, 'agents BYOK tools');
 assert.match(COMPUTE_SKILL_MD, /^Mint: POST \/compute\/api\/guest-keys$/m, 'agents mint pointer');
+assert.match(COMPUTE_SKILL_MD, /reasoning_effort low\|medium\|high \(alias effort\)/, 'agents can send reasoning_effort');
 assert.equal(
   (COMPUTE_SKILL_MD.match(/curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/g) || []).length,
   1,
