@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'v1-models-retrieve-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -100,6 +100,6 @@ assert.equal(list.status, 200);
 assert.deepEqual(await list.json(), { object: 'list', data: [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' }] });
 const foo = await worker.fetch(new Request('https://www.getdasha.com/compute/api/foo'), workerEnv);
 assert.equal(foo.status, 404);
-assert.deepEqual(await foo.json(), { error: 'not found' });
+assert.deepEqual(await foo.json(), openaiErrorBody('not found', 404));
 
 console.log('dasha-compute-v1-models-retrieve: PASS (OpenAI retrieve auth + empty-network 404, no fake Mac)');

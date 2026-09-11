@@ -105,6 +105,18 @@ function assertAxNext(body, { message, type, reason, status = 'action_required' 
   });
   assert.equal(method.next[0].path, '/compute/api/v1/chat/completions');
 
+  const unknownPath = openaiErrorBody('not found', 404);
+  assertAxNext(unknownPath, { message: 'not found', type: 'invalid_request_error', reason: 'not_found' });
+  assert.equal(unknownPath.next.some(s => s.path === '/compute/api/v1'), true);
+
+  const methodOpaque = openaiErrorBody('method not allowed', 405);
+  assertAxNext(methodOpaque, { message: 'method not allowed', type: 'invalid_request_error', reason: 'method_not_allowed' });
+  assert.equal(methodOpaque.next.some(s => s.path === '/compute/api/v1'), true);
+
+  const providerTok = openaiErrorBody('invalid provider token', 401, 'authentication_error');
+  assertAxNext(providerTok, { message: 'invalid provider token', type: 'authentication_error', reason: 'invalid_provider_token' });
+  assert.equal(providerTok.next.some(s => s.path === '/compute#provide'), true);
+
   assert.equal(openaiErrorAx('internal exploded', 500, 'server_error').status, 'failed');
 }
 

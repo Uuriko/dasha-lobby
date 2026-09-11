@@ -2,7 +2,7 @@
 /** GET+HEAD /compute/api/providers/heartbeat (and jobs/:id/heartbeat) + slash → 405; empty HEAD; POST bare+slash 401 invalid token. No lastSeenAt on named POST. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'providers-heartbeat-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -38,7 +38,7 @@ for (const path of [named, `${named}/`, jobHb, `${jobHb}/`]) {
   const get = await pair('lobby.getdasha.com', path, {}, (req) => network.fetch(req));
   assert.equal(get.status, 405, `${path} GET`);
   assert.notEqual(get.status, 404, `${path} must not 404`);
-  assert.deepEqual(get.body, { error: 'method not allowed' });
+  assert.deepEqual(get.body, openaiErrorBody('method not allowed', 405));
   const head = await network.fetch(new Request(`https://lobby.getdasha.com${path}`, { method: 'HEAD' }));
   assert.equal(head.status, 405, `${path} HEAD`);
   assert.notEqual(head.status, 404, `${path} HEAD must not 404`);
@@ -53,7 +53,7 @@ for (const path of [named, `${named}/`, jobHb, `${jobHb}/`]) {
     body: JSON.stringify({}),
   }));
   assert.equal(post.status, 401, `${path} POST unauth`);
-  assert.deepEqual(await post.json(), { error: 'invalid provider token' });
+  assert.deepEqual(await post.json(), openaiErrorBody('invalid provider token', 401, 'authentication_error'));
 }
 
 const beforeSeen = Date.now();
@@ -72,7 +72,7 @@ assert.equal(stored.lastSeenAt, 0, 'named heartbeat POST must not mark a Mac onl
 
 const short = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/providers/jobs/hb_x/heartbeat'));
 assert.equal(short.status, 404);
-assert.deepEqual(await short.json(), { error: 'not found' });
+assert.deepEqual(await short.json(), openaiErrorBody('not found', 404));
 
 const lobby = {
   idFromName: () => 'public',
@@ -91,7 +91,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     const wGet = await pair(host, path, {}, (request) => worker.fetch(request, workerEnv));
     assert.equal(wGet.status, 405, `${host} ${path} GET`);
     assert.notEqual(wGet.status, 404);
-    assert.deepEqual(wGet.body, { error: 'method not allowed' });
+    assert.deepEqual(wGet.body, openaiErrorBody('method not allowed', 405));
     const wHead = await worker.fetch(new Request(`https://${host}${path}/`, { method: 'HEAD' }), workerEnv);
     assert.equal(wHead.status, 405, `${host} ${path}/ HEAD`);
     assert.notEqual(wHead.status, 404);
@@ -107,12 +107,12 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       body: JSON.stringify({}),
     }), workerEnv);
     assert.equal(wPost.status, 401, `${host} ${path}/ POST`);
-    assert.deepEqual(await wPost.json(), { error: 'invalid provider token' });
+    assert.deepEqual(await wPost.json(), openaiErrorBody('invalid provider token', 401, 'authentication_error'));
   }
 
   const foo = await worker.fetch(new Request(`https://${host}/compute/api/providers/heartbeatx`), workerEnv);
   assert.equal(foo.status, 404);
-  assert.deepEqual(await foo.json(), { error: 'not found' });
+  assert.deepEqual(await foo.json(), openaiErrorBody('not found', 404));
 }
 
 console.log('dasha-compute-providers-heartbeat-slash-head: PASS');

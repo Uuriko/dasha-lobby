@@ -2,7 +2,7 @@
 /** GET+HEAD /compute/api/status and /status/; live:true; empty HEAD. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'status-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -83,7 +83,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   assert.equal((await chat.json()).error.message, 'invalid API key');
   const foo = await worker.fetch(new Request(`https://${host}/compute/api/foo`), workerEnv);
   assert.equal(foo.status, 404);
-  assert.deepEqual(await foo.json(), { error: 'not found' });
+  assert.deepEqual(await foo.json(), openaiErrorBody('not found', 404));
 }
 
 for (const path of ['/compute/api', '/compute/api/']) {

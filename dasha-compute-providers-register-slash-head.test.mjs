@@ -2,7 +2,7 @@
 /** GET+HEAD /compute/api/providers/register and /register/; 405 method not allowed; empty HEAD; slash parity; POST still works. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'providers-register-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
@@ -38,7 +38,7 @@ for (const path of ['/compute/api/providers/register', '/compute/api/providers/r
   const get = await pair('lobby.getdasha.com', path, {}, (req) => network.fetch(req));
   assert.equal(get.status, 405, `${path} GET`);
   assert.notEqual(get.status, 404, `${path} must not 404`);
-  assert.deepEqual(get.body, { error: 'method not allowed' });
+  assert.deepEqual(get.body, openaiErrorBody('method not allowed', 405));
   const head = await network.fetch(new Request(`https://lobby.getdasha.com${path}`, { method: 'HEAD' }));
   assert.equal(head.status, 405, `${path} HEAD`);
   assert.notEqual(head.status, 404, `${path} HEAD must not 404`);
@@ -83,7 +83,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const wGet = await pair(host, '/compute/api/providers/register', {}, (request) => worker.fetch(request, workerEnv));
   assert.equal(wGet.status, 405, `${host} register GET`);
   assert.notEqual(wGet.status, 404);
-  assert.deepEqual(wGet.body, { error: 'method not allowed' });
+  assert.deepEqual(wGet.body, openaiErrorBody('method not allowed', 405));
   const wHead = await worker.fetch(new Request(`https://${host}/compute/api/providers/register/`, { method: 'HEAD' }), workerEnv);
   assert.equal(wHead.status, 405, `${host} register/ HEAD`);
   assert.notEqual(wHead.status, 404);
@@ -95,7 +95,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
   const foo = await worker.fetch(new Request(`https://${host}/compute/api/providers/registerx`), workerEnv);
   assert.equal(foo.status, 404);
-  assert.deepEqual(await foo.json(), { error: 'not found' });
+  assert.deepEqual(await foo.json(), openaiErrorBody('not found', 404));
 }
 
 assert.equal([...rows.keys()].filter(k => k.startsWith('compute:provider:')).length, 2, 'POST bare+slash both registered');

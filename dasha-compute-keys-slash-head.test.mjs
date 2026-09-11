@@ -2,7 +2,7 @@
 /** GET+HEAD+POST /compute/api/keys and /keys/; origin/auth gates; empty HEAD; slash parity. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork, ORIGIN_REQUIRED } from './dasha-compute-network.mjs';
+import { ComputeNetwork, ORIGIN_REQUIRED, openaiErrorBody } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'keys-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
@@ -98,7 +98,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
   const foo = await worker.fetch(new Request(`https://${host}/compute/api/keyz`), workerEnv);
   assert.equal(foo.status, 404);
-  assert.deepEqual(await foo.json(), { error: 'not found' });
+  assert.deepEqual(await foo.json(), openaiErrorBody('not found', 404));
 }
 
 assert.equal([...rows.keys()].some(key => key.startsWith('compute:provider:')), false, 'must not invent Macs');
