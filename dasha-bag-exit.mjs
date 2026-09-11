@@ -1,4 +1,4 @@
-/** /bag exit estimate. Jupiter quote, not mark. Worker fetches. No auto-sell. */
+/** /bag exit estimate. Jupiter quote, not mark. Worker fetches. Estimate only. */
 
 export const HERS_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 export const WSOL = 'So11111111111111111111111111111111111111112';
@@ -175,7 +175,6 @@ async function fetchOneQuote(fetchImpl, outputMint, amountRaw, timeoutMs) {
     jupiterQuoteUrl(JUP_QUOTE_FALLBACK, args),
   ];
   for (const href of urls) {
-    if (href.includes('plugin.jup.ag')) continue;
     let timer;
     try {
       const signal = AbortSignal.timeout(timeoutMs);
