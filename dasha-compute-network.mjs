@@ -143,6 +143,18 @@ export const SSE_BUYER_HOLD_MS = 35_000;
 export const SSE_KEEPALIVE_MS = 10_000;
 
 const MODELS = new Set(['qwen3-4b', 'qwen3-8b', 'gemma3-12b', 'gpt-oss-20b', 'qwen3-30b-a3b', 'gemma3-27b', 'gpt-oss-120b']);
+export const COMPUTE_CATALOG_MODELS = MODELS;
+
+/** Poll grows a Mac's allow-list to the live Worker catalog (qwen3-4b after older registers). */
+export function growAllowedModels(prior, catalog = MODELS) {
+  const next = new Set();
+  for (const model of catalog) next.add(String(model));
+  for (const model of prior || []) {
+    const id = String(model);
+    if (catalog.has(id)) next.add(id);
+  }
+  return [...next];
+}
 const FRESH_MS = 45_000;
 const JOB_TTL_MS = 5 * 60_000;
 const LEASE_MS = 5 * 60_000;
@@ -394,19 +406,45 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
 
 const V1_PUBLIC = 'https://lobby.getdasha.com/compute/api/v1';
 
+export function presentedApiToken(request) {
+  return String(request?.headers?.get?.('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+}
+
+export function invalidApiKeyMessage(request) {
+  const token = presentedApiToken(request);
+  if (/^ocm_(live|host|enroll)_/i.test(token)) {
+    return 'ocm_live_ is an OCM key. Compute wants dsk_ or dgk_.';
+  }
+  return 'invalid API key';
+}
+
 /** AX next-step for agents. OpenAI {error.message,type,code} stays. */
 export function openaiErrorAx(message, status = 400, type = 'invalid_request_error') {
   const msg = String(message || '');
+  if (/ocm_live_|OCM key/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'wrong_product_key',
+      hint: 'OCM key on Compute. Use dsk_/dgk_ here; ocm_live_ only on /compute/ocm/v1.',
+      next: [
+        { path: '/compute/api/guest-keys' },
+        { path: '/compute/ocm/v1' },
+        { path: '/compute/skill.md' },
+        { command: 'Use ocm_live_ on https://www.getdasha.com/compute/ocm/v1 — never on /compute/api/v1' },
+      ],
+    };
+  }
   if (type === 'authentication_error' || /invalid API key/i.test(msg)) {
     return {
       status: 'action_required',
       reason: 'invalid_api_key',
-      hint: 'Mint a key at /compute#build. See /compute/llms.txt and /compute/skill.md.',
+      hint: 'Compute: dsk_ or dgk_ on /compute/api/v1. ocm_live_ is OCM at /compute/ocm/v1.',
       next: [
         { path: '/compute#build' },
         { path: '/compute/llms.txt' },
         { path: '/compute/skill.md' },
         { path: '/compute/api/guest-keys' },
+        { path: '/compute/ocm/v1' },
         { command: `curl -sS -H 'Authorization: Bearer $DASHA_KEY' ${V1_PUBLIC}/chat/completions` },
       ],
     };
@@ -1357,7 +1395,7 @@ export class ComputeNetwork {
     const modelRetrieve = path.match(/^\/compute\/api\/v1\/models\/([A-Za-z0-9._-]+)\/?$/);
     if (modelRetrieve && (request.method === 'GET' || request.method === 'HEAD')) {
       const modelKey = await this.apiKey(request);
-      if (!modelKey) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      if (!modelKey) return maybeHead(request, v1err(invalidApiKeyMessage(request), 401, 'authentication_error'));
       if (!guestKeyAllows(modelKey, 'models')) return maybeHead(request, v1err('guest key cannot use this endpoint', 403, 'invalid_request_error'));
       await this.prune(now);
       const id = modelRetrieve[1];
@@ -1369,43 +1407,43 @@ export class ComputeNetwork {
 
     if ((path === '/compute/api/v1/embeddings' || path === '/compute/api/v1/embeddings/') && request.method === 'POST') {
       const embedKey = await this.apiKey(request);
-      if (!embedKey) return v1err('invalid API key', 401, 'authentication_error');
+      if (!embedKey) return v1err(invalidApiKeyMessage(request), 401, 'authentication_error');
       if (!guestKeyAllows(embedKey, 'embeddings')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
       return v1err('embeddings are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
     if ((path === '/compute/api/v1/embeddings' || path === '/compute/api/v1/embeddings/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      if (!await this.apiKey(request)) return maybeHead(request, v1err(invalidApiKeyMessage(request), 401, 'authentication_error'));
       return maybeHead(request, v1err('Only POST is supported. Use POST /v1/embeddings', 405, 'invalid_request_error'));
     }
 
     if ((path === '/compute/api/v1/completions' || path === '/compute/api/v1/completions/') && request.method === 'POST') {
       const completionKey = await this.apiKey(request);
-      if (!completionKey) return v1err('invalid API key', 401, 'authentication_error');
+      if (!completionKey) return v1err(invalidApiKeyMessage(request), 401, 'authentication_error');
       if (!guestKeyAllows(completionKey, 'completions')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
       return v1err('legacy completions are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
     if ((path === '/compute/api/v1/completions' || path === '/compute/api/v1/completions/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      if (!await this.apiKey(request)) return maybeHead(request, v1err(invalidApiKeyMessage(request), 401, 'authentication_error'));
       return maybeHead(request, v1err('Only POST is supported. Use POST /v1/completions', 405, 'invalid_request_error'));
     }
 
     if ((path === '/compute/api/v1/responses' || path === '/compute/api/v1/responses/') && request.method === 'POST') {
       const responseKey = await this.apiKey(request);
-      if (!responseKey) return v1err('invalid API key', 401, 'authentication_error');
+      if (!responseKey) return v1err(invalidApiKeyMessage(request), 401, 'authentication_error');
       if (!guestKeyAllows(responseKey, 'responses')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
       return v1err('responses are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
     if ((path === '/compute/api/v1/responses' || path === '/compute/api/v1/responses/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      if (!await this.apiKey(request)) return maybeHead(request, v1err(invalidApiKeyMessage(request), 401, 'authentication_error'));
       return maybeHead(request, v1err('Only POST is supported. Use POST /v1/responses', 405, 'invalid_request_error'));
     }
 
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method === 'POST') {
       const key = await this.apiKey(request);
-      if (!key) return v1err('invalid API key', 401, 'authentication_error');
+      if (!key) return v1err(invalidApiKeyMessage(request), 401, 'authentication_error');
       if (!guestKeyAllows(key, 'chat')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
       if (isGuestApiKey(key) && !takeGuestRate(this.rates, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS)) {
         return v1err('guest key rate limited; try again shortly', 429, 'invalid_request_error');
@@ -1477,7 +1515,7 @@ export class ComputeNetwork {
     }
 
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method !== 'OPTIONS') {
-      if (!await this.apiKey(request)) return v1err('invalid API key', 401, 'authentication_error');
+      if (!await this.apiKey(request)) return v1err(invalidApiKeyMessage(request), 401, 'authentication_error');
       return v1err('Only POST is supported. Use POST /v1/chat/completions', 405, 'invalid_request_error');
     }
 
@@ -1629,7 +1667,7 @@ export class ComputeNetwork {
       provider.lastSeenAt = now;
       const kitVersion = String(input.version || '').trim().slice(0, 32);
       if (kitVersion) provider.kitVersion = kitVersion;
-      provider.allowedModels ||= provider.models || [];
+      provider.allowedModels = growAllowedModels(provider.allowedModels || provider.models || []);
       if (Array.isArray(input.models)) provider.models = [...new Set(input.models.map(String).filter(model => provider.allowedModels.includes(model)))];
       else provider.models ||= [];
       const hardware = providerHardware(input, provider.allowedModels);

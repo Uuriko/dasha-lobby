@@ -4,6 +4,8 @@
  * /compute/api/* stays the Dasha coordinator (caller must check API first or use isComputeOcmPath).
  */
 
+import { polishOcmLoginHtml } from './dasha-compute-ocm-login-skin.mjs';
+
 export const OCM_ORIGIN = 'https://ocm.getdasha.com';
 export const OCM_PREFIX = '/compute/ocm';
 
@@ -206,7 +208,7 @@ export async function proxyComputeOcm(request, opts = {}) {
   }
 
   const html = await upstream.text();
-  const rewritten = rewriteOcmHtml(html);
+  const rewritten = polishOcmLoginHtml(rewriteOcmHtml(html));
   outHeaders.set('content-type', 'text/html; charset=utf-8');
   return maybeHead(request, new Response(rewritten, {
     status: upstream.status,

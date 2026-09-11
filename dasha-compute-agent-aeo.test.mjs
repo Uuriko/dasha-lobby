@@ -28,6 +28,8 @@ import {
   COMPUTE_NETWORK,
   COMPUTE_SKILL_MD,
   COMPUTE_SKILL_URL,
+  COMPUTE_WHICH_KEY_TXT,
+  OCM_API_BASE,
   attachComputeLlmsHtmlLinks,
   computeAgentAeoResponse,
 } from './dasha-compute-agent.mjs';
@@ -75,6 +77,13 @@ assert.match(COMPUTE_LLMS_TXT, new RegExp(`^healthz ${COMPUTE_HEALTHZ.replace(/\
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^network ${COMPUTE_NETWORK.replace(/\./g, '\\.')}$`, 'm'));
 assert.match(COMPUTE_LLMS_TXT, /auth Bearer API key/, 'packet names Bearer auth');
 assert.match(COMPUTE_LLMS_TXT, /^no key needed for healthz \+ network \+ models; key needed for chat$/m, 'packet soft-guest line');
+assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_WHICH_KEY_TXT), true, 'packet names which key');
+assert.match(COMPUTE_LLMS_TXT, /ocm_live_/, 'packet names OCM key');
+assert.match(COMPUTE_LLMS_TXT, new RegExp(OCM_API_BASE.replace(/\./g, '\\.')), 'packet names OCM base');
+assert.match(COMPUTE_SKILL_MD, /Which key \/ which base/, 'skill names which key');
+assert.equal(COMPUTE_AGENT_JSON.ocm.base_url, OCM_API_BASE);
+assert.equal(COMPUTE_AGENT_JSON.ocm.key, 'ocm_live_');
+assert.equal(COMPUTE_AGENT_JSON.endpoints.ocm_v1, OCM_API_BASE);
 assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — 24h chat\+models, 3\/hour\/IP$/m, 'packet guest key mint');
 assert.match(COMPUTE_LLMS_TXT, /curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/, 'packet guest mint curl');
 assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_AGENTS_TXT), true, 'packet embeds Agents');

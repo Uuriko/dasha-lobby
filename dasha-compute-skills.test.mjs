@@ -28,7 +28,12 @@ assert.match(PROVIDE_SKILL_MD, /Advertising\/heartbeat OK while mid-Ask fails wi
 assert.match(OCM_HOST_SKILL_MD, /Enrolled ≠ advertising already live/);
 assert.match(USE_SKILL_MD, /Prefer MLX when you can \(providers\)/);
 assert.match(USE_SKILL_MD, /Use Dasha Compute \(run a prompt\)/);
+assert.match(USE_SKILL_MD, /Which key \/ which base/);
+assert.match(USE_SKILL_MD, /ocm_live_/);
+assert.match(USE_SKILL_MD, /dgk_/);
 assert.match(OCM_HOST_SKILL_MD, /Host on OCM/);
+assert.match(OCM_HOST_SKILL_MD, /Which key \/ which base/);
+assert.match(OCM_HOST_SKILL_MD, /compute\/ocm\/v1/);
 assert.match(OCM_HOST_SKILL_MD, /ocm_enroll_/);
 assert.match(OCM_HOST_SKILL_MD, /ocm-agent-update/);
 assert.match(OCM_HOST_SKILL_MD, /\bCold\b/);

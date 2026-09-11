@@ -14,6 +14,7 @@ import worker, { DashaLobby } from './dasha-lobby-worker.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD } from './dasha-compute-skills.mjs';
 import { COMPUTE_PROVIDE_SPEED_TXT } from './dasha-compute-agent.mjs';
+import { growAllowedModels, COMPUTE_CATALOG_MODELS } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -85,6 +86,20 @@ const register = await lobby.fetch(new Request('https://lobby.getdasha.com/compu
 assert.equal(register.status, 201);
 const credentials = await register.json();
 assert.deepEqual(rows.get(`compute:provider:${credentials.provider_id}`).allowedModels, ['qwen3-4b', 'qwen3-8b', 'gemma3-12b']);
+assert.ok(growAllowedModels(['qwen3-8b']).includes('qwen3-4b'), 'catalog grow adds qwen3-4b');
+assert.ok([...COMPUTE_CATALOG_MODELS].includes('qwen3-4b'));
+
+const stale = rows.get(`compute:provider:${credentials.provider_id}`);
+stale.allowedModels = ['qwen3-8b'];
+stale.models = [];
+const grown = await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/providers/poll', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${credentials.provider_token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ provider_id: credentials.provider_id, name: 'A4 Mac', models: ['qwen3-4b', 'qwen3-8b'] }),
+}));
+assert.equal(grown.status, 204, 'pre-4b allow-list can poll after catalog grow');
+assert.ok(rows.get(`compute:provider:${credentials.provider_id}`).allowedModels.includes('qwen3-4b'), 'poll grew allowedModels with qwen3-4b');
+assert.ok(rows.get(`compute:provider:${credentials.provider_id}`).models.includes('qwen3-4b'), 'poll advertises qwen3-4b');
 
 const providerHeaders = { Authorization: `Bearer ${credentials.provider_token}`, 'Content-Type': 'application/json' };
 const heartbeat = {

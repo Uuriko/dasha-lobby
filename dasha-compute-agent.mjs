@@ -15,6 +15,7 @@
 
 export const COMPUTE_API_BASE = 'https://lobby.getdasha.com/compute/api/v1';
 export const COMPUTE_API_BASE_WWW = 'https://www.getdasha.com/compute/api/v1';
+export const OCM_API_BASE = 'https://www.getdasha.com/compute/ocm/v1';
 export const COMPUTE_HEALTHZ = 'https://lobby.getdasha.com/compute/api/healthz';
 export const COMPUTE_NETWORK = `${COMPUTE_API_BASE}/network`;
 export const COMPUTE_GUEST_KEYS_URL = 'https://lobby.getdasha.com/compute/api/guest-keys';
@@ -57,13 +58,20 @@ new OpenAI({ baseURL: "${COMPUTE_API_BASE}", apiKey: process.env.DASHA_API_KEY }
 
 /** Point coding agents at Compute. Shared by skill.md + /compute/llms.txt. */
 export const COMPUTE_AGENTS_BASE = 'https://lobby.getdasha.com/compute/api/v1';
+export const COMPUTE_WHICH_KEY_TXT = `## Which key / which base
+
+Compute: ${COMPUTE_API_BASE} · dsk_ or guest dgk_ (POST /compute/api/guest-keys)
+OCM: ${OCM_API_BASE} · ocm_live_
+Never swap keys. Compute X session is not an OCM session.
+`;
 export const COMPUTE_AGENTS_TXT = `## Agents
 
 base_url ${COMPUTE_AGENTS_BASE}
 OpenAI-compatible. OpenAI SDK, Aider, Goose, OpenHands (BYOK).
 Mint: POST /compute/api/guest-keys
 reasoning_effort low|medium|high (alias effort). Hosted applies it. Community may ignore — honesty on dasha.
-`;
+
+${COMPUTE_WHICH_KEY_TXT}`;
 
 /** agents.txt (CC0 vibe: https://agents-txt.com). Short. Skills → skill.md. */
 export const AGENTS_TXT = `# agents.txt
@@ -75,6 +83,9 @@ Skills: ${COMPUTE_SKILL_URL_LOBBY}
 
 # OpenAI-compat base_url ${COMPUTE_AGENTS_BASE}
 # Guest mint POST /compute/api/guest-keys
+# Compute key dsk_ or dgk_ on ${COMPUTE_AGENTS_BASE}
+# OCM key ocm_live_ on ${OCM_API_BASE}
+# Never swap keys
 `;
 
 export const AGENTS_JSON = {
@@ -84,7 +95,7 @@ export const AGENTS_JSON = {
   site: {
     name: 'Dasha',
     url: 'https://www.getdasha.com/',
-    description: `OpenAI-compat base_url ${COMPUTE_AGENTS_BASE}. Guest mint POST /compute/api/guest-keys.`,
+    description: `OpenAI-compat base_url ${COMPUTE_AGENTS_BASE} (dsk_/dgk_). OCM base_url ${OCM_API_BASE} (ocm_live_). Never swap keys. Guest mint POST /compute/api/guest-keys.`,
   },
   skills: [
     { url: COMPUTE_SKILL_URL, description: 'First call on Dasha Compute.' },
@@ -249,6 +260,12 @@ export const COMPUTE_AGENT_JSON = {
     healthz: COMPUTE_HEALTHZ,
     network: COMPUTE_NETWORK,
     guest_keys: COMPUTE_GUEST_KEYS_URL,
+    ocm_v1: OCM_API_BASE,
+  },
+  ocm: {
+    base_url: OCM_API_BASE,
+    key: 'ocm_live_',
+    note: 'Separate product. Never send dsk_/dgk_ to OCM or ocm_live_ to Compute.',
   },
   docs: {
     llms: COMPUTE_LLMS_URL,
