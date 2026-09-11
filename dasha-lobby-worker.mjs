@@ -3544,8 +3544,8 @@ const POTTER_COMPUTE_MARKET_OCM_308_PATHS = new Set([
 const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/use",
   "/compute/use/",
-  "/compute/provide",
-  "/compute/provide/",
+  // /compute/provide (+slash) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
+  // → /compute#provide (join a Mac). Not Ask first-paint.
   "/compute/night",
   "/compute/night/",
   "/compute/build",
@@ -3581,13 +3581,13 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/profile/",
   "/compute/settings",
   "/compute/settings/",
-  // Apex product doors: /provide /start /sponsor(s) /ask /pay /credits /host /use
+  // Apex product doors: /start /sponsor(s) /ask /pay /credits /host /use
   // /you /night /build /ocm already 308→/compute.
+  // /provide (+slash) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
+  // → /compute#provide (join a Mac). Not Ask first-paint.
   // Apex /marketplace /market leftover pretty-paths are POTTER_COMPUTE_MARKET_OCM_308_PATHS → /compute/ocm.
   // Leftover apex Product/Provider/Mac + Prefer-MLX (/mlx /prefer-mlx /kit) still
   // html-404 while peers 308. /api is dedicated → /compute/api (not this set).
-  "/provide",
-  "/provide/",
   "/start",
   "/start/",
   "/sponsor",
@@ -3620,7 +3620,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/ocm/",
   // How? engine synonyms: live /hosted /community /mixture (+ /compute/* tabs,
   // Title-case) html-404 while Start. How? already names Hosted · Community · Mixture
-  // and /night /provide /ask already 308→/compute. Fold to plain /compute (no hash).
+  // and /night /ask already 308→/compute. /provide folds via
+  // POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS → /compute#provide.
   "/hosted",
   "/hosted/",
   "/community",
@@ -3892,8 +3893,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/api_key/",
   "/install",
   "/install/",
-  "/doctor",
-  "/doctor/",
+  // /doctor + /compute/doctor fold via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
+  // → /compute#provide (soft-doctor / enroll-code). Not Ask first-paint.
   "/me",
   "/me/",
   "/usage",
@@ -3915,7 +3916,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/install",
   "/compute/install/",
   // /compute/doctor (+slash) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
-  // → /compute#provide (soft-doctor / enroll-code). Apex /doctor stays here.
+  // → /compute#provide (soft-doctor / enroll-code). Apex /doctor same dest.
   "/compute/me",
   "/compute/me/",
   "/compute/usage",
@@ -3926,8 +3927,9 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // live html-404 while plural /machines + /compute/machines already folded here.
   // Console/credits peers /dashboard /console /balance
   // /pay-usdc. Mac/local peers /apple-silicon /macos /silicon /local /edge (Prefer-MLX
-  // /run /ollama family). Setup/try doors /onboard /setup /quickstart /playground
-  // /sandbox. Kit hello peers /hello /example /examples. Prefer synonyms /prefer
+  // /run /ollama family). Setup/try doors /onboard /quickstart /playground
+  // /sandbox. /setup folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS → #provide.
+  // Kit hello peers /hello /example /examples. Prefer synonyms /prefer
   // /preference /preferences. Skip /admin /blog /news /faq /waitlist /join /oauth.
   "/fleet",
   "/fleet/",
@@ -3999,8 +4001,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/edge/",
   "/onboard",
   "/onboard/",
-  "/setup",
-  "/setup/",
+  // /setup + /compute/setup fold via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
+  // → /compute#provide (join / enroll). Not Ask first-paint.
   "/quickstart",
   "/quickstart/",
   "/playground",
@@ -4074,8 +4076,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/edge/",
   "/compute/onboard",
   "/compute/onboard/",
-  "/compute/setup",
-  "/compute/setup/",
+  // /compute/setup (+slash) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
+  // → /compute#provide (join / enroll). Not Ask first-paint.
   "/compute/quickstart",
   "/compute/quickstart/",
   "/compute/playground",
@@ -4425,10 +4427,12 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/earlyaccess",
   "/compute/earlyaccess/",
   // Advertise/caps/curl leftovers (2026-09-06 hop DOWN keep-swarm-busy): live
-  // /tutorials /advertise /enroll /download /spend /caps /limits /free (+ /compute/*
-  // tabs, Title-case) html-404 while /tutorial /provide /kit /credits /balance
+  // /tutorials /advertise /download /spend /caps /limits /free (+ /compute/*
+  // tabs, Title-case) html-404 while /tutorial /kit /credits /balance
   // /free-credits peers already 308→/compute. Fold product synonyms to plain
-  // /compute — NOT faucet earn. /curl /openai-compat /completions /compat fold
+  // /compute — NOT faucet earn. /enroll + /compute/enroll fold via
+  // POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS → /compute#provide.
+  // /curl /openai-compat /completions /compat fold
   // via potterHome308Dest → /compute/api (not this set). Skip /arcade /games
   // /multichain /room /connect /faq /waitlist /blog /tos /legal /discord /slack
   // /openai /v1 /status /health /healthz /network /x402 /attestation /price.json.
@@ -4437,8 +4441,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/tutorials/",
   "/advertise",
   "/advertise/",
-  "/enroll",
-  "/enroll/",
   "/download",
   "/download/",
   "/spend",
@@ -4453,8 +4455,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/tutorials/",
   "/compute/advertise",
   "/compute/advertise/",
-  "/compute/enroll",
-  "/compute/enroll/",
+  // /compute/enroll (+slash) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
+  // → /compute#provide (join a Mac). Not Ask first-paint.
   "/compute/download",
   "/compute/download/",
   "/compute/spend",
@@ -4872,15 +4874,27 @@ const POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS = new Set([
 /** Live GET /compute/docs + /compute/openapi.json were 308 → /compute/api (JSON
  *  gateway). Agents/humans asking for docs landed on raw JSON. No OpenAPI file
  *  exists — do not invent one. Fold this path-family to the skill face.
- *  Do not invent /compute/documentation /compute/openapi /swagger peers. */
+ *  /compute/documentation + /compute/openapi (no .json) same leftover family.
+ *  Do not invent swagger.yaml / readme peers. /sdk-docs /cli /api-reference stay gateway. */
 const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
   '/compute/docs', '/compute/docs/',
   '/compute/openapi.json', '/compute/openapi.json/',
+  '/compute/documentation', '/compute/documentation/',
+  '/compute/openapi', '/compute/openapi/',
 ]);
 /** Live GET /compute/doctor was 308 → /compute (Ask first-paint). Soft-doctor
- *  / Provide enroll should land on Provide. Apex /doctor stays tab → /compute. */
+ *  / Provide enroll should land on Provide. Leftover /provide /enroll /setup
+ *  /doctor (apex) + /compute/provide|/enroll|/setup still dumped to Ask.
+ *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
+  '/doctor', '/doctor/',
+  '/provide', '/provide/',
+  '/compute/provide', '/compute/provide/',
+  '/enroll', '/enroll/',
+  '/compute/enroll', '/compute/enroll/',
+  '/setup', '/setup/',
+  '/compute/setup', '/compute/setup/',
 ]);
 /** Leftover /agents.txt/ /compute/agents.txt/ → face. Exact stays 200. Bare /agents stays leftover → /compute. */
 const POTTER_AGENTS_TXT_308_PATHS = new Set([
@@ -5133,7 +5147,7 @@ export function potterHome308Dest(path) {
   if (p === "/gateway" || p === "/gateway/" || p === "/compute/gateway" || p === "/compute/gateway/") {
     return "https://www.getdasha.com/compute/api";
   }
-  if (p === "/openapi" || p === "/openapi/" || p === "/openapi.json" || p === "/openapi.json/" || p === "/swagger" || p === "/swagger/" || p === "/swagger.json" || p === "/swagger.json/" || p === "/swagger-ui" || p === "/swagger-ui/" || p === "/swagger-ui.html" || p === "/swagger-ui.html/" || p === "/swagger_ui" || p === "/swagger_ui/" || p === "/swagger_ui.html" || p === "/swagger_ui.html/" || p === "/compute/documentation" || p === "/compute/documentation/" || p === "/compute/openapi" || p === "/compute/openapi/" || p === "/compute/swagger" || p === "/compute/swagger/" || p === "/compute/swagger.json" || p === "/compute/swagger.json/" || p === "/compute/swagger-ui" || p === "/compute/swagger-ui/" || p === "/compute/swagger_ui" || p === "/compute/swagger_ui/" || p === "/compute/api-docs" || p === "/compute/api-docs/" || p === "/compute/api_docs" || p === "/compute/api_docs/" || p === "/docs/api" || p === "/docs/api/" || p === "/api/docs" || p === "/api/docs/" || p === "/api-docs" || p === "/api-docs/" || p === "/api_docs" || p === "/api_docs/" || p === "/api/openapi" || p === "/api/openapi/" || p === "/api/openapi.json" || p === "/api/openapi.json/" || p === "/api/swagger" || p === "/api/swagger/" || p === "/api/swagger.json" || p === "/api/swagger.json/") {
+  if (p === "/openapi" || p === "/openapi/" || p === "/openapi.json" || p === "/openapi.json/" || p === "/swagger" || p === "/swagger/" || p === "/swagger.json" || p === "/swagger.json/" || p === "/swagger-ui" || p === "/swagger-ui/" || p === "/swagger-ui.html" || p === "/swagger-ui.html/" || p === "/swagger_ui" || p === "/swagger_ui/" || p === "/swagger_ui.html" || p === "/swagger_ui.html/" || p === "/compute/swagger" || p === "/compute/swagger/" || p === "/compute/swagger.json" || p === "/compute/swagger.json/" || p === "/compute/swagger-ui" || p === "/compute/swagger-ui/" || p === "/compute/swagger_ui" || p === "/compute/swagger_ui/" || p === "/compute/api-docs" || p === "/compute/api-docs/" || p === "/compute/api_docs" || p === "/compute/api_docs/" || p === "/docs/api" || p === "/docs/api/" || p === "/api/docs" || p === "/api/docs/" || p === "/api-docs" || p === "/api-docs/" || p === "/api_docs" || p === "/api_docs/" || p === "/api/openapi" || p === "/api/openapi/" || p === "/api/openapi.json" || p === "/api/openapi.json/" || p === "/api/swagger" || p === "/api/swagger/" || p === "/api/swagger.json" || p === "/api/swagger.json/") {
     return "https://www.getdasha.com/compute/api";
   }
   if (p === "/jobs" || p === "/jobs/" || p === "/job" || p === "/job/" || p === "/compute/jobs" || p === "/compute/jobs/" || p === "/compute/job" || p === "/compute/job/" || p === "/api/jobs" || p === "/api/jobs/" || p === "/api/job" || p === "/api/job/") {

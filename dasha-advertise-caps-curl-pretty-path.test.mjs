@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
  * Leftover pretty path (Worker b1725bc2-a9bc-4e49-b946-38014939e7b9):
- * live /tutorials /advertise /enroll /download /spend /caps /limits /free
+ * live /tutorials /advertise /download /spend /caps /limits /free
  * (+ /compute/* tabs, slash / Title-case) 308 → /compute.
+ * /enroll + /compute/enroll fold via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
+ * → /compute#provide.
  * live /curl /openai-compat /completions /compat
  * (+ /compute/* tabs, slash / Title-case) 308 → /compute/api.
  * /tutorial /free-credits /pay /credits peers already 308→/compute.
@@ -28,7 +30,7 @@ assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 
 
 
 const COMPUTE_LEAVES = [
-  'tutorials', 'advertise', 'enroll', 'download', 'spend', 'caps', 'limits', 'free',
+  'tutorials', 'advertise', 'download', 'spend', 'caps', 'limits', 'free',
 ];
 const API_LEAVES = ['curl', 'openai-compat', 'completions', 'compat'];
 
@@ -141,7 +143,7 @@ function expectLoc(host, dest) {
 
 const FETCH_COMPUTE = [
   '/tutorials', '/tutorials/', '/Tutorials', '/ADVERTISE',
-  '/enroll', '/download', '/spend', '/caps', '/limits', '/free', '/Free/',
+  '/download', '/spend', '/caps', '/limits', '/free', '/Free/',
   '/compute/advertise', '/Compute/caps/', '/compute/free',
 ];
 const FETCH_API = [
@@ -232,4 +234,4 @@ for (const path of [
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-advertise-caps-curl-pretty-path: PASS (/tutorials+/advertise+/enroll+/download+/spend+/caps+/limits+/free + /compute/* tabs 308 /compute; /curl+/openai-compat+/completions+/compat + /compute/* tabs 308 /compute/api; Title-case+slash; www+lobby GET+HEAD; /compute+/compute/api+/privacy+/price 200; /arcade+/games+/multichain+/room+/openai+/v1+/status+/health+/x402 stay out; no plugin.jup.ag)');
+console.log('dasha-advertise-caps-curl-pretty-path: PASS (/tutorials+/advertise+/download+/spend+/caps+/limits+/free + /compute/* tabs 308 /compute; /enroll folds via provide leftover; /curl+/openai-compat+/completions+/compat + /compute/* tabs 308 /compute/api; Title-case+slash; www+lobby GET+HEAD; /compute+/compute/api+/privacy+/price 200; /arcade+/games+/multichain+/room+/openai+/v1+/status+/health+/x402 stay out; no plugin.jup.ag)');

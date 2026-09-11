@@ -287,10 +287,15 @@ assert.ok(gone.length > LIVE.length * 0.7, "CSS drop is per-token, not eat-the-p
   assert.equal(siwg.headers.get("location"), "https://www.getdasha.com/login#grok");
 }
 
-for (const path of ["/compute/use", "/compute/provide", "/compute/night", "/compute/build", "/compute/sponsor"]) {
+for (const path of ["/compute/use", "/compute/night", "/compute/build", "/compute/sponsor"]) {
   const res = await edgeWorker.fetch(new Request(`https://www.getdasha.com${path}`), {});
   assert.equal(res.status, 308, `${path} 308`);
   assert.equal(res.headers.get("location"), "https://www.getdasha.com/compute", `${path} → /compute`);
+}
+{
+  const provide = await edgeWorker.fetch(new Request("https://www.getdasha.com/compute/provide"), {});
+  assert.equal(provide.status, 308, "/compute/provide 308");
+  assert.equal(provide.headers.get("location"), "https://www.getdasha.com/compute#provide", "/compute/provide → #provide");
 }
 
 {

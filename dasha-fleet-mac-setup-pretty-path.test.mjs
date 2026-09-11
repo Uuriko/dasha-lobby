@@ -2,7 +2,9 @@
 /**
  * Leftover pretty path (Worker e8adc1ad + 0d7b2adc): live fleet/capacity +
  * console/credits + Mac/local + setup/try + kit/prefer leftovers (+ /compute/*
- * tabs, slash / Title-case) html-404 → 308 /compute. Redo: /fleet /compute/fleet
+ * tabs, slash / Title-case) html-404 → 308 /compute. /setup + /compute/setup
+ * fold via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS → /compute#provide.
+ * Redo: /fleet /compute/fleet
  * (+slash / Title-case) while /rent /capacity /workers already 308.
  * Apex /donate /donate/ → /faucet. Title-case works via existing dest
  * lowercasing. Exact /compute stays 200 (null dest). Skip /admin /blog /news
@@ -31,7 +33,7 @@ const FLEET_LEAVES = [
 ];
 const CONSOLE_LEAVES = ['dashboard', 'console', 'balance', 'pay-usdc'];
 const MAC_LEAVES = ['apple-silicon', 'macos', 'silicon', 'local', 'edge'];
-const SETUP_LEAVES = ['onboard', 'setup', 'quickstart', 'playground', 'sandbox'];
+const SETUP_LEAVES = ['onboard', 'quickstart', 'playground', 'sandbox'];
 const KIT_LEAVES = ['hello', 'example', 'examples', 'prefer', 'preference', 'preferences'];
 const COMPUTE_LEAVES = [...FLEET_LEAVES, ...CONSOLE_LEAVES, ...MAC_LEAVES, ...SETUP_LEAVES, ...KIT_LEAVES];
 

@@ -3,7 +3,7 @@
  * Leftover pretty path (Worker 7528e50a): live compute doors /hosts /inferences
  * /key /keys /apikey /api-key /api_key /install /doctor /me /usage + /inference
  * /gpu /gpus /pricing /providing /mac-kit (+ /compute/* peers, slash / Title-case)
- * html-404 → 308 /compute. Apex /doctor stays here; /compute/doctor is
+ * html-404 → 308 /compute. Apex /doctor + /compute/doctor fold via
  * POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS → /compute#provide.
  * Faucet /tips /compute/tips (peer of /tip) → /faucet.
  * API synonyms: /job /compute/job /api/job → /compute/api/jobs;
@@ -47,19 +47,17 @@ const JOBS = `${WWW}/compute/api/jobs`;
 const RECEIPTS = `${WWW}/compute/api/receipts`;
 const KEYS = `${WWW}/compute/api/keys`;
 
-const APEX_DOCTOR = [
+const TO_COMPUTE = COMPUTE_LEAVES.flatMap((leaf) => [
+  `/${leaf}`, `/${leaf}/`,
+  `/${leaf[0].toUpperCase()}${leaf.slice(1)}`,
+  `/${leaf.toUpperCase()}`,
+  `/compute/${leaf}`, `/compute/${leaf}/`,
+  `/Compute/${leaf}`, `/COMPUTE/${leaf.toUpperCase()}`,
+]);
+const TO_PROVIDE = [
   '/doctor', '/doctor/', '/Doctor', '/DOCTOR',
 ];
-const TO_COMPUTE = [
-  ...COMPUTE_LEAVES.flatMap((leaf) => [
-    `/${leaf}`, `/${leaf}/`,
-    `/${leaf[0].toUpperCase()}${leaf.slice(1)}`,
-    `/${leaf.toUpperCase()}`,
-    `/compute/${leaf}`, `/compute/${leaf}/`,
-    `/Compute/${leaf}`, `/COMPUTE/${leaf.toUpperCase()}`,
-  ]),
-  ...APEX_DOCTOR,
-];
+const PROVIDE = `${WWW}/compute#provide`;
 const TO_FAUCET = [
   '/tips', '/tips/', '/Tips', '/TIPS', '/tIpS/',
   '/compute/tips', '/compute/tips/', '/Compute/tips', '/COMPUTE/TIPS', '/Compute/Tips/',
@@ -95,6 +93,9 @@ const STAY_OUT = [
 
 for (const path of [...TO_COMPUTE, ...PRIOR_COMPUTE]) {
   assert.equal(potterHome308Dest(path), COMPUTE, path);
+}
+for (const path of TO_PROVIDE) {
+  assert.equal(potterHome308Dest(path), PROVIDE, path);
 }
 for (const path of [...TO_FAUCET, ...PRIOR_FAUCET]) {
   assert.equal(potterHome308Dest(path), FAUCET, path);
@@ -147,6 +148,7 @@ const env = {
 };
 const FETCH_FOLDS = [
   ...TO_COMPUTE.map((path) => [path, COMPUTE]),
+  ...TO_PROVIDE.map((path) => [path, PROVIDE]),
   ...TO_FAUCET.map((path) => [path, FAUCET]),
   ...TO_JOBS.map((path) => [path, JOBS]),
   ...TO_RECEIPTS.map((path) => [path, RECEIPTS]),

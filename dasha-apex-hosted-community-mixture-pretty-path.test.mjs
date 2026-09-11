@@ -3,7 +3,8 @@
  * Leftover pretty path (Worker 59661cb0): live /hosted /community /mixture
  * + /compute/* tabs (+slash / Title-case) html-404 → 308 /compute.
  * How? engine synonyms — Start. How? already names Hosted · Community · Mixture
- * and /night /provide /ask already 308→/compute. Fold to plain /compute (no hash).
+ * and /night /ask already 308→/compute. /provide folds via
+ * POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS → /compute#provide.
  * Title-case works via existing dest lowercasing.
  * Exact /compute stays 200 (null dest). Skip /health /status /v1 /openai.
  * Disk only. No Designer. Never plugin.jup.ag.
@@ -51,9 +52,13 @@ const ENGINE_SYNONYMS = [
 ];
 const PRIOR_PEERS = [
   '/night', '/night/', '/Night', '/NIGHT',
-  '/provide', '/provide/', '/Provide', '/PROVIDE',
   '/ask', '/ask/', '/Ask', '/ASK',
-  '/compute/night', '/compute/provide', '/compute/ask',
+  '/compute/night', '/compute/ask',
+];
+const PROVIDE = 'https://www.getdasha.com/compute#provide';
+const PROVIDE_PEERS = [
+  '/provide', '/provide/', '/Provide', '/PROVIDE',
+  '/compute/provide',
 ];
 const FOLDS = [...ENGINE_SYNONYMS, ...PRIOR_PEERS];
 const STAY_OUT = [
@@ -65,6 +70,9 @@ const STAY_OUT = [
 
 for (const path of FOLDS) {
   assert.equal(potterHome308Dest(path), COMPUTE, path);
+}
+for (const path of PROVIDE_PEERS) {
+  assert.equal(potterHome308Dest(path), PROVIDE, path);
 }
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.equal(potterHome308Dest('/compute/'), COMPUTE, '/compute/ still folds to /compute');
@@ -81,6 +89,15 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       assert.equal(res.headers.get('location'), COMPUTE, `${host} ${path} ${method} loc`);
       assert.doesNotMatch(res.headers.get('location') || '', /#/, `${host} ${path} ${method} no hash`);
       assert.doesNotMatch(res.headers.get('location') || '', /plugin\.jup\.ag/, `${host} ${path} ${method} no plugin.jup.ag`);
+      if (method === 'HEAD') assert.equal(await res.text(), '');
+    }
+  }
+  for (const path of PROVIDE_PEERS) {
+    for (const method of ['GET', 'HEAD']) {
+      const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
+      assert.equal(res.status, 308, `${host} ${path} ${method}`);
+      assert.equal(res.headers.get('location'), PROVIDE, `${host} ${path} ${method} loc`);
+      assert.match(res.headers.get('location') || '', /#provide$/, `${host} ${path} ${method} hash`);
       if (method === 'HEAD') assert.equal(await res.text(), '');
     }
   }
@@ -105,4 +122,4 @@ for (const path of ['/hosted', '/community', '/mixture', '/compute/hosted', '/co
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-apex-hosted-community-mixture-pretty-path: PASS (/hosted+/community+/mixture + /compute/* tabs 308 /compute; How? engine synonyms; Title-case+slash; www+lobby GET+HEAD; /night+/provide+/ask peers; /compute 200; /health+/status+/v1+/openai stay out; no plugin.jup.ag)');
+console.log('dasha-apex-hosted-community-mixture-pretty-path: PASS (/hosted+/community+/mixture + /compute/* tabs 308 /compute; How? engine synonyms; Title-case+slash; www+lobby GET+HEAD; /night+/ask peers; /provide→#provide; /compute 200; /health+/status+/v1+/openai stay out; no plugin.jup.ag)');

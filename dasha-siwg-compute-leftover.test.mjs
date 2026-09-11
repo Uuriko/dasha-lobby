@@ -18,9 +18,12 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 const LOGIN = 'https://www.getdasha.com/login#grok';
 const COMPUTE = 'https://www.getdasha.com/compute';
 const SIWG = ['/siwg', '/siwg/', '/grok', '/grok/'];
+const PROVIDE = 'https://www.getdasha.com/compute#provide';
+const PROVIDE_TABS = [
+  '/compute/provide', '/compute/provide/',
+];
 const TABS = [
   '/compute/use', '/compute/use/',
-  '/compute/provide', '/compute/provide/',
   '/compute/night', '/compute/night/',
   '/compute/build', '/compute/build/',
   '/compute/sponsor', '/compute/sponsor/',
@@ -43,6 +46,9 @@ for (const path of SIWG) {
 for (const path of TABS) {
   assert.equal(potterHome308Dest(path), COMPUTE, path);
 }
+for (const path of PROVIDE_TABS) {
+  assert.equal(potterHome308Dest(path), PROVIDE, path);
+}
 for (const path of MARKET) {
   assert.equal(potterHome308Dest(path), OCM, path);
 }
@@ -64,6 +70,12 @@ for (const method of ['GET', 'HEAD']) {
     assert.equal(res.status, 308, `${method} ${path}`);
     assert.equal(res.headers.get('location'), COMPUTE, `${method} ${path} dest`);
     assert.doesNotMatch(res.headers.get('location') || '', /#/, `${method} ${path} no hash`);
+  }
+  for (const path of PROVIDE_TABS) {
+    const res = await edgeWorker.fetch(new Request(`https://www.getdasha.com${path}`, { method }), {});
+    assert.equal(res.status, 308, `${method} ${path}`);
+    assert.equal(res.headers.get('location'), PROVIDE, `${method} ${path} dest`);
+    assert.match(res.headers.get('location') || '', /#provide$/, `${method} ${path} hash`);
   }
   for (const path of MARKET) {
     const res = await edgeWorker.fetch(new Request(`https://www.getdasha.com${path}`, { method }), {});
@@ -118,4 +130,4 @@ for (const path of ['/compute/use', '/compute/provide', '/compute/night', '/comp
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits ${path}`);
 }
 
-console.log('dasha-siwg-compute-leftover: PASS (/siwg 308 login#grok, compute tabs 308 /compute, /compute 200, /compute/ 308, /compute/api JSON, healthz 200, no plugin.jup.ag)');
+console.log('dasha-siwg-compute-leftover: PASS (/siwg 308 login#grok, compute tabs 308 /compute, /compute/provide 308 #provide, /compute 200, /compute/ 308, /compute/api JSON, healthz 200, no plugin.jup.ag)');

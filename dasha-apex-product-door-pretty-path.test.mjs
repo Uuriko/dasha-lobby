@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
  * Leftover: live GET apex Typeform/product doors → html-404 while /compute/* peers 308.
- * /provide /start /sponsor(s) /ask /pay /credits /host /use /you
+ * /start /sponsor(s) /ask /pay /credits /host /use /you
  * /night /build /ocm (+ Title-case / slash) → https://www.getdasha.com/compute
+ * /provide + /compute/provide fold via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
+ * → /compute#provide.
  * /marketplace /market leftover → https://www.getdasha.com/compute/ocm
  * /tip /tip-me → https://www.getdasha.com/faucet (claim path ends tip me)
  * Never plugin.jup.ag. Never Designer.
@@ -17,14 +19,18 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /Apex product doors/);
-assert.match(workerSrc, /Apex product doors: \/provide \/start \/sponsor\(s\) \/ask \/pay \/credits \/host \/use/);
+assert.match(workerSrc, /Apex product doors: \/start \/sponsor\(s\) \/ask \/pay \/credits \/host \/use/);
+assert.match(workerSrc, /\/provide \(\+slash\) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS/);
 assert.match(workerSrc, /tip-me doors/);
 
 const COMPUTE = 'https://www.getdasha.com/compute';
 const OCM = 'https://www.getdasha.com/compute/ocm';
 const FAUCET = 'https://www.getdasha.com/faucet';
-const COMPUTE_CASES = [
+const PROVIDE = 'https://www.getdasha.com/compute#provide';
+const PROVIDE_CASES = [
   '/provide', '/provide/', '/Provide', '/PROVIDE', '/pRoViDe/',
+];
+const COMPUTE_CASES = [
   '/start', '/start/', '/Start', '/START', '/sTaRt/',
   '/sponsor', '/sponsor/', '/Sponsor', '/SPONSOR',
   '/sponsors', '/sponsors/', '/Sponsors', '/SPONSORS',
@@ -50,6 +56,9 @@ const FAUCET_CASES = [
 for (const path of COMPUTE_CASES) {
   assert.equal(potterHome308Dest(path), COMPUTE, path);
 }
+for (const path of PROVIDE_CASES) {
+  assert.equal(potterHome308Dest(path), PROVIDE, path);
+}
 for (const path of OCM_CASES) {
   assert.equal(potterHome308Dest(path), OCM, path);
 }
@@ -58,7 +67,7 @@ for (const path of FAUCET_CASES) {
 }
 assert.equal(potterHome308Dest('/compute'), null, 'lowercase /compute stays 200');
 assert.equal(potterHome308Dest('/faucet'), null, 'lowercase /faucet stays 200');
-assert.equal(potterHome308Dest('/compute/provide'), COMPUTE);
+assert.equal(potterHome308Dest('/compute/provide'), PROVIDE);
 assert.equal(potterHome308Dest('/compute/sponsor'), COMPUTE);
 assert.equal(potterHome308Dest('/compute/ask'), COMPUTE);
 assert.equal(potterHome308Dest('/compute/ocm'), null, 'lowercase /compute/ocm stays edge (200)');
@@ -70,6 +79,14 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
       assert.equal(res.status, 308, `${host} ${path} ${method}`);
       assert.equal(res.headers.get('location'), COMPUTE, `${host} ${path} ${method} loc`);
+      if (method === 'HEAD') assert.equal(await res.text(), '');
+    }
+  }
+  for (const path of PROVIDE_CASES) {
+    for (const method of ['GET', 'HEAD']) {
+      const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
+      assert.equal(res.status, 308, `${host} ${path} ${method}`);
+      assert.equal(res.headers.get('location'), PROVIDE, `${host} ${path} ${method} loc`);
       if (method === 'HEAD') assert.equal(await res.text(), '');
     }
   }
@@ -91,4 +108,4 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   }
 }
 
-console.log('dasha-apex-product-door-pretty-path: PASS (apex Ask/Pay/Credits/Host/Use/Night/You/Build/Ocm+provide/start/sponsor→/compute; marketplace/market→/compute/ocm; tip→/faucet www+lobby GET+HEAD)');
+console.log('dasha-apex-product-door-pretty-path: PASS (apex Ask/Pay/Credits/Host/Use/Night/You/Build/Ocm+start/sponsor→/compute; /provide→/compute#provide; marketplace/market→/compute/ocm; tip→/faucet www+lobby GET+HEAD)');
