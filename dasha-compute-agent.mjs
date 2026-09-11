@@ -91,8 +91,9 @@ export const AGENTS_JSON = {
   ],
 };
 
-/** Hosted Flash option. Shared by skill.md + llms.txt. Never Community. Not a live SKU. */
-export const COMPUTE_HOSTED_FLASH_TXT = 'Hosted Flash: bigger-than-Mac (Spark / Engram-class Flash when offered). Never Community. Same base_url. Watch x-dasha-route.';
+/** Hosted Flash option. Shared by skill.md + llms.txt. Official API id deepseek-flash when offered. Never Community. Not a live SKU. */
+export const COMPUTE_HOSTED_FLASH_TXT = `Hosted Flash: bigger-than-Mac (Spark / Engram-class Flash when offered). Model id \`deepseek-flash\` (Hosted). Never Community. Same base_url. Watch x-dasha-route.
+Engram/SSD-stream local recipes stay Hosted/Provide-Max — not Air kit.`;
 
 /** Provide speed honesty. Shared by /compute/skill.md + /compute/llms.txt. */
 export const COMPUTE_PROVIDE_SPEED_TXT = `## Provide speed
