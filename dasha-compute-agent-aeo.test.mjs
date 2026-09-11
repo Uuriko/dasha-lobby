@@ -95,6 +95,9 @@ assert.match(COMPUTE_LLMS_TXT, /Authorization: Bearer \$DASHA_API_KEY/, 'packet 
 assert.match(COMPUTE_LLMS_TXT, /"model":"gemma3-27b"/, 'packet first-call model');
 assert.match(COMPUTE_LLMS_TXT, /^Community: a peer Mac runs the job\.$/m, 'Community one-liner');
 assert.match(COMPUTE_LLMS_TXT, /^Hosted: still there when no Mac is online\.$/m, 'Hosted one-liner');
+assert.match(COMPUTE_LLMS_TXT, /x-dasha-route/, 'packet names spend route header');
+assert.match(COMPUTE_LLMS_TXT, /x-dasha-spend-usd/, 'packet names spend usd header');
+assert.match(COMPUTE_LLMS_TXT, /Community omits unknown USD/, 'packet honesty: no invented community USD');
 assert.match(COMPUTE_LLMS_TXT, /https:\/\/www\.getdasha\.com\/llms\.txt/, 'packet links site llms');
 assert.match(COMPUTE_LLMS_TXT, /https:\/\/www\.getdasha\.com\/llms-full\.txt/, 'packet links site llms-full');
 assert.doesNotMatch(COMPUTE_LLMS_TXT, /plugin\.jup\.ag/, 'packet no plugin.jup.ag');

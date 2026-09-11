@@ -120,6 +120,9 @@ for (let i = 0; i < 3; i++) {
     method: 'POST', headers: chatHeaders, body: msg,
   }), env, origin);
   assert.equal(free.status, 200, `free ${i}`);
+  assert.equal(free.headers.get('x-dasha-route'), 'hosted', `free ${i} route`);
+  assert.equal(free.headers.get('x-dasha-model'), 'gpt-oss-20b', `free ${i} model`);
+  assert.equal(free.headers.get('x-dasha-spend-usd'), '0.00', `free ${i} known $0`);
   const bal = await storage.get('compute:credit-balance:x:42');
   assert.equal(Math.floor(Number(bal?.cents) || 0), 7, `free tier must not debit (${i})`);
 }
@@ -129,6 +132,9 @@ const paid = await computeApi(new Request('https://lobby.getdasha.com/compute/ap
 }), env, origin);
 assert.equal(paid.status, 200, await paid.clone().text());
 assert.equal(paid.headers.get('X-Dasha-Balance-Cents'), '2');
+assert.equal(paid.headers.get('x-dasha-route'), 'hosted');
+assert.equal(paid.headers.get('x-dasha-model'), 'gpt-oss-20b');
+assert.equal(paid.headers.get('x-dasha-spend-usd'), '0.05');
 const paidJson = await paid.json();
 assert.equal(paidJson.answer, 'ok');
 assert.equal(paidJson.balance_cents, 2);
@@ -139,6 +145,9 @@ const fail = await computeApi(new Request('https://lobby.getdasha.com/compute/ap
   method: 'POST', headers: chatHeaders, body: msg,
 }), env, origin);
 assert.equal(fail.status, 402);
+assert.equal(fail.headers.get('x-dasha-route'), 'hosted');
+assert.equal(fail.headers.get('x-dasha-model'), 'gpt-oss-20b');
+assert.equal(fail.headers.get('x-dasha-spend-usd'), null, '402 did not charge — omit USD');
 const failBody = await fail.json();
 assert.equal(failBody.error, 'top up credits');
 assert.equal(failBody.balance_cents, 2);

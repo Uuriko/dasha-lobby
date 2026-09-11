@@ -116,6 +116,7 @@ Pick \`model\` from the models list.
 Receipts: signed, chained. GET https://www.getdasha.com/compute/api/receipts · verify https://www.getdasha.com/verify
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
+Spend: read \`x-dasha-route\` (\`community\`|\`hosted\`) and \`x-dasha-model\` on chat/completions. \`x-dasha-spend-usd\` only when cost is known — Community omits USD when unknown.
 
 ## More
 
@@ -142,6 +143,7 @@ First path: Sign in, create a key, change the base URL.
 ${COMPUTE_FIRST_CALL_TXT}
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
+spend headers x-dasha-route · x-dasha-model · x-dasha-spend-usd when known (Community omits unknown USD)
 
 compute https://www.getdasha.com/compute
 Use a Mac https://www.getdasha.com/compute#ask
