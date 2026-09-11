@@ -128,6 +128,7 @@ import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import { isComputeOcmPath, proxyComputeOcm } from './dasha-compute-ocm-proxy.mjs';
+import { roomDiscoveryResponse } from './dasha-room-edge-proxy.mjs';
 import {
   COMPUTE_FIRST_CALL_TXT,
   COMPUTE_LLMS_DESCRIBEDBY,
@@ -11570,6 +11571,10 @@ export default {
         status: 308,
         headers: { Location: url.href, 'Cache-Control': 'public, max-age=3600' },
       });
+    }
+    {
+      const room = await roomDiscoveryResponse(request, { fetch: env?.fetch || globalThis.fetch });
+      if (room) return room;
     }
     const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
