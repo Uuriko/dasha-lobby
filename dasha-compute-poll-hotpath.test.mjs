@@ -1,11 +1,18 @@
 #!/usr/bin/env node
 /**
  * Provider poll is the hottest DO path (kit loops ~1s).
- * Expire/requeue jobs in one list; skip night + provider GC on poll.
- * Lease expiry without stream progress still requeues. No wrangler.
+ * After the first prune, idle polls list queued/leased stubs — not every compute:job:.
+ * Night + provider GC stay off poll. Expired leases requeue from the leased index.
+ * No wrangler.
  */
 import assert from 'node:assert/strict';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import {
+  ComputeNetwork,
+  JOB_LEASED_PREFIX,
+  JOB_QUEUED_PREFIX,
+  POLL_FULL_PRUNE_MS,
+  jobLeasedKey,
+} from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'poll-hotpath-secret' };
@@ -54,6 +61,17 @@ rows.set('compute:night:night_idle', {
   createdAt: Date.now() - 2000,
 });
 
+// Park a completed job so a naive full job-list would grow with history.
+const doneAt = Date.now();
+rows.set('compute:job:job_history', {
+  id: 'job_history',
+  owner: 'x:done',
+  model: 'qwen3-8b',
+  status: 'complete',
+  createdAt: doneAt - 30_000,
+  expiresAt: doneAt + 9 * 60_000,
+});
+
 lists.length = 0;
 const idle = await network.fetch(new Request('https://www.getdasha.com/compute/api/providers/poll', {
   method: 'POST', headers: providerHeaders, body: JSON.stringify(heartbeat),
@@ -62,13 +80,18 @@ assert.equal(idle.status, 204);
 const jobLists = lists.filter((p) => p === 'compute:job:');
 const nightLists = lists.filter((p) => p === 'compute:night:');
 const providerLists = lists.filter((p) => p === 'compute:provider:');
-assert.equal(jobLists.length, 1, `poll should list jobs once, got ${jobLists.length} (${lists.join(',')})`);
+const queuedLists = lists.filter((p) => p === JOB_QUEUED_PREFIX);
+const leasedLists = lists.filter((p) => p === JOB_LEASED_PREFIX);
+assert.equal(jobLists.length, 0, `idle poll must not list all jobs, got ${jobLists.length} (${lists.join(',')})`);
+assert.ok(queuedLists.length >= 1, 'idle poll reads queued index');
+assert.ok(leasedLists.length >= 1, 'idle poll reads leased index');
 assert.equal(nightLists.length, 0, 'poll must not scan night tasks');
 assert.equal(providerLists.length, 0, 'poll must not GC-scan providers');
 assert.equal(rows.get('compute:night:night_idle').status, 'scheduled', 'due night stays parked on poll');
+assert.ok(POLL_FULL_PRUNE_MS >= 10_000, 'full prune stays off the 1s loop');
 
 const staleNow = Date.now();
-rows.set('compute:job:job_stalelease', {
+const stale = {
   id: 'job_stalelease',
   owner: 'x:buyer',
   model: 'qwen3-8b',
@@ -82,13 +105,23 @@ rows.set('compute:job:job_stalelease', {
   createdAt: staleNow - 10_000,
   leaseExpiresAt: staleNow - 1,
   expiresAt: staleNow + 60_000,
+};
+rows.set('compute:job:job_stalelease', stale);
+rows.set(jobLeasedKey(stale.id), {
+  id: stale.id,
+  owner: stale.owner,
+  leaseExpiresAt: stale.leaseExpiresAt,
+  stream: false,
+  hasProgress: false,
 });
+lists.length = 0;
 const relist = await network.fetch(new Request('https://www.getdasha.com/compute/api/providers/poll', {
   method: 'POST', headers: providerHeaders, body: JSON.stringify(heartbeat),
 }), origin);
 assert.equal(relist.status, 200, await relist.clone().text());
 const leased = await relist.json();
-assert.equal(leased.job.id, 'job_stalelease', 'expired lease without tokens requeues on poll');
+assert.equal(leased.job.id, 'job_stalelease', 'expired lease without tokens requeues from leased index');
 assert.equal(leased.job.messages.at(-1).content, 'requeue me');
+assert.equal(lists.filter((p) => p === 'compute:job:').length, 0, 'index requeue does not list all jobs');
 
 console.log('dasha-compute-poll-hotpath: PASS');

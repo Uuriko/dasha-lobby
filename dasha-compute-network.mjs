@@ -855,6 +855,11 @@ export function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
 }
 
 async function cancelJob(storage, key, job, now = Date.now()) {
+  const id = job?.id;
+  if (id) {
+    await storage.delete(jobQueuedKey(id));
+    await storage.delete(jobLeasedKey(id));
+  }
   if (job.status === 'leased') await storage.put(key, { ...job, status: 'cancelled', messages: null, chunks: null, answer: null, error: null, expiresAt: now + LEASE_MS });
   else await storage.delete(key);
 }
@@ -906,6 +911,54 @@ function mergeRouteFromHeaders(input, request) {
   return next;
 }
 
+/** Hot-path indexes: poll lists these instead of every compute:job: (completed sit ~10 min). */
+export const JOB_QUEUED_PREFIX = 'compute:queued:';
+export const JOB_LEASED_PREFIX = 'compute:leased:';
+/** Full job-list prune on poll at most this often. Lease requeue uses the leased index between. */
+export const POLL_FULL_PRUNE_MS = 15_000;
+
+export function jobQueuedKey(id) { return `${JOB_QUEUED_PREFIX}${id}`; }
+export function jobLeasedKey(id) { return `${JOB_LEASED_PREFIX}${id}`; }
+
+export function jobQueuedStub(job) {
+  return { id: job.id, model: job.model, route: job.route || 'community', owner: job.owner, createdAt: job.createdAt };
+}
+
+export function jobLeasedStub(job) {
+  return {
+    id: job.id,
+    owner: job.owner,
+    leaseExpiresAt: job.leaseExpiresAt,
+    stream: job.stream === true,
+    hasProgress: job.stream === true && (job.chunks || []).some((chunk) => String(chunk || '').trim()),
+  };
+}
+
+async function syncJobIndex(storage, job) {
+  if (!job?.id) return;
+  if (job.status === 'queued') {
+    await storage.put(jobQueuedKey(job.id), jobQueuedStub(job));
+    await storage.delete(jobLeasedKey(job.id));
+  } else if (job.status === 'leased') {
+    await storage.delete(jobQueuedKey(job.id));
+    await storage.put(jobLeasedKey(job.id), jobLeasedStub(job));
+  } else {
+    await storage.delete(jobQueuedKey(job.id));
+    await storage.delete(jobLeasedKey(job.id));
+  }
+}
+
+async function writeJob(storage, job) {
+  await storage.put(`compute:job:${job.id}`, job);
+  await syncJobIndex(storage, job);
+}
+
+async function removeJob(storage, jobId) {
+  if (!jobId) return;
+  await storage.delete(`compute:job:${jobId}`);
+  await storage.delete(jobQueuedKey(jobId));
+  await storage.delete(jobLeasedKey(jobId));
+}
 
 export class ComputeNetwork {
   constructor(state, env) { this.state = state; this.env = env; this.rates = new Map(); }
@@ -918,32 +971,99 @@ export class ComputeNetwork {
     for (const [key, job] of await this.state.storage.list({ prefix: 'compute:job:' })) {
       if (!job || Number(job.expiresAt) <= now) {
         if (job && job.status !== 'complete') await this.refundJobDebit(job, now, 'expired');
-        await this.state.storage.delete(key);
+        if (job?.id) await removeJob(this.state.storage, job.id);
+        else await this.state.storage.delete(key);
         if (job?.nightId && ['queued', 'leased'].includes(job.status)) await this.finishNight(job, 'failed', null, 'job expired before completion', now);
       }
       else if (job.status === 'leased' && Number(job.leaseExpiresAt) <= now) {
         const hadStreamProgress = job.stream === true && (job.chunks || []).some(chunk => String(chunk || '').trim());
         if (hadStreamProgress) {
           await this.refundJobDebit(job, now, 'provider cut');
-          await this.state.storage.put(key, { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 });
+          const failed = { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 };
+          await writeJob(this.state.storage, failed);
           await this.finishNight(job, 'failed', null, 'provider cut', now);
           await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: true });
         } else {
           const next = { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) };
-          await this.state.storage.put(key, next);
+          await writeJob(this.state.storage, next);
           jobs.push(next);
         }
       } else {
         jobs.push(job);
       }
     }
+    for (const job of jobs) await syncJobIndex(this.state.storage, job);
     if (sweepProviders) {
       for (const [key, provider] of await this.state.storage.list({ prefix: 'compute:provider:' })) {
         if (!provider || (now - Number(provider.createdAt || 0) > 30 * 24 * 60 * 60_000 && !provider.lastSeenAt)) await this.state.storage.delete(key);
       }
     }
     if (runNight) await this.runNightTasks(now);
+    this._indexesReady = true;
+    this._lastFullPrune = now;
     return jobs;
+  }
+
+  async ownerHasInflight(owner) {
+    const who = String(owner || '');
+    if (!who) return false;
+    for (const [prefix, ok] of [[JOB_QUEUED_PREFIX, 'queued'], [JOB_LEASED_PREFIX, 'leased']]) {
+      for (const stub of (await this.state.storage.list({ prefix })).values()) {
+        if (stub?.owner !== who || !stub.id) continue;
+        const job = await this.state.storage.get(`compute:job:${stub.id}`);
+        if (job && job.status === ok) return true;
+        await this.state.storage.delete(`${prefix}${stub.id}`);
+      }
+    }
+    return false;
+  }
+
+  async requeueExpiredLeasesFromIndex(now) {
+    for (const stub of (await this.state.storage.list({ prefix: JOB_LEASED_PREFIX })).values()) {
+      if (!stub?.id || Number(stub.leaseExpiresAt) > now) continue;
+      const job = await this.state.storage.get(`compute:job:${stub.id}`);
+      if (!job) {
+        await this.state.storage.delete(jobLeasedKey(stub.id));
+        await this.state.storage.delete(jobQueuedKey(stub.id));
+        continue;
+      }
+      if (job.status !== 'leased' || Number(job.leaseExpiresAt) > now) {
+        await syncJobIndex(this.state.storage, job);
+        continue;
+      }
+      const hadStreamProgress = job.stream === true && (job.chunks || []).some((chunk) => String(chunk || '').trim());
+      if (hadStreamProgress) {
+        await this.refundJobDebit(job, now, 'provider cut');
+        await writeJob(this.state.storage, { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 });
+        await this.finishNight(job, 'failed', null, 'provider cut', now);
+        await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: true });
+      } else {
+        await writeJob(this.state.storage, { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) });
+      }
+    }
+  }
+
+  async pickQueuedJob(provider) {
+    const stubs = [...(await this.state.storage.list({ prefix: JOB_QUEUED_PREFIX })).values()]
+      .filter((stub) => stub?.id && provider.models.includes(stub.model) && (stub.route !== 'self' || provider.owner === stub.owner))
+      .sort((a, b) => a.createdAt - b.createdAt);
+    for (const stub of stubs) {
+      const job = await this.state.storage.get(`compute:job:${stub.id}`);
+      if (!job || job.status !== 'queued') {
+        await this.state.storage.delete(jobQueuedKey(stub.id));
+        continue;
+      }
+      if (!provider.models.includes(job.model) || (job.route === 'self' && provider.owner !== job.owner)) continue;
+      return job;
+    }
+    return null;
+  }
+
+  async takePollJob(provider, now) {
+    const due = !this._indexesReady || !this._lastFullPrune || (now - this._lastFullPrune) >= POLL_FULL_PRUNE_MS;
+    if (due) await this.prune(now, { night: false, providers: false });
+    else await this.requeueExpiredLeasesFromIndex(now);
+    return this.pickQueuedJob(provider);
   }
 
   async runNightTasks(now) {
@@ -956,7 +1076,7 @@ export class ComputeNetwork {
       const nightMessages = [{ role: 'system', content: NIGHT_TEMPLATES[task.template] }, { role: 'user', content: nightStepPrompt(task) }];
       const turns = countConversationTurns(nightMessages);
       const job = { id: `job_${randomUrlToken(9)}`, nightId: task.id, nightStep: Number(task.stepIndex || 0), owner: task.owner, model: task.model, route: 'community', messages: nightMessages, maxTokens: 2048, temperature: 0.4, stream: false, status: 'queued', providerId: null, createdAt: now, expiresAt: now + NIGHT_JOB_TTL_MS, ...(turns ? { turns } : {}) };
-      await this.state.storage.put(`compute:job:${job.id}`, job);
+      await writeJob(this.state.storage, job);
       await this.state.storage.put(`compute:night:${task.id}`, { ...task, status: 'running', lastJobId: job.id, lastRunAt: now });
       activeOwners.add(task.owner);
     }
@@ -1201,12 +1321,12 @@ export class ComputeNetwork {
     } else if (!anyOnline) {
       return { error: 'No Mac is online.', status: 503 };
     }
-    if ([...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].some(job => job.owner === owner && ['queued', 'leased'].includes(job.status))) return { error: 'finish your current community request first', status: 409 };
+    if (await this.ownerHasInflight(owner)) return { error: 'finish your current community request first', status: 409 };
     const requestedTemperature = Number(input.temperature);
     const stream = input.stream === true;
     const turns = countConversationTurns(messages);
     const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(input.request_id != null && String(input.request_id).trim() ? { request_id: String(input.request_id).trim().slice(0, 80) } : {}), ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
-    await this.state.storage.put(`compute:job:${job.id}`, job);
+    await writeJob(this.state.storage, job);
     return { job };
   }
 
@@ -1374,8 +1494,8 @@ export class ComputeNetwork {
       if (!task || task.owner !== owner) return json({ error: 'Night Shift task not found' }, 404, allowedOrigin, true);
       if (task.lastJobId) {
         const jobKey = `compute:job:${task.lastJobId}`, job = await this.state.storage.get(jobKey);
-        if (job?.status === 'leased') await this.state.storage.put(jobKey, { ...job, status: 'cancelled', messages: null, chunks: null, expiresAt: now + LEASE_MS });
-        else if (job) await this.state.storage.delete(jobKey);
+        if (job?.status === 'leased') await writeJob(this.state.storage, { ...job, status: 'cancelled', messages: null, chunks: null, expiresAt: now + LEASE_MS });
+        else if (job) await removeJob(this.state.storage, job.id);
       }
       await this.state.storage.delete(key);
       return json({ ok: true, prompt_deleted: true }, 200, allowedOrigin, true);
@@ -1515,19 +1635,19 @@ export class ComputeNetwork {
           now,
         });
         if (!debit.ok) {
-          await this.state.storage.delete(`compute:job:${queued.job.id}`);
+          await removeJob(this.state.storage, queued.job.id);
           return v1err(debit.error || 'top up credits', 402, 'invalid_request_error', chatSpend(queued.job));
         }
         const spend = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now);
         if (!spend.ok) {
           await this.refundCredits(key.owner, { requestId: `api:${queued.job.id}`, now, reason: 'spend-cap' });
-          await this.state.storage.delete(`compute:job:${queued.job.id}`);
+          await removeJob(this.state.storage, queued.job.id);
           return v1err(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error', chatSpend(queued.job));
         }
         queued.job.debitRequestId = `api:${queued.job.id}`;
         queued.job.debitKeyId = key.id;
         queued.job.debitCents = HOSTED_ASK_PRICE_CENTS;
-        await this.state.storage.put(`compute:job:${queued.job.id}`, queued.job);
+        await writeJob(this.state.storage, queued.job);
       }
       if (input.stream) {
         const honesty = effortHonestyFromJob(queued.job);
@@ -1561,7 +1681,7 @@ export class ComputeNetwork {
       }
       const leftover = await this.state.storage.get(`compute:job:${queued.job.id}`);
       if (leftover) await this.refundJobDebit(leftover, Date.now(), request.signal.aborted ? 'cancelled' : 'timeout');
-      await this.state.storage.delete(`compute:job:${queued.job.id}`);
+      await removeJob(this.state.storage, queued.job.id);
       return v1err(request.signal.aborted ? 'request cancelled' : 'request timed out', request.signal.aborted ? 499 : 504, 'server_error', chatSpend(queued.job));
     }
 
@@ -1694,7 +1814,12 @@ export class ComputeNetwork {
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!provider || provider.owner !== owner) return json({ error: 'provider not found' }, 404, allowedOrigin, true);
       await this.state.storage.delete(key);
-      for (const [jobKey, job] of await this.state.storage.list({ prefix: 'compute:job:' })) if (job.providerId === provider.id && job.status === 'leased') await this.state.storage.put(jobKey, { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) });
+      for (const stub of (await this.state.storage.list({ prefix: JOB_LEASED_PREFIX })).values()) {
+        const job = stub?.id ? await this.state.storage.get(`compute:job:${stub.id}`) : null;
+        if (job?.providerId === provider.id && job.status === 'leased') {
+          await writeJob(this.state.storage, { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) });
+        }
+      }
       return json({ ok: true }, 200, allowedOrigin, true);
     }
 
@@ -1729,11 +1854,10 @@ export class ComputeNetwork {
       provider.name = String(input.name || '').trim().slice(0, 64) || provider.name;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       if (firstOnline) await this.referralMilestone(provider.owner, 'm1', [{ to: 'referrer', cents: REF_M1_CENTS }], now);
-      const jobs = (await this.prune(now, { night: false, providers: false })).sort((a, b) => a.createdAt - b.createdAt);
-      const job = jobs.find(candidate => candidate.status === 'queued' && provider.models.includes(candidate.model) && (candidate.route !== 'self' || provider.owner === candidate.owner));
+      const job = await this.takePollJob(provider, now);
       if (!job) return new Response(null, { status: 204, headers: SECURITY });
       job.status = 'leased'; job.providerId = provider.id; job.leasedAt = now; job.leaseExpiresAt = now + LEASE_MS; job.expiresAt = now + LEASE_MS + 60_000;
-      await this.state.storage.put(`compute:job:${job.id}`, job);
+      await writeJob(this.state.storage, job);
       return json({ job: { id: job.id, model: job.model, messages: job.messages, max_tokens: job.maxTokens, temperature: job.temperature, stream: job.stream === true }, lease_seconds: LEASE_MS / 1000 });
     }
 
@@ -1747,7 +1871,7 @@ export class ComputeNetwork {
       if (job.status !== 'leased' || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
       provider.lastSeenAt = now;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
-      await this.state.storage.put(key, { ...job, leaseExpiresAt: now + LEASE_MS, expiresAt: now + LEASE_MS + 60_000 });
+      await writeJob(this.state.storage, { ...job, leaseExpiresAt: now + LEASE_MS, expiresAt: now + LEASE_MS + 60_000 });
       return json({ ok: true, cancelled: false, lease_seconds: LEASE_MS / 1000 });
     }
 
@@ -1784,7 +1908,7 @@ export class ComputeNetwork {
         }
       }
       if (error) await this.refundJobDebit(job, now, error);
-      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
+      await writeJob(this.state.storage, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
       await this.finishNight(job, error ? 'failed' : 'complete', error ? null : answer, error || null, now);
       await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
       return json({ accepted: true }, 202);
@@ -1832,7 +1956,7 @@ export class ComputeNetwork {
       const failed = Boolean(streamError);
       const finished = failed || Boolean(input.done);
       if (failed) await this.refundJobDebit(job, now, streamError);
-      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
+      await writeJob(this.state.storage, { ...job, chunks: failed ? [] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
       if (finished) {
         await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
         await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
@@ -1886,10 +2010,10 @@ export class ComputeNetwork {
       if (job.status === 'cancelled') return maybeHead(request, json({ error: 'job not found' }, 404, allowedOrigin, credentials));
       if (Number(job.expiresAt) <= now) {
         await this.refundJobDebit(job, now, 'expired');
-        await this.state.storage.delete(key);
+        await removeJob(this.state.storage, job.id);
         return maybeHead(request, json({ error: 'job expired' }, 410, allowedOrigin, credentials));
       }
-      const queued = job.status === 'queued' ? [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].filter(candidate => candidate.status === 'queued' && candidate.model === job.model).sort((a, b) => a.createdAt - b.createdAt) : [];
+      const queued = job.status === 'queued' ? [...(await this.state.storage.list({ prefix: JOB_QUEUED_PREFIX })).values()].filter(candidate => candidate.model === job.model).sort((a, b) => a.createdAt - b.createdAt) : [];
       const queuePosition = queued.findIndex(candidate => candidate.id === job.id) + 1;
       const usage = job.usage && typeof job.usage === 'object' ? {
         prompt_tokens: Math.max(0, Math.floor(Number(job.usage.prompt_tokens) || 0)),
