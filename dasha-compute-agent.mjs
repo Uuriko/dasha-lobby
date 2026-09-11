@@ -41,6 +41,15 @@ OpenAI(base_url="${COMPUTE_API_BASE}", api_key=os.environ["DASHA_API_KEY"])
 new OpenAI({ baseURL: "${COMPUTE_API_BASE}", apiKey: process.env.DASHA_API_KEY })
 `;
 
+/** Point coding agents at Compute. Shared by skill.md + /compute/llms.txt. */
+export const COMPUTE_AGENTS_BASE = 'https://lobby.getdasha.com/compute/api';
+export const COMPUTE_AGENTS_TXT = `## Agents
+
+base_url ${COMPUTE_AGENTS_BASE}
+OpenAI-compatible. OpenAI SDK, Aider, Goose, OpenHands (BYOK).
+Mint: POST /compute/api/guest-keys
+`;
+
 /** Cursor/Claude-style skill. Stable GET /compute/skill.md. */
 export const COMPUTE_SKILL_MD = `---
 name: dasha-compute
@@ -55,6 +64,7 @@ OpenAI-compatible inference. A run factory, not a ledger.
 
 You want a Mac to run a prompt — or Hosted when no Mac is online. Not a ledger. Not Room.
 
+${COMPUTE_AGENTS_TXT}
 ## Create a key
 
 Sign in at https://www.getdasha.com/compute#build
@@ -91,6 +101,7 @@ no key needed for healthz + network + models; key needed for chat
 guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP
 curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
 
+${COMPUTE_AGENTS_TXT}
 First path: Sign in, create a key, change the base URL.
 
 ${COMPUTE_FIRST_CALL_TXT}

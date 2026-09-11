@@ -15,6 +15,8 @@ import {
   COMPUTE_AGENT_JSON,
   COMPUTE_AGENT_JSON_ALIAS_URL,
   COMPUTE_AGENT_JSON_URL,
+  COMPUTE_AGENTS_BASE,
+  COMPUTE_AGENTS_TXT,
   COMPUTE_API_BASE,
   COMPUTE_API_BASE_WWW,
   COMPUTE_FIRST_CALL_TXT,
@@ -75,6 +77,16 @@ assert.match(COMPUTE_LLMS_TXT, /auth Bearer API key/, 'packet names Bearer auth'
 assert.match(COMPUTE_LLMS_TXT, /^no key needed for healthz \+ network \+ models; key needed for chat$/m, 'packet soft-guest line');
 assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — 24h chat\+models, 3\/hour\/IP$/m, 'packet guest key mint');
 assert.match(COMPUTE_LLMS_TXT, /curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/, 'packet guest mint curl');
+assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_AGENTS_TXT), true, 'packet embeds Agents');
+assert.match(COMPUTE_LLMS_TXT, /^## Agents$/m, 'packet Agents');
+assert.match(COMPUTE_LLMS_TXT, new RegExp(`^base_url ${COMPUTE_AGENTS_BASE.replace(/\./g, '\\.')}$`, 'm'), 'packet agents base_url');
+assert.match(COMPUTE_LLMS_TXT, /OpenAI SDK, Aider, Goose, OpenHands \(BYOK\)/, 'packet agents BYOK tools');
+assert.match(COMPUTE_LLMS_TXT, /^Mint: POST \/compute\/api\/guest-keys$/m, 'packet agents mint pointer');
+assert.equal(
+  (COMPUTE_LLMS_TXT.match(/curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/g) || []).length,
+  1,
+  'packet keeps one mint curl',
+);
 assert.match(COMPUTE_LLMS_TXT, /First path: Sign in, create a key, change the base URL\./, 'packet first path');
 assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_FIRST_CALL_TXT), true, 'packet embeds First call');
 assert.match(COMPUTE_LLMS_TXT, /^## First call$/m, 'packet First call heading');

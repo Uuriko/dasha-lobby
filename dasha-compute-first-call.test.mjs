@@ -84,6 +84,7 @@ for (const origin of ORIGINS) {
   const indexBody = await index.text();
   assert.ok(indexBody.includes(COMPUTE_LLMS_URL), `${origin}/llms.txt still points at packet`);
   assert.doesNotMatch(indexBody, /## First call/, `${origin}/llms.txt stays the short index`);
+  assert.doesNotMatch(indexBody, /## Agents/, `${origin}/llms.txt stays the short index`);
   assert.doesNotMatch(indexBody, /gemma3-27b/, `${origin}/llms.txt no First call wall`);
 }
 
