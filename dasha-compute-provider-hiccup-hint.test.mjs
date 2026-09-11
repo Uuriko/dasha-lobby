@@ -22,14 +22,18 @@ for (const raw of [
   'provider inference failed: RuntimeError',
   'provider inference failed: URLError: The operation couldn’t be completed.',
   'provider inference failed: stream ended before completion',
+  'provider cut',
+  'empty completion',
 ]) {
   const body = openaiErrorBody(raw, 502, 'server_error');
   assert.equal(body.error.message, raw, 'error.message keeps the diagnostic');
   assert.equal(body.error.type, 'server_error');
   assert.equal(body.status, 'failed');
-  assert.equal(body.reason, 'provider_failed');
+  assert.equal(body.reason, raw === 'empty completion' ? 'empty_completion' : 'provider_failed');
   assert.equal(body.hint, HINT, 'hint is the next step, not the raw exception');
-  assert.doesNotMatch(body.hint, /RuntimeError|URLError|provider inference failed/i);
+  assert.doesNotMatch(body.hint, /RuntimeError|URLError|provider inference failed|empty completion|provider cut/i);
   assert.equal(body.next[0].path, '/compute/api/v1/chat/completions', 'retry first');
   assert.equal(body.next[1].path, '/compute/api/v1/models', 'then live models');
 }
+
+console.log('dasha-compute-provider-hiccup-hint: PASS');
