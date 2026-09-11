@@ -4929,12 +4929,18 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
 /** Live GET/HEAD /compute/agent.md /compute/agents.md /compute/AGENTS.md
  *  /compute/README.md /compute/api.md /compute/create-key /compute/guest
  *  /compute/guest-key /compute/guest-keys were HTML Not found 404 (not JSON
- *  fail-loud) on www while /compute/skill.md is the agent contract. No
- *  separate agent.md. Fold this path-family to the skill face.
- *  Exact /compute/agent stays tab leftover → /compute (do not fold).
+ *  fail-loud) on www while /compute/skill.md is the agent contract.
+ *  Apex siblings /agent.md /agents.md /AGENTS.md /README.md /api.md
+ *  /create-key /guest /guest-key /guest-keys (+slash / Title-case via
+ *  toLowerCase) same leftover family — agents guessing root paths, not
+ *  under /compute, hit HTML-404 while skill is the contract.
+ *  No separate agent.md. Fold this path-family to the skill face.
+ *  Exact /compute/agent and singular /agent stay tab leftover → /compute
+ *  (do not invent /agent → skill). Bare /agents → agents.txt (#199).
  *  POST /compute/api/guest-keys stays 201 mint (do not 308 the API path).
  *  Exact /compute/skill.md + /compute/mcp.json stay 200.
- *  Do not invent /compute/readme (no .md) or DEX peers. */
+ *  Exact /agents.txt + /agents.json stay 200.
+ *  Do not invent /compute/readme or /readme (no .md) or DEX peers. */
 const POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS = new Set([
   '/compute/agent.md', '/compute/agent.md/',
   '/compute/agents.md', '/compute/agents.md/',
@@ -4944,6 +4950,14 @@ const POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS = new Set([
   '/compute/guest', '/compute/guest/',
   '/compute/guest-key', '/compute/guest-key/',
   '/compute/guest-keys', '/compute/guest-keys/',
+  '/agent.md', '/agent.md/',
+  '/agents.md', '/agents.md/',
+  '/readme.md', '/readme.md/',
+  '/api.md', '/api.md/',
+  '/create-key', '/create-key/',
+  '/guest', '/guest/',
+  '/guest-key', '/guest-key/',
+  '/guest-keys', '/guest-keys/',
 ]);
 /** Leftover /agents /agents/ /agents.txt/ /compute/agents.txt/ → face.
  *  Exact /agents.txt stays 200. Bare leftover /compute/agents stays tab → /compute. */
