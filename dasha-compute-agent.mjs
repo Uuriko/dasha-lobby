@@ -151,11 +151,11 @@ You want a Mac to run a prompt — or Hosted when no Mac is online. Not a ledger
 ${COMPUTE_AGENTS_TXT}
 ## Create a key
 
-Sign in at https://www.getdasha.com/compute#build
-
 Guest key: POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP. Copy once.
 
 curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
+
+Or sign in at https://www.getdasha.com/compute#build for lasting dsk_.
 
 ${COMPUTE_FIRST_CALL_TXT}
 Pick \`model\` from the models list.

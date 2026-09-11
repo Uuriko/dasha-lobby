@@ -89,7 +89,12 @@ assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — 2
 assert.match(COMPUTE_LLMS_TXT, /curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/);
 assert.match(COMPUTE_SKILL_MD, /Guest key: POST \/compute\/api\/guest-keys — 24h chat\+models/);
 assert.match(COMPUTE_SKILL_MD, /curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/);
-assert.match(COMPUTE_SKILL_MD, /Sign in at https:\/\/www\.getdasha\.com\/compute#build/);
+assert.match(COMPUTE_SKILL_MD, /Or sign in at https:\/\/www\.getdasha\.com\/compute#build for lasting dsk_/);
+assert.match(
+  COMPUTE_SKILL_MD,
+  /Guest key: POST \/compute\/api\/guest-keys[\s\S]*Or sign in at https:\/\/www\.getdasha\.com\/compute#build for lasting dsk_/,
+  'Create a key is guest-first',
+);
 assert.doesNotMatch(COMPUTE_SKILL_MD, /guest-agent/i);
 assert.doesNotMatch(COMPUTE_SKILL_MD, /mint deferred/);
 assert.equal(COMPUTE_AGENT_JSON.endpoints.guest_keys, COMPUTE_GUEST_KEYS_URL);

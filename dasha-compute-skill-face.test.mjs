@@ -61,8 +61,14 @@ assert.equal(
   'skill keeps one mint curl',
 );
 assert.match(COMPUTE_SKILL_MD, /^## Create a key$/m, 'Create a key');
+assert.match(
+  COMPUTE_SKILL_MD,
+  /^## Create a key\n\nGuest key: POST \/compute\/api\/guest-keys — 24h chat\+models, 3\/hour\/IP\. Copy once\.\n\ncurl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys -H 'Content-Type: application\/json' -d '\{\}'\n\nOr sign in at https:\/\/www\.getdasha\.com\/compute#build for lasting dsk_\.\n/m,
+  'Create a key is guest-first, Sign in for lasting dsk_ second',
+);
 assert.match(COMPUTE_SKILL_MD, /https:\/\/www\.getdasha\.com\/compute#build/, 'key door is /compute#build');
-assert.match(COMPUTE_SKILL_MD, /Sign in/, 'key door names Sign in');
+assert.match(COMPUTE_SKILL_MD, /sign in at https:\/\/www\.getdasha\.com\/compute#build for lasting dsk_/, 'key door names Sign in for lasting dsk_');
+assert.doesNotMatch(COMPUTE_SKILL_MD, /## Create a key\n\nSign in at/, 'Create a key does not lead with Sign in');
 assert.equal(COMPUTE_SKILL_MD.includes(COMPUTE_FIRST_CALL_TXT), true, 'skill embeds First call');
 assert.match(COMPUTE_SKILL_MD, new RegExp(`^base ${COMPUTE_API_BASE.replace(/\./g, '\\.')}$`, 'm'), 'lobby base');
 assert.match(COMPUTE_SKILL_MD, new RegExp(`^www ${COMPUTE_API_BASE_WWW.replace(/\./g, '\\.')}$`, 'm'), 'www mirror');

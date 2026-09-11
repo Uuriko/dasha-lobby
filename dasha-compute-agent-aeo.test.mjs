@@ -98,6 +98,16 @@ assert.equal(
   'packet keeps one mint curl',
 );
 assert.match(COMPUTE_LLMS_TXT, /First path: POST \/compute\/api\/guest-keys\. Or sign in at \/compute#build for dsk_\./, 'packet first path');
+assert.match(
+  COMPUTE_SKILL_MD,
+  /Guest key: POST \/compute\/api\/guest-keys[\s\S]*Or sign in at https:\/\/www\.getdasha\.com\/compute#build for lasting dsk_/,
+  'skill Create a key is guest-first',
+);
+assert.match(
+  COMPUTE_LLMS_FULL_TXT,
+  /## Create a key\n\nGuest key: POST \/compute\/api\/guest-keys[\s\S]*Or sign in at https:\/\/www\.getdasha\.com\/compute#build for lasting dsk_/,
+  'full packet embeds guest-first Create a key',
+);
 assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_FIRST_CALL_TXT), true, 'packet embeds First call');
 assert.match(COMPUTE_LLMS_TXT, /^## First call$/m, 'packet First call heading');
 assert.match(COMPUTE_LLMS_TXT, /Authorization: Bearer \$DASHA_API_KEY/, 'packet keyed curl');
