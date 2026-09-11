@@ -319,6 +319,7 @@ compute https://www.getdasha.com/compute
 compute packet https://www.getdasha.com/compute/llms.txt
 agent.json https://www.getdasha.com/.well-known/agent.json
 compute skill https://www.getdasha.com/compute/skill.md
+mcp https://www.getdasha.com/compute/mcp.json
 Use a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
 Live benchmarks https://www.getdasha.com/benchmarks
@@ -344,6 +345,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Compute packet](https://www.getdasha.com/compute/llms.txt)
 - [Compute agent.json](https://www.getdasha.com/.well-known/agent.json)
 - [Compute skill](https://www.getdasha.com/compute/skill.md)
+- [Compute MCP](https://www.getdasha.com/compute/mcp.json)
 - [Use a Mac](https://www.getdasha.com/compute#ask)
 - [Join a Mac](https://www.getdasha.com/compute#provide)
 - [Live benchmarks](https://www.getdasha.com/benchmarks)
@@ -454,6 +456,7 @@ Compute: Start. (Do / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Spo
 Agent packet: https://www.getdasha.com/compute/llms.txt
 Agent JSON: https://www.getdasha.com/.well-known/agent.json
 Agent skill: https://www.getdasha.com/compute/skill.md
+MCP catalog: https://www.getdasha.com/compute/mcp.json
 Use a Mac: https://www.getdasha.com/compute#ask
 Join a Mac: https://www.getdasha.com/compute#provide
 Live benchmarks: https://www.getdasha.com/benchmarks
@@ -478,6 +481,7 @@ Login: Grok Bot first, then X, then wallet. https://www.getdasha.com/login
 - https://www.getdasha.com/compute/llms.txt
 - https://www.getdasha.com/compute/skill.md
 - https://www.getdasha.com/.well-known/agent.json
+- https://www.getdasha.com/compute/mcp.json
 - https://www.getdasha.com/sitemap.xml
 - https://www.getdasha.com/robots.txt
 `;
@@ -3978,6 +3982,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // /payout(s) /withdraw /cashout /payment(s) /checkout /getting_started /mac-setup
   // /mac_setup /agents|/agent /mcp /tools|/tool (+ /compute/* tabs, Title-case) html-404
   // Leftover /agents|/compute/agents must not catch *.txt/*.json (exact faces stay 200).
+  // Leftover /mcp|/compute/mcp must not catch *.json (exact /compute/mcp.json +
+  // /.well-known/mcp.json stay 200 catalog).
   // while /pricing /pay /earn /getting-started /mac /kit peers already 308→/compute.
   // Do NOT fold bare /price (live 200 JSON token-price API). Only /compute/price folds.
   // Skip /terms /blog /news /admin /waitlist /tos /legal (/help shipped in help/credits block).
@@ -4671,6 +4677,14 @@ const POTTER_COMPUTE_LLMS_FULL_AEO_308_PATHS = new Set([
 const POTTER_COMPUTE_AGENT_JSON_ALIAS_308_PATHS = new Set([
   '/compute/agent.json/',
 ]);
+/** Leftover /mcp.json + slash well-known → catalog. Exact /compute/mcp.json stays 200.
+ *  Bare leftover /mcp|/compute/mcp stay tab → /compute. */
+const POTTER_COMPUTE_MCP_JSON_308_PATHS = new Set([
+  '/compute/mcp.json/',
+  '/mcp.json', '/mcp.json/',
+  '/.well-known/mcp.json/',
+  '/compute/.well-known/mcp.json/',
+]);
 /** Leftover pretty skill doors → /compute/skill.md. Exact /compute/skill.md stays 200. */
 const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
   '/skill.md', '/skill.md/',
@@ -4776,6 +4790,9 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/.well-known/agent.json', 'https://www.getdasha.com/.well-known/agent.json'],
   ['/compute/.well-known/agent.json', 'https://www.getdasha.com/compute/.well-known/agent.json'],
   ['/compute/agent.json', 'https://www.getdasha.com/compute/agent.json'],
+  ['/compute/mcp.json', 'https://www.getdasha.com/compute/mcp.json'],
+  ['/.well-known/mcp.json', 'https://www.getdasha.com/.well-known/mcp.json'],
+  ['/compute/.well-known/mcp.json', 'https://www.getdasha.com/compute/.well-known/mcp.json'],
   ['/robots.txt', 'https://www.getdasha.com/robots.txt'],
   ['/sitemap.xml', 'https://www.getdasha.com/sitemap.xml'],
   // Digest: Title-case /Digest /DIGEST /Digest.json html-404 while lowercase already 200.
@@ -4857,6 +4874,15 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_AGENT_JSON_ALIAS_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/agent.json";
   }
+  if (POTTER_COMPUTE_MCP_JSON_308_PATHS.has(p)) {
+    if (p.startsWith("/compute/.well-known/")) {
+      return "https://www.getdasha.com/compute/.well-known/mcp.json";
+    }
+    if (p.startsWith("/.well-known/")) {
+      return "https://www.getdasha.com/.well-known/mcp.json";
+    }
+    return "https://www.getdasha.com/compute/mcp.json";
+  }
   if (POTTER_COMPUTE_SKILL_FACE_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/skill.md";
   }
@@ -4872,6 +4898,8 @@ export function potterHome308Dest(path) {
   }
   // Exact agents.txt / agents.json faces stay 200.
   // Leftover /agents|/compute/agents must not catch *.txt/*.json.
+  // Exact /compute/mcp.json + /.well-known/mcp.json stay 200 catalog.
+  // Leftover /mcp|/compute/mcp must not catch *.json.
   if (p === "/agents.txt" || p === "/agents.json" || p === "/compute/agents.txt" || p === "/compute/agents.json") {
     if (raw !== p) {
       const dest = POTTER_PRODUCT_CASEFOLD_DEST.get(p);
