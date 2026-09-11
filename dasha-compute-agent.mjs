@@ -5,6 +5,9 @@
  * /agents.txt + /agents.json (+ /compute/agents.txt + /compute/agents.json), and
  * /.well-known/agent.json + /compute/.well-known/agent.json +
  * /compute/agent.json (alias for agents that skip .well-known).
+ * MCP catalog: /compute/mcp.json + /.well-known/mcp.json
+ * (+ /compute/.well-known/mcp.json). Static tool list — not streamable HTTP.
+ * Leftover /mcp|/compute/mcp stay 308 /compute.
  * Exact agents faces match before leftover /agents fold.
  * Run factory, not a ledger. No secrets. No people-data.
  */
@@ -20,6 +23,9 @@ export const COMPUTE_SKILL_URL_LOBBY = 'https://lobby.getdasha.com/compute/skill
 export const COMPUTE_SKILL_CURSOR_URL = 'https://www.getdasha.com/compute/skills/dasha-compute/SKILL.md';
 export const COMPUTE_AGENT_JSON_URL = 'https://www.getdasha.com/.well-known/agent.json';
 export const COMPUTE_AGENT_JSON_ALIAS_URL = 'https://www.getdasha.com/compute/agent.json';
+export const COMPUTE_MCP_JSON_URL = 'https://www.getdasha.com/compute/mcp.json';
+export const COMPUTE_MCP_WELLKNOWN_URL = 'https://www.getdasha.com/.well-known/mcp.json';
+export const COMPUTE_MCP_WELLKNOWN_COMPUTE_URL = 'https://www.getdasha.com/compute/.well-known/mcp.json';
 export const COMPUTE_LLMS_FULL_URL = 'https://www.getdasha.com/compute/llms-full.txt';
 export const COMPUTE_LLMS_DESCRIBEDBY = '</compute/llms.txt>; rel="describedby"';
 export const AGENTS_TXT_URL = 'https://www.getdasha.com/agents.txt';
@@ -138,6 +144,7 @@ ${COMPUTE_PROVIDE_SPEED_TXT}
 
 packet ${COMPUTE_LLMS_URL}
 agent.json ${COMPUTE_AGENT_JSON_URL}
+MCP: ${COMPUTE_MCP_JSON_URL}
 `;
 
 export const COMPUTE_LLMS_TXT = `# Dasha Compute
@@ -170,6 +177,7 @@ Join a Mac https://www.getdasha.com/compute#provide
 agent.json ${COMPUTE_AGENT_JSON_URL}
 skill ${COMPUTE_SKILL_URL}
 skills ${COMPUTE_SKILL_CURSOR_URL}
+mcp ${COMPUTE_MCP_JSON_URL}
 
 site https://www.getdasha.com/llms.txt
 full https://www.getdasha.com/llms-full.txt
@@ -185,6 +193,8 @@ GET ${COMPUTE_AGENT_JSON_ALIAS_URL}
 GET ${COMPUTE_LLMS_URL}
 GET ${COMPUTE_LLMS_FULL_URL}
 GET ${COMPUTE_SKILL_URL}
+GET ${COMPUTE_MCP_JSON_URL}
+GET ${COMPUTE_MCP_WELLKNOWN_URL}
 
 ## Skill
 
@@ -223,9 +233,78 @@ export const COMPUTE_AGENT_JSON = {
   docs: {
     llms: COMPUTE_LLMS_URL,
     skill: COMPUTE_SKILL_URL,
+    mcp: COMPUTE_MCP_JSON_URL,
     site_llms: 'https://www.getdasha.com/llms.txt',
     site_llms_full: 'https://www.getdasha.com/llms-full.txt',
   },
+};
+
+/** Static MCP catalog. Points at existing HTTP tools — not a second chat protocol. */
+export const COMPUTE_MCP_JSON = {
+  name: 'Dasha Compute',
+  description: 'OpenAI-compatible inference. A run factory, not a ledger. Not Room.',
+  url: 'https://www.getdasha.com/compute',
+  skill: COMPUTE_SKILL_URL,
+  protocol: 'catalog',
+  transport: 'http',
+  note: 'Static MCP catalog. Call the existing HTTP tools or the OpenAI-compatible base_url. Chat needs Bearer. Not a streamable MCP session.',
+  base_url: COMPUTE_API_BASE,
+  base_url_www: COMPUTE_API_BASE_WWW,
+  auth: {
+    type: 'api_key',
+    in: 'header',
+    header: 'Authorization',
+    scheme: 'Bearer',
+    public_reads: ['healthz', 'network', 'models'],
+    chat: 'bearer',
+    guest_key: {
+      method: 'POST',
+      path: '/compute/api/guest-keys',
+      ttl_seconds: 86_400,
+      scopes: ['chat', 'models'],
+      rate: '3/hour/IP',
+    },
+  },
+  tools: [
+    {
+      name: 'healthz',
+      method: 'GET',
+      url: COMPUTE_HEALTHZ,
+      auth: 'none',
+      description: 'Coordinator health.',
+    },
+    {
+      name: 'models',
+      method: 'GET',
+      url: `${COMPUTE_API_BASE}/models`,
+      auth: 'none',
+      description: 'OpenAI-compatible model list.',
+    },
+    {
+      name: 'network',
+      method: 'GET',
+      url: COMPUTE_NETWORK,
+      auth: 'none',
+      description: 'Community Macs advertising.',
+    },
+    {
+      name: 'guest-keys',
+      method: 'POST',
+      url: COMPUTE_GUEST_KEYS_URL,
+      auth: 'none',
+      rate: '3/hour/IP',
+      ttl_seconds: 86_400,
+      scopes: ['chat', 'models'],
+      description: 'Mint a 24h guest key. Copy once. Rate-limited.',
+    },
+    {
+      name: 'chat.completions',
+      method: 'POST',
+      url: `${COMPUTE_API_BASE}/chat/completions`,
+      auth: 'bearer',
+      description: 'OpenAI-compatible chat. Use base_url with the OpenAI SDK. Bearer required.',
+    },
+  ],
 };
 
 export function isComputeLlmsPath(pathname) {
@@ -252,6 +331,14 @@ export function isComputeAgentJsonPath(pathname) {
     pathname === '/.well-known/agent.json' ||
     pathname === '/compute/.well-known/agent.json' ||
     pathname === '/compute/agent.json'
+  );
+}
+
+export function isComputeMcpJsonPath(pathname) {
+  return (
+    pathname === '/compute/mcp.json' ||
+    pathname === '/.well-known/mcp.json' ||
+    pathname === '/compute/.well-known/mcp.json'
   );
 }
 
@@ -331,6 +418,29 @@ export function computeAgentJsonResponse(request) {
   });
 }
 
+export function computeMcpJsonResponse(request) {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
+  return new Response(request.method === 'HEAD' ? null : JSON.stringify(COMPUTE_MCP_JSON), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'X-Dasha-Edge': 'compute-mcp',
+    },
+  });
+}
+
 export function agentsTxtResponse(request) {
   return new Response(request.method === 'HEAD' ? null : AGENTS_TXT, {
     status: 200,
@@ -380,7 +490,7 @@ export function agentsDiscoveryResponse(request) {
   return null;
 }
 
-/** Shared door for agent.json, /compute/llms.txt, /compute/llms-full.txt, /compute/skill.md, Cursor SKILL.md alias, and agents.txt/json faces. */
+/** Shared door for agent.json, MCP catalog, /compute/llms.txt, /compute/llms-full.txt, /compute/skill.md, Cursor SKILL.md alias, and agents.txt/json faces. */
 export function computeAgentAeoResponse(request) {
   const agents = agentsDiscoveryResponse(request);
   if (agents) return agents;
@@ -397,6 +507,9 @@ export function computeAgentAeoResponse(request) {
   }
   if (isComputeAgentJsonPath(path) && (method === 'GET' || method === 'HEAD' || method === 'OPTIONS')) {
     return computeAgentJsonResponse(request);
+  }
+  if (isComputeMcpJsonPath(path) && (method === 'GET' || method === 'HEAD' || method === 'OPTIONS')) {
+    return computeMcpJsonResponse(request);
   }
   return null;
 }
