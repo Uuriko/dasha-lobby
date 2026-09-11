@@ -117,10 +117,10 @@ assert.equal(potterHome308Dest('/compute/api/guest-keys'), null, '/compute/api/g
 assert.equal(potterHome308Dest('/compute/api/guest-keys/'), null, '/compute/api/guest-keys/ stays mint API');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.notEqual(potterHome308Dest('/compute/readme'), SKILL, 'do not invent /compute/readme');
-assert.notEqual(potterHome308Dest('/agent.md'), SKILL, 'do not invent apex /agent.md');
-assert.notEqual(potterHome308Dest('/agents.md'), SKILL, 'do not invent apex /agents.md');
-assert.notEqual(potterHome308Dest('/create-key'), SKILL, 'do not invent apex /create-key');
-assert.notEqual(potterHome308Dest('/guest-keys'), SKILL, 'do not invent apex /guest-keys');
+assert.equal(potterHome308Dest('/agent.md'), SKILL, 'apex /agent.md leftover skill');
+assert.equal(potterHome308Dest('/agents.md'), SKILL, 'apex /agents.md leftover skill');
+assert.equal(potterHome308Dest('/create-key'), SKILL, 'apex /create-key leftover skill');
+assert.equal(potterHome308Dest('/guest-keys'), SKILL, 'apex /guest-keys leftover skill');
 assert.notEqual(potterHome308Dest('/compute/jupiter'), SKILL, 'do not invent DEX peer /compute/jupiter');
 assert.notEqual(potterHome308Dest('/compute/orca'), SKILL, 'do not invent DEX peer /compute/orca');
 assert.notEqual(potterHome308Dest('/compute/agent.mdx'), SKILL, 'do not invent /compute/agent.mdx');

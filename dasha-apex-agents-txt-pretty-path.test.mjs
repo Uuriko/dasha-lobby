@@ -5,8 +5,9 @@
  * is already 200 at /agents.txt (+ /agents.json). Bare /agents should
  * land on the agents.txt standard, not the Compute HTML tab.
  * Exact /agents.json stays 200. Do not invent /agent (singular stays
- * existing compute-tab leftover). Do not claim /agents.md (PR #196
- * skill.md stack, separate). /compute/agents stays tab → /compute.
+ * existing compute-tab leftover). /agents.md is not in this leftover
+ * set — agent-discovery leftover folds it to skill.md. /compute/agents
+ * stays tab → /compute.
  * Disk only. No Designer. Never plugin.jup.ag. PR-mirror only — no wrangler.
  */
 import assert from 'node:assert/strict';
@@ -39,6 +40,7 @@ assert.doesNotMatch(agentsTxtSet, /['"]\/agents\.md['"]/, 'this PR does not clai
 assert.doesNotMatch(agentsTxtSet, /['"]\/agent['"]/, 'do not invent singular /agent in agents.txt set');
 
 const WWW = 'https://www.getdasha.com';
+const LOBBY = 'https://lobby.getdasha.com';
 const AGENTS_TXT = `${WWW}/agents.txt`;
 const COMPUTE = `${WWW}/compute`;
 const SKILL = `${WWW}/compute/skill.md`;
@@ -63,9 +65,8 @@ assert.equal(potterHome308Dest('/agent'), COMPUTE, 'singular /agent stays comput
 assert.equal(potterHome308Dest('/agent/'), COMPUTE, 'singular /agent/ stays compute leftover');
 assert.equal(potterHome308Dest('/compute/agents'), COMPUTE, '/compute/agents stays tab leftover');
 assert.equal(potterHome308Dest('/compute/agents/'), COMPUTE, '/compute/agents/ stays tab leftover');
-assert.notEqual(potterHome308Dest('/agents.md'), AGENTS_TXT, '/agents.md not claimed by this PR');
-assert.notEqual(potterHome308Dest('/agents.md'), SKILL, '/agents.md stays out of this PR (PR #196)');
-assert.equal(potterHome308Dest('/agents.md'), null, '/agents.md dest stays null here');
+assert.notEqual(potterHome308Dest('/agents.md'), AGENTS_TXT, '/agents.md not claimed by agents.txt leftover');
+assert.equal(potterHome308Dest('/agents.md'), SKILL, '/agents.md folds via agent-discovery leftover');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 
 const env = {
@@ -92,8 +93,10 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     }
   }
   const md = await edgeWorker.fetch(new Request(`https://${host}/agents.md`), env);
-  assert.notEqual(md.headers.get('location'), AGENTS_TXT, `${host} /agents.md not claimed`);
-  assert.notEqual(md.status, 308, `${host} /agents.md not a leftover 308 from this PR`);
+  const skillLoc = host === 'lobby.getdasha.com' ? `${LOBBY}/compute/skill.md` : SKILL;
+  assert.notEqual(md.headers.get('location'), AGENTS_TXT, `${host} /agents.md not agents.txt`);
+  assert.equal(md.status, 308, `${host} /agents.md leftover 308 via agent-discovery`);
+  assert.equal(md.headers.get('location'), skillLoc, `${host} /agents.md → skill.md`);
   const agent = await edgeWorker.fetch(new Request(`https://${host}/agent`), env);
   assert.equal(agent.status, 308, `${host} /agent stays leftover`);
   assert.equal(agent.headers.get('location'), COMPUTE, `${host} /agent loc`);
@@ -102,4 +105,4 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 assert.ok(!sitemapXml.includes(`${WWW}/agents</loc>`), 'sitemap omits leftover /agents');
 
-console.log('dasha-apex-agents-txt-pretty-path: PASS (/agents+/agents/ 308 agents.txt; Title-case; /agents.json 200; /agents.md not claimed; /agent stays /compute; www+lobby GET+HEAD; no plugin.jup.ag)');
+console.log('dasha-apex-agents-txt-pretty-path: PASS (/agents+/agents/ 308 agents.txt; Title-case; /agents.json 200; /agents.md skill leftover not this set; /agent stays /compute; www+lobby GET+HEAD; no plugin.jup.ag)');
