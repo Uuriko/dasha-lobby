@@ -82,6 +82,7 @@ assert.match(COMPUTE_LLMS_TXT, /^## Agents$/m, 'packet Agents');
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^base_url ${COMPUTE_AGENTS_BASE.replace(/\./g, '\\.')}$`, 'm'), 'packet agents base_url');
 assert.match(COMPUTE_LLMS_TXT, /OpenAI SDK, Aider, Goose, OpenHands \(BYOK\)/, 'packet agents BYOK tools');
 assert.match(COMPUTE_LLMS_TXT, /^Mint: POST \/compute\/api\/guest-keys$/m, 'packet agents mint pointer');
+assert.match(COMPUTE_LLMS_TXT, /reasoning_effort low\|medium\|high \(alias effort\)/, 'packet names reasoning_effort');
 assert.equal(
   (COMPUTE_LLMS_TXT.match(/curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/g) || []).length,
   1,
