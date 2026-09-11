@@ -203,6 +203,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
 
 <section class="tf-step gate-cinematic" id="step-gate" data-tf="gate">
   <h1 class="tf-q">Start.</h1>
+  <!-- gate-proof-live:2026-09-11 -->
   <p class="gate-proof" id="gate-proof">Measured Mac speed via network capacity.</p>
   <div class="tf-choices" role="group" aria-label="Start.">
     <div class="tf-door">
@@ -2676,14 +2677,42 @@ function formatUsdCents(cents){
 }
 
 
+function winningMeasuredCapacity(){
+  // Live /compute/api/network capacity[] only — never invent tok/s, models, or Macs.
+  if(!(Number.isInteger(providersOnline)&&providersOnline>=1))return null;
+  let best=null;
+  for(const row of (networkCapacity||[])){
+    if(!row||typeof row!=='object')continue;
+    const mp=Number(row.measured_providers);
+    const tps=Number(row.tokens_per_second);
+    if(!(mp>=1&&Number.isFinite(tps)&&tps>0))continue;
+    if(!best||tps>best.tps)best={model:String(row.model||'').trim(),tps};
+  }
+  return best;
+}
+function formatGateProofTok(n){
+  const v=Number(n);
+  if(!Number.isFinite(v)||v<=0)return '';
+  // Kate Tolo: if it works, say it again — headline ~N, never invent.
+  if(v>=10)return String(Math.round(v));
+  return formatTokPerSec(v);
+}
+function formatGateProofLine(n,win){
+  const count=Number.isInteger(n)?n:0;
+  const tpsLabel=win?formatGateProofTok(win.tps):'';
+  if(!(count>=1&&tpsLabel))return 'Measured Mac speed via network capacity.';
+  const mac=count===1?'1 Mac':count+' Macs';
+  const model=win&&win.model?String(win.model).trim():'';
+  return model?(mac+' · '+model+' ~'+tpsLabel+' tok/s'):(mac+' · ~'+tpsLabel+' tok/s');
+}
 function paintGateProof(){
   const el=$('gate-proof');
   if(!el)return;
   const n=Number.isInteger(providersOnline)?providersOnline:0;
-  const live=fleetMeasuredLabel();
+  const win=winningMeasuredCapacity();
   // Measured tok/s only — never invent teams or pad providers.
-  if(n>=1&&live.tpsLabel){
-    el.textContent=n+' · '+live.tpsLabel+' tok/s';
+  if(n>=1&&win){
+    el.textContent=formatGateProofLine(n,win);
     return;
   }
   el.textContent='Measured Mac speed via network capacity.';
