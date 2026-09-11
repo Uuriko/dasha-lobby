@@ -56,7 +56,7 @@ const PRIOR_COMPUTE_PEERS = [
 const PRIOR_API_PEERS = [
   '/swagger-ui', '/openapi', '/api-docs',
 ];
-const STAY_404 = ['/openai', '/openai/', '/OpenAI', '/yc', '/yc/', '/Yc', '/news', '/news/', '/News', '/v1', '/v1/'];
+const STAY_404 = ['/openai', '/openai/', '/OpenAI', '/yc', '/yc/', '/Yc', '/news', '/news/', '/News'];
 
 for (const path of MODEL_CASES) {
   assert.equal(potterHome308Dest(path), COMPUTE, path);

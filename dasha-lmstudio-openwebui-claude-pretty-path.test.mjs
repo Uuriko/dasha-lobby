@@ -106,7 +106,6 @@ const SKIP_404 = [
   '/games', '/games/', '/Games',
   '/openai', '/openai/', '/OpenAI',
   '/anthropic', '/anthropic/', '/Anthropic',
-  '/v1', '/v1/',
   '/api/v1', '/api/v1/',
   '/status', '/status/',
   '/health', '/health/',

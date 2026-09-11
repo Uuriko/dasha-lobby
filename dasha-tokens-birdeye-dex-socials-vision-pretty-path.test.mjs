@@ -124,7 +124,6 @@ const STAY_NULL = [
   '/careers', '/careers/',
   '/hiring', '/hiring/',
   '/healthz', '/healthz/',
-  '/v1', '/v1/',
   '/openai', '/openai/',
   '/discord', '/discord/',
   '/roadmap', '/roadmap/',

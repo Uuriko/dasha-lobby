@@ -56,7 +56,6 @@ const STAY_404 = [
   '/x402', '/x402/',
   '/status', '/status/', '/Status',
   '/healthz', '/healthz/',
-  '/v1', '/v1/',
 ];
 const SKIP_UNTOUCHED = ['/health', '/health/', '/Health'];
 

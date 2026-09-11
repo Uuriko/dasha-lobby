@@ -64,7 +64,6 @@ const FOLDS = [...ENGINE_SYNONYMS, ...PRIOR_PEERS];
 const STAY_OUT = [
   '/health', '/health/',
   '/status', '/status/',
-  '/v1', '/v1/',
   '/openai', '/openai/', '/OpenAI',
 ];
 

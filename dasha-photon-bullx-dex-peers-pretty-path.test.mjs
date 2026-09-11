@@ -108,7 +108,7 @@ const STAY_200 = [
 const STAY_OUT = [
   '/explorer', '/faq', '/waitlist', '/terms', '/blog', '/careers', '/hiring',
   '/openai', '/discord', '/roadmap', '/whitepaper', '/tokenomics', '/x402',
-  '/openrouter', '/status', '/health', '/healthz', '/v1',
+  '/openrouter', '/status', '/health', '/healthz',
 ];
 
 for (const path of TO_LISTINGS) {

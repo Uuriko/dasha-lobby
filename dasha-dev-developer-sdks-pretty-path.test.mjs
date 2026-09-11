@@ -56,7 +56,6 @@ const PRIOR_API = [
 const STAY_200 = ['/compute', '/privacy', '/compute/api', '/compute/api/'];
 const SKIP_404 = [
   '/openai', '/openai/', '/OpenAI',
-  '/v1', '/v1/',
   '/admin', '/admin/', '/Admin',
   '/blog', '/blog/', '/Blog',
   '/tos', '/tos/', '/Tos',

@@ -98,7 +98,6 @@ const SKIP_404 = [
   '/discord', '/discord/',
   '/slack', '/slack/',
   '/openai', '/openai/', '/OpenAI',
-  '/v1', '/v1/',
   '/status', '/status/',
   '/health', '/health/',
   '/healthz', '/healthz/',

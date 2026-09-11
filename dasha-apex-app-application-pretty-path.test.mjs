@@ -4,7 +4,7 @@
  * + /compute/app|/application (+slash / Title-case) html-404 → 308 /compute.
  * Product-door synonyms while /dashboard /console /sandbox /playground /demo
  * /try peers already 308→/compute. Do NOT invent /arcade /games. Do NOT fold
- * /connect (ambiguous). Skip /v1 /openai /status /health /terms /admin.
+ * /connect (ambiguous). Skip /openai /status /health /terms /admin.
  * Bare /price stays the 200 JSON token-price API. /privacy /compute stay 200.
  * /play still 308→/lobby. Disk only. No Designer. Never plugin.jup.ag.
  */
@@ -66,7 +66,7 @@ const PRIOR_PEERS = [
 const UNTOUCHED = [
   '/price', '/privacy', '/compute',
   '/arcade', '/games', '/connect',
-  '/v1', '/openai', '/status', '/health', '/terms', '/admin',
+  '/openai', '/status', '/health', '/terms', '/admin',
 ];
 const STAY_404 = ['/arcade', '/connect', '/terms'];
 

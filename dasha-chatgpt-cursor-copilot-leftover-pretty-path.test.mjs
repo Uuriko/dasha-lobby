@@ -78,7 +78,6 @@ const SKIP_404 = [
   '/openai', '/openai/', '/OpenAI',
   '/anthropic', '/anthropic/', '/Anthropic',
   '/arcade', '/arcade/', '/Arcade',
-  '/v1', '/v1/',
   '/x402', '/x402/',
   '/health', '/health/',
   '/status', '/status/',

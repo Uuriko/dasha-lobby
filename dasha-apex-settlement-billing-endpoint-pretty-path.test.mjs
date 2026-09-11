@@ -98,7 +98,6 @@ const SKIP_UNTOUCHED = [
   '/health', '/health/',
   '/status', '/status/',
   '/openai', '/openai/', '/OpenAI',
-  '/v1', '/v1/',
 ];
 const STAY_OUT = [...SKIP_404, ...SKIP_UNTOUCHED];
 

@@ -95,7 +95,6 @@ const TO_COMPUTE = [
 const TO_API = ['/readme', '/readme/', '/Readme', '/README', '/Readme/'];
 const DOCS_PEER = ['/docs', '/docs/', '/Docs'];
 const STAY_NULL = [
-  '/v1', '/v1/',
   '/status', '/status/',
   '/health', '/health/',
   '/openai', '/openai/',

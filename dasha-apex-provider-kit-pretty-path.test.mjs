@@ -79,7 +79,6 @@ const STAY_NULL = [
 const SKIP_404 = [
   '/openai', '/openai/', '/OpenAI',
   '/openai-api', '/openai-api/',
-  '/v1', '/v1/',
   '/status', '/status/', '/Status',
   '/health', '/health/', '/Health',
   '/connect', '/connect/', '/Connect',
