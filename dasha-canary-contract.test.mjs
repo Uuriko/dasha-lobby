@@ -150,7 +150,7 @@ for (const path of ['/compute/use', '/compute/night', '/compute/build', '/comput
   assert.equal(res.status, 308, path);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/compute', path);
 }
-for (const path of ['/compute/provide', '/compute/provide/', '/Compute/provide']) {
+for (const path of ['/compute/provide', '/compute/provide/', '/Compute/provide', '/compute/provide/enroll', '/compute/provide/setup', '/compute/provide/doctor', '/compute/provide/register']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute#provide', path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
   assert.equal(res.status, 308, path);
