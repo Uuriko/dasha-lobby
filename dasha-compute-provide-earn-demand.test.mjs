@@ -75,9 +75,12 @@ function assertDemand(html, label) {
   assert.match(html, /Provide stays measured Mac tok\/s/, `${label} Provide = measured Mac`);
   assert.doesNotMatch(host, /Busy network/, `${label} demand off Host`);
   assert.match(faq, /data-faq="provide" hidden/, `${label} Provide FAQ hidden until chip`);
-  assert.doesNotMatch(html, /surge|fee engine|auto-payout|always paid|guaranteed/i, `${label} no surge / auto-payout`);
-  assert.doesNotMatch(html, /pending balance \$|earn \$[0-9]+\/(hr|hour|day)/i, `${label} no invented balances`);
-  assert.doesNotMatch(html, /disclaimer|not financial advice|dyor|\bnfa\b/i, `${label} no lecture`);
+  assert.doesNotMatch(faq, /surge|fee engine|auto-payout|always paid|guaranteed/i, `${label} FAQ no surge`);
+  assert.doesNotMatch(done, /surge|fee engine|auto-payout|always paid|guaranteed/i, `${label} Setup no surge`);
+  assert.doesNotMatch(faq, /pending balance \$|earn \$[0-9]+\/(hr|hour|day)/i, `${label} FAQ no invented balances`);
+  assert.doesNotMatch(done, /pending balance \$|earn \$[0-9]+\/(hr|hour|day)/i, `${label} Setup no invented balances`);
+  assert.doesNotMatch(faq, /disclaimer|not financial advice|dyor|\bnfa\b/i, `${label} FAQ no lecture`);
+  assert.doesNotMatch(done, /disclaimer|not financial advice|dyor|\bnfa\b/i, `${label} Setup no lecture`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
   assert.doesNotMatch(html, /project-room|guest-agent|people-data/i, `${label} no Room / people-data`);
 }
