@@ -229,6 +229,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const gw = await pair(host, '/compute/api/v1', {}, fetchImpl);
   assert.equal(gw.status, 200, `${host} /v1`);
   assert.equal(gw.body.errors, 'openai + status/reason/hint/next');
+  assert.equal(gw.body.guest_keys, '/compute/api/guest-keys', `${host} /v1 guest_keys`);
+  assert.equal(gw.body.guest_key?.path, '/compute/api/guest-keys', `${host} /v1 guest_key.path`);
   assert.doesNotMatch(JSON.stringify(gw.body), /plugin\.jup\.ag/);
 }
 

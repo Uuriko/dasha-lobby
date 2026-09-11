@@ -299,6 +299,17 @@ const rootBody = await rootApi.json();
 assert.equal(rootBody.guest_keys, COMPUTE_GUEST_KEYS_PATH);
 assert.equal(rootBody.guest_key_mint, 'live');
 
+const gw = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/v1'));
+assert.equal(gw.status, 200);
+const gwBody = await gw.json();
+assert.equal(gwBody.object, 'gateway');
+assert.equal(gwBody.guest_keys, COMPUTE_GUEST_KEYS_PATH, 'v1 gateway guest_keys path');
+assert.equal(gwBody.guest_key?.path, COMPUTE_GUEST_KEYS_PATH, 'v1 gateway guest_key.path');
+assert.equal(gwBody.guest_key?.method, 'POST', 'v1 gateway guest_key.method');
+assert.match(String(gwBody.guest_key?.note || ''), /24h dgk_ chat\+models/, 'v1 gateway guest_key.note');
+assert.match(String(gwBody.guest_key?.note || ''), /copy once/i, 'v1 gateway copy once');
+assert.equal(gwBody.guest_keys, rootBody.guest_keys, 'gateway mint path matches /compute/api');
+
 {
   const rateIp = '192.0.2.44';
   for (let i = 0; i < GUEST_KEY_MINT_MAX; i++) {

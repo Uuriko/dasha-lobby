@@ -113,6 +113,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       assert.equal(body.object, 'gateway', `${host} v1 gateway object`);
       assert.equal(body.service, 'dasha-compute', `${host} v1 service`);
       assert.equal(body.models, '/compute/api/v1/models', `${host} v1 models dest`);
+      assert.equal(body.guest_keys, '/compute/api/guest-keys', `${host} v1 guest_keys`);
+      assert.equal(body.guest_key?.path, '/compute/api/guest-keys', `${host} v1 guest_key.path`);
     } else {
       assert.equal(await api.text(), '');
     }
