@@ -16,6 +16,8 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 import {
   COMPUTE_AGENT_JSON,
   COMPUTE_AGENT_JSON_URL,
+  COMPUTE_AGENTS_BASE,
+  COMPUTE_AGENTS_TXT,
   COMPUTE_API_BASE,
   COMPUTE_API_BASE_WWW,
   COMPUTE_FIRST_CALL_TXT,
@@ -47,6 +49,16 @@ assert.match(COMPUTE_SKILL_MD, /^description: First call on Dasha Compute/m, 'fr
 assert.match(COMPUTE_SKILL_MD, /^# Dasha Compute/m, 'skill H1');
 assert.match(COMPUTE_SKILL_MD, /^## When to use$/m, 'When to use');
 assert.match(COMPUTE_SKILL_MD, /Not a ledger\. Not Room\./, 'when-to-use names run factory');
+assert.equal(COMPUTE_SKILL_MD.includes(COMPUTE_AGENTS_TXT), true, 'skill embeds Agents');
+assert.match(COMPUTE_SKILL_MD, /^## Agents$/m, 'Agents');
+assert.match(COMPUTE_SKILL_MD, new RegExp(`^base_url ${COMPUTE_AGENTS_BASE.replace(/\./g, '\\.')}$`, 'm'), 'agents base_url');
+assert.match(COMPUTE_SKILL_MD, /OpenAI SDK, Aider, Goose, OpenHands \(BYOK\)/, 'agents BYOK tools');
+assert.match(COMPUTE_SKILL_MD, /^Mint: POST \/compute\/api\/guest-keys$/m, 'agents mint pointer');
+assert.equal(
+  (COMPUTE_SKILL_MD.match(/curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/g) || []).length,
+  1,
+  'skill keeps one mint curl',
+);
 assert.match(COMPUTE_SKILL_MD, /^## Create a key$/m, 'Create a key');
 assert.match(COMPUTE_SKILL_MD, /https:\/\/www\.getdasha\.com\/compute#build/, 'key door is /compute#build');
 assert.match(COMPUTE_SKILL_MD, /Sign in/, 'key door names Sign in');
@@ -135,6 +147,7 @@ for (const origin of ORIGINS) {
   const indexBody = await index.text();
   assert.ok(indexBody.includes(COMPUTE_SKILL_URL), `${origin}/llms.txt links skill`);
   assert.doesNotMatch(indexBody, /## When to use/, `${origin}/llms.txt stays the short index`);
+  assert.doesNotMatch(indexBody, /## Agents/, `${origin}/llms.txt stays the short index`);
 
   const full = await edgeWorker.fetch(new Request(`${origin}/llms-full.txt`), {});
   assert.ok((await full.text()).includes(COMPUTE_SKILL_URL), `${origin}/llms-full.txt links skill`);

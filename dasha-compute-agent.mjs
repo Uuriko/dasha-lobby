@@ -1,7 +1,8 @@
 /**
  * Compute agent AEO — shared packet for /compute/llms.txt,
  * /compute/llms-full.txt, /compute/skill.md + Cursor
- * /compute/skills/dasha-compute/SKILL.md alias (same bytes), and
+ * /compute/skills/dasha-compute/SKILL.md alias (same bytes),
+ * /agents.txt + /agents.json (+ /compute/agents.txt), and
  * /.well-known/agent.json + /compute/.well-known/agent.json +
  * /compute/agent.json (alias for agents that skip .well-known).
  * Run factory, not a ledger. No secrets. No people-data.
@@ -19,6 +20,9 @@ export const COMPUTE_AGENT_JSON_URL = 'https://www.getdasha.com/.well-known/agen
 export const COMPUTE_AGENT_JSON_ALIAS_URL = 'https://www.getdasha.com/compute/agent.json';
 export const COMPUTE_LLMS_FULL_URL = 'https://www.getdasha.com/compute/llms-full.txt';
 export const COMPUTE_LLMS_DESCRIBEDBY = '</compute/llms.txt>; rel="describedby"';
+export const AGENTS_TXT_URL = 'https://www.getdasha.com/agents.txt';
+export const AGENTS_JSON_URL = 'https://www.getdasha.com/agents.json';
+export const COMPUTE_AGENTS_TXT_URL = 'https://www.getdasha.com/compute/agents.txt';
 
 /** Copy-paste first call. Shared by /compute/llms.txt and site /llms-full.txt. */
 export const COMPUTE_FIRST_CALL_TXT = `## First call
@@ -41,6 +45,35 @@ OpenAI(base_url="${COMPUTE_API_BASE}", api_key=os.environ["DASHA_API_KEY"])
 new OpenAI({ baseURL: "${COMPUTE_API_BASE}", apiKey: process.env.DASHA_API_KEY })
 `;
 
+/** Point coding agents at Compute. Shared by skill.md + /compute/llms.txt. */
+export const COMPUTE_AGENTS_BASE = 'https://lobby.getdasha.com/compute/api';
+export const COMPUTE_AGENTS_TXT = `## Agents
+
+base_url ${COMPUTE_AGENTS_BASE}
+OpenAI-compatible. OpenAI SDK, Aider, Goose, OpenHands (BYOK).
+Mint: POST /compute/api/guest-keys
+`;
+
+/** agents.txt (CC0 vibe: https://agents-txt.com). Skills → /compute/skill.md. */
+export const AGENTS_TXT = `# agents.txt
+# Standard: https://agents-txt.com
+# JSON: ${AGENTS_JSON_URL}
+
+Skills: ${COMPUTE_SKILL_URL}
+`;
+
+export const AGENTS_JSON = {
+  $schema: 'https://agents-txt.com/schema/agents-json/v1.0.json',
+  version: '1.0',
+  standard: 'https://agents-txt.com',
+  site: {
+    name: 'Dasha',
+    url: 'https://www.getdasha.com/',
+    description: 'OpenAI-compatible inference. A run factory, not a ledger.',
+  },
+  skills: [{ url: COMPUTE_SKILL_URL, description: 'First call on Dasha Compute.' }],
+};
+
 /** Cursor/Claude-style skill. Stable GET /compute/skill.md. */
 export const COMPUTE_SKILL_MD = `---
 name: dasha-compute
@@ -55,6 +88,7 @@ OpenAI-compatible inference. A run factory, not a ledger.
 
 You want a Mac to run a prompt — or Hosted when no Mac is online. Not a ledger. Not Room.
 
+${COMPUTE_AGENTS_TXT}
 ## Create a key
 
 Sign in at https://www.getdasha.com/compute#build
@@ -91,6 +125,7 @@ no key needed for healthz + network + models; key needed for chat
 guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP
 curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
 
+${COMPUTE_AGENTS_TXT}
 First path: Sign in, create a key, change the base URL.
 
 ${COMPUTE_FIRST_CALL_TXT}
@@ -188,6 +223,14 @@ export function isComputeAgentJsonPath(pathname) {
   );
 }
 
+export function isAgentsTxtPath(pathname) {
+  return pathname === '/agents.txt' || pathname === '/compute/agents.txt';
+}
+
+export function isAgentsJsonPath(pathname) {
+  return pathname === '/agents.json';
+}
+
 export function computeSkillFaceResponse(request) {
   return new Response(request.method === 'HEAD' ? null : COMPUTE_SKILL_MD, {
     status: 200,
@@ -251,7 +294,43 @@ export function computeAgentJsonResponse(request) {
   });
 }
 
-/** Shared door for agent.json, /compute/llms.txt, /compute/llms-full.txt, /compute/skill.md, and Cursor SKILL.md alias. */
+export function agentsTxtResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : AGENTS_TXT, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+      'Access-Control-Allow-Origin': '*',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Dasha-Edge': 'agents-txt',
+    },
+  });
+}
+
+export function agentsJsonResponse(request) {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
+  return new Response(request.method === 'HEAD' ? null : JSON.stringify(AGENTS_JSON), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'X-Dasha-Edge': 'agents-json',
+    },
+  });
+}
+
+/** Shared door for agent.json, /compute/llms.txt, /compute/llms-full.txt, /compute/skill.md, Cursor SKILL.md alias, /agents.txt, /agents.json, and /compute/agents.txt. */
 export function computeAgentAeoResponse(request) {
   const path = new URL(request.url).pathname;
   const method = request.method;
@@ -266,6 +345,12 @@ export function computeAgentAeoResponse(request) {
   }
   if (isComputeAgentJsonPath(path) && (method === 'GET' || method === 'HEAD' || method === 'OPTIONS')) {
     return computeAgentJsonResponse(request);
+  }
+  if (isAgentsTxtPath(path) && (method === 'GET' || method === 'HEAD')) {
+    return agentsTxtResponse(request);
+  }
+  if (isAgentsJsonPath(path) && (method === 'GET' || method === 'HEAD' || method === 'OPTIONS')) {
+    return agentsJsonResponse(request);
   }
   return null;
 }
