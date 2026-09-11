@@ -78,7 +78,7 @@ for (const origin of ORIGINS) {
   assertFirstCall(fullBody, `${origin}/llms-full.txt`);
   const beforeFaq = fullBody.split('## Compute buyer FAQ')[0];
   assert.match(beforeFaq, /^## First call$/m, `${origin}/llms-full.txt First call sits in Compute section`);
-  assert.match(beforeFaq, /First path: Sign in, create a key, change the base URL\./);
+  assert.match(beforeFaq, /First path: POST \/compute\/api\/guest-keys\. Or sign in at \/compute#build for dsk_\./);
 
   const index = await edgeWorker.fetch(new Request(`${origin}/llms.txt`), {});
   const indexBody = await index.text();
