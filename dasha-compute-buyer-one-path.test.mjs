@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Buyer one-path on /compute API: OpenAI-compatible base URL snippets.
- * Quiet first-job checklist: Sign in. / Create a key. / Change the base URL.
+ * Quiet first-job checklist: Guest dgk_ below, or Sign in. / Copy the key once. / Change the base URL.
  * LiteLLM / LangChain / n8n share lobby v1. $0.05/job stays on Provide, not this block.
  * Quiet gateways line lives on buyer-one-path (not the first-job checklist, not Ask).
  * Test-only. No wrangler. No Designer. No plugin.jup.ag.
@@ -36,8 +36,8 @@ function assertFirstJob(html, label) {
   const block = buyerBlock(html);
   assert.ok(block.includes(job), `${label} checklist sits in buyer-one-path`);
   assert.equal((job.match(/<p\b/g) || []).length, 3, `${label} three lines only`);
-  assert.match(job, /<a href=["']\/login["']>Sign in<\/a>\./, `${label} Sign in. → /login`);
-  assert.match(job, /<p class=["']fine["']>Create a key\.<\/p>/, `${label} Create a key.`);
+  assert.match(job, /Guest dgk_ below, or <a href=["']\/login["']>Sign in<\/a>\./, `${label} Guest dgk_ or Sign in → /login`);
+  assert.match(job, /<p class=["']fine["']>Copy the key once\.<\/p>/, `${label} Copy the key once.`);
   assert.match(job, /<p class=["']fine["']>Change the base URL\.<\/p>/, `${label} Change the base URL.`);
   assert.doesNotMatch(job, /For gateways|potter@trydemigod/, `${label} no extra gateway line on checklist`);
   assert.doesNotMatch(job, /\$0\.05\/job/, `${label} no \$0.05/job on checklist`);
@@ -155,7 +155,7 @@ if (puppeteer && existsSync(chrome)) {
       askStep: document.getElementById('step-ask')?.innerText || '',
     }));
     assert.equal(first.lead, 'OpenAI-compatible. Change the base URL.');
-    assert.deepEqual(first.lines, ['Sign in.', 'Create a key.', 'Change the base URL.']);
+    assert.deepEqual(first.lines, ['Guest dgk_ below, or Sign in.', 'Copy the key once.', 'Change the base URL.']);
     assert.equal(first.signin, '/login');
     assert.doesNotMatch(first.job, /\$0\.05\/job/);
     assert.doesNotMatch(first.job, /\d+\s*Mac/);

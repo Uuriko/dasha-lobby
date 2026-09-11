@@ -11,12 +11,12 @@ const computeDisk = readFileSync(join(root, "dasha-compute.html"), "utf8");
 assert.equal(computeDisk, COMPUTE_PAGE_HTML);
 
 function assertFill(html, label) {
-  assert.match(html, /id=["']guest-key-fine["'][^>]*>24h · chat \+ models\.</, `${label} guest one-line`);
+  assert.match(html, /id=["']guest-key-fine["'][^>]*>No Sign in\. 24h dgk_ · chat \+ models\.</, `${label} guest one-line`);
   assert.match(html, /id=["']mint-guest-key["'][^>]*>Get 24h guest key</, `${label} quiet guest CTA`);
   assert.match(html, /class=["']tf-quiet["'][^>]*id=["']mint-guest-key["']|id=["']mint-guest-key["'][^>]*class=["']tf-quiet["']/, `${label} guest CTA tf-quiet`);
   assert.match(html, /api\(['"]\/compute\/api\/guest-keys['"]/, `${label} guest mint POST`);
-  assert.match(html, /id=["']api-key-output["'][\s\S]{0,40}Sign in for a developer key/, `${label} output`);
-  assert.match(html, /id=["']api-key-list["'][\s\S]{0,80}Sign in for a developer key/, `${label} list`);
+  assert.match(html, /id=["']api-key-output["'][\s\S]{0,40}Guest dgk_ or Sign in for dsk_/, `${label} output`);
+  assert.match(html, /id=["']api-key-list["'][\s\S]{0,80}Guest dgk_ or Sign in for dsk_/, `${label} list`);
   assert.match(html, /async function loadApiKeys\(\)/, `${label} loadApiKeys`);
   assert.match(html, /list\.replaceChildren\(\)/, `${label} replaceChildren`);
   assert.match(html, /if\(!loggedIn\)\{apiKeyCount=0/, `${label} gated`);

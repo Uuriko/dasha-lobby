@@ -88,7 +88,7 @@ assert.ok(full.includes('https://www.getdasha.com/compute/llms.txt'), 'llms-full
 assert.ok(full.includes('https://www.getdasha.com/compute/skill.md'), 'llms-full points at Compute skill');
 assert.ok(full.includes('https://www.getdasha.com/.well-known/agent.json'), 'llms-full points at agent.json');
 assert.match(full, /^## Compute buyer FAQ$/m, 'llms-full Compute buyer FAQ');
-assert.match(full, /^How do I start\? Sign in\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1$/m, 'llms-full FAQ how');
+assert.match(full, /^How do I start\? Guest dgk_, or Sign in for dsk_\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1$/m, 'llms-full FAQ how');
 assert.match(full, /^What is live\? The Mac that is advertising\. Read \/compute\/api\/network\.$/m, 'llms-full FAQ live');
 assert.match(full, /^What if no Mac is online\? Hosted is still there\.$/m, 'llms-full FAQ hosted');
 assert.match(full, /^What does \$0\.05\/job mean\? Provider Earn\. Not the buyer price\.$/m, 'llms-full FAQ earn');

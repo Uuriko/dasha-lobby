@@ -469,7 +469,7 @@ First path: POST /compute/api/guest-keys. Or sign in at /compute#build for dsk_.
 ${COMPUTE_FIRST_CALL_TXT}
 ## Compute buyer FAQ
 
-How do I start? Sign in. Change the base URL. https://lobby.getdasha.com/compute/api/v1
+How do I start? Guest dgk_, or Sign in for dsk_. Change the base URL. https://lobby.getdasha.com/compute/api/v1
 What is live? The Mac that is advertising. Read /compute/api/network.
 What if no Mac is online? Hosted is still there.
 What does $0.05/job mean? Provider Earn. Not the buyer price.
