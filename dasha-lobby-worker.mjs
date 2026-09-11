@@ -3540,7 +3540,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // /skill.md /compute/skill.md/ /compute/agents/skill.md 308 there.
   // Live /skills /skill /ai-skills /compute/skills (+slash) html-404; /compute/skills/
   // even 301→/compute/skills 404. Fold those to /compute (Copy AI skill). Do NOT fold
-  // /compute/skill/*.md (200 markdown) or exact /compute/skill.md (agent face).
+  // /compute/skill/*.md (200 markdown), exact /compute/skill.md (agent face), or
+  // /compute/skills/dasha-compute(+ /SKILL.md) — 200 same bytes as the face.
   // Redo: /skills.md|/compute/skills.md (+slash) still html-404 while singular
   // /skill.md peers 308 → /compute/skill.md — fold the plural .md doors to /compute.
   "/skills",

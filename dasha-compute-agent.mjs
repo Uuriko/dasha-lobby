@@ -1,6 +1,7 @@
 /**
  * Compute agent AEO — shared packet for /compute/llms.txt,
- * /compute/llms-full.txt, /compute/skill.md, and
+ * /compute/llms-full.txt, /compute/skill.md + Cursor
+ * /compute/skills/dasha-compute/SKILL.md alias (same bytes), and
  * /.well-known/agent.json + /compute/.well-known/agent.json +
  * /compute/agent.json (alias for agents that skip .well-known).
  * Run factory, not a ledger. No secrets. No people-data.
@@ -13,6 +14,7 @@ export const COMPUTE_NETWORK = `${COMPUTE_API_BASE}/network`;
 export const COMPUTE_GUEST_KEYS_URL = 'https://lobby.getdasha.com/compute/api/guest-keys';
 export const COMPUTE_LLMS_URL = 'https://www.getdasha.com/compute/llms.txt';
 export const COMPUTE_SKILL_URL = 'https://www.getdasha.com/compute/skill.md';
+export const COMPUTE_SKILL_CURSOR_URL = 'https://www.getdasha.com/compute/skills/dasha-compute/SKILL.md';
 export const COMPUTE_AGENT_JSON_URL = 'https://www.getdasha.com/.well-known/agent.json';
 export const COMPUTE_AGENT_JSON_ALIAS_URL = 'https://www.getdasha.com/compute/agent.json';
 export const COMPUTE_LLMS_FULL_URL = 'https://www.getdasha.com/compute/llms-full.txt';
@@ -97,6 +99,7 @@ Use a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
 agent.json ${COMPUTE_AGENT_JSON_URL}
 skill ${COMPUTE_SKILL_URL}
+skills ${COMPUTE_SKILL_CURSOR_URL}
 
 site https://www.getdasha.com/llms.txt
 full https://www.getdasha.com/llms-full.txt
@@ -156,7 +159,14 @@ export function isComputeLlmsFullPath(pathname) {
 }
 
 export function isComputeSkillFacePath(pathname) {
-  return pathname === '/compute/skill.md';
+  if (pathname === '/compute/skill.md') return true;
+  const p = String(pathname || '').toLowerCase();
+  return (
+    p === '/compute/skills/dasha-compute' ||
+    p === '/compute/skills/dasha-compute/' ||
+    p === '/compute/skills/dasha-compute/skill.md' ||
+    p === '/compute/skills/dasha-compute/skill.md/'
+  );
 }
 
 export function isComputeAgentJsonPath(pathname) {
@@ -230,7 +240,7 @@ export function computeAgentJsonResponse(request) {
   });
 }
 
-/** Shared door for agent.json, /compute/llms.txt, /compute/llms-full.txt, and /compute/skill.md. */
+/** Shared door for agent.json, /compute/llms.txt, /compute/llms-full.txt, /compute/skill.md, and Cursor SKILL.md alias. */
 export function computeAgentAeoResponse(request) {
   const path = new URL(request.url).pathname;
   const method = request.method;
