@@ -1,7 +1,8 @@
 /**
  * Compute agent AEO — shared packet for /compute/llms.txt,
- * /compute/skill.md, and /.well-known/agent.json +
- * /compute/.well-known/agent.json.
+ * /compute/llms-full.txt, /compute/skill.md, and
+ * /.well-known/agent.json + /compute/.well-known/agent.json +
+ * /compute/agent.json (alias for agents that skip .well-known).
  * Run factory, not a ledger. No secrets. No people-data.
  */
 
@@ -13,6 +14,8 @@ export const COMPUTE_GUEST_KEYS_URL = 'https://lobby.getdasha.com/compute/api/gu
 export const COMPUTE_LLMS_URL = 'https://www.getdasha.com/compute/llms.txt';
 export const COMPUTE_SKILL_URL = 'https://www.getdasha.com/compute/skill.md';
 export const COMPUTE_AGENT_JSON_URL = 'https://www.getdasha.com/.well-known/agent.json';
+export const COMPUTE_AGENT_JSON_ALIAS_URL = 'https://www.getdasha.com/compute/agent.json';
+export const COMPUTE_LLMS_FULL_URL = 'https://www.getdasha.com/compute/llms-full.txt';
 export const COMPUTE_LLMS_DESCRIBEDBY = '</compute/llms.txt>; rel="describedby"';
 
 /** Copy-paste first call. Shared by /compute/llms.txt and site /llms-full.txt. */
@@ -99,6 +102,22 @@ site https://www.getdasha.com/llms.txt
 full https://www.getdasha.com/llms-full.txt
 `;
 
+/** Longer agent-oriented Compute packet. Site /llms-full.txt stays the site companion. */
+export const COMPUTE_LLMS_FULL_TXT = `${COMPUTE_LLMS_TXT}
+## Discovery
+
+GET ${COMPUTE_AGENT_JSON_URL}
+GET https://www.getdasha.com/compute/.well-known/agent.json
+GET ${COMPUTE_AGENT_JSON_ALIAS_URL}
+GET ${COMPUTE_LLMS_URL}
+GET ${COMPUTE_LLMS_FULL_URL}
+GET ${COMPUTE_SKILL_URL}
+
+## Skill
+
+${COMPUTE_SKILL_MD}
+`;
+
 export const COMPUTE_AGENT_JSON = {
   name: 'Dasha Compute',
   description: 'OpenAI-compatible inference marketplace. Mac run factory — not a ledger.',
@@ -132,12 +151,20 @@ export function isComputeLlmsPath(pathname) {
   return pathname === '/compute/llms.txt' || pathname === '/compute/llms.txt/';
 }
 
+export function isComputeLlmsFullPath(pathname) {
+  return pathname === '/compute/llms-full.txt' || pathname === '/compute/llms-full.txt/';
+}
+
 export function isComputeSkillFacePath(pathname) {
   return pathname === '/compute/skill.md';
 }
 
 export function isComputeAgentJsonPath(pathname) {
-  return pathname === '/.well-known/agent.json' || pathname === '/compute/.well-known/agent.json';
+  return (
+    pathname === '/.well-known/agent.json' ||
+    pathname === '/compute/.well-known/agent.json' ||
+    pathname === '/compute/agent.json'
+  );
 }
 
 export function computeSkillFaceResponse(request) {
@@ -150,6 +177,19 @@ export function computeSkillFaceResponse(request) {
       'X-Content-Type-Options': 'nosniff',
       'Access-Control-Allow-Origin': '*',
       'X-Dasha-Edge': 'compute-skill-face',
+    },
+  });
+}
+
+export function computeLlmsFullResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : COMPUTE_LLMS_FULL_TXT, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      'Strict-Transport-Security': 'max-age=31536000',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Dasha-Edge': 'compute-llms-full',
     },
   });
 }
@@ -190,12 +230,15 @@ export function computeAgentJsonResponse(request) {
   });
 }
 
-/** Shared door for agent.json, /compute/llms.txt, and /compute/skill.md. */
+/** Shared door for agent.json, /compute/llms.txt, /compute/llms-full.txt, and /compute/skill.md. */
 export function computeAgentAeoResponse(request) {
   const path = new URL(request.url).pathname;
   const method = request.method;
   if (isComputeLlmsPath(path) && (method === 'GET' || method === 'HEAD')) {
     return computeLlmsResponse(request);
+  }
+  if (isComputeLlmsFullPath(path) && (method === 'GET' || method === 'HEAD')) {
+    return computeLlmsFullResponse(request);
   }
   if (isComputeSkillFacePath(path) && (method === 'GET' || method === 'HEAD')) {
     return computeSkillFaceResponse(request);
@@ -209,7 +252,8 @@ export function computeAgentAeoResponse(request) {
 /** Quiet HTML describedby so crawlers that only parse the document find /compute/llms.txt. */
 export function attachComputeLlmsHtmlLinks(html) {
   const src = String(html || '');
-  if (src.includes('href="/compute/llms.txt"') && /rel=["']describedby["']/i.test(src)) return src;
+  if (/<link\b[^>]*\brel=["']describedby["'][^>]*\bhref=["']\/compute\/llms\.txt["']/i.test(src)) return src;
+  if (/<link\b[^>]*\bhref=["']\/compute\/llms\.txt["'][^>]*\brel=["']describedby["']/i.test(src)) return src;
   const tag = '<link rel="describedby" href="/compute/llms.txt" type="text/plain">';
   return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${tag}</head>`) : tag + src;
 }

@@ -4646,6 +4646,15 @@ const POTTER_AI_TXT_WELLKNOWN_308_PATHS = new Set([
 const POTTER_COMPUTE_LLMS_AEO_308_PATHS = new Set([
   '/compute/llms', '/compute/llms/',
 ]);
+/** Leftover /compute/llms-full /llms_full (+slash / Title-case) → /compute/llms-full.txt. */
+const POTTER_COMPUTE_LLMS_FULL_AEO_308_PATHS = new Set([
+  '/compute/llms-full', '/compute/llms-full/',
+  '/compute/llms_full', '/compute/llms_full/',
+]);
+/** Leftover /compute/agent.json/ → /compute/agent.json. Exact stays 200. */
+const POTTER_COMPUTE_AGENT_JSON_ALIAS_308_PATHS = new Set([
+  '/compute/agent.json/',
+]);
 /** Leftover pretty skill doors → /compute/skill.md. Exact /compute/skill.md stays 200. */
 const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
   '/skill.md', '/skill.md/',
@@ -4730,9 +4739,11 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
   ['/ai.txt', 'https://www.getdasha.com/ai.txt'],
   ['/compute/llms.txt', 'https://www.getdasha.com/compute/llms.txt'],
+  ['/compute/llms-full.txt', 'https://www.getdasha.com/compute/llms-full.txt'],
   ['/compute/skill.md', 'https://www.getdasha.com/compute/skill.md'],
   ['/.well-known/agent.json', 'https://www.getdasha.com/.well-known/agent.json'],
   ['/compute/.well-known/agent.json', 'https://www.getdasha.com/compute/.well-known/agent.json'],
+  ['/compute/agent.json', 'https://www.getdasha.com/compute/agent.json'],
   ['/robots.txt', 'https://www.getdasha.com/robots.txt'],
   ['/sitemap.xml', 'https://www.getdasha.com/sitemap.xml'],
   // Digest: Title-case /Digest /DIGEST /Digest.json html-404 while lowercase already 200.
@@ -4807,6 +4818,12 @@ export function potterHome308Dest(path) {
   }
   if (POTTER_COMPUTE_LLMS_AEO_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/llms.txt";
+  }
+  if (POTTER_COMPUTE_LLMS_FULL_AEO_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/llms-full.txt";
+  }
+  if (POTTER_COMPUTE_AGENT_JSON_ALIAS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/agent.json";
   }
   if (POTTER_COMPUTE_SKILL_FACE_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/skill.md";

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Compute agent AEO: /compute/llms.txt + /.well-known/agent.json
- * + /compute/.well-known/agent.json. Run factory, not a ledger.
+ * + /compute/.well-known/agent.json + /compute/agent.json alias
+ * + /compute/llms-full.txt. Run factory, not a ledger.
  * Quiet /compute describedby door. No wrangler. No Designer.
  * Never plugin.jup.ag. No people-data. No guest-agent mint.
  */
@@ -12,14 +13,18 @@ import { fileURLToPath } from 'node:url';
 import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 import {
   COMPUTE_AGENT_JSON,
+  COMPUTE_AGENT_JSON_ALIAS_URL,
   COMPUTE_AGENT_JSON_URL,
   COMPUTE_API_BASE,
   COMPUTE_API_BASE_WWW,
   COMPUTE_FIRST_CALL_TXT,
   COMPUTE_HEALTHZ,
+  COMPUTE_LLMS_FULL_TXT,
+  COMPUTE_LLMS_FULL_URL,
   COMPUTE_LLMS_TXT,
   COMPUTE_LLMS_URL,
   COMPUTE_NETWORK,
+  COMPUTE_SKILL_MD,
   COMPUTE_SKILL_URL,
   attachComputeLlmsHtmlLinks,
   computeAgentAeoResponse,
@@ -31,7 +36,11 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 const PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
 const ORIGINS = ['https://www.getdasha.com', 'https://lobby.getdasha.com'];
-const AGENT_PATHS = ['/.well-known/agent.json', '/compute/.well-known/agent.json'];
+const AGENT_PATHS = [
+  '/.well-known/agent.json',
+  '/compute/.well-known/agent.json',
+  '/compute/agent.json',
+];
 
 function extractConst(name) {
   const re = new RegExp(`const ${name} = \`([\\s\\S]*?)\`;`);
@@ -50,6 +59,10 @@ assert.equal(
 );
 assert.match(workerSrc, /attachComputeLlmsHtmlLinks/, 'compute page attaches packet door');
 assert.match(workerSrc, /POTTER_COMPUTE_LLMS_AEO_308_PATHS/, 'leftover /compute/llms → packet');
+assert.match(workerSrc, /POTTER_COMPUTE_LLMS_FULL_AEO_308_PATHS/, 'leftover /compute/llms-full → full packet');
+assert.match(workerSrc, /POTTER_COMPUTE_AGENT_JSON_ALIAS_308_PATHS/, 'leftover /compute/agent.json/ → alias');
+assert.match(workerSrc, /\[\'\/compute\/agent\.json\'/, 'alias in product casefold map');
+assert.match(workerSrc, /\[\'\/compute\/llms-full\.txt\'/, 'compute llms-full in product casefold map');
 assert.match(workerSrc, /POTTER_COMPUTE_SKILL_FACE_308_PATHS/, 'leftover pretty skill → face');
 
 assert.match(COMPUTE_LLMS_TXT, /^# Dasha Compute/m, 'packet H1');
@@ -74,6 +87,14 @@ assert.doesNotMatch(COMPUTE_LLMS_TXT, /plugin\.jup\.ag/, 'packet no plugin.jup.a
 assert.doesNotMatch(COMPUTE_LLMS_TXT, /disclaimer|not financial advice|dyor|\bnfa\b/i, 'packet no lecture');
 assert.doesNotMatch(COMPUTE_LLMS_TXT, /people.?data|email|phone|seed phrase/i, 'packet no people-data');
 assert.doesNotMatch(COMPUTE_LLMS_TXT, /project-room|guest-agent/i, 'packet stays Compute, not Room');
+
+assert.ok(COMPUTE_LLMS_FULL_TXT.startsWith(COMPUTE_LLMS_TXT), 'full packet starts with short packet');
+assert.ok(COMPUTE_LLMS_FULL_TXT.length > COMPUTE_LLMS_TXT.length, 'full packet is longer');
+assert.ok(COMPUTE_LLMS_FULL_TXT.includes(COMPUTE_AGENT_JSON_ALIAS_URL), 'full packet names alias');
+assert.ok(COMPUTE_LLMS_FULL_TXT.includes(COMPUTE_SKILL_MD), 'full packet embeds skill');
+assert.match(COMPUTE_LLMS_FULL_TXT, /^## Discovery$/m, 'full packet Discovery');
+assert.doesNotMatch(COMPUTE_LLMS_FULL_TXT, /plugin\.jup\.ag/, 'full packet no plugin.jup.ag');
+assert.doesNotMatch(COMPUTE_LLMS_FULL_TXT, /people.?data|email|phone|seed phrase/i, 'full packet no people-data');
 
 assert.equal(COMPUTE_AGENT_JSON.name, 'Dasha Compute');
 assert.match(COMPUTE_AGENT_JSON.description, /OpenAI-compatible inference marketplace/);
@@ -110,18 +131,27 @@ assert.equal(potterHome308Dest('/compute/llms'), COMPUTE_LLMS_URL, '/compute/llm
 assert.equal(potterHome308Dest('/compute/llms/'), COMPUTE_LLMS_URL, '/compute/llms/ → packet');
 assert.equal(potterHome308Dest('/Compute/Llms'), COMPUTE_LLMS_URL, 'Title-case /compute/llms');
 assert.equal(potterHome308Dest('/compute/llms.txt'), null, '/compute/llms.txt stays 200');
+assert.equal(potterHome308Dest('/compute/llms-full.txt'), null, '/compute/llms-full.txt stays 200');
+assert.equal(potterHome308Dest('/compute/llms-full'), COMPUTE_LLMS_FULL_URL, '/compute/llms-full → full packet');
+assert.equal(potterHome308Dest('/compute/llms-full/'), COMPUTE_LLMS_FULL_URL, '/compute/llms-full/ → full packet');
+assert.equal(potterHome308Dest('/Compute/Llms-Full.txt'), COMPUTE_LLMS_FULL_URL, 'Title-case /compute/llms-full.txt');
 assert.equal(potterHome308Dest('/compute/skill.md'), null, '/compute/skill.md stays 200');
 assert.equal(potterHome308Dest('/compute/skill.md/'), COMPUTE_SKILL_URL, '/compute/skill.md/ → face');
 assert.equal(potterHome308Dest('/skill.md'), COMPUTE_SKILL_URL, '/skill.md → face');
 assert.equal(potterHome308Dest('/.well-known/agent.json'), null, '/.well-known/agent.json stays 200');
 assert.equal(potterHome308Dest('/compute/.well-known/agent.json'), null, '/compute/.well-known/agent.json stays 200');
+assert.equal(potterHome308Dest('/compute/agent.json'), null, '/compute/agent.json stays 200');
+assert.equal(potterHome308Dest('/compute/agent.json/'), COMPUTE_AGENT_JSON_ALIAS_URL, '/compute/agent.json/ → alias');
 assert.equal(potterHome308Dest('/.well-known/Agent.json'), COMPUTE_AGENT_JSON_URL, 'Title-case site agent.json');
 assert.equal(
   potterHome308Dest('/compute/.well-known/AGENT.JSON'),
   'https://www.getdasha.com/compute/.well-known/agent.json',
-  'Title-case compute agent.json',
+  'Title-case compute well-known agent.json',
 );
+assert.equal(potterHome308Dest('/compute/Agent.json'), COMPUTE_AGENT_JSON_ALIAS_URL, 'Title-case /compute/agent.json');
+assert.equal(potterHome308Dest('/COMPUTE/AGENT.JSON'), COMPUTE_AGENT_JSON_ALIAS_URL, 'UPPER /compute/agent.json');
 assert.equal(potterHome308Dest('/agent'), 'https://www.getdasha.com/compute', '/agent stays Compute leftover, not agent.json');
+assert.equal(potterHome308Dest('/agent.json'), null, 'apex /agent.json stays out (not a 200 alias)');
 assert.equal(potterHome308Dest('/compute/agent'), 'https://www.getdasha.com/compute', '/compute/agent stays leftover');
 assert.equal(potterHome308Dest('/compute/llms-api'), 'https://www.getdasha.com/compute', '/compute/llms-api stays leftover');
 
@@ -130,6 +160,10 @@ assert.equal(potterHome308Dest('/compute/llms-api'), 'https://www.getdasha.com/c
   assert.match(injected, /<link rel="describedby" href="\/compute\/llms\.txt" type="text\/plain">/);
   const again = attachComputeLlmsHtmlLinks(injected);
   assert.equal((again.match(/href="\/compute\/llms\.txt"/g) || []).length, 1);
+  const bodyHref = attachComputeLlmsHtmlLinks(
+    '<html><head><link rel="describedby" href="/llms.txt" type="text/plain"></head><body><a href="/compute/llms.txt">packet</a></body></html>',
+  );
+  assert.match(bodyHref, /<link rel="describedby" href="\/compute\/llms\.txt" type="text\/plain">/);
 }
 
 for (const origin of ORIGINS) {
@@ -146,6 +180,19 @@ for (const origin of ORIGINS) {
   const head = await edgeWorker.fetch(new Request(`${origin}/compute/llms.txt`, { method: 'HEAD' }), {});
   assert.equal(head.status, 200, `${origin}/compute/llms.txt HEAD`);
   assert.equal(await head.text(), '');
+
+  const computeFull = await edgeWorker.fetch(new Request(`${origin}/compute/llms-full.txt`), {});
+  assert.equal(computeFull.status, 200, `${origin}/compute/llms-full.txt`);
+  assert.equal(computeFull.headers.get('x-dasha-edge'), 'compute-llms-full');
+  assert.match(computeFull.headers.get('content-type') || '', /text\/plain/);
+  const computeFullBody = await computeFull.text();
+  assert.equal(computeFullBody, COMPUTE_LLMS_FULL_TXT);
+  assert.ok(computeFullBody.includes(COMPUTE_AGENT_JSON_ALIAS_URL));
+  assert.ok(computeFullBody.includes(COMPUTE_SKILL_MD));
+  assert.doesNotMatch(computeFullBody, /plugin\.jup\.ag/);
+  const computeFullHead = await edgeWorker.fetch(new Request(`${origin}/compute/llms-full.txt`, { method: 'HEAD' }), {});
+  assert.equal(computeFullHead.status, 200, `${origin}/compute/llms-full.txt HEAD`);
+  assert.equal(await computeFullHead.text(), '');
 
   for (const path of AGENT_PATHS) {
     const res = await edgeWorker.fetch(new Request(`${origin}${path}`), {});
@@ -199,8 +246,26 @@ for (const origin of ORIGINS) {
 }
 
 {
+  const leftoverFull = await edgeWorker.fetch(new Request('https://www.getdasha.com/compute/llms-full'), {});
+  assert.equal(leftoverFull.status, 308, '/compute/llms-full 308');
+  assert.equal(leftoverFull.headers.get('location'), COMPUTE_LLMS_FULL_URL);
+}
+
+{
+  const leftoverAlias = await edgeWorker.fetch(new Request('https://www.getdasha.com/compute/agent.json/'), {});
+  assert.equal(leftoverAlias.status, 308, '/compute/agent.json/ 308');
+  assert.equal(leftoverAlias.headers.get('location'), COMPUTE_AGENT_JSON_ALIAS_URL);
+}
+
+{
+  const titleAlias = await edgeWorker.fetch(new Request('https://www.getdasha.com/compute/Agent.json'), {});
+  assert.equal(titleAlias.status, 308, '/compute/Agent.json 308');
+  assert.equal(titleAlias.headers.get('location'), COMPUTE_AGENT_JSON_ALIAS_URL);
+}
+
+{
   const direct = computeAgentAeoResponse(new Request('https://www.getdasha.com/privacy'));
   assert.equal(direct, null, 'helper ignores non-AEO paths');
 }
 
-console.log('dasha-compute-agent-aeo: PASS (/compute/llms.txt + well-known agent.json, site llms pointers, /compute door, leftover /compute/llms, no plugin.jup.ag)');
+console.log('dasha-compute-agent-aeo: PASS (/compute/llms.txt + well-known agent.json + /compute/agent.json alias + /compute/llms-full.txt, site llms pointers, /compute door, leftover /compute/llms, no plugin.jup.ag)');
