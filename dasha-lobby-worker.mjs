@@ -6216,14 +6216,25 @@ function computeKitJsonResponse(request) {
 }
 
 /** Funnel telemetry (task 22): aggregate counters in the shared 'public' DO storage.
- * Counter bump only - never stores identities, emails, or payloads. */
-async function bumpLobbyMetric(storage, name) {
+ * Counter bump only - never stores identities, emails, or payloads.
+ * Storage is optional: X OAuth runs on the Worker isolate (no this.state). */
+export async function bumpLobbyMetric(storage, name) {
   try {
+    if (!storage || typeof storage.get !== 'function' || typeof storage.put !== 'function') return;
     if (!/^[a-z0-9:_-]{1,48}$/.test(String(name || ''))) return;
     const key = `compute:metric:${new Date().toISOString().slice(0, 10)}:${name}`;
     const current = Number(await storage.get(key)) || 0;
     await storage.put(key, current + 1);
   } catch {}
+}
+
+/** Honest Link-X error for the callback page. Never leak TypeError / undefined.state. */
+export function oauthLinkErrorMessage(err) {
+  const raw = String(err && err.message || err).replace(/\s+/g, ' ').trim().slice(0, 200);
+  if (!raw || /Cannot read propert/i.test(raw) || /reading ['"]state['"]/i.test(raw)) {
+    return 'Link failed. Try again.';
+  }
+  return raw;
 }
 
 
@@ -9848,7 +9859,7 @@ async function handleOAuth(request, env, allowedOrigin) {
       return readCookie(raw, OAUTH_COOKIE);
     })();
     const st = oauthCookie ? await verifyPayload(env.LOBBY_SESSION_SECRET, oauthCookie) : null;
-    if (!code || !state || !st || st.kind !== 'oauth_state' || st.state !== state || !st.verifier) {
+    if (!code || !state || st?.kind !== 'oauth_state' || st?.state !== state || !st?.verifier) {
       return oauthHtmlResponse(htmlPage('Error', '<h1>Invalid OAuth state</h1><p><a href="/oauth/x/start">Try again</a></p>'), 400);
     }
     try {
@@ -9856,7 +9867,8 @@ async function handleOAuth(request, env, allowedOrigin) {
       const user = await fetchXUser(tokens.access_token);
       if (!user.handle) throw new Error('missing handle');
       const session = await createSessionToken(env, user);
-      await bumpLobbyMetric(this.state.storage, 'signin:success:x');
+      // Worker isolate — no room Durable Object storage on this path.
+      await bumpLobbyMetric(env?.__lobbyMetricStorage, 'signin:success:x');
       const safeHandle = escapeHtml(user.handle);
       const scriptHandle = JSON.stringify(user.handle).replace(/</g, '\\u003c');
       const scriptNonce = randomUrlToken(18);
@@ -9876,7 +9888,7 @@ async function handleOAuth(request, env, allowedOrigin) {
       return new Response(body, { status: 200, headers });
     } catch (e) {
       return oauthHtmlResponse(
-        htmlPage('Error', `<h1>Could not link X</h1><p>${escapeHtml(String(e.message || e).slice(0, 200))}</p><p><a href="/oauth/x/start">Try again</a></p>`),
+        htmlPage('Error', `<h1>Could not link X</h1><p>${escapeHtml(oauthLinkErrorMessage(e))}</p><p><a href="/oauth/x/start">Try again</a></p>`),
         502,
       );
     }
