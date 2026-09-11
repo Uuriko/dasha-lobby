@@ -51,6 +51,9 @@ function chunksStream(parts) {
   }), env, origin);
   assert.equal(streamed.status, 200);
   assert.match(streamed.headers.get('content-type') || '', /text\/event-stream/);
+  assert.equal(streamed.headers.get('x-dasha-route'), 'hosted');
+  assert.equal(streamed.headers.get('x-dasha-model'), 'gpt-oss-20b');
+  assert.equal(streamed.headers.get('x-dasha-spend-usd'), '0.00');
   const body = await streamed.text();
   assert.match(body, /"content":"Hi"/);
   assert.match(body, /data: \[DONE\]/);

@@ -78,6 +78,9 @@ assert.match(COMPUTE_SKILL_MD, /Receipts: signed, chained\./, 'receipts one-line
 assert.match(COMPUTE_SKILL_MD, /https:\/\/www\.getdasha\.com\/compute\/api\/receipts/, 'receipts URL');
 assert.match(COMPUTE_SKILL_MD, /^Community: a peer Mac runs the job\.$/m, 'Community one-liner');
 assert.match(COMPUTE_SKILL_MD, /^Hosted: still there when no Mac is online\.$/m, 'Hosted one-liner');
+assert.match(COMPUTE_SKILL_MD, /x-dasha-route/, 'skill names spend route header');
+assert.match(COMPUTE_SKILL_MD, /x-dasha-spend-usd/, 'skill names spend usd header');
+assert.match(COMPUTE_SKILL_MD, /Community omits USD when unknown/, 'skill honesty: no invented community USD');
 assert.ok(COMPUTE_SKILL_MD.includes(COMPUTE_LLMS_URL), 'skill links packet');
 assert.ok(COMPUTE_SKILL_MD.includes(COMPUTE_AGENT_JSON_URL), 'skill links agent.json');
 assert.doesNotMatch(COMPUTE_SKILL_MD, /plugin\.jup\.ag/, 'skill no plugin.jup.ag');

@@ -105,6 +105,34 @@ export { X402_BILLING_DOCS, x402BillingDocsLine };
 
 export { HOSTED_ASK_PRICE_CENTS };
 
+/** LiteLLM-style spend visibility on chat completions. Community omits USD when cost is unknown. */
+export const DASHA_SPEND_HEADER_ROUTE = 'X-Dasha-Route';
+export const DASHA_SPEND_HEADER_MODEL = 'X-Dasha-Model';
+export const DASHA_SPEND_HEADER_USD = 'X-Dasha-Spend-Usd';
+export const DASHA_SPEND_EXPOSE = 'X-Dasha-Spend-Usd, X-Dasha-Route, X-Dasha-Model';
+
+/** Response face is community | hosted. Mac routes (community/mixture/self) collapse to community. */
+export function dashaChatRouteFace(route) {
+  return String(route || '') === 'hosted' ? 'hosted' : 'community';
+}
+
+/**
+ * Honest spend headers. Never invent pennies from tokens.
+ * spendCents: integer cents when known; null/undefined omits X-Dasha-Spend-Usd.
+ */
+export function dashaChatSpendHeaders({ route, model, spendCents = null } = {}) {
+  const headers = {
+    [DASHA_SPEND_HEADER_ROUTE]: dashaChatRouteFace(route),
+    'Access-Control-Expose-Headers': DASHA_SPEND_EXPOSE,
+  };
+  const id = String(model || '').trim();
+  if (id) headers[DASHA_SPEND_HEADER_MODEL] = id.slice(0, 64);
+  if (spendCents != null && spendCents !== '' && Number.isFinite(Number(spendCents))) {
+    headers[DASHA_SPEND_HEADER_USD] = (Math.max(0, Math.floor(Number(spendCents))) / 100).toFixed(2);
+  }
+  return headers;
+}
+
 /** Buyer SSE hold: close cleanly in the 30–45s window (FRESH_MS=45s) so CF/browser idle kill is not a Failed to fetch. */
 export const SSE_BUYER_HOLD_MS = 35_000;
 export const SSE_KEEPALIVE_MS = 10_000;
@@ -543,8 +571,8 @@ export function openaiErrorBody(message, status = 400, type = 'invalid_request_e
   };
 }
 
-function openaiError(message, status = 400, type = 'invalid_request_error') {
-  return json(openaiErrorBody(message, status, type), status);
+function openaiError(message, status = 400, type = 'invalid_request_error', extra = {}) {
+  return json(openaiErrorBody(message, status, type), status, null, false, extra);
 }
 
 async function body(request, limit = 4096) {
@@ -1309,7 +1337,7 @@ export class ComputeNetwork {
     // v1 gateway: every response (errors + successes + stream) carries ACAO (OpenAI convention).
     const v1Origin = allowedOrigin || '*';
     const v1cors = (res) => withV1Cors(res, v1Origin);
-    const v1err = (message, status = 400, type = 'invalid_request_error') => v1cors(openaiError(message, status, type));
+    const v1err = (message, status = 400, type = 'invalid_request_error', extra = {}) => v1cors(openaiError(message, status, type, extra));
     if ((path === '/compute/api/v1/models' || path === '/compute/api/v1/models/') && (request.method === 'GET' || request.method === 'HEAD')) {
       // Soft-guest list: same advertised ids as public GET /compute/api/network.
       await this.prune(now);
@@ -1381,16 +1409,21 @@ export class ComputeNetwork {
       await this.prune(now);
       const providersPeek = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
       const peek = resolveJobRoute(key.owner, input, providersPeek, now);
+      // Community Mac cost is unknown — route+model only. Never invent USD from tokens or the $0.05 credit gate.
+      const chatSpend = (jobLike) => dashaChatSpendHeaders({
+        route: jobLike?.route || peek.route,
+        model: jobLike?.model || input.model,
+      });
       if (peek.route !== 'self' && !guest) {
         const gate = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now, { checkOnly: true });
-        if (!gate.ok) return v1err(gate.error || 'key spend limit reached', gate.status || 402, 'invalid_request_error');
+        if (!gate.ok) return v1err(gate.error || 'key spend limit reached', gate.status || 402, 'invalid_request_error', chatSpend());
         const balPeek = Math.max(0, Math.floor(Number((await this.state.storage.get(`compute:credit-balance:${key.owner}`))?.cents) || 0));
         if (balPeek < HOSTED_ASK_PRICE_CENTS) {
-          return v1err('top up credits', 402, 'invalid_request_error');
+          return v1err('top up credits', 402, 'invalid_request_error', chatSpend());
         }
       }
       const queued = await this.queueJob(key.owner, input, now);
-      if (queued.error) return v1err(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error');
+      if (queued.error) return v1err(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error', chatSpend());
       if (queued.job.route !== 'self' && !guest) {
         const debit = await this.debitCredits(key.owner, {
           cents: HOSTED_ASK_PRICE_CENTS,
@@ -1400,20 +1433,21 @@ export class ComputeNetwork {
         });
         if (!debit.ok) {
           await this.state.storage.delete(`compute:job:${queued.job.id}`);
-          return v1err(debit.error || 'top up credits', 402, 'invalid_request_error');
+          return v1err(debit.error || 'top up credits', 402, 'invalid_request_error', chatSpend(queued.job));
         }
         const spend = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now);
         if (!spend.ok) {
           await this.state.storage.delete(`compute:job:${queued.job.id}`);
-          return v1err(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error');
+          return v1err(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error', chatSpend(queued.job));
         }
       }
       if (input.stream) {
-        return v1cors(this.streamResponse(queued.job, null, effortResponseHeaders(effortHonestyFromJob(queued.job))));
+        const honesty = effortHonestyFromJob(queued.job);
+        return v1cors(this.streamResponse(queued.job, null, { ...effortResponseHeaders(honesty), ...chatSpend(queued.job) }));
       }
       while (!request.signal.aborted) {
         const job = await this.state.storage.get(`compute:job:${queued.job.id}`);
-        if (!job) return v1err('job expired', 410, 'server_error');
+        if (!job) return v1err('job expired', 410, 'server_error', chatSpend(queued.job));
         if (Number(job.expiresAt) <= Date.now()) break;
         if (job.status === 'complete') {
           const honesty = effortHonestyFromJob(job);
@@ -1425,13 +1459,13 @@ export class ComputeNetwork {
             choices: [{ index: 0, message: { role: 'assistant', content: job.answer }, finish_reason: 'stop' }],
             usage: job.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
             ...dashaEffortExtension(honesty),
-          }, 200, null, false, effortResponseHeaders(honesty)));
+          }, 200, null, false, { ...effortResponseHeaders(honesty), ...chatSpend(job) }));
         }
-        if (job.status === 'failed') return v1err(job.error || 'provider failed', 502, 'server_error');
+        if (job.status === 'failed') return v1err(job.error || 'provider failed', 502, 'server_error', chatSpend(job));
         await new Promise(resolve => setTimeout(resolve, 250));
       }
       await this.state.storage.delete(`compute:job:${queued.job.id}`);
-      return v1err(request.signal.aborted ? 'request cancelled' : 'request timed out', request.signal.aborted ? 499 : 504, 'server_error');
+      return v1err(request.signal.aborted ? 'request cancelled' : 'request timed out', request.signal.aborted ? 499 : 504, 'server_error', chatSpend(queued.job));
     }
 
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method !== 'OPTIONS') {
@@ -2817,7 +2851,7 @@ export async function computeApi(request, env, allowedOrigin) {
         error: spent.error || 'top up credits',
         balance_cents: spent.balance_cents ?? 0,
         price_cents: HOSTED_ASK_PRICE_CENTS,
-      }, spent.status || 402, allowedOrigin, true);
+      }, spent.status || 402, allowedOrigin, true, dashaChatSpendHeaders({ route: 'hosted', model: 'gpt-oss-20b' }));
     }
     creditBalanceHeader = String(spent.balance_cents);
     hostedChargedCents = Math.max(0, Math.floor(Number(spent.charged_cents) || HOSTED_ASK_PRICE_CENTS));
@@ -2835,7 +2869,7 @@ export async function computeApi(request, env, allowedOrigin) {
     if (input.stream === true) {
       const run = await env.AI.run('@cf/openai/gpt-oss-20b', { stream: true, messages: [system, ...messages], max_tokens: 256, temperature: 0.6, ...hostedEffortKnob });
       const encoder = new TextEncoder();
-      const headers = { ...SECURITY, ...cors(allowedOrigin, true), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Dasha-Model': 'gpt-oss-20b', ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) };
+      const headers = { ...SECURITY, ...cors(allowedOrigin, true), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', ...dashaChatSpendHeaders({ route: 'hosted', model: 'gpt-oss-20b', spendCents: hostedChargedCents }), ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) };
       let completionText = '';
       let upstreamUsage = null;
       const approxTokens = (text) => Math.max(0, Math.ceil(String(text || '').length / 4));
@@ -2942,9 +2976,9 @@ export async function computeApi(request, env, allowedOrigin) {
     const completion_tokens = approxTokens(answer);
     const usage = tokenUsage({ usage: { prompt_tokens, completion_tokens, total_tokens: prompt_tokens + completion_tokens } });
     await bumpHostedFactory(env, { failed: false, settled: hostedSettledPayload(usage) });
-    return json({ answer, model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, usage, ...hostedEffortFace(hostedHonesty), ...(creditBalanceHeader != null ? { balance_cents: Number(creditBalanceHeader) } : {}) }, 200, allowedOrigin, true, { 'X-Dasha-Model': 'gpt-oss-20b', ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) });
+    return json({ answer, model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, usage, ...hostedEffortFace(hostedHonesty), ...(creditBalanceHeader != null ? { balance_cents: Number(creditBalanceHeader) } : {}) }, 200, allowedOrigin, true, { ...dashaChatSpendHeaders({ route: 'hosted', model: 'gpt-oss-20b', spendCents: hostedChargedCents }), ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) });
   } catch {
     await bumpHostedFactory(env, { failed: true });
-    return json({ error: 'model request failed; try again', code: 'hosted_cut' }, 502, allowedOrigin, true);
+    return json({ error: 'model request failed; try again', code: 'hosted_cut' }, 502, allowedOrigin, true, dashaChatSpendHeaders({ route: 'hosted', model: 'gpt-oss-20b', spendCents: hostedChargedCents }));
   }
 }
