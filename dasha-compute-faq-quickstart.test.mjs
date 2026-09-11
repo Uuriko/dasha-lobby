@@ -28,6 +28,7 @@ const BUYER_LINES = [
 
 const PROVIDER_LINES = [
   '$0.05/job is Provider Earn. Not the buyer price.',
+  'Busy network · more jobs. Stay warm. Same rate.',
   'Mac · Apple Silicon · Ollama ≥0.33.1 · python3 · 15–30 min.',
   'Sign in. Name it. Register. Run Setup.',
   'USDC · $dasha +10% · wallet to get paid.',
@@ -107,6 +108,7 @@ function assertFaqQuickstart(html, label) {
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 
   assert.match(provide, /id=["']provide-faq-earn["'][^>]*>\$0\.05\/job is Provider Earn\. Not the buyer price\.</, `${label} Earn distinction`);
+  assert.match(provide, /id=["']provide-faq-demand["'][^>]*>Busy network · more jobs\. Stay warm\. Same rate\.</, `${label} demand`);
   assert.match(provide, /id=["']provide-faq-need["'][^>]*>Mac · Apple Silicon · Ollama ≥0\.33\.1 · python3 · 15–30 min\.</, `${label} need`);
   assert.match(provide, /id=["']provide-faq-enroll["'][^>]*>Sign in\. Name it\. Register\. Run Setup\.</, `${label} enroll`);
   assert.match(provide, /id=["']provide-faq-wallet["'][^>]*>USDC · \$dasha \+10% · wallet to get paid\.</, `${label} wallet`);
