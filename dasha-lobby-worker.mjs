@@ -4862,9 +4862,11 @@ const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
 ]);
 /** Live GET/HEAD /compute/api/docs (+slash / Title-case) was JSON fail-loud 404
  *  while /compute/skill.md is the agent docs face. Fold there — not /compute/api
- *  (that's /compute/docs /sdk-docs /api-reference leftover dest). */
+ *  (that's /compute/docs /sdk-docs /api-reference leftover dest).
+ *  Singular leftover /compute/api/doc still JSON 404 after plural docs went live. */
 const POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS = new Set([
   '/compute/api/docs', '/compute/api/docs/',
+  '/compute/api/doc', '/compute/api/doc/',
 ]);
 /** Leftover /agents.txt/ /compute/agents.txt/ → face. Exact stays 200. Bare /agents stays leftover → /compute. */
 const POTTER_AGENTS_TXT_308_PATHS = new Set([

@@ -3,6 +3,7 @@
  * Leftover pretty path: live GET/HEAD /compute/api/docs (+slash / Title-case)
  * was JSON fail-loud 404 on www + lobby while /compute/skill.md is already
  * the agent docs face (200 markdown). Fold to that face.
+ * Singular leftover /compute/api/doc still 404 after plural docs went live.
  * /compute/docs /sdk-docs /api-reference /sdk /cli stay 308 → /compute/api.
  * Lobby same-host via potterHome308Response. Disk only. Never plugin.jup.ag.
  */
@@ -35,6 +36,13 @@ const FOLDS = [
   '/Compute/Api/Docs',
   '/Compute/Api/Docs/',
   '/COMPUTE/API/DOCS/',
+  '/compute/api/doc',
+  '/compute/api/doc/',
+  '/Compute/api/doc',
+  '/COMPUTE/API/DOC',
+  '/Compute/Api/Doc',
+  '/Compute/Api/Doc/',
+  '/COMPUTE/API/DOC/',
 ];
 
 const GATEWAY_UNCHANGED = [
@@ -63,6 +71,7 @@ for (const [path, dest] of GATEWAY_UNCHANGED) {
 assert.equal(potterHome308Dest('/compute/skill.md'), null, '/compute/skill.md stays 200');
 assert.equal(potterHome308Dest('/compute/api'), null, '/compute/api stays JSON');
 assert.equal(potterHome308Dest('/docs/other'), null, 'do not invent /docs/*');
+assert.notEqual(potterHome308Dest('/compute/api/documentation'), SKILL, 'do not invent /compute/api/documentation');
 
 const env = { LOBBY_SESSION_SECRET: 'compute-api-docs-pretty-path-secret', AI: { run: async () => ({ response: 'ok' }) } };
 for (const host of ['www.getdasha.com', 'getdasha.com', 'lobby.getdasha.com']) {
@@ -90,5 +99,6 @@ for (const host of ['www.getdasha.com', 'getdasha.com', 'lobby.getdasha.com']) {
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 assert.ok(!sitemapXml.includes(`${WWW}/compute/api/docs</loc>`), 'sitemap omits leftover /compute/api/docs');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/api/doc</loc>`), 'sitemap omits leftover /compute/api/doc');
 
-console.log('dasha-compute-api-docs-pretty-path: PASS (/compute/api/docs 308 skill.md www+lobby GET+HEAD; /compute/docs still /compute/api; no plugin.jup.ag)');
+console.log('dasha-compute-api-docs-pretty-path: PASS (/compute/api/docs+/doc 308 skill.md www+lobby GET+HEAD; /compute/docs still /compute/api; no plugin.jup.ag)');
