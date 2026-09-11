@@ -222,9 +222,10 @@ for (const path of ['/donate', '/donate/', '/Donate']) {
 for (const path of ['/settlement', '/Settlement', '/compute/invoice', '/credit', '/kits', '/try', '/getting-started', '/mac_kit']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
-for (const path of ['/plan', '/Plans', '/prices', '/payout', '/agents', '/tools', '/compute/price', '/earn', '/mac', '/kit']) {
+for (const path of ['/plan', '/Plans', '/prices', '/payout', '/tools', '/compute/price', '/earn', '/mac', '/kit']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
+assert.equal(potterHome308Dest('/agents'), 'https://www.getdasha.com/agents.txt', 'bare /agents → agents.txt');
 for (const path of ['/mcp', '/mcp/', '/compute/mcp', '/compute/mcp/']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/mcp.json', path);
 }

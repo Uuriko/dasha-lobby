@@ -4150,7 +4150,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/mac_kit/",
   // Plans/prices/payout/payment/agents leftovers (2026-09-06): live /plan(s) /prices
   // /payout(s) /withdraw /cashout /payment(s) /checkout /getting_started /mac-setup
-  // /mac_setup /agents|/agent /tools|/tool (+ /compute/* tabs, Title-case) html-404
+  // /mac_setup /agent /tools|/tool (+ /compute/* tabs, Title-case) html-404
+  // Bare leftover /agents|/agents/ fold via POTTER_AGENTS_TXT_308_PATHS → agents.txt.
   // Leftover /agents|/compute/agents must not catch *.txt/*.json (exact faces stay 200).
   // Leftover /mcp|/compute/mcp fold via POTTER_COMPUTE_MCP_JSON_308_PATHS → catalog
   // (must not catch *.json; exact /compute/mcp.json + /.well-known/mcp.json stay 200).
@@ -4183,8 +4184,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/mac-setup/",
   "/mac_setup",
   "/mac_setup/",
-  "/agents",
-  "/agents/",
   "/agent",
   "/agent/",
   "/tools",
@@ -4933,8 +4932,11 @@ const POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS = new Set([
   '/compute/guest-key', '/compute/guest-key/',
   '/compute/guest-keys', '/compute/guest-keys/',
 ]);
-/** Leftover /agents.txt/ /compute/agents.txt/ → face. Exact stays 200. Bare /agents stays leftover → /compute. */
+/** Leftover /agents /agents/ /agents.txt/ /compute/agents.txt/ → face.
+ *  Exact /agents.txt stays 200. Bare leftover /compute/agents stays tab → /compute. */
 const POTTER_AGENTS_TXT_308_PATHS = new Set([
+  '/agents',
+  '/agents/',
   '/agents.txt/',
   '/compute/agents.txt/',
 ]);
@@ -5015,8 +5017,9 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/login', 'https://www.getdasha.com/login'],
   // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Agents.txt
   // /Agents.json html-404 while lowercase siblings already 200. Exact lowercase
-  // stays null so 200 handlers run. Bare leftover /agents|/compute/agents stay
-  // exact-path only — do not catch *.txt/*.json.
+  // stays null so 200 handlers run. Bare leftover /agents|/agents/ fold via
+  // POTTER_AGENTS_TXT_308_PATHS. /compute/agents stays tab exact-path only —
+  // do not catch *.txt/*.json.
   // Do NOT put /forum /chat here — that would drop ?t=; use isForumChatAliasPath + forumToLobbyRedirect.
   ['/llms.txt', 'https://www.getdasha.com/llms.txt'],
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
