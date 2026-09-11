@@ -114,6 +114,7 @@ Pick \`model\` from the models list.
 ## Receipts / Community / Hosted
 
 Receipts: signed, chained. GET https://www.getdasha.com/compute/api/receipts · verify https://www.getdasha.com/verify
+Job receipts include \`route\` (\`community\`|\`hosted\`, same as x-dasha-route). \`turns\` only when already counted — never invented.
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
 Spend: read \`x-dasha-route\` (\`community\`|\`hosted\`) and \`x-dasha-model\` on chat/completions. \`x-dasha-spend-usd\` only when cost is known — Community omits USD when unknown.
@@ -144,6 +145,7 @@ ${COMPUTE_FIRST_CALL_TXT}
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
 spend headers x-dasha-route · x-dasha-model · x-dasha-spend-usd when known (Community omits unknown USD)
+receipts include route community|hosted (same as x-dasha-route); turns only when counted — never invented
 
 compute https://www.getdasha.com/compute
 Use a Mac https://www.getdasha.com/compute#ask

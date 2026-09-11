@@ -101,6 +101,11 @@ import {
   hostedReasoningEffortInput,
   parseReasoningEffort,
 } from './dasha-compute-reasoning-effort.mjs';
+import {
+  attachReceiptHonesty,
+  countConversationTurns,
+  honestLoopFields,
+} from './dasha-compute-receipt-honesty.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
 
 export { HOSTED_ASK_PRICE_CENTS };
@@ -787,7 +792,7 @@ export function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
   const settle = status === 'complete' ? publicJobSettle(job) : null;
   if (settle) receipt.settled = settle;
   if (status === 'failed') receipt.ok = false;
-  return attachEffortToReceipt(receipt, effortHonestyFromJob(job));
+  return attachEffortToReceipt(attachReceiptHonesty(receipt, job), effortHonestyFromJob(job));
 }
 
 async function cancelJob(storage, key, job, now = Date.now()) {
@@ -876,7 +881,9 @@ export class ComputeNetwork {
     const tasks = [...(await this.state.storage.list({ prefix: 'compute:night:' })).values()].sort((a, b) => a.nextRunAt - b.nextRunAt);
     for (const task of tasks) {
       if (task.status !== 'scheduled' || Number(task.nextRunAt) > now || activeOwners.has(task.owner) || !providers.some(provider => provider.models?.includes(task.model))) continue;
-      const job = { id: `job_${randomUrlToken(9)}`, nightId: task.id, nightStep: Number(task.stepIndex || 0), owner: task.owner, model: task.model, messages: [{ role: 'system', content: NIGHT_TEMPLATES[task.template] }, { role: 'user', content: nightStepPrompt(task) }], maxTokens: 2048, temperature: 0.4, stream: false, status: 'queued', providerId: null, createdAt: now, expiresAt: now + NIGHT_JOB_TTL_MS };
+      const nightMessages = [{ role: 'system', content: NIGHT_TEMPLATES[task.template] }, { role: 'user', content: nightStepPrompt(task) }];
+      const turns = countConversationTurns(nightMessages);
+      const job = { id: `job_${randomUrlToken(9)}`, nightId: task.id, nightStep: Number(task.stepIndex || 0), owner: task.owner, model: task.model, route: 'community', messages: nightMessages, maxTokens: 2048, temperature: 0.4, stream: false, status: 'queued', providerId: null, createdAt: now, expiresAt: now + NIGHT_JOB_TTL_MS, ...(turns ? { turns } : {}) };
       await this.state.storage.put(`compute:job:${job.id}`, job);
       await this.state.storage.put(`compute:night:${task.id}`, { ...task, status: 'running', lastJobId: job.id, lastRunAt: now });
       activeOwners.add(task.owner);
@@ -1125,7 +1132,8 @@ export class ComputeNetwork {
     if ([...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].some(job => job.owner === owner && ['queued', 'leased'].includes(job.status))) return { error: 'finish your current community request first', status: 409 };
     const requestedTemperature = Number(input.temperature);
     const stream = input.stream === true;
-    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}) };
+    const turns = countConversationTurns(messages);
+    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
     await this.state.storage.put(`compute:job:${job.id}`, job);
     return { job };
   }
@@ -1676,6 +1684,7 @@ export class ComputeNetwork {
             jobId: job.id,
             model: job.model,
             latencyMs: job.leasedAt ? now - job.leasedAt : null,
+            ...honestLoopFields(job),
             replayKey: `job:${job.id}`,
             now,
           });
@@ -1719,6 +1728,7 @@ export class ComputeNetwork {
             jobId: job.id,
             model: job.model,
             latencyMs: job.leasedAt ? now - job.leasedAt : null,
+            ...honestLoopFields(job),
             replayKey: `job:${job.id}`,
             now,
           });
@@ -1793,6 +1803,7 @@ export class ComputeNetwork {
       const measuredTps = measuredTokPerSecForModel(freshProviders, job.model, now);
       const receipt = publicPhase0Receipt(job, { tokensPerSecond: measuredTps });
       const honesty = effortHonestyFromJob(job);
+      const loop = honestLoopFields(job);
       return maybeHead(request, json({
         id: job.id,
         status: job.status,
@@ -1805,6 +1816,7 @@ export class ComputeNetwork {
         ...(usage && (usage.total_tokens > 0 || usage.prompt_tokens > 0 || usage.completion_tokens > 0) ? { usage } : {}),
         ...(route ? { route } : {}),
         ...(settle ? { settle } : {}),
+        ...loop,
         ...(receipt ? { receipt } : {}),
         ...dashaEffortExtension(honesty),
       }, 200, allowedOrigin, credentials, effortResponseHeaders(honesty)));

@@ -5,6 +5,7 @@
  * Never invent Darkbloom-style volume.
  */
 import { randomUrlToken } from './dasha-lobby-x.mjs';
+import { asPositiveInt, settledReceiptRoute } from './dasha-compute-receipt-honesty.mjs';
 
 export const SETTLED_HOUR_PREFIX = 'compute:settled-hour:';
 export const SETTLED_RECEIPT_PREFIX = 'compute:settled-receipt:';
@@ -48,6 +49,9 @@ export function publicSettled24h(summary) {
 
 export function publicReceipt(row) {
   if (!row || typeof row !== 'object') return null;
+  const route = settledReceiptRoute(row.engine);
+  const turns = asPositiveInt(row.turns);
+  const steps = !turns ? asPositiveInt(row.steps) : null;
   return {
     id: String(row.id || ''),
     engine: String(row.engine || ''),
@@ -59,6 +63,9 @@ export function publicReceipt(row) {
     model: row.model ? String(row.model) : null,
     latency_ms: Number.isFinite(Number(row.latency_ms)) ? Math.max(0, Math.floor(Number(row.latency_ms))) : null,
     kind: 'paid-inference',
+    ...(route ? { route } : {}),
+    ...(turns ? { turns } : {}),
+    ...(steps ? { steps } : {}),
   };
 }
 
@@ -76,6 +83,8 @@ export async function recordSettledInference(storage, {
   requestId = null,
   model = null,
   latencyMs = null,
+  turns = null,
+  steps = null,
   replayKey = null,
   now = Date.now(),
   idFactory = () => `rcp_${randomUrlToken(10)}`,
@@ -99,6 +108,8 @@ export async function recordSettledInference(storage, {
 
   const id = String(idFactory()).slice(0, 40);
   const who = owner ? String(owner).trim().slice(0, 80) : null;
+  const storedTurns = asPositiveInt(turns);
+  const storedSteps = !storedTurns ? asPositiveInt(steps) : null;
   const receipt = {
     id,
     owner: who,
@@ -111,6 +122,8 @@ export async function recordSettledInference(storage, {
     latency_ms: Number.isFinite(Number(latencyMs)) ? Math.max(0, Math.floor(Number(latencyMs))) : null,
     at: now,
     kind: 'paid-inference',
+    ...(storedTurns ? { turns: storedTurns } : {}),
+    ...(storedSteps ? { steps: storedSteps } : {}),
   };
 
   const hour = hourBucket(now);

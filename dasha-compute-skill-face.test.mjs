@@ -75,6 +75,8 @@ assert.match(COMPUTE_SKILL_MD, /"model":"gemma3-27b"/, 'model from list');
 assert.match(COMPUTE_SKILL_MD, /Pick `model` from the models list\./, 'model from models list');
 assert.match(COMPUTE_SKILL_MD, /^## Receipts \/ Community \/ Hosted$/m, 'receipts heading');
 assert.match(COMPUTE_SKILL_MD, /Receipts: signed, chained\./, 'receipts one-liner');
+assert.match(COMPUTE_SKILL_MD, /Job receipts include `route` \(`community`\|`hosted`/, 'skill names receipt route');
+assert.match(COMPUTE_SKILL_MD, /`turns` only when already counted/, 'skill never invents turns');
 assert.match(COMPUTE_SKILL_MD, /https:\/\/www\.getdasha\.com\/compute\/api\/receipts/, 'receipts URL');
 assert.match(COMPUTE_SKILL_MD, /^Community: a peer Mac runs the job\.$/m, 'Community one-liner');
 assert.match(COMPUTE_SKILL_MD, /^Hosted: still there when no Mac is online\.$/m, 'Hosted one-liner');
