@@ -3,7 +3,9 @@
  * Leftover pretty path (Worker 7528e50a): live compute doors /hosts /inferences
  * /key /keys /apikey /api-key /api_key /install /doctor /me /usage + /inference
  * /gpu /gpus /pricing /providing /mac-kit (+ /compute/* peers, slash / Title-case)
- * html-404 → 308 /compute. Faucet /tips /compute/tips (peer of /tip) → /faucet.
+ * html-404 → 308 /compute. Apex /doctor stays here; /compute/doctor is
+ * POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS → /compute#provide.
+ * Faucet /tips /compute/tips (peer of /tip) → /faucet.
  * API synonyms: /job /compute/job /api/job → /compute/api/jobs;
  * /receipt /receipts /compute/receipt(s) /api/receipt(s) → /compute/api/receipts;
  * /api/keys → /compute/api/keys. Lobby rewrites /compute/api* Location onto
@@ -31,7 +33,7 @@ assert.match(
 
 const COMPUTE_LEAVES = [
   'hosts', 'inferences', 'key', 'keys', 'apikey', 'api-key', 'api_key',
-  'install', 'doctor', 'me', 'usage', 'inference', 'gpu', 'gpus',
+  'install', 'me', 'usage', 'inference', 'gpu', 'gpus',
   'pricing', 'providing', 'mac-kit',
 ];
 for (const leaf of COMPUTE_LEAVES) {
@@ -45,13 +47,19 @@ const JOBS = `${WWW}/compute/api/jobs`;
 const RECEIPTS = `${WWW}/compute/api/receipts`;
 const KEYS = `${WWW}/compute/api/keys`;
 
-const TO_COMPUTE = COMPUTE_LEAVES.flatMap((leaf) => [
-  `/${leaf}`, `/${leaf}/`,
-  `/${leaf[0].toUpperCase()}${leaf.slice(1)}`,
-  `/${leaf.toUpperCase()}`,
-  `/compute/${leaf}`, `/compute/${leaf}/`,
-  `/Compute/${leaf}`, `/COMPUTE/${leaf.toUpperCase()}`,
-]);
+const APEX_DOCTOR = [
+  '/doctor', '/doctor/', '/Doctor', '/DOCTOR',
+];
+const TO_COMPUTE = [
+  ...COMPUTE_LEAVES.flatMap((leaf) => [
+    `/${leaf}`, `/${leaf}/`,
+    `/${leaf[0].toUpperCase()}${leaf.slice(1)}`,
+    `/${leaf.toUpperCase()}`,
+    `/compute/${leaf}`, `/compute/${leaf}/`,
+    `/Compute/${leaf}`, `/COMPUTE/${leaf.toUpperCase()}`,
+  ]),
+  ...APEX_DOCTOR,
+];
 const TO_FAUCET = [
   '/tips', '/tips/', '/Tips', '/TIPS', '/tIpS/',
   '/compute/tips', '/compute/tips/', '/Compute/tips', '/COMPUTE/TIPS', '/Compute/Tips/',

@@ -26,6 +26,8 @@ function assertProvideSpeed(body, label) {
   assert.match(body, /measured tok\/s/, `${label} measured tok/s`);
   assert.match(body, /network capacity/, `${label} network capacity`);
   assert.match(body, /measured_providers/, `${label} measured_providers`);
+  assert.match(body, /Join a Mac at \/compute#provide/, `${label} Join a Mac door`);
+  assert.match(body, /soft-doctor and enroll-code/, `${label} soft-doctor enroll-code`);
   assert.match(body, /OLLAMA_KEEP_ALIVE/, `${label} keepalive`);
   assert.match(body, /qwen3-4b/, `${label} qwen3-4b`);
   assert.match(body, /qwen3-8b/, `${label} qwen3-8b`);

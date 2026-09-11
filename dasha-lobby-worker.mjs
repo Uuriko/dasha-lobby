@@ -3914,8 +3914,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/api_key/",
   "/compute/install",
   "/compute/install/",
-  "/compute/doctor",
-  "/compute/doctor/",
+  // /compute/doctor (+slash) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
+  // → /compute#provide (soft-doctor / enroll-code). Apex /doctor stays here.
   "/compute/me",
   "/compute/me/",
   "/compute/usage",
@@ -4862,11 +4862,25 @@ const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
 ]);
 /** Live GET/HEAD /compute/api/docs (+slash / Title-case) was JSON fail-loud 404
  *  while /compute/skill.md is the agent docs face. Fold there — not /compute/api
- *  (that's /compute/docs /sdk-docs /api-reference leftover dest).
- *  Singular leftover /compute/api/doc still JSON 404 after plural docs went live. */
+ *  (that's /sdk-docs /api-reference leftover dest).
+ *  Singular leftover /compute/api/doc still JSON 404 after plural docs went live.
+ *  /compute/docs + /compute/openapi.json fold via POTTER_COMPUTE_DOCS_SKILL_308_PATHS. */
 const POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS = new Set([
   '/compute/api/docs', '/compute/api/docs/',
   '/compute/api/doc', '/compute/api/doc/',
+]);
+/** Live GET /compute/docs + /compute/openapi.json were 308 → /compute/api (JSON
+ *  gateway). Agents/humans asking for docs landed on raw JSON. No OpenAPI file
+ *  exists — do not invent one. Fold this path-family to the skill face.
+ *  Do not invent /compute/documentation /compute/openapi /swagger peers. */
+const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
+  '/compute/docs', '/compute/docs/',
+  '/compute/openapi.json', '/compute/openapi.json/',
+]);
+/** Live GET /compute/doctor was 308 → /compute (Ask first-paint). Soft-doctor
+ *  / Provide enroll should land on Provide. Apex /doctor stays tab → /compute. */
+const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
+  '/compute/doctor', '/compute/doctor/',
 ]);
 /** Leftover /agents.txt/ /compute/agents.txt/ → face. Exact stays 200. Bare /agents stays leftover → /compute. */
 const POTTER_AGENTS_TXT_308_PATHS = new Set([
@@ -5065,6 +5079,12 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/skill.md";
   }
+  if (POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/skill.md";
+  }
+  if (POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute#provide";
+  }
   if (POTTER_AGENTS_TXT_308_PATHS.has(p)) {
     return p.startsWith("/compute/")
       ? "https://www.getdasha.com/compute/agents.txt"
@@ -5113,7 +5133,7 @@ export function potterHome308Dest(path) {
   if (p === "/gateway" || p === "/gateway/" || p === "/compute/gateway" || p === "/compute/gateway/") {
     return "https://www.getdasha.com/compute/api";
   }
-  if (p === "/openapi" || p === "/openapi/" || p === "/openapi.json" || p === "/openapi.json/" || p === "/swagger" || p === "/swagger/" || p === "/swagger.json" || p === "/swagger.json/" || p === "/swagger-ui" || p === "/swagger-ui/" || p === "/swagger-ui.html" || p === "/swagger-ui.html/" || p === "/swagger_ui" || p === "/swagger_ui/" || p === "/swagger_ui.html" || p === "/swagger_ui.html/" || p === "/compute/docs" || p === "/compute/docs/" || p === "/compute/documentation" || p === "/compute/documentation/" || p === "/compute/openapi" || p === "/compute/openapi/" || p === "/compute/openapi.json" || p === "/compute/openapi.json/" || p === "/compute/swagger" || p === "/compute/swagger/" || p === "/compute/swagger.json" || p === "/compute/swagger.json/" || p === "/compute/swagger-ui" || p === "/compute/swagger-ui/" || p === "/compute/swagger_ui" || p === "/compute/swagger_ui/" || p === "/compute/api-docs" || p === "/compute/api-docs/" || p === "/compute/api_docs" || p === "/compute/api_docs/" || p === "/docs/api" || p === "/docs/api/" || p === "/api/docs" || p === "/api/docs/" || p === "/api-docs" || p === "/api-docs/" || p === "/api_docs" || p === "/api_docs/" || p === "/api/openapi" || p === "/api/openapi/" || p === "/api/openapi.json" || p === "/api/openapi.json/" || p === "/api/swagger" || p === "/api/swagger/" || p === "/api/swagger.json" || p === "/api/swagger.json/") {
+  if (p === "/openapi" || p === "/openapi/" || p === "/openapi.json" || p === "/openapi.json/" || p === "/swagger" || p === "/swagger/" || p === "/swagger.json" || p === "/swagger.json/" || p === "/swagger-ui" || p === "/swagger-ui/" || p === "/swagger-ui.html" || p === "/swagger-ui.html/" || p === "/swagger_ui" || p === "/swagger_ui/" || p === "/swagger_ui.html" || p === "/swagger_ui.html/" || p === "/compute/documentation" || p === "/compute/documentation/" || p === "/compute/openapi" || p === "/compute/openapi/" || p === "/compute/swagger" || p === "/compute/swagger/" || p === "/compute/swagger.json" || p === "/compute/swagger.json/" || p === "/compute/swagger-ui" || p === "/compute/swagger-ui/" || p === "/compute/swagger_ui" || p === "/compute/swagger_ui/" || p === "/compute/api-docs" || p === "/compute/api-docs/" || p === "/compute/api_docs" || p === "/compute/api_docs/" || p === "/docs/api" || p === "/docs/api/" || p === "/api/docs" || p === "/api/docs/" || p === "/api-docs" || p === "/api-docs/" || p === "/api_docs" || p === "/api_docs/" || p === "/api/openapi" || p === "/api/openapi/" || p === "/api/openapi.json" || p === "/api/openapi.json/" || p === "/api/swagger" || p === "/api/swagger/" || p === "/api/swagger.json" || p === "/api/swagger.json/") {
     return "https://www.getdasha.com/compute/api";
   }
   if (p === "/jobs" || p === "/jobs/" || p === "/job" || p === "/job/" || p === "/compute/jobs" || p === "/compute/jobs/" || p === "/compute/job" || p === "/compute/job/" || p === "/api/jobs" || p === "/api/jobs/" || p === "/api/job" || p === "/api/job/") {
@@ -5258,7 +5278,10 @@ export function potterHome308Response(request, url) {
         (
           u.pathname === '/compute/api' ||
           u.pathname.startsWith('/compute/api/') ||
-          (u.pathname === '/compute/skill.md' && POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src))
+          (u.pathname === '/compute/skill.md' && (
+            POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src) ||
+            POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src)
+          ))
         )
       ) {
         location = 'https://lobby.getdasha.com' + u.pathname + u.search + u.hash;
