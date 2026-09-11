@@ -4860,6 +4860,12 @@ const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
   '/compute/agents/skill.md', '/compute/agents/skill.md/',
   '/compute/agent/skill.md', '/compute/agent/skill.md/',
 ]);
+/** Live GET/HEAD /compute/api/docs (+slash / Title-case) was JSON fail-loud 404
+ *  while /compute/skill.md is the agent docs face. Fold there — not /compute/api
+ *  (that's /compute/docs /sdk-docs /api-reference leftover dest). */
+const POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS = new Set([
+  '/compute/api/docs', '/compute/api/docs/',
+]);
 /** Leftover /agents.txt/ /compute/agents.txt/ → face. Exact stays 200. Bare /agents stays leftover → /compute. */
 const POTTER_AGENTS_TXT_308_PATHS = new Set([
   '/agents.txt/',
@@ -5054,6 +5060,9 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_SKILL_FACE_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/skill.md";
   }
+  if (POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/skill.md";
+  }
   if (POTTER_AGENTS_TXT_308_PATHS.has(p)) {
     return p.startsWith("/compute/")
       ? "https://www.getdasha.com/compute/agents.txt"
@@ -5241,9 +5250,14 @@ export function potterHome308Response(request, url) {
     const host = request && new URL(request.url).hostname;
     if (host === 'lobby.getdasha.com') {
       const u = new URL(dest);
+      const src = String(path || '').toLowerCase();
       if (
         u.hostname === 'www.getdasha.com' &&
-        (u.pathname === '/compute/api' || u.pathname.startsWith('/compute/api/'))
+        (
+          u.pathname === '/compute/api' ||
+          u.pathname.startsWith('/compute/api/') ||
+          (u.pathname === '/compute/skill.md' && POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src))
+        )
       ) {
         location = 'https://lobby.getdasha.com' + u.pathname + u.search + u.hash;
       }
