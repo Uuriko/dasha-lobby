@@ -22,9 +22,9 @@ const lobbyDisk = readFileSync(join(root, 'dasha-lobby-page.html'), 'utf8');
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 
 const ACTS = [
-  { key: 'provide', href: 'https://www.getdasha.com/compute#provide', copy: 'Provide once today' },
-  { key: 'ask', href: 'https://www.getdasha.com/compute#ask', copy: 'Ask with a guest key' },
-  { key: 'build', href: 'https://www.getdasha.com/compute#build', copy: 'Build on Dasha' },
+  { key: 'provide', href: 'https://www.getdasha.com/compute#provide', copy: 'Provide' },
+  { key: 'ask', href: 'https://www.getdasha.com/compute#ask', copy: 'Ask' },
+  { key: 'build', href: 'https://www.getdasha.com/compute#build', copy: 'Build' },
 ];
 
 function afterStyleScript(html) {
@@ -66,11 +66,15 @@ function assertActs(html, label) {
     `${label} chat then acts then Play then threads`,
   );
   assert.doesNotMatch(pinInner(html), /compute/, `${label} pin stays mint, no Compute`);
+  assert.doesNotMatch(pinInner(html), /Buy|Chess|jup\.ag/, `${label} pin no Buy/Chess dump`);
   assert.doesNotMatch(html, /id=["']compute-door["']/, `${label} no compute-door`);
   assert.doesNotMatch(html, /nav-drop|hamburger|>Menu</, `${label} no hamburger`);
   assert.doesNotMatch(html, /disclaimer/i, `${label} no disclaimer`);
   assert.doesNotMatch(html, /three(?:\.min)?\.js|from ['"]three['"]/, `${label} no Three.js`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin.jup.ag`);
+  assert.doesNotMatch(vis, /Provide once today|Ask with a guest key/, `${label} no chatty act ledes`);
+  assert.match(vis, />Dasha vs Anna\.</, `${label} Play lede`);
+  assert.doesNotMatch(vis, /Dasha vs Anna in the room/, `${label} no Play essay`);
   assert.match(html, new RegExp(MINT), `${label} mint`);
   assert.match(html, /<h1>Lobby<\/h1>/, `${label} Lobby H1`);
   assert.match(html, /id=["']forum-play-go["']/, `${label} Play`);
@@ -116,6 +120,8 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.equal(lobby.headers.get('x-dasha-edge'), 'lobby-page');
   const html = await lobby.text();
   assertActs(html, `served ${origin}/lobby`);
+  assert.match(html, /Link X to post\./, `${origin} threads lede`);
+  assert.doesNotMatch(html, /Official room\. Read freely/, `${origin} no Official-room essay`);
 }
 
 {

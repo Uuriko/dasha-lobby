@@ -133,8 +133,8 @@ footer.ux-foot .ux-foot-meta{display:flex;justify-content:space-between;gap:14px
 footer.listed-on{justify-content:flex-start;align-items:center;gap:10px;padding-top:16px;color:var(--muted);font-size:12px}
 footer.listed-on[hidden]{display:none!important}
 footer.listed-on img{display:block;height:32px;width:auto}
-.ux-band{margin-top:28px;padding-top:22px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
-.ux-kicker{margin:0 0 12px;color:var(--muted);font:800 11px/1 Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.ux-band{margin-top:20px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.ux-kicker{margin:0 0 8px;color:var(--muted);font:800 11px/1 Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase}
 .ux-triad,.ux-tech{display:grid;gap:10px}
 .ux-triad{grid-template-columns:repeat(3,minmax(0,1fr))}
 .ux-tech{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -269,7 +269,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <div class="ux-band" id="ux-tech-band">
     <p class="ux-kicker">On.</p>
     <div class="ux-tech" id="ux-tech">
-      <article class="ux-card" id="ux-card-community" title="Advertising only. Never invent a count.">
+      <article class="ux-card" id="ux-card-community" title="Advertising only.">
         <h2>Community Macs</h2>
         <p>Used when a Mac is advertising.</p>
         <p class="ux-reveal">Read /compute/api/network.</p>
@@ -319,11 +319,11 @@ footer.listed-on img{display:block;height:32px;width:auto}
       </div>
       <div class="ux-faq-item" data-faq="provide" hidden>
         <p class="ux-faq-q">Is hosting safe for my Mac?</p>
-        <p class="ux-faq-a">Weights stay local (Ollama). We send prompts; you return text. Keychain holds the provider key. No remote shell. Pick models; stop anytime.</p>
+        <p class="ux-faq-a">Ollama local. Keychain holds the key. No remote shell.</p>
       </div>
       <div class="ux-faq-item" data-faq="provide" hidden>
         <p class="ux-faq-q">How fast is Provide?</p>
-        <p class="ux-faq-a">Network capacity. Measured tok/s when measured_providers ≥ 1. Never invent.</p>
+        <p class="ux-faq-a">Network capacity. Measured tok/s when measured_providers ≥ 1.</p>
       </div>
       <!-- provide-earn-demand:2026-09-11 -->
       <div class="ux-faq-item" data-faq="provide" hidden>
@@ -690,7 +690,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <p class="fine" id="provide-faq-jobs">Jobs cross your Mac. Don't put secrets. No attestation in alpha.</p>
     <p class="fine" id="provide-faq-offline">Offline: drop from advertise. No penalty. Earn only for served jobs.</p>
     <p class="fine" id="provide-faq-cmds">dasha-compute status · doctor · benchmark · logs · restart · uninstall</p>
-    <p class="fine" id="provide-faq-speed">How fast is Provide? Network capacity · measured_providers. Never invent.</p>
+    <p class="fine" id="provide-faq-speed">How fast is Provide? Network capacity · measured_providers.</p>
   </section>
   <pre class="setup" id="setup" aria-live="polite">curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
 tar -xzf dasha-compute-open-alpha.tar.gz

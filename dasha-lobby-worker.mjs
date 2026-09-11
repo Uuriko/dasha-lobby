@@ -5572,11 +5572,25 @@ export function injectLobbyForumTagCss(html) {
 export const LOBBY_ACTS_STYLE = '<style id="dasha-lobby-acts">.lobby-acts{margin:1.6rem 0 0;display:grid;gap:.5rem}.lobby-act{display:flex;align-items:center;min-height:48px;padding:.65rem .85rem;border:1px solid rgba(244,237,219,.28);background:var(--ink,#070608);color:var(--paper,#f4eddb);font:900 .88rem/1.15 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.02em;text-decoration:none;text-transform:uppercase}.lobby-act[data-lobby-act=provide]{border-color:var(--hot,#ff3b81)}.lobby-act[data-lobby-act=ask]{background:var(--acid,#dfff00);border-color:var(--acid,#dfff00);color:var(--ink,#070608)}.lobby-act[data-lobby-act=build]{border-color:#8b5cff}@media(min-width:560px){.lobby-acts{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(prefers-reduced-motion:no-preference){.lobby-act{transition:border-color .12s linear}}@media(prefers-reduced-motion:reduce){.lobby-act{transition:none}}</style>';
 
 export const LOBBY_ACTS_HTML = `<section class="lobby-acts" id="lobby-acts" aria-label="Do">
-<a class="lobby-act" data-lobby-act="provide" href="https://www.getdasha.com/compute#provide">Provide once today</a>
-<a class="lobby-act" data-lobby-act="ask" href="https://www.getdasha.com/compute#ask">Ask with a guest key</a>
-<a class="lobby-act" data-lobby-act="build" href="https://www.getdasha.com/compute#build">Build on Dasha</a>
+<a class="lobby-act" data-lobby-act="provide" href="https://www.getdasha.com/compute#provide">Provide</a>
+<a class="lobby-act" data-lobby-act="ask" href="https://www.getdasha.com/compute#ask">Ask</a>
+<a class="lobby-act" data-lobby-act="build" href="https://www.getdasha.com/compute#build">Build</a>
 </section>
 `;
+
+const LOBBY_ACT_COPY = { provide: 'Provide', ask: 'Ask', build: 'Build' };
+
+export function rewriteLobbyComputeActsCopy(html) {
+  let src = String(html || '');
+  if (!/id=["']lobby-acts["']/.test(src)) return src;
+  for (const [key, copy] of Object.entries(LOBBY_ACT_COPY)) {
+    src = src.replace(
+      new RegExp(`(data-lobby-act="${key}"[^>]*>)[^<]*`, 'i'),
+      `$1${copy}`,
+    );
+  }
+  return src;
+}
 
 export function injectLobbyComputeActs(html) {
   let src = String(html || '');
@@ -5585,7 +5599,7 @@ export function injectLobbyComputeActs(html) {
     if (/<\/head>/i.test(src)) src = src.replace(/<\/head>/i, `${LOBBY_ACTS_STYLE}</head>`);
     else src += LOBBY_ACTS_STYLE;
   }
-  if (/id=["']lobby-acts["']/.test(src)) return src;
+  if (/id=["']lobby-acts["']/.test(src)) return rewriteLobbyComputeActsCopy(src);
   const play = /<section\b(?=[^>]*\bclass=["'][^"']*\bforum-play\b)[^>]*>/i;
   if (play.test(src)) return src.replace(play, `${LOBBY_ACTS_HTML}$&`);
   const now = /<section\b(?=[^>]*\bclass=["'][^"']*\bforum-now\b)[^>]*>[\s\S]*?<\/section>/i;
@@ -5669,6 +5683,9 @@ export function rewriteLobbyForumChrome(html) {
   out = injectLobbyForumTagCss(out);
   /* Quiet Lobby → Compute acts after first chat paint. Keep Room out. */
   out = injectLobbyComputeActs(out);
+  out = rewriteLobbyComputeActsCopy(out);
+  /* Play lede stays in-room. Drop leftover "in the room" essay. */
+  out = out.replace(/>Dasha vs Anna in the room\.</g, '>Dasha vs Anna.<');
   return out;
 }
 
@@ -7212,7 +7229,7 @@ export function forumIndexPageHtml(html, threads, { tag } = {}) {
   const empty = active
     ? '<p class="df-empty">Nothing matches that tag.</p>'
     : '<p class="df-empty">Start the first thread: meme, question, or build idea.</p>';
-  const firstPaint = `<div class="df-head"><h2 class="df-title">Lobby</h2><p class="df-note">Official room. Read freely. Link X in the lobby to post. · <a class="df-feed" href="https://www.getdasha.com/lobby/feed.xml" type="application/rss+xml" aria-label="Subscribe to public forum threads with RSS">RSS</a></p></div>${filters}${rows ? `<div class="df-list">${rows}</div>` : empty}`;
+  const firstPaint = `<div class="df-head"><h2 class="df-title">Lobby</h2><p class="df-note">Link X to post. · <a class="df-feed" href="https://www.getdasha.com/lobby/feed.xml" type="application/rss+xml" aria-label="Subscribe to public forum threads with RSS">RSS</a></p></div>${filters}${rows ? `<div class="df-list">${rows}</div>` : empty}`;
   return String(html).replace(/<div id="dasha-forum"([^>]*)>(?:<p class="forum-empty">None yet\.<\/p>)?<\/div>/, `<div id="dasha-forum"$1>${firstPaint}</div>`);
 }
 

@@ -36,7 +36,7 @@ const PROVIDER_LINES = [
   "Jobs cross your Mac. Don't put secrets. No attestation in alpha.",
   'Offline: drop from advertise. No penalty. Earn only for served jobs.',
   'dasha-compute status · doctor · benchmark · logs · restart · uninstall',
-  'How fast is Provide? Network capacity · measured_providers. Never invent.',
+  'How fast is Provide? Network capacity · measured_providers.',
 ];
 
 function buyerBlock(html) {
@@ -116,7 +116,7 @@ function assertFaqQuickstart(html, label) {
   assert.match(provide, /id=["']provide-faq-jobs["'][^>]*>Jobs cross your Mac\. Don't put secrets\. No attestation in alpha\.</, `${label} jobs`);
   assert.match(provide, /id=["']provide-faq-offline["'][^>]*>Offline: drop from advertise\. No penalty\. Earn only for served jobs\.</, `${label} offline`);
   assert.match(provide, /id=["']provide-faq-cmds["'][^>]*>dasha-compute status · doctor · benchmark · logs · restart · uninstall</, `${label} cmds`);
-  assert.match(provide, /id=["']provide-faq-speed["'][^>]*>How fast is Provide\? Network capacity · measured_providers\. Never invent\.</, `${label} speed`);
+  assert.match(provide, /id=["']provide-faq-speed["'][^>]*>How fast is Provide\? Network capacity · measured_providers\.</, `${label} speed`);
   assert.equal((provide.match(/<p\b/g) || []).length, PROVIDER_LINES.length, `${label} provider FAQ line count`);
   assert.doesNotMatch(provide, /disclaimer|not financial advice/i, `${label} provide no lecture`);
   assert.doesNotMatch(provide, /\d+\s*Mac|providers_online=\d/i, `${label} provide no invented Mac count`);
