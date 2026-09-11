@@ -4676,6 +4676,15 @@ const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
   '/compute/agents/skill.md', '/compute/agents/skill.md/',
   '/compute/agent/skill.md', '/compute/agent/skill.md/',
 ]);
+/** Leftover /agents.txt/ /compute/agents.txt/ → face. Exact stays 200. Bare /agents stays leftover → /compute. */
+const POTTER_AGENTS_TXT_308_PATHS = new Set([
+  '/agents.txt/',
+  '/compute/agents.txt/',
+]);
+/** Leftover /agents.json/ → /agents.json. Exact stays 200. */
+const POTTER_AGENTS_JSON_308_PATHS = new Set([
+  '/agents.json/',
+]);
 /** /jobs /job /compute/jobs /compute/job /api/jobs /api/job → /compute/api/jobs. */
 const POTTER_COMPUTE_API_JOBS_308_PATHS = new Set([
   '/jobs', '/jobs/',
@@ -4746,15 +4755,19 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/how-to-buy', 'https://www.getdasha.com/how-to-buy'],
   ['/bounties', 'https://www.getdasha.com/bounties'],
   ['/login', 'https://www.getdasha.com/login'],
-  // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt html-404 while
-  // lowercase siblings already 200. Exact lowercase stays null so 200 handlers run.
+  // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Agents.txt
+  // /Agents.json html-404 while lowercase siblings already 200. Exact lowercase
+  // stays null so 200 handlers run. Bare /agents stays leftover → /compute.
   // Do NOT put /forum /chat here — that would drop ?t=; use isForumChatAliasPath + forumToLobbyRedirect.
   ['/llms.txt', 'https://www.getdasha.com/llms.txt'],
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
   ['/ai.txt', 'https://www.getdasha.com/ai.txt'],
+  ['/agents.txt', 'https://www.getdasha.com/agents.txt'],
+  ['/agents.json', 'https://www.getdasha.com/agents.json'],
   ['/compute/llms.txt', 'https://www.getdasha.com/compute/llms.txt'],
   ['/compute/llms-full.txt', 'https://www.getdasha.com/compute/llms-full.txt'],
   ['/compute/skill.md', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/agents.txt', 'https://www.getdasha.com/compute/agents.txt'],
   ['/.well-known/agent.json', 'https://www.getdasha.com/.well-known/agent.json'],
   ['/compute/.well-known/agent.json', 'https://www.getdasha.com/compute/.well-known/agent.json'],
   ['/compute/agent.json', 'https://www.getdasha.com/compute/agent.json'],
@@ -4841,6 +4854,14 @@ export function potterHome308Dest(path) {
   }
   if (POTTER_COMPUTE_SKILL_FACE_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/skill.md";
+  }
+  if (POTTER_AGENTS_TXT_308_PATHS.has(p)) {
+    return p.startsWith("/compute/")
+      ? "https://www.getdasha.com/compute/agents.txt"
+      : "https://www.getdasha.com/agents.txt";
+  }
+  if (POTTER_AGENTS_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/agents.json";
   }
   if (p === "/llms-full" || p === "/llms-full/" || p === "/llms_full" || p === "/llms_full/") {
     return "https://www.getdasha.com/llms-full.txt";
