@@ -604,10 +604,10 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
       next: [{ path: '/compute/api/v1/chat/completions' }],
     };
   }
-  if (/provider inference failed/i.test(msg)) {
+  if (/provider inference failed|provider cut|empty completion|stream ended before completion/i.test(msg)) {
     return {
       status: 'failed',
-      reason: 'provider_failed',
+      reason: /empty completion/i.test(msg) ? 'empty_completion' : 'provider_failed',
       hint: 'Provider hiccup; retry or pick another live model from /compute/api/v1/models.',
       next: [
         { path: '/compute/api/v1/chat/completions' },
@@ -910,27 +910,40 @@ function mergeRouteFromHeaders(input, request) {
 export class ComputeNetwork {
   constructor(state, env) { this.state = state; this.env = env; this.rates = new Map(); }
 
-  async prune(now = Date.now()) {
+  /** Expire / requeue jobs. Poll skips night + provider GC — those are not lease-hot. */
+  async prune(now = Date.now(), opts = {}) {
+    const runNight = opts.night !== false;
+    const sweepProviders = opts.providers !== false;
+    const jobs = [];
     for (const [key, job] of await this.state.storage.list({ prefix: 'compute:job:' })) {
       if (!job || Number(job.expiresAt) <= now) {
+        if (job && job.status !== 'complete') await this.refundJobDebit(job, now, 'expired');
         await this.state.storage.delete(key);
         if (job?.nightId && ['queued', 'leased'].includes(job.status)) await this.finishNight(job, 'failed', null, 'job expired before completion', now);
       }
       else if (job.status === 'leased' && Number(job.leaseExpiresAt) <= now) {
         const hadStreamProgress = job.stream === true && (job.chunks || []).some(chunk => String(chunk || '').trim());
         if (hadStreamProgress) {
+          await this.refundJobDebit(job, now, 'provider cut');
           await this.state.storage.put(key, { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 });
           await this.finishNight(job, 'failed', null, 'provider cut', now);
           await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: true });
         } else {
-          await this.state.storage.put(key, { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) });
+          const next = { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) };
+          await this.state.storage.put(key, next);
+          jobs.push(next);
         }
+      } else {
+        jobs.push(job);
       }
     }
-    for (const [key, provider] of await this.state.storage.list({ prefix: 'compute:provider:' })) {
-      if (!provider || (now - Number(provider.createdAt || 0) > 30 * 24 * 60 * 60_000 && !provider.lastSeenAt)) await this.state.storage.delete(key);
+    if (sweepProviders) {
+      for (const [key, provider] of await this.state.storage.list({ prefix: 'compute:provider:' })) {
+        if (!provider || (now - Number(provider.createdAt || 0) > 30 * 24 * 60 * 60_000 && !provider.lastSeenAt)) await this.state.storage.delete(key);
+      }
     }
-    await this.runNightTasks(now);
+    if (runNight) await this.runNightTasks(now);
+    return jobs;
   }
 
   async runNightTasks(now) {
@@ -1198,7 +1211,7 @@ export class ComputeNetwork {
   }
 
   streamResponse(job, origin = null, extra = {}, opts = {}) {
-    const encoder = new TextEncoder(), storage = this.state.storage, key = `compute:job:${job.id}`;
+    const encoder = new TextEncoder(), storage = this.state.storage, key = `compute:job:${job.id}`, network = this;
     const holdMs = Number.isFinite(Number(opts.holdMs)) ? Math.max(0, Number(opts.holdMs)) : SSE_BUYER_HOLD_MS;
     const keepaliveMs = Number.isFinite(Number(opts.keepaliveMs)) ? Math.max(0, Number(opts.keepaliveMs)) : SSE_KEEPALIVE_MS;
     let stopped = false;
@@ -1231,12 +1244,14 @@ export class ComputeNetwork {
         }
         if (current.status === 'failed' || current.status === 'cancelled') {
           const errMsg = current.error || (current.status === 'cancelled' ? 'job cancelled' : 'provider failed');
+          await network.refundJobDebit(current, Date.now(), errMsg);
           emit({ error: { message: errMsg, type: 'server_error', code: isProviderStreamCutError(errMsg) ? 'provider_cut' : null } });
           emit('[DONE]');
           controller.close();
           return;
         }
         if (sent > 0 && current.status === 'queued') {
+          await network.refundJobDebit(current, Date.now(), 'provider cut');
           emit({ error: { message: 'provider cut', type: 'server_error', code: 'provider_cut' } });
           emit('[DONE]');
           controller.close();
@@ -1263,6 +1278,7 @@ export class ComputeNetwork {
       const current = await storage.get(key);
       if (!current) return;
       if (keepBuyerJobOnStreamDrop(current, await listProviders(), Date.now())) return;
+      await network.refundJobDebit(current, Date.now(), 'cancelled');
       await cancelJob(storage, key, current);
     } }), { headers: { ...SECURITY, ...cors(origin, Boolean(origin)), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', ...extra } });
   }
@@ -1504,9 +1520,14 @@ export class ComputeNetwork {
         }
         const spend = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now);
         if (!spend.ok) {
+          await this.refundCredits(key.owner, { requestId: `api:${queued.job.id}`, now, reason: 'spend-cap' });
           await this.state.storage.delete(`compute:job:${queued.job.id}`);
           return v1err(spend.error || 'key spend limit reached', spend.status || 402, 'invalid_request_error', chatSpend(queued.job));
         }
+        queued.job.debitRequestId = `api:${queued.job.id}`;
+        queued.job.debitKeyId = key.id;
+        queued.job.debitCents = HOSTED_ASK_PRICE_CENTS;
+        await this.state.storage.put(`compute:job:${queued.job.id}`, queued.job);
       }
       if (input.stream) {
         const honesty = effortHonestyFromJob(queued.job);
@@ -1532,9 +1553,14 @@ export class ComputeNetwork {
             ...dashaEffortExtension(honesty),
           }, 200, null, false, { ...effortResponseHeaders(honesty), ...chatSpend(job) }));
         }
-        if (job.status === 'failed') return v1err(job.error || 'provider failed', 502, 'server_error', chatSpend(job));
+        if (job.status === 'failed') {
+          await this.refundJobDebit(job, Date.now(), job.error || 'provider failed');
+          return v1err(job.error || 'provider failed', 502, 'server_error', chatSpend(job));
+        }
         await new Promise(resolve => setTimeout(resolve, 250));
       }
+      const leftover = await this.state.storage.get(`compute:job:${queued.job.id}`);
+      if (leftover) await this.refundJobDebit(leftover, Date.now(), request.signal.aborted ? 'cancelled' : 'timeout');
       await this.state.storage.delete(`compute:job:${queued.job.id}`);
       return v1err(request.signal.aborted ? 'request cancelled' : 'request timed out', request.signal.aborted ? 499 : 504, 'server_error', chatSpend(queued.job));
     }
@@ -1703,8 +1729,7 @@ export class ComputeNetwork {
       provider.name = String(input.name || '').trim().slice(0, 64) || provider.name;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       if (firstOnline) await this.referralMilestone(provider.owner, 'm1', [{ to: 'referrer', cents: REF_M1_CENTS }], now);
-      await this.prune(now);
-      const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].sort((a, b) => a.createdAt - b.createdAt);
+      const jobs = (await this.prune(now, { night: false, providers: false })).sort((a, b) => a.createdAt - b.createdAt);
       const job = jobs.find(candidate => candidate.status === 'queued' && provider.models.includes(candidate.model) && (candidate.route !== 'self' || provider.owner === candidate.owner));
       if (!job) return new Response(null, { status: 204, headers: SECURITY });
       job.status = 'leased'; job.providerId = provider.id; job.leasedAt = now; job.leaseExpiresAt = now + LEASE_MS; job.expiresAt = now + LEASE_MS + 60_000;
@@ -1758,6 +1783,7 @@ export class ComputeNetwork {
           await this.referralCheckM2(job.owner, now);
         }
       }
+      if (error) await this.refundJobDebit(job, now, error);
       await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
       await this.finishNight(job, error ? 'failed' : 'complete', error ? null : answer, error || null, now);
       await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
@@ -1805,6 +1831,7 @@ export class ComputeNetwork {
       }
       const failed = Boolean(streamError);
       const finished = failed || Boolean(input.done);
+      if (failed) await this.refundJobDebit(job, now, streamError);
       await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
       if (finished) {
         await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
@@ -1852,11 +1879,16 @@ export class ComputeNetwork {
       if (!job || job.owner !== owner) return maybeHead(request, json({ error: 'job not found' }, 404, allowedOrigin, credentials));
       if (request.method === 'DELETE') {
         if (!allowedOrigin) return originRequired();
+        await this.refundJobDebit(job, now, 'cancelled');
         await cancelJob(this.state.storage, key, job, now);
         return json({ ok: true, prompt_deleted: true }, 200, allowedOrigin, true);
       }
       if (job.status === 'cancelled') return maybeHead(request, json({ error: 'job not found' }, 404, allowedOrigin, credentials));
-      if (Number(job.expiresAt) <= now) { await this.state.storage.delete(key); return maybeHead(request, json({ error: 'job expired' }, 410, allowedOrigin, credentials)); }
+      if (Number(job.expiresAt) <= now) {
+        await this.refundJobDebit(job, now, 'expired');
+        await this.state.storage.delete(key);
+        return maybeHead(request, json({ error: 'job expired' }, 410, allowedOrigin, credentials));
+      }
       const queued = job.status === 'queued' ? [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].filter(candidate => candidate.status === 'queued' && candidate.model === job.model).sort((a, b) => a.createdAt - b.createdAt) : [];
       const queuePosition = queued.findIndex(candidate => candidate.id === job.id) + 1;
       const usage = job.usage && typeof job.usage === 'object' ? {
@@ -2557,6 +2589,52 @@ export class ComputeNetwork {
       at: now,
     });
     return { ok: true, replay: false, charged_cents: applied.charged_cents, balance_cents: applied.balance_cents, reason };
+  }
+
+  /** Replay-safe refund of a debitCredits row. Complete jobs must not call this. */
+  async refundCredits(owner, { requestId, now = Date.now(), reason = 'refund' } = {}) {
+    const who = String(owner || '').trim();
+    const rid = requestId ? String(requestId).slice(0, 80) : '';
+    if (!who || !rid) return { ok: false, error: 'bad refund' };
+    const spendKey = `compute:credit-spend:${who}:${rid}`;
+    const prior = await this.state.storage.get(spendKey);
+    const cents = Math.max(0, Math.floor(Number(prior?.cents) || 0));
+    if (!prior || cents <= 0) return { ok: false, error: 'no spend' };
+    const balKey = `compute:credit-balance:${who}`;
+    const readBal = async () => Math.max(0, Math.floor(Number((await this.state.storage.get(balKey))?.cents) || 0));
+    if (prior.refundedAt) return { ok: true, replay: true, refunded_cents: 0, balance_cents: await readBal() };
+    const bal = await readBal();
+    await this.state.storage.put(balKey, { owner: who, cents: bal + cents, updatedAt: now });
+    await this.state.storage.put(spendKey, { ...prior, refundedAt: now, refund_reason: String(reason || 'refund').slice(0, 80) });
+    await this.state.storage.put(`compute:credit-ledger:${who}:${now}:refund-${randomUrlToken(6)}`, {
+      owner: who,
+      cents,
+      reason: `refund:${String(reason || 'refund').slice(0, 48)}`,
+      request_id: rid,
+      balance_cents: bal + cents,
+      at: now,
+    });
+    return { ok: true, replay: false, refunded_cents: cents, balance_cents: bal + cents };
+  }
+
+  async refundApiKeySpend(keyId, cents, now = Date.now()) {
+    const id = String(keyId || '').trim();
+    const charge = Math.max(0, Math.floor(Number(cents) || 0));
+    if (!id || charge <= 0) return { ok: false };
+    const row = await this.state.storage.get(`compute:api-key:${id}`);
+    if (!row) return { ok: false };
+    const next = { ...row, spendCents: Math.max(0, Math.floor(Number(row.spendCents) || 0) - charge), lastUsedAt: row.lastUsedAt || now };
+    await this.state.storage.put(`compute:api-key:${id}`, next);
+    return { ok: true, key: next };
+  }
+
+  async refundJobDebit(job, now = Date.now(), reason = 'failed') {
+    if (!job?.debitRequestId || !job.owner || job.status === 'complete') return { ok: false };
+    const refunded = await this.refundCredits(job.owner, { requestId: job.debitRequestId, now, reason });
+    if (refunded.ok && !refunded.replay && job.debitKeyId && job.debitCents) {
+      await this.refundApiKeySpend(job.debitKeyId, job.debitCents, now);
+    }
+    return refunded;
   }
 
   async settleSponsorOrder(order, { signature = null, now = Date.now() } = {}) {
