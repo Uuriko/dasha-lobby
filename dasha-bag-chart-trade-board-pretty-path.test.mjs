@@ -53,7 +53,7 @@ const TO_SIMP = ['leaderboard', 'board'].flatMap(variants);
 const STAY_200 = ['/bag', '/simp', '/how-to-buy', '/price', '/privacy'];
 const SKIP = [
   '/terms', '/tos', '/discord', '/status', '/openai',
-  '/legal', '/slack', '/news', '/blog', '/yc', '/v1', '/health', '/healthz', '/admin',
+  '/legal', '/slack', '/news', '/blog', '/yc', '/health', '/healthz', '/admin',
 ];
 const STAY_AS_TODAY = ['/mint', '/token', '/mint/', '/token/', '/Mint', '/Token']; // live folds all home
 

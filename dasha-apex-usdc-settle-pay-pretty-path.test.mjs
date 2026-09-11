@@ -66,9 +66,7 @@ const PRIOR_PEERS = [
 const FOLDS = [...USDC_SETTLE, ...PRIOR_PEERS];
 const STAY_OUT = [
   '/openai', '/openai/', '/OpenAI',
-  '/v1', '/v1/',
   '/api/v1', '/api/v1/',
-  '/v1/models', '/v1/models/',
   '/status', '/status/',
   '/health', '/health/',
   '/healthz', '/healthz/',

@@ -83,7 +83,6 @@ const PRIOR_FAUCET = ['/tip', '/tip/', '/Tip', '/TIP'];
 const PRIOR_JOBS = ['/jobs', '/jobs/', '/Jobs', '/compute/jobs', '/api/jobs'];
 const STAY_OUT = [
   '/openai', '/openai/', '/OpenAI',
-  '/v1', '/v1/',
   '/resend', '/resend/', '/Resend',
   '/email', '/email/', '/Email',
   '/health', '/health/',

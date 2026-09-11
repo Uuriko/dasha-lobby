@@ -95,7 +95,6 @@ const LOCKS = [
   '/multichain', '/multichain/',
   '/room', '/room/', '/Room',
   '/connect', '/connect/', '/Connect',
-  '/v1', '/v1/',
   '/openai', '/openai/', '/OpenAI',
   '/openai-api', '/openai-api/',
   '/terms', '/terms/', '/Terms',

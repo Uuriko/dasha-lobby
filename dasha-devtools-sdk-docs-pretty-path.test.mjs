@@ -74,7 +74,6 @@ const PRIOR_API = [
 const SKIP_404 = [
   '/reference', '/reference/', '/Reference',
   '/openai', '/openai/', '/OpenAI',
-  '/v1', '/v1/',
   '/redoc', '/redoc/', '/Redoc',
   '/status', '/status/', '/Status',
   '/health', '/health/', '/Health',

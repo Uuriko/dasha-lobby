@@ -87,10 +87,10 @@ const PRIOR_PEERS = [
   '/buy-credits', '/buy-credits/', '/Buy-credits', '/BUY-CREDITS',
 ];
 const LEAVE_404 = [
-  '/connect', '/openai', '/v1', '/arcade', '/games', '/admin', '/health', '/status', '/tos',
+  '/connect', '/openai', '/arcade', '/games', '/admin', '/health', '/status', '/tos',
 ];
 const STAY_404 = [
-  '/connect', '/openai', '/v1', '/arcade', '/games', '/admin', '/status', '/tos',
+  '/connect', '/openai', '/arcade', '/games', '/admin', '/status', '/tos',
 ];
 
 for (const path of [...SHIP, ...PRIOR_PEERS]) {

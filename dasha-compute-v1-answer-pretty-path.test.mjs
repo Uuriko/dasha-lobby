@@ -5,7 +5,7 @@
  * is 200 JSON. /compute/v1/models → /compute/api/v1/models (200 JSON handler).
  * /answer /compute/answer (+slash / Title-case) → plain /compute (no hash),
  * same as /ask /compute/ask. Lobby same-host remap for /compute/api/* dests.
- * Never fold exact /compute/api/v1* or bare /v1|/v1/models (stay 404).
+ * Never fold exact /compute/api/v1*. Apex /v1|/v1/models fold to /compute/api.
  * Disk only. No Designer. Never plugin.jup.ag. No Graham OCM.
  */
 import assert from 'node:assert/strict';
@@ -20,7 +20,7 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(
   workerSrc,
   /p === "\/compute\/v1\/models" \|\| p === "\/compute\/v1\/models\/"/,
-  'stay-out comment for exact API + bare /v1',
+  'compute/v1/models dest stays exact API rewrite',
 );
 
 
@@ -46,11 +46,13 @@ const ANSWER_FOLDS = [
 ];
 const ASK_PEERS = ['/ask', '/ask/', '/compute/ask', '/compute/ask/'];
 const STAY_OUT = [
-  '/v1', '/v1/', '/V1',
-  '/v1/models', '/v1/models/', '/V1/models',
   '/api/v1', '/api/v1/',
   '/compute/api/v1', '/compute/api/v1/',
   '/compute/api/v1/models', '/compute/api/v1/models/',
+];
+const APEX_V1 = [
+  '/v1', '/v1/', '/V1',
+  '/v1/models', '/v1/models/', '/V1/models',
 ];
 
 for (const path of V1_FOLDS) {
@@ -67,6 +69,9 @@ for (const path of ASK_PEERS) {
 }
 for (const path of STAY_OUT) {
   assert.equal(potterHome308Dest(path), null, `stay out ${path}`);
+}
+for (const path of APEX_V1) {
+  assert.equal(potterHome308Dest(path), `${WWW}/compute/api`, `apex leftover ${path}`);
 }
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.equal(potterHome308Dest('/privacy'), null, '/privacy stays 200');
@@ -122,11 +127,10 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   for (const path of ['/v1', '/v1/', '/v1/models', '/v1/models/']) {
     for (const method of ['GET', 'HEAD']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
-      assert.equal(res.status, 404, `${host} ${path} ${method} stays 404`);
-      if (host === 'www.getdasha.com') {
-        assert.equal(res.headers.get('x-dasha-edge'), 'html-404', `${host} ${path} ${method} html-404`);
-        if (method === 'HEAD') assert.equal(await res.text(), '');
-      }
+      assert.equal(res.status, 308, `${host} ${path} ${method} leftover 308`);
+      const want = host === 'lobby.getdasha.com' ? `${LOBBY}/compute/api` : `${WWW}/compute/api`;
+      assert.equal(res.headers.get('location'), want, `${host} ${path} ${method} loc`);
+      if (method === 'HEAD') assert.equal(await res.text(), '');
     }
   }
   const privacy = await edgeWorker.fetch(new Request(`https://${host}/privacy`), env);
@@ -140,4 +144,4 @@ for (const path of ['/compute/v1', '/compute/v1/models', '/answer', '/compute/an
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-compute-v1-answer-pretty-path: PASS (/compute/v1 308 /compute/api/v1; /compute/v1/models 308 /compute/api/v1/models; /answer+/compute/answer 308 /compute; www+lobby GET+HEAD; lobby same-host remap; bare /v1* 404; exact API stays; /privacy 200; no plugin.jup.ag)');
+console.log('dasha-compute-v1-answer-pretty-path: PASS (/compute/v1 308 /compute/api/v1; /compute/v1/models 308 /compute/api/v1/models; /answer+/compute/answer 308 /compute; www+lobby GET+HEAD; lobby same-host remap; apex /v1* 308 /compute/api; exact API stays; /privacy 200; no plugin.jup.ag)');
