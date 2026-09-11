@@ -44,6 +44,7 @@ await network.recordPaidInferenceSettle({
   engine: 'hosted',
   usage: { total_tokens: 33 },
   cents: 5,
+  model: 'gpt-oss-20b',
   requestId: 'hosted_t',
   replayKey: 'hosted:hosted_t',
   now: Date.now(),
@@ -58,6 +59,7 @@ const body = await listed.json();
 assert.equal(body.receipts.length, 1);
 assert.equal(body.receipts[0].tokens, 33);
 assert.equal(body.receipts[0].kind, 'paid-inference');
+assert.equal(body.receipts[0].model, 'gpt-oss-20b', 'serving model survives settle -> store -> /compute/api/receipts');
 assert.equal(body.settled_24h.tokens, 33);
 
 const fac = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/factory'), origin);
