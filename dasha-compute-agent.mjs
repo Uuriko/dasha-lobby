@@ -56,7 +56,7 @@ new OpenAI({ baseURL: "${COMPUTE_API_BASE}", apiKey: process.env.DASHA_API_KEY }
 `;
 
 /** Point coding agents at Compute. Shared by skill.md + /compute/llms.txt. */
-export const COMPUTE_AGENTS_BASE = 'https://lobby.getdasha.com/compute/api';
+export const COMPUTE_AGENTS_BASE = 'https://lobby.getdasha.com/compute/api/v1';
 export const COMPUTE_AGENTS_TXT = `## Agents
 
 base_url ${COMPUTE_AGENTS_BASE}
