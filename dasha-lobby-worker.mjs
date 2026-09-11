@@ -133,6 +133,7 @@ import {
   COMPUTE_FIRST_CALL_TXT,
   COMPUTE_LLMS_DESCRIBEDBY,
   attachComputeLlmsHtmlLinks,
+  agentsDiscoveryResponse,
   computeAgentAeoResponse,
 } from './dasha-compute-agent.mjs';
 import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
@@ -4746,15 +4747,20 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/how-to-buy', 'https://www.getdasha.com/how-to-buy'],
   ['/bounties', 'https://www.getdasha.com/bounties'],
   ['/login', 'https://www.getdasha.com/login'],
-  // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt html-404 while
-  // lowercase siblings already 200. Exact lowercase stays null so 200 handlers run.
+  // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Agents.txt
+  // /Agents.json html-404 while lowercase siblings already 200. Exact lowercase
+  // stays null so 200 handlers run. Bare leftover /agents|/compute/agents stay
+  // exact-path only — do not catch *.txt/*.json.
   // Do NOT put /forum /chat here — that would drop ?t=; use isForumChatAliasPath + forumToLobbyRedirect.
   ['/llms.txt', 'https://www.getdasha.com/llms.txt'],
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
   ['/ai.txt', 'https://www.getdasha.com/ai.txt'],
+  ['/agents.txt', 'https://www.getdasha.com/agents.txt'],
+  ['/agents.json', 'https://www.getdasha.com/agents.json'],
   ['/compute/llms.txt', 'https://www.getdasha.com/compute/llms.txt'],
   ['/compute/llms-full.txt', 'https://www.getdasha.com/compute/llms-full.txt'],
   ['/compute/skill.md', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/agents.txt', 'https://www.getdasha.com/compute/agents.txt'],
   ['/.well-known/agent.json', 'https://www.getdasha.com/.well-known/agent.json'],
   ['/compute/.well-known/agent.json', 'https://www.getdasha.com/compute/.well-known/agent.json'],
   ['/compute/agent.json', 'https://www.getdasha.com/compute/agent.json'],
@@ -4842,6 +4848,18 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_SKILL_FACE_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/skill.md";
   }
+  // Exact agents.txt / agents.json faces stay 200.
+  // Leftover /agents|/compute/agents must not catch *.txt/*.json.
+  if (p === "/agents.txt" || p === "/agents.json" || p === "/compute/agents.txt") {
+    if (raw !== p) {
+      const dest = POTTER_PRODUCT_CASEFOLD_DEST.get(p);
+      if (dest) return dest;
+    }
+    return null;
+  }
+  if (p === "/agents.txt/") return "https://www.getdasha.com/agents.txt";
+  if (p === "/agents.json/") return "https://www.getdasha.com/agents.json";
+  if (p === "/compute/agents.txt/") return "https://www.getdasha.com/compute/agents.txt";
   if (p === "/llms-full" || p === "/llms-full/" || p === "/llms_full" || p === "/llms_full/") {
     return "https://www.getdasha.com/llms-full.txt";
   }
@@ -4921,7 +4939,11 @@ export function potterHome308Dest(path) {
     if (raw !== "/dasha-compute-open-alpha.tar.gz") return KIT_TAR;
     return null;
   }
-  if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) return "https://www.getdasha.com/compute";
+  if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) {
+    if (p === "/agents.txt" || p === "/agents.json" || p === "/compute/agents.txt") return null;
+    if (p.endsWith(".txt") || p.endsWith(".json")) return null;
+    return "https://www.getdasha.com/compute";
+  }
   if (p === "/compute/" || p === "/compute/index.html") {
     return "https://www.getdasha.com/compute";
   }
@@ -10367,6 +10389,8 @@ async function digestEdge(request, env) {
 
 
 async function productEdge(request, url, env) {
+  const agentsFace = agentsDiscoveryResponse(request);
+  if (agentsFace) return agentsFace;
   const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
     const simpOg = await simpOgResponse(request, url, env);
@@ -11579,6 +11603,8 @@ export default {
       const room = await roomDiscoveryResponse(request, { fetch: env?.fetch || globalThis.fetch });
       if (room) return room;
     }
+    const agentsFace = agentsDiscoveryResponse(request);
+    if (agentsFace) return agentsFace;
     const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
     if (isMailSmokePath(url.pathname)) {
