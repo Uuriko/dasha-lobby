@@ -160,6 +160,10 @@ assert.equal(potterHome308Dest('/compute/llms-api'), 'https://www.getdasha.com/c
   assert.match(injected, /<link rel="describedby" href="\/compute\/llms\.txt" type="text\/plain">/);
   const again = attachComputeLlmsHtmlLinks(injected);
   assert.equal((again.match(/href="\/compute\/llms\.txt"/g) || []).length, 1);
+  const bodyHref = attachComputeLlmsHtmlLinks(
+    '<html><head><link rel="describedby" href="/llms.txt" type="text/plain"></head><body><a href="/compute/llms.txt">packet</a></body></html>',
+  );
+  assert.match(bodyHref, /<link rel="describedby" href="\/compute\/llms\.txt" type="text\/plain">/);
 }
 
 for (const origin of ORIGINS) {

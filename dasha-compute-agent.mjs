@@ -252,7 +252,8 @@ export function computeAgentAeoResponse(request) {
 /** Quiet HTML describedby so crawlers that only parse the document find /compute/llms.txt. */
 export function attachComputeLlmsHtmlLinks(html) {
   const src = String(html || '');
-  if (src.includes('href="/compute/llms.txt"') && /rel=["']describedby["']/i.test(src)) return src;
+  if (/<link\b[^>]*\brel=["']describedby["'][^>]*\bhref=["']\/compute\/llms\.txt["']/i.test(src)) return src;
+  if (/<link\b[^>]*\bhref=["']\/compute\/llms\.txt["'][^>]*\brel=["']describedby["']/i.test(src)) return src;
   const tag = '<link rel="describedby" href="/compute/llms.txt" type="text/plain">';
   return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${tag}</head>`) : tag + src;
 }
