@@ -80,6 +80,7 @@ assert.match(COMPUTE_SKILL_MD, /`turns` only when already counted/, 'skill never
 assert.match(COMPUTE_SKILL_MD, /https:\/\/www\.getdasha\.com\/compute\/api\/receipts/, 'receipts URL');
 assert.match(COMPUTE_SKILL_MD, /^Community: a peer Mac runs the job\.$/m, 'Community one-liner');
 assert.match(COMPUTE_SKILL_MD, /^Hosted: still there when no Mac is online\.$/m, 'Hosted one-liner');
+assert.match(COMPUTE_SKILL_MD, /^Hosted Flash: bigger-than-Mac \(Spark \/ Engram-class Flash when offered\)\. Never Community\. Same base_url\. Watch x-dasha-route\.$/m, 'Hosted Flash option');
 assert.match(COMPUTE_SKILL_MD, /x-dasha-route/, 'skill names spend route header');
 assert.match(COMPUTE_SKILL_MD, /x-dasha-spend-usd/, 'skill names spend usd header');
 assert.match(COMPUTE_SKILL_MD, /Community omits USD when unknown/, 'skill honesty: no invented community USD');

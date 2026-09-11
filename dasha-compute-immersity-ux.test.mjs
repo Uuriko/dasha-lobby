@@ -77,6 +77,8 @@ function assertImmersitySteal(html, label) {
   assert.match(html, /data-faq-area=["']api["']/, `${label} FAQ API chip`);
   assert.match(html, /How do I start\?/, `${label} FAQ start`);
   assert.match(html, /Hosted is still there\./, `${label} FAQ no-Mac`);
+  assert.match(html, /Need Flash \/ bigger than a Mac\?/, `${label} FAQ Hosted Flash`);
+  assert.match(html, /Hosted route when that SKU is offered/, `${label} FAQ Hosted Flash when offered`);
   assert.match(html, /Provide\. Name the Mac\. Kit\. Doctor\./, `${label} FAQ enroll`);
   assert.match(html, /Is hosting safe for my Mac\?/, `${label} FAQ host safe`);
   assert.match(html, /How fast is Provide\?/, `${label} FAQ provide speed`);
