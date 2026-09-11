@@ -101,7 +101,7 @@ export const COMPUTE_PROVIDE_SPEED_TXT = `## Provide speed
 
 Community Macs publish measured tok/s via network capacity (measured_providers). Never invent.
 Kit uses OLLAMA_KEEP_ALIVE (launch agent / service — a shell export is not enough).
-Smaller is faster: qwen3-8b · gemma3-12b · gemma3-27b.
+Smaller is faster: qwen3-4b · qwen3-8b · gemma3-12b · gemma3-27b.
 Send a recipe — MLX / Ollama / llama.cpp Apple Silicon. We pin winners.
 Hosted-only when offered: Flash-class · DGX Spark · Qwen 3.8 Flash-Next. Never a Community Mac.
 `;

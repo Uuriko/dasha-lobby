@@ -27,6 +27,7 @@ function assertProvideSpeed(body, label) {
   assert.match(body, /network capacity/, `${label} network capacity`);
   assert.match(body, /measured_providers/, `${label} measured_providers`);
   assert.match(body, /OLLAMA_KEEP_ALIVE/, `${label} keepalive`);
+  assert.match(body, /qwen3-4b/, `${label} qwen3-4b`);
   assert.match(body, /qwen3-8b/, `${label} qwen3-8b`);
   assert.match(body, /gemma3-12b/, `${label} gemma3-12b`);
   assert.match(body, /gemma3-27b/, `${label} gemma3-27b`);

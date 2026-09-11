@@ -22,7 +22,7 @@ Get a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Commu
 ## Steps for the AI to guide
 1. Open https://www.getdasha.com/compute
 2. Cold boot shows Start. — Do → Community when a Mac is up, else Hosted. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Do · Top up → Buy). Optional on Do: quiet starter chips (Write code / Fix a bug / Do the thing) fill the prompt; empty input is Message Dasha; after a reply the thread stays and Enter sends a follow-up; Change engine for Hosted, Community, or Mixture; quiet Provide / Marketplace / Host links
-3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-8b / gemma3-12b for Mixture)
+3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-4b / qwen3-8b / gemma3-12b for Mixture)
 4. Sign in if prompted
 5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back
 6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available
