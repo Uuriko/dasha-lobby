@@ -741,6 +741,10 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
       <button class="primary" id="create-api-key" type="button" hidden disabled>Create API key</button>
       <button class="secondary" id="check" type="button">Run check</button>
     </div>
+    <!-- guest-key-cta:2026-09-11 -->
+    <p class="fine" id="guest-key-line"><button class="tf-quiet" id="get-guest-key" type="button">Get 24h guest key</button></p>
+    <pre id="guest-key-output" hidden aria-live="polite"></pre>
+    <button class="copy tf-quiet" id="copy-guest-key" data-copy="guest-key-output" type="button" hidden>Copy</button>
     <section id="buyer-one-path">
       <div id="buyer-first-job">
         <p class="fine"><a href="/login">Sign in</a>.</p>
@@ -1642,6 +1646,10 @@ function updateProvideAuth(){
   $('key-login').hidden=loggedIn;
   $('create-api-key').hidden=!loggedIn;
   $('create-api-key').disabled=!loggedIn;
+  const guestBtn=$('get-guest-key'),guestLine=$('guest-key-line'),guestOut=$('guest-key-output'),guestCopy=$('copy-guest-key');
+  if(guestBtn){guestBtn.hidden=loggedIn;guestBtn.disabled=loggedIn}
+  if(guestLine)guestLine.hidden=loggedIn;
+  if(loggedIn){if(guestOut)guestOut.hidden=true;if(guestCopy)guestCopy.hidden=true}
   const limWrap=$('api-key-limit-wrap');if(limWrap)limWrap.hidden=!loggedIn;
   paintGateAuth();
 }
@@ -2531,6 +2539,21 @@ $('create-api-key').addEventListener('click',async()=>{
     await loadApiKeys();
   }catch(error){$('api-key-output').textContent=error.message}
   finally{button.disabled=!loggedIn}
+});
+$('get-guest-key')?.addEventListener('click',async()=>{
+  const button=$('get-guest-key');if(!button||loggedIn)return;
+  button.disabled=true;
+  const out=$('guest-key-output'),copy=$('copy-guest-key');
+  try{
+    const response=await fetch(API+'/compute/api/guest-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.hint||data.error?.message||'Could not mint');
+    if(out){out.hidden=false;out.textContent="export DASHA_API_KEY='"+data.api_key+"'\n\nCopy now. 24h. Chat at /compute/api/v1"}
+    if(copy)copy.hidden=false;
+  }catch(error){
+    if(out){out.hidden=false;out.textContent=error.message}
+    if(copy)copy.hidden=true;
+  }finally{button.disabled=loggedIn}
 });
 
 $('api-key-list').addEventListener('click',async event=>{
