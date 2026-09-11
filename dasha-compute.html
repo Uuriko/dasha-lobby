@@ -171,6 +171,24 @@ footer.listed-on img{display:block;height:32px;width:auto}
 .presence-act-boot{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
 .presence-act-boot[hidden]{display:none!important}
 .presence-act-boot .honesty-sep{color:var(--line);user-select:none}
+/* Cinematic Start depth — CSS only. No dancer mesh. */
+#step-gate.gate-cinematic{position:relative;isolation:isolate}
+#step-gate.gate-cinematic::before{content:'';position:absolute;left:50%;top:-3rem;width:min(46rem,148%);height:22rem;transform:translateX(-50%);pointer-events:none;z-index:0;background:radial-gradient(ellipse 52% 48% at 50% 40%,color-mix(in srgb,var(--acid) 16%,transparent) 0%,transparent 64%),radial-gradient(ellipse 82% 72% at 50% 18%,color-mix(in srgb,var(--violet) 26%,#2a1730) 0%,transparent 72%);filter:blur(10px)}
+#step-gate.gate-cinematic::after{content:'';position:absolute;inset:-5rem -22% auto;height:30rem;pointer-events:none;z-index:0;background:radial-gradient(ellipse 68% 58% at 50% 8%,transparent 36%,color-mix(in srgb,var(--ink) 78%,transparent) 100%)}
+#step-gate.gate-cinematic>*{position:relative;z-index:1}
+#step-gate.gate-cinematic>.tf-q{margin-bottom:12px}
+#step-gate .gate-proof{margin:0 0 24px;color:var(--muted);font:400 13px/1.4 Arial,Helvetica,sans-serif}
+#pick-ask.tf-acid-rim{background:var(--acid);border-color:var(--acid);color:var(--ink);box-shadow:0 0 0 1px color-mix(in srgb,var(--acid) 80%,transparent),0 0 22px color-mix(in srgb,var(--acid) 40%,transparent)}
+#pick-ask.tf-acid-rim:hover,#pick-ask.tf-acid-rim:focus-visible{background:var(--acid);border-color:var(--acid);color:var(--ink)}
+@keyframes gate-acid-glow{0%,100%{box-shadow:0 0 0 1px color-mix(in srgb,var(--acid) 68%,transparent),0 0 16px color-mix(in srgb,var(--acid) 26%,transparent)}50%{box-shadow:0 0 0 1px color-mix(in srgb,var(--acid) 95%,transparent),0 0 30px color-mix(in srgb,var(--acid) 50%,transparent)}}
+@keyframes gate-lift{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+#step-gate .tf-lift{animation:gate-lift 5s ease-in-out infinite}
+#pick-ask.tf-acid-rim{animation:gate-acid-glow 3.8s ease-in-out infinite}
+#pick-ask.tf-acid-rim.tf-lift{animation:gate-acid-glow 3.8s ease-in-out infinite,gate-lift 5s ease-in-out infinite}
+#pick-provide.tf-lift{animation-delay:.16s}
+#pick-pay.tf-lift{animation-delay:.3s}
+#pick-credits.tf-lift{animation-delay:.44s}
+@media(prefers-reduced-motion:reduce){#step-gate .tf-lift,#pick-ask.tf-acid-rim,#pick-ask.tf-acid-rim.tf-lift{animation:none!important;transform:none}#step-gate.gate-cinematic::before{filter:none}}
 </style>
 <link rel="describedby" href="/llms.txt" type="text/plain"><link rel="describedby" href="/llms-full.txt" type="text/plain"></head>
 <body data-step="gate">
@@ -183,25 +201,26 @@ footer.listed-on img{display:block;height:32px;width:auto}
 </header>
 <nav class="tf-progress" id="tf-progress" aria-label="Progress" hidden></nav>
 
-<section class="tf-step" id="step-gate" data-tf="gate">
+<section class="tf-step gate-cinematic" id="step-gate" data-tf="gate">
   <h1 class="tf-q">Start.</h1>
+  <p class="gate-proof" id="gate-proof">Measured Mac speed via network capacity.</p>
   <div class="tf-choices" role="group" aria-label="Start.">
     <div class="tf-door">
-      <button type="button" class="tf-choice primary" id="pick-ask" title="Run a prompt">Do</button>
+      <button type="button" class="tf-choice primary tf-acid-rim tf-lift" id="pick-ask" title="Run a prompt">Do</button>
       <p class="tf-door-hint">code · text · whatever</p>
     </div>
     <div class="tf-door">
-      <button type="button" class="tf-choice secondary" id="pick-provide" title="Join with a Mac">Provide</button>
+      <button type="button" class="tf-choice secondary tf-lift" id="pick-provide" title="Join with a Mac">Provide</button>
       <p class="tf-door-hint">Join a Mac.</p>
     </div>
   </div>
   <div class="ask-links" role="group" aria-label="Money.">
     <div class="tf-money">
-      <button type="button" class="tf-quiet" id="pick-pay" title="Top up or sponsor">Pay</button>
+      <button type="button" class="tf-quiet tf-lift" id="pick-pay" title="Top up or sponsor">Pay</button>
       <span class="tf-micro">Top up</span>
     </div>
     <div class="tf-money">
-      <button type="button" class="tf-quiet" id="pick-credits" title="Use prepaid">Credits</button>
+      <button type="button" class="tf-quiet tf-lift" id="pick-credits" title="Use prepaid">Credits</button>
       <span class="tf-micro">Balance</span>
     </div>
     <div class="tf-money">
@@ -2623,7 +2642,20 @@ function formatUsdCents(cents){
 }
 
 
+function paintGateProof(){
+  const el=$('gate-proof');
+  if(!el)return;
+  const n=Number.isInteger(providersOnline)?providersOnline:0;
+  const live=fleetMeasuredLabel();
+  // Measured tok/s only — never invent teams or pad providers.
+  if(n>=1&&live.tpsLabel){
+    el.textContent=n+' · '+live.tpsLabel+' tok/s';
+    return;
+  }
+  el.textContent='Measured Mac speed via network capacity.';
+}
 function paintPresenceActBoot(){
+  paintGateProof();
   const boot=$('presence-act-boot');
   if(!boot)return;
   const onGate=tfStep==='gate';
