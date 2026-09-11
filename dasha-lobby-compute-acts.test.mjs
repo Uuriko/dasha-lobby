@@ -10,6 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import edgeWorker, {
   asStandaloneLobbyPage,
+  forumIndexPageHtml,
   injectLobbyComputeActs,
   LOBBY_ACTS_HTML,
   rewriteLobbyForumChrome,
@@ -120,8 +121,12 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.equal(lobby.headers.get('x-dasha-edge'), 'lobby-page');
   const html = await lobby.text();
   assertActs(html, `served ${origin}/lobby`);
-  assert.match(html, /Link X to post\./, `${origin} threads lede`);
-  assert.doesNotMatch(html, /Official room\. Read freely/, `${origin} no Official-room essay`);
+}
+
+{
+  const painted = forumIndexPageHtml(lobbyDisk, []);
+  assert.match(painted, /Link X to post\./, 'threads lede');
+  assert.doesNotMatch(painted, /Official room\. Read freely/, 'no Official-room essay');
 }
 
 {
