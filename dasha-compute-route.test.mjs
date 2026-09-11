@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createSessionToken } from './dasha-lobby-x.mjs';
 import worker from './dasha-lobby-worker.mjs';
 import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
+import { COMPUTE_GUEST_KEYS_PATH } from './dasha-compute-guest-key.mjs';
 
 const compute = await worker.fetch(new Request('https://www.getdasha.com/compute'), {});
 assert.equal(compute.status, 200);
@@ -100,6 +101,11 @@ async function assertGatewayRes(res, label) {
   assert.equal(parsed.object, 'gateway', label);
   assert.equal(parsed.models, '/compute/api/v1/models', label);
   assert.ok(String(parsed.chat_completions).endsWith('chat/completions'), label);
+  assert.equal(parsed.guest_keys, COMPUTE_GUEST_KEYS_PATH, `${label} guest_keys path`);
+  assert.equal(parsed.guest_key?.path, COMPUTE_GUEST_KEYS_PATH, `${label} guest_key.path`);
+  assert.equal(parsed.guest_key?.method, 'POST', `${label} guest_key.method`);
+  assert.match(String(parsed.guest_key?.note || ''), /24h dgk_ chat\+models/, `${label} guest_key.note`);
+  assert.match(String(parsed.guest_key?.note || ''), /copy once/i, `${label} guest_key copy once`);
   return parsed;
 }
 

@@ -90,6 +90,7 @@ import {
   isGuestApiKey,
   parseGuestApiToken,
   takeGuestRate,
+  COMPUTE_GUEST_KEYS_PATH,
   GUEST_KEY_CHAT_MAX,
   GUEST_KEY_CHAT_WINDOW_MS,
 } from './dasha-compute-guest-key.mjs';
@@ -375,7 +376,7 @@ function computeApiRootBody(env) {
     limit: '3 free / 10 min · then credits',
     session_chat: ORIGIN_REQUIRED_HINT,
     usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)',
-    guest_keys: '/compute/api/guest-keys',
+    guest_keys: COMPUTE_GUEST_KEYS_PATH,
     guest_key_mint: 'live',
     billing: {
       chat_completions: "Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card",
@@ -396,6 +397,12 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
     chat_completions: '/compute/api/v1/chat/completions',
     network: '/compute/api/v1/network',
     healthz: '/compute/api/healthz',
+    guest_keys: COMPUTE_GUEST_KEYS_PATH,
+    guest_key: {
+      path: COMPUTE_GUEST_KEYS_PATH,
+      method: 'POST',
+      note: '24h dgk_ chat+models. Copy once.',
+    },
     errors: 'openai + status/reason/hint/next',
     // OpenRouter apply bar + Hosted UI parity: usage on stream stop + non-stream JSON.
     usage: {
