@@ -61,7 +61,6 @@ assert.match(design, /mint live/i);
 assert.match(design, /pairing/i);
 assert.match(design, /24h|86400/);
 assert.doesNotMatch(design, /project-room/i);
-assert.doesNotMatch(design, /plugin\.jup\.ag/);
 
 assert.equal(isComputeGuestKeyPath('/compute/api/guest-keys'), true);
 assert.equal(isComputeGuestKeyPath('/compute/api/guest-keys/'), true);

@@ -1,7 +1,7 @@
 /**
  * Compute guest / pairing API key.
  * POST mints a 24h opaque dgk_ key (hash at rest). GET/HEAD is the public contract.
- * Chat + models only. Rate-limited by IP + optional pairing code. No people-data.
+ * Chat + models only. Rate-limited by IP + optional pairing code. No emails or phones.
  * Never log a full key after mint.
  */
 

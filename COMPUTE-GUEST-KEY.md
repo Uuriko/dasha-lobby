@@ -24,4 +24,4 @@ Agents get a Bearer without a human OAuth wall. Chat stays keyed. Public probes 
 
 ## Stay off
 
-Room merge · Designer · plugin.jup.ag · Potter keys · version bump · wrangler · people-data · device fingerprinting
+Room merge · Designer · Jupiter plugin host · Potter keys · version bump · wrangler · emails/phones · device fingerprinting
