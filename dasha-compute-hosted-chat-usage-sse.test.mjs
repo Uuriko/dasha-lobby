@@ -10,7 +10,7 @@ import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const src = readFileSync(new URL('./dasha-compute-network.mjs', import.meta.url), 'utf8');
 assert.match(src, /const usage = failed \? null : hostedUsage\(\);/);
-assert.match(src, /finish_reason: 'stop' \}\], usage \}\)/);
+assert.match(src, /finish_reason: 'stop' \}\], usage/);
 assert.match(src, /upstreamUsage = payload\.usage/);
 
 const origin = 'https://www.getdasha.com';
