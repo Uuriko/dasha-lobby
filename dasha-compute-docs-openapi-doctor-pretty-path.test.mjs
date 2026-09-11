@@ -10,9 +10,11 @@
  * / Provide enroll lands on /compute#provide. After #192, leftover /provide
  * /enroll /setup /doctor (apex) + /compute/provide|/enroll|/setup still dumped
  * to Ask. Fold this join family to /compute#provide.
- * /sdk-docs /cli /api-reference /compute/sdk stay gateway leftovers.
+ * After #192/#193, leftover /compute/sdk /compute/sdk-docs /compute/cli
+ * /compute/api-reference still dumped to the JSON gateway. Same family,
+ * same skill dest. Apex /sdk-docs /cli /api-reference stay gateway.
  * Lobby skill dests same-host via potterHome308Response. Disk only.
- * Never plugin.jup.ag. No ocm rewrite. No Designer.
+ * Never plugin.jup.ag. No ocm rewrite. No Designer. Do not invent swagger.yaml.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -29,6 +31,7 @@ assert.match(workerSrc, /Live GET \/compute\/docs \+ \/compute\/openapi\.json/, 
 assert.match(workerSrc, /Live GET \/compute\/doctor was 308/, 'live doctor comment');
 assert.match(workerSrc, /\/compute\/documentation \+ \/compute\/openapi \(no \.json\)/, 'documentation leftover comment');
 assert.match(workerSrc, /Leftover \/provide \/enroll \/setup/, 'provide join leftover comment');
+assert.match(workerSrc, /\/compute\/sdk \/compute\/sdk-docs \/compute\/cli \/compute\/api-reference still dumped/, 'sdk/cli leftover comment');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
 const WWW = 'https://www.getdasha.com';
@@ -68,6 +71,34 @@ const DOCS_SKILL = [
   '/Compute/Openapi',
   '/Compute/Openapi/',
   '/COMPUTE/OPENAPI/',
+  '/compute/sdk',
+  '/compute/sdk/',
+  '/Compute/sdk',
+  '/COMPUTE/SDK',
+  '/Compute/Sdk',
+  '/Compute/Sdk/',
+  '/COMPUTE/SDK/',
+  '/compute/sdk-docs',
+  '/compute/sdk-docs/',
+  '/Compute/sdk-docs',
+  '/COMPUTE/SDK-DOCS',
+  '/Compute/Sdk-docs',
+  '/Compute/Sdk-Docs/',
+  '/COMPUTE/SDK-DOCS/',
+  '/compute/cli',
+  '/compute/cli/',
+  '/Compute/cli',
+  '/COMPUTE/CLI',
+  '/Compute/Cli',
+  '/Compute/Cli/',
+  '/COMPUTE/CLI/',
+  '/compute/api-reference',
+  '/compute/api-reference/',
+  '/Compute/api-reference',
+  '/COMPUTE/API-REFERENCE',
+  '/Compute/Api-reference',
+  '/Compute/Api-Reference/',
+  '/COMPUTE/API-REFERENCE/',
 ];
 
 const PROVIDE_JOIN = [
@@ -118,11 +149,13 @@ const GATEWAY_UNCHANGED = [
   ['/openapi', API],
   ['/documentation', API],
   ['/sdk-docs', API],
+  ['/sdk-docs/', API],
   ['/api-reference', API],
-  ['/compute/sdk-docs', API],
-  ['/compute/sdk', API],
-  ['/compute/cli', API],
+  ['/cli', API],
+  ['/sdk', API],
   ['/compute/swagger', API],
+  ['/compute/cli-docs', API],
+  ['/compute/sdk-reference', API],
   ['/api/docs', API],
   ['/docs', API],
 ];
@@ -152,6 +185,7 @@ assert.equal(potterHome308Dest('/compute/skill.md'), null, '/compute/skill.md st
 assert.equal(potterHome308Dest('/compute/api'), null, '/compute/api stays JSON');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.notEqual(potterHome308Dest('/compute/openapi.yaml'), SKILL, 'do not invent /compute/openapi.yaml');
+assert.notEqual(potterHome308Dest('/compute/swagger.yaml'), SKILL, 'do not invent swagger.yaml');
 assert.notEqual(potterHome308Dest('/compute/swagger.json'), SKILL, 'do not invent swagger→skill');
 assert.notEqual(potterHome308Dest('/compute/readme'), SKILL, 'do not invent /compute/readme');
 assert.match(potterHome308Dest('/doctor') || '', /#provide$/, 'apex /doctor hashes #provide');
@@ -205,10 +239,14 @@ assert.ok(!sitemapXml.includes(`${WWW}/compute/docs</loc>`), 'sitemap omits left
 assert.ok(!sitemapXml.includes(`${WWW}/compute/openapi.json</loc>`), 'sitemap omits leftover /compute/openapi.json');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/documentation</loc>`), 'sitemap omits leftover /compute/documentation');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/openapi</loc>`), 'sitemap omits leftover /compute/openapi');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/sdk</loc>`), 'sitemap omits leftover /compute/sdk');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/sdk-docs</loc>`), 'sitemap omits leftover /compute/sdk-docs');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/cli</loc>`), 'sitemap omits leftover /compute/cli');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/api-reference</loc>`), 'sitemap omits leftover /compute/api-reference');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/doctor</loc>`), 'sitemap omits leftover /compute/doctor');
 assert.ok(!sitemapXml.includes(`${WWW}/provide</loc>`), 'sitemap omits leftover /provide');
 assert.ok(!sitemapXml.includes(`${WWW}/enroll</loc>`), 'sitemap omits leftover /enroll');
 assert.ok(!sitemapXml.includes(`${WWW}/setup</loc>`), 'sitemap omits leftover /setup');
 assert.ok(!sitemapXml.includes(`${WWW}/doctor</loc>`), 'sitemap omits leftover /doctor');
 
-console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json) 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/* 308 /compute#provide; /sdk-docs stay /compute/api; no plugin.jup.ag)');
+console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json)+/sdk+/sdk-docs+/cli+/api-reference 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/* 308 /compute#provide; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');

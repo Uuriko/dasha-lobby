@@ -2,8 +2,9 @@
 /**
  * Leftover pretty path (Worker ef812bfe): live /plan(s) /prices /payout(s)
  * /withdraw /cashout /payment(s) /checkout /getting_started /mac-setup
- * /mac_setup /agents|/agent /mcp /tools|/tool (+ /compute/* tabs, Title-case)
- * html-404 → 308 /compute. /compute/price folds; bare /price stays the
+ * /mac_setup /agents|/agent /tools|/tool (+ /compute/* tabs, Title-case)
+ * html-404 → 308 /compute. /mcp|/compute/mcp fold via MCP catalog leftover
+ * → /compute/mcp.json. /compute/price folds; bare /price stays the
  * 200 JSON token-price API. Peers /pricing /pay /earn /getting-started
  * /mac /kit still → /compute. /help now folds via help/credits leftover
  * → /compute. Skip /terms /admin /blog /waitlist /tos /legal /news.
@@ -40,7 +41,7 @@ const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s
 const COMPUTE_LEAVES = [
   'plan', 'plans', 'prices', 'payout', 'payouts', 'withdraw', 'cashout',
   'payment', 'payments', 'checkout', 'getting_started', 'mac-setup', 'mac_setup',
-  'agents', 'agent', 'mcp', 'tools', 'tool',
+  'agents', 'agent', 'tools', 'tool',
 ];
 for (const leaf of COMPUTE_LEAVES) {
   assert.match(tab, new RegExp(`["']/${leaf}["']`));
@@ -57,6 +58,8 @@ assert.doesNotMatch(tab, /['"]\/waitlist['"]/, 'do not invent /waitlist');
 assert.doesNotMatch(tab, /['"]\/tos['"]/, 'do not invent /tos');
 assert.doesNotMatch(tab, /['"]\/legal['"]/, 'do not invent /legal');
 assert.doesNotMatch(tab, /['"]\/news['"]/, 'do not invent /news');
+assert.doesNotMatch(tab, /['"]\/mcp['"]/, '/mcp left the tab set for catalog leftover');
+assert.doesNotMatch(tab, /['"]\/compute\/mcp['"]/, '/compute/mcp left the tab set for catalog leftover');
 
 const COMPUTE = 'https://www.getdasha.com/compute';
 
@@ -99,6 +102,8 @@ for (const path of HELP_NOW_COMPUTE) {
   assert.equal(potterHome308Dest(path), COMPUTE, `${path} now folds via help leftover`);
 }
 assert.equal(potterHome308Dest('/compute/price'), COMPUTE, '/compute/price folds');
+assert.equal(potterHome308Dest('/mcp'), 'https://www.getdasha.com/compute/mcp.json', '/mcp → catalog');
+assert.equal(potterHome308Dest('/compute/mcp'), 'https://www.getdasha.com/compute/mcp.json', '/compute/mcp → catalog');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.equal(potterHome308Dest('/compute/'), COMPUTE, '/compute/ still folds to /compute');
 for (const path of BARE_PRICE) {
@@ -110,7 +115,7 @@ for (const path of STAY_OUT) {
 
 const FETCH_SAMPLE = [
   '/plan', '/Plans/', '/prices', '/Payout', '/checkout',
-  '/getting_started', '/mac-setup', '/Agents', '/mcp', '/tools',
+  '/getting_started', '/mac-setup', '/Agents', '/tools',
   '/compute/price', '/Compute/price/',
   '/pricing', '/pay', '/earn', '/getting-started', '/mac', '/kit',
 ];
@@ -169,10 +174,10 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 for (const path of [
-  '/plan', '/plans', '/prices', '/price', '/payout', '/agents', '/mcp', '/tools',
+  '/plan', '/plans', '/prices', '/price', '/payout', '/agents', '/tools',
   '/compute/price', '/help', '/terms', '/admin', '/blog', '/waitlist', '/tos', '/legal',
 ]) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-apex-plans-payout-agents-pretty-path: PASS (/plan(s)+/prices+/payout(s)+/withdraw+/cashout+/payment(s)+/checkout+/getting_started+/mac-setup+/agents|/agent+/mcp+/tools|/tool + /compute/* tabs 308 /compute; /compute/price folds; bare /price untouched; /pricing+/pay+/earn+/getting-started+/mac+/kit peers; Title-case+slash; www+lobby GET+HEAD sample; /compute 200; /help now /compute; /terms+/admin+/blog+/waitlist+/tos+/legal stay out; no plugin.jup.ag)');
+console.log('dasha-apex-plans-payout-agents-pretty-path: PASS (/plan(s)+/prices+/payout(s)+/withdraw+/cashout+/payment(s)+/checkout+/getting_started+/mac-setup+/agents|/agent+/tools|/tool + /compute/* tabs 308 /compute; /mcp catalog leftover; /compute/price folds; bare /price untouched; /pricing+/pay+/earn+/getting-started+/mac+/kit peers; Title-case+slash; www+lobby GET+HEAD sample; /compute 200; /help now /compute; /terms+/admin+/blog+/waitlist+/tos+/legal stay out; no plugin.jup.ag)');

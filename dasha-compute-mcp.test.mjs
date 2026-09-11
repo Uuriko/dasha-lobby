@@ -4,7 +4,7 @@
  * GET /compute/mcp.json + /.well-known/mcp.json (+ /compute/.well-known/mcp.json)
  * is a static tool list: healthz / models / network / guest-keys + skill.md.
  * Chat is OpenAI-compat Bearer at base_url — not a second protocol.
- * skill.md carries MCP: … Leftover /mcp|/compute/mcp stay 308 /compute.
+ * skill.md carries MCP: … Leftover /mcp|/compute/mcp 308 /compute/mcp.json.
  * No streamable MCP session. No Hosted Flash SKU. No wrangler. No Room.
  * Never plugin.jup.ag. No people-data.
  */
@@ -35,7 +35,6 @@ import {
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 const ORIGINS = ['https://www.getdasha.com', 'https://lobby.getdasha.com'];
-const COMPUTE = 'https://www.getdasha.com/compute';
 const MCP_PATHS = [
   '/compute/mcp.json',
   '/.well-known/mcp.json',
@@ -55,10 +54,13 @@ assert.match(
 );
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-assert.match(tab, /["']\/mcp["']/, 'leftover keeps bare /mcp');
-assert.match(tab, /["']\/compute\/mcp["']/, 'leftover keeps bare /compute/mcp');
+assert.doesNotMatch(tab, /["']\/mcp["']/, 'bare /mcp left the tab set');
+assert.doesNotMatch(tab, /["']\/compute\/mcp["']/, 'bare /compute/mcp left the tab set');
 assert.doesNotMatch(tab, /["']\/compute\/mcp\.json["']/, 'leftover must not list /compute/mcp.json');
 assert.doesNotMatch(tab, /["']\/\.well-known\/mcp\.json["']/, 'leftover must not list well-known mcp.json');
+const mcpJsonSet = workerSrc.match(/const POTTER_COMPUTE_MCP_JSON_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
+assert.match(mcpJsonSet, /['"]\/mcp['"]/, 'catalog leftover set lists bare /mcp');
+assert.match(mcpJsonSet, /['"]\/compute\/mcp['"]/, 'catalog leftover set lists /compute/mcp');
 
 assert.equal(isComputeMcpJsonPath('/compute/mcp.json'), true);
 assert.equal(isComputeMcpJsonPath('/.well-known/mcp.json'), true);
@@ -141,11 +143,14 @@ assert.equal(
 );
 assert.equal(potterHome308Dest('/Compute/Mcp.json'), COMPUTE_MCP_JSON_URL, 'Title-case /compute/mcp.json');
 assert.equal(potterHome308Dest('/.well-known/Mcp.json'), COMPUTE_MCP_WELLKNOWN_URL, 'Title-case well-known mcp.json');
-assert.equal(potterHome308Dest('/mcp'), COMPUTE, 'bare /mcp stays leftover');
-assert.equal(potterHome308Dest('/mcp/'), COMPUTE, 'bare /mcp/ stays leftover');
-assert.equal(potterHome308Dest('/compute/mcp'), COMPUTE, 'bare /compute/mcp stays leftover');
-assert.equal(potterHome308Dest('/compute/mcp/'), COMPUTE, 'bare /compute/mcp/ stays leftover');
-assert.equal(potterHome308Dest('/MCP'), COMPUTE, 'UPPER /mcp stays leftover');
+assert.equal(potterHome308Dest('/mcp'), COMPUTE_MCP_JSON_URL, 'bare /mcp → catalog');
+assert.equal(potterHome308Dest('/mcp/'), COMPUTE_MCP_JSON_URL, 'bare /mcp/ → catalog');
+assert.equal(potterHome308Dest('/compute/mcp'), COMPUTE_MCP_JSON_URL, 'bare /compute/mcp → catalog');
+assert.equal(potterHome308Dest('/compute/mcp/'), COMPUTE_MCP_JSON_URL, 'bare /compute/mcp/ → catalog');
+assert.equal(potterHome308Dest('/MCP'), COMPUTE_MCP_JSON_URL, 'UPPER /mcp → catalog');
+assert.equal(potterHome308Dest('/Mcp'), COMPUTE_MCP_JSON_URL, 'Title-case /mcp → catalog');
+assert.equal(potterHome308Dest('/Compute/Mcp'), COMPUTE_MCP_JSON_URL, 'Title-case /compute/mcp → catalog');
+assert.equal(potterHome308Dest('/COMPUTE/MCP/'), COMPUTE_MCP_JSON_URL, 'UPPER /compute/mcp/ → catalog');
 
 {
   const direct = computeAgentAeoResponse(new Request('https://www.getdasha.com/compute/mcp.json'));
@@ -209,8 +214,12 @@ for (const origin of ORIGINS) {
     ['/mcp.json/', COMPUTE_MCP_JSON_URL],
     ['/Compute/Mcp.json', COMPUTE_MCP_JSON_URL],
     ['/.well-known/mcp.json/', COMPUTE_MCP_WELLKNOWN_URL],
-    ['/mcp', COMPUTE],
-    ['/compute/mcp', COMPUTE],
+    ['/mcp', COMPUTE_MCP_JSON_URL],
+    ['/mcp/', COMPUTE_MCP_JSON_URL],
+    ['/MCP', COMPUTE_MCP_JSON_URL],
+    ['/compute/mcp', COMPUTE_MCP_JSON_URL],
+    ['/compute/mcp/', COMPUTE_MCP_JSON_URL],
+    ['/Compute/Mcp', COMPUTE_MCP_JSON_URL],
   ]) {
     for (const method of ['GET', 'HEAD']) {
       const res = await edgeWorker.fetch(new Request(`${origin}${path}`, { method }), {});
@@ -222,4 +231,4 @@ for (const origin of ORIGINS) {
   }
 }
 
-console.log('dasha-compute-mcp: PASS (/compute/mcp.json + well-known catalog, skill MCP: bullet, leftover /mcp stays /compute, no Hosted Flash SKU, no plugin.jup.ag)');
+console.log('dasha-compute-mcp: PASS (/compute/mcp.json + well-known catalog, skill MCP: bullet, leftover /mcp+/compute/mcp 308 catalog, no Hosted Flash SKU, no plugin.jup.ag)');

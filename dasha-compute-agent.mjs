@@ -7,7 +7,7 @@
  * /compute/agent.json (alias for agents that skip .well-known).
  * MCP catalog: /compute/mcp.json + /.well-known/mcp.json
  * (+ /compute/.well-known/mcp.json). Static tool list — not streamable HTTP.
- * Leftover /mcp|/compute/mcp stay 308 /compute.
+ * Leftover /mcp|/compute/mcp 308 /compute/mcp.json.
  * Exact agents faces match before leftover /agents fold.
  * Run factory, not a ledger. No secrets. No people-data.
  * Build on Dasha: mint + run factory. UI is yours.

@@ -2,7 +2,8 @@
 /**
  * Leftover pretty path (Worker 66c5ac55): live settlement/billing + getting-started
  * leftovers (+ /compute/* tabs, slash / Title-case) html-404 → 308 /compute.
- * /endpoint /endpoints /sdk /cli + /compute/* tabs → 308 /compute/api
+ * /endpoint /endpoints /sdk /cli → 308 /compute/api (apex + /compute/endpoint(s)).
+ * /compute/sdk /compute/cli fold via POTTER_COMPUTE_DOCS_SKILL_308_PATHS.
  * (lobby host rewrites Location onto lobby). /purchase → /how-to-buy.
  * /once-a-day /once_a_day → /faucet. Apex only for faucet leftover —
  * do not invent /compute/once-a-day. Title-case via existing dest lowercasing.
@@ -56,13 +57,20 @@ const TO_COMPUTE = COMPUTE_LEAVES.flatMap((leaf) => [
   `/compute/${leaf}`, `/compute/${leaf}/`,
   `/Compute/${leaf}`, `/COMPUTE/${leaf.toUpperCase()}`,
 ]);
-const TO_API = API_LEAVES.flatMap((leaf) => [
-  `/${leaf}`, `/${leaf}/`,
-  `/${leaf[0].toUpperCase()}${leaf.slice(1)}`,
-  `/${leaf.toUpperCase()}`,
-  `/compute/${leaf}`, `/compute/${leaf}/`,
-  `/Compute/${leaf}`, `/COMPUTE/${leaf.toUpperCase()}`,
-]);
+const SKILL_COMPUTE_TABS = new Set(['sdk', 'cli']);
+const TO_API = API_LEAVES.flatMap((leaf) => {
+  const apex = [
+    `/${leaf}`, `/${leaf}/`,
+    `/${leaf[0].toUpperCase()}${leaf.slice(1)}`,
+    `/${leaf.toUpperCase()}`,
+  ];
+  if (SKILL_COMPUTE_TABS.has(leaf)) return apex;
+  return [
+    ...apex,
+    `/compute/${leaf}`, `/compute/${leaf}/`,
+    `/Compute/${leaf}`, `/COMPUTE/${leaf.toUpperCase()}`,
+  ];
+});
 const TO_HOWTO = [
   '/purchase', '/purchase/', '/Purchase', '/PURCHASE', '/pUrChAsE/',
 ];

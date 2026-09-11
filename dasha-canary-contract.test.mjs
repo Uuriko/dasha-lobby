@@ -222,16 +222,22 @@ for (const path of ['/donate', '/donate/', '/Donate']) {
 for (const path of ['/settlement', '/Settlement', '/compute/invoice', '/credit', '/kits', '/try', '/getting-started', '/mac_kit']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
-for (const path of ['/plan', '/Plans', '/prices', '/payout', '/agents', '/mcp', '/tools', '/compute/price', '/earn', '/mac', '/kit']) {
+for (const path of ['/plan', '/Plans', '/prices', '/payout', '/agents', '/tools', '/compute/price', '/earn', '/mac', '/kit']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
+}
+for (const path of ['/mcp', '/mcp/', '/compute/mcp', '/compute/mcp/']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/mcp.json', path);
 }
 for (const path of ['/tool/dasha-compute', '/tool/dasha-compute/', '/Tool/dasha-compute', '/tool/dasha', '/tools/dasha-compute', '/tools/dasha']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
 }
 assert.equal(potterHome308Dest('/price'), null, 'bare /price stays token-price API');
 assert.equal(potterHome308Dest('/price/'), null, 'bare /price/ stays token-price API');
-for (const path of ['/endpoint', '/endpoints', '/sdk', '/cli', '/compute/sdk', '/devtools', '/sdk-docs', '/api-reference', '/compute/devtools', '/compute/sdk-docs']) {
+for (const path of ['/endpoint', '/endpoints', '/sdk', '/cli', '/devtools', '/sdk-docs', '/api-reference', '/compute/devtools']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/api', path);
+}
+for (const path of ['/compute/sdk', '/compute/sdk-docs', '/compute/cli', '/compute/api-reference']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/skill.md', path);
 }
 for (const path of ['/purchase', '/Purchase']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/how-to-buy', path);
