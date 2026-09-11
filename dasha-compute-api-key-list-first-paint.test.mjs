@@ -19,7 +19,9 @@ function assertFill(html, label) {
   assert.match(html, /id=["']api-key-list["'][\s\S]{0,80}Guest dgk_ or Sign in for dsk_/, `${label} list`);
   assert.match(html, /async function loadApiKeys\(\)/, `${label} loadApiKeys`);
   assert.match(html, /list\.replaceChildren\(\)/, `${label} replaceChildren`);
-  assert.match(html, /if\(!loggedIn\)\{apiKeyCount=0/, `${label} gated`);
+  assert.match(html, /if\(!loggedIn\)\{apiKeyCount=0;paintAnswerApi\(\);return\}/, `${label} guest skips GET /compute/api/keys`);
+  assert.match(html, /error\.message===['"]login required['"]\?['"]Guest dgk_ or Sign in for dsk_\./, `${label} 401 stays quiet guest copy`);
+  assert.match(html, /Could not load API keys/, `${label} signed-in load errors still named`);
 }
 assertFill(computeDisk, "disk");
 const res = await worker.fetch(new Request("https://www.getdasha.com/compute"), {});
