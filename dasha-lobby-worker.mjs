@@ -5226,6 +5226,8 @@ export function potterHome308Dest(path) {
     p === "/compute/dasha-compute-open-alpha.tar.gz/" ||
     p === "/compute/kit.tar.gz" ||
     p === "/compute/kit.tar.gz/" ||
+    p === "/kit.tar.gz" ||
+    p === "/kit.tar.gz/" ||
     p === "/assets/dasha-compute-open-alpha.tar.gz" ||
     p === "/assets/dasha-compute-open-alpha.tar.gz/" ||
     p === "/assets/open-alpha.tar.gz" ||
