@@ -239,6 +239,9 @@ for (const path of ['/endpoint', '/endpoints', '/sdk', '/cli', '/devtools', '/sd
 for (const path of ['/compute/sdk', '/compute/sdk-docs', '/compute/cli', '/compute/api-reference']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/skill.md', path);
 }
+for (const path of ['/compute/agent.md', '/compute/agents.md', '/compute/readme.md', '/compute/api.md', '/compute/create-key', '/compute/guest', '/compute/guest-key', '/compute/guest-keys']) {
+  assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute/skill.md', path);
+}
 for (const path of ['/purchase', '/Purchase']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/how-to-buy', path);
 }
