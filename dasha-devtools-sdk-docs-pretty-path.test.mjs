@@ -50,13 +50,20 @@ const LOBBY = 'https://lobby.getdasha.com';
 const COMPUTE = `${WWW}/compute`;
 const API = `${WWW}/compute/api`;
 
-const TO_API = API_LEAVES.flatMap((leaf) => [
-  `/${leaf}`, `/${leaf}/`,
-  `/${leaf[0].toUpperCase()}${leaf.slice(1)}`,
-  `/${leaf.toUpperCase()}`,
-  `/compute/${leaf}`, `/compute/${leaf}/`,
-  `/Compute/${leaf}`, `/COMPUTE/${leaf.toUpperCase()}`,
-]);
+const SKILL_COMPUTE_TABS = new Set(['sdk-docs', 'api-reference']);
+const TO_API = API_LEAVES.flatMap((leaf) => {
+  const apex = [
+    `/${leaf}`, `/${leaf}/`,
+    `/${leaf[0].toUpperCase()}${leaf.slice(1)}`,
+    `/${leaf.toUpperCase()}`,
+  ];
+  if (SKILL_COMPUTE_TABS.has(leaf)) return apex;
+  return [
+    ...apex,
+    `/compute/${leaf}`, `/compute/${leaf}/`,
+    `/Compute/${leaf}`, `/COMPUTE/${leaf.toUpperCase()}`,
+  ];
+});
 const PRIOR_API = [
   '/sdk', '/sdk/', '/Sdk', '/SDK',
   '/cli', '/cli/', '/Cli', '/CLI',
@@ -140,7 +147,7 @@ const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 for (const path of [
   '/devtools', '/devtool', '/developer-docs', '/sdk-docs', '/cli-docs', '/sdks-docs',
   '/api-reference', '/sdk-reference', '/cli-reference', '/developer-api', '/dev-api',
-  '/compute/devtools', '/compute/sdk-docs', '/compute/api-reference',
+  '/compute/devtools', '/compute/cli-docs', '/compute/sdk-reference',
   '/reference', '/openai', '/v1', '/redoc', '/status', '/health',
 ]) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);

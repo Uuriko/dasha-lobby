@@ -4150,10 +4150,10 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/mac_kit/",
   // Plans/prices/payout/payment/agents leftovers (2026-09-06): live /plan(s) /prices
   // /payout(s) /withdraw /cashout /payment(s) /checkout /getting_started /mac-setup
-  // /mac_setup /agents|/agent /mcp /tools|/tool (+ /compute/* tabs, Title-case) html-404
+  // /mac_setup /agents|/agent /tools|/tool (+ /compute/* tabs, Title-case) html-404
   // Leftover /agents|/compute/agents must not catch *.txt/*.json (exact faces stay 200).
-  // Leftover /mcp|/compute/mcp must not catch *.json (exact /compute/mcp.json +
-  // /.well-known/mcp.json stay 200 catalog).
+  // Leftover /mcp|/compute/mcp fold via POTTER_COMPUTE_MCP_JSON_308_PATHS → catalog
+  // (must not catch *.json; exact /compute/mcp.json + /.well-known/mcp.json stay 200).
   // while /pricing /pay /earn /getting-started /mac /kit peers already 308→/compute.
   // Do NOT fold bare /price (live 200 JSON token-price API). Only /compute/price folds.
   // Skip /terms /blog /news /admin /waitlist /tos /legal (/help shipped in help/credits block).
@@ -4187,8 +4187,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/agents/",
   "/agent",
   "/agent/",
-  "/mcp",
-  "/mcp/",
   "/tools",
   "/tools/",
   "/tool",
@@ -4225,8 +4223,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/agents/",
   "/compute/agent",
   "/compute/agent/",
-  "/compute/mcp",
-  "/compute/mcp/",
   "/compute/tools",
   "/compute/tools/",
   "/compute/tool",
@@ -4779,7 +4775,8 @@ const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
   '/api/healthz', '/api/healthz/',
   '/api/health', '/api/health/',
 ]);
-/** Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /docs /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /compute/sdk /compute/cli /devtools /devtool /developer-docs /sdk-docs /cli-docs /sdks-docs /api-reference /sdk-reference /cli-reference /developer-api /dev-api /compute/devtools /compute/devtool /compute/developer-docs /compute/sdk-docs /compute/cli-docs /compute/sdks-docs /compute/api-reference /compute/sdk-reference /compute/cli-reference /compute/developer-api /compute/dev-api (+slash) → /compute/api. */
+/** Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /docs /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /devtools /devtool /developer-docs /sdk-docs /cli-docs /sdks-docs /api-reference /sdk-reference /cli-reference /developer-api /dev-api /compute/devtools /compute/devtool /compute/developer-docs /compute/cli-docs /compute/sdks-docs /compute/sdk-reference /compute/cli-reference /compute/developer-api /compute/dev-api (+slash) → /compute/api.
+ *  /compute/sdk /compute/sdk-docs /compute/cli /compute/api-reference fold via POTTER_COMPUTE_DOCS_SKILL_308_PATHS. */
 const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set([
   '/swagger-ui', '/swagger-ui/',
   '/swagger-ui.html', '/swagger-ui.html/',
@@ -4809,8 +4806,6 @@ const POTTER_COMPUTE_API_DOCS_308_PATHS = new Set([
   '/cli', '/cli/',
   '/compute/endpoint', '/compute/endpoint/',
   '/compute/endpoints', '/compute/endpoints/',
-  '/compute/sdk', '/compute/sdk/',
-  '/compute/cli', '/compute/cli/',
   // Leftover /vision /tts /text-to-speech /text_to_speech (+ /compute/* tabs)
   // (Worker 3f2d0e6d) → /compute/api. Peer of /embeddings.
   // Skip /openai /v1 /openrouter /x402. Do NOT invent /redoc.
@@ -4859,12 +4854,15 @@ const POTTER_COMPUTE_AGENT_JSON_ALIAS_308_PATHS = new Set([
   '/compute/agent.json/',
 ]);
 /** Leftover /mcp.json + slash well-known → catalog. Exact /compute/mcp.json stays 200.
- *  Bare leftover /mcp|/compute/mcp stay tab → /compute. */
+ *  Bare leftover /mcp|/compute/mcp (live 308 → /compute) now fold to the catalog.
+ *  Must not catch *.json (exact faces stay 200). */
 const POTTER_COMPUTE_MCP_JSON_308_PATHS = new Set([
   '/compute/mcp.json/',
   '/mcp.json', '/mcp.json/',
   '/.well-known/mcp.json/',
   '/compute/.well-known/mcp.json/',
+  '/mcp', '/mcp/',
+  '/compute/mcp', '/compute/mcp/',
 ]);
 /** Leftover pretty skill doors → /compute/skill.md. Exact /compute/skill.md stays 200. */
 const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
@@ -4886,12 +4884,18 @@ const POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS = new Set([
  *  gateway). Agents/humans asking for docs landed on raw JSON. No OpenAPI file
  *  exists — do not invent one. Fold this path-family to the skill face.
  *  /compute/documentation + /compute/openapi (no .json) same leftover family.
- *  Do not invent swagger.yaml / readme peers. /sdk-docs /cli /api-reference stay gateway. */
+ *  /compute/sdk /compute/sdk-docs /compute/cli /compute/api-reference still dumped
+ *  to the JSON gateway after #192/#193 — same family, same skill dest.
+ *  Do not invent swagger.yaml / readme peers. Apex /sdk-docs /cli /api-reference stay gateway. */
 const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
   '/compute/docs', '/compute/docs/',
   '/compute/openapi.json', '/compute/openapi.json/',
   '/compute/documentation', '/compute/documentation/',
   '/compute/openapi', '/compute/openapi/',
+  '/compute/sdk', '/compute/sdk/',
+  '/compute/sdk-docs', '/compute/sdk-docs/',
+  '/compute/cli', '/compute/cli/',
+  '/compute/api-reference', '/compute/api-reference/',
 ]);
 /** Live GET /compute/doctor was 308 → /compute (Ask first-paint). Soft-doctor
  *  / Provide enroll should land on Provide. Leftover /provide /enroll /setup
@@ -5154,7 +5158,7 @@ export function potterHome308Dest(path) {
   if (p === "/docs" || p === "/docs/") return "https://www.getdasha.com/compute/api";
   if (p === "/documentation" || p === "/documentation/") return "https://www.getdasha.com/compute/api";
   if (p === "/readme" || p === "/readme/") return "https://www.getdasha.com/compute/api";
-  if (p === "/endpoint" || p === "/endpoint/" || p === "/endpoints" || p === "/endpoints/" || p === "/sdk" || p === "/sdk/" || p === "/sdks" || p === "/sdks/" || p === "/dev" || p === "/dev/" || p === "/developer" || p === "/developer/" || p === "/developers" || p === "/developers/" || p === "/devtools" || p === "/devtools/" || p === "/devtool" || p === "/devtool/" || p === "/developer-docs" || p === "/developer-docs/" || p === "/sdk-docs" || p === "/sdk-docs/" || p === "/cli-docs" || p === "/cli-docs/" || p === "/sdks-docs" || p === "/sdks-docs/" || p === "/api-reference" || p === "/api-reference/" || p === "/sdk-reference" || p === "/sdk-reference/" || p === "/cli-reference" || p === "/cli-reference/" || p === "/developer-api" || p === "/developer-api/" || p === "/dev-api" || p === "/dev-api/" || p === "/cli" || p === "/cli/" || p === "/curl" || p === "/curl/" || p === "/openai-compat" || p === "/openai-compat/" || p === "/completions" || p === "/completions/" || p === "/compat" || p === "/compat/" || p === "/base-url" || p === "/base-url/" || p === "/baseurl" || p === "/baseurl/" || p === "/base_url" || p === "/base_url/" || p === "/chat-completions" || p === "/chat-completions/" || p === "/chatcompletions" || p === "/chatcompletions/" || p === "/chat_completions" || p === "/chat_completions/" || p === "/embeddings" || p === "/embeddings/" || p === "/embedding" || p === "/embedding/" || p === "/responses" || p === "/responses/" || p === "/response" || p === "/response/" || p === "/completion" || p === "/completion/" || p === "/compute/endpoint" || p === "/compute/endpoint/" || p === "/compute/endpoints" || p === "/compute/endpoints/" || p === "/compute/sdk" || p === "/compute/sdk/" || p === "/compute/sdks" || p === "/compute/sdks/" || p === "/compute/dev" || p === "/compute/dev/" || p === "/compute/developer" || p === "/compute/developer/" || p === "/compute/developers" || p === "/compute/developers/" || p === "/compute/devtools" || p === "/compute/devtools/" || p === "/compute/devtool" || p === "/compute/devtool/" || p === "/compute/developer-docs" || p === "/compute/developer-docs/" || p === "/compute/sdk-docs" || p === "/compute/sdk-docs/" || p === "/compute/cli-docs" || p === "/compute/cli-docs/" || p === "/compute/sdks-docs" || p === "/compute/sdks-docs/" || p === "/compute/api-reference" || p === "/compute/api-reference/" || p === "/compute/sdk-reference" || p === "/compute/sdk-reference/" || p === "/compute/cli-reference" || p === "/compute/cli-reference/" || p === "/compute/developer-api" || p === "/compute/developer-api/" || p === "/compute/dev-api" || p === "/compute/dev-api/" || p === "/compute/cli" || p === "/compute/cli/" || p === "/compute/curl" || p === "/compute/curl/" || p === "/compute/openai-compat" || p === "/compute/openai-compat/" || p === "/compute/completions" || p === "/compute/completions/" || p === "/compute/compat" || p === "/compute/compat/" || p === "/compute/base-url" || p === "/compute/base-url/" || p === "/compute/baseurl" || p === "/compute/baseurl/" || p === "/compute/base_url" || p === "/compute/base_url/" || p === "/compute/chat-completions" || p === "/compute/chat-completions/" || p === "/compute/chatcompletions" || p === "/compute/chatcompletions/" || p === "/compute/chat_completions" || p === "/compute/chat_completions/" || p === "/compute/embeddings" || p === "/compute/embeddings/" || p === "/compute/embedding" || p === "/compute/embedding/" || p === "/compute/responses" || p === "/compute/responses/" || p === "/compute/response" || p === "/compute/response/" || p === "/compute/completion" || p === "/compute/completion/" || // Vision/TTS modality peers of /embeddings (live html-404).
+  if (p === "/endpoint" || p === "/endpoint/" || p === "/endpoints" || p === "/endpoints/" || p === "/sdk" || p === "/sdk/" || p === "/sdks" || p === "/sdks/" || p === "/dev" || p === "/dev/" || p === "/developer" || p === "/developer/" || p === "/developers" || p === "/developers/" || p === "/devtools" || p === "/devtools/" || p === "/devtool" || p === "/devtool/" || p === "/developer-docs" || p === "/developer-docs/" || p === "/sdk-docs" || p === "/sdk-docs/" || p === "/cli-docs" || p === "/cli-docs/" || p === "/sdks-docs" || p === "/sdks-docs/" || p === "/api-reference" || p === "/api-reference/" || p === "/sdk-reference" || p === "/sdk-reference/" || p === "/cli-reference" || p === "/cli-reference/" || p === "/developer-api" || p === "/developer-api/" || p === "/dev-api" || p === "/dev-api/" || p === "/cli" || p === "/cli/" || p === "/curl" || p === "/curl/" || p === "/openai-compat" || p === "/openai-compat/" || p === "/completions" || p === "/completions/" || p === "/compat" || p === "/compat/" || p === "/base-url" || p === "/base-url/" || p === "/baseurl" || p === "/baseurl/" || p === "/base_url" || p === "/base_url/" || p === "/chat-completions" || p === "/chat-completions/" || p === "/chatcompletions" || p === "/chatcompletions/" || p === "/chat_completions" || p === "/chat_completions/" || p === "/embeddings" || p === "/embeddings/" || p === "/embedding" || p === "/embedding/" || p === "/responses" || p === "/responses/" || p === "/response" || p === "/response/" || p === "/completion" || p === "/completion/" || p === "/compute/endpoint" || p === "/compute/endpoint/" || p === "/compute/endpoints" || p === "/compute/endpoints/" || p === "/compute/sdks" || p === "/compute/sdks/" || p === "/compute/dev" || p === "/compute/dev/" || p === "/compute/developer" || p === "/compute/developer/" || p === "/compute/developers" || p === "/compute/developers/" || p === "/compute/devtools" || p === "/compute/devtools/" || p === "/compute/devtool" || p === "/compute/devtool/" || p === "/compute/developer-docs" || p === "/compute/developer-docs/" || p === "/compute/cli-docs" || p === "/compute/cli-docs/" || p === "/compute/sdks-docs" || p === "/compute/sdks-docs/" || p === "/compute/sdk-reference" || p === "/compute/sdk-reference/" || p === "/compute/cli-reference" || p === "/compute/cli-reference/" || p === "/compute/developer-api" || p === "/compute/developer-api/" || p === "/compute/dev-api" || p === "/compute/dev-api/" || p === "/compute/curl" || p === "/compute/curl/" || p === "/compute/openai-compat" || p === "/compute/openai-compat/" || p === "/compute/completions" || p === "/compute/completions/" || p === "/compute/compat" || p === "/compute/compat/" || p === "/compute/base-url" || p === "/compute/base-url/" || p === "/compute/baseurl" || p === "/compute/baseurl/" || p === "/compute/base_url" || p === "/compute/base_url/" || p === "/compute/chat-completions" || p === "/compute/chat-completions/" || p === "/compute/chatcompletions" || p === "/compute/chatcompletions/" || p === "/compute/chat_completions" || p === "/compute/chat_completions/" || p === "/compute/embeddings" || p === "/compute/embeddings/" || p === "/compute/embedding" || p === "/compute/embedding/" || p === "/compute/responses" || p === "/compute/responses/" || p === "/compute/response" || p === "/compute/response/" || p === "/compute/completion" || p === "/compute/completion/" || // Vision/TTS modality peers of /embeddings (live html-404).
   p === "/vision" || p === "/vision/" || p === "/tts" || p === "/tts/" || p === "/text-to-speech" || p === "/text-to-speech/" || p === "/text_to_speech" || p === "/text_to_speech/" || p === "/compute/vision" || p === "/compute/vision/" || p === "/compute/tts" || p === "/compute/tts/" || p === "/compute/text-to-speech" || p === "/compute/text-to-speech/" || p === "/compute/text_to_speech" || p === "/compute/text_to_speech/") return "https://www.getdasha.com/compute/api";
   if (p === "/gateway" || p === "/gateway/" || p === "/compute/gateway" || p === "/compute/gateway/") {
     return "https://www.getdasha.com/compute/api";

@@ -4,8 +4,8 @@
  * was JSON fail-loud 404 on www + lobby while /compute/skill.md is already
  * the agent docs face (200 markdown). Fold to that face.
  * Singular leftover /compute/api/doc still 404 after plural docs went live.
- * /sdk-docs /api-reference /sdk /cli stay 308 → /compute/api.
- * /compute/docs + /compute/openapi.json fold via POTTER_COMPUTE_DOCS_SKILL_308_PATHS.
+ * Apex /sdk-docs /api-reference /sdk /cli stay 308 → /compute/api.
+ * /compute/sdk /compute/sdk-docs /compute/cli /compute/api-reference fold via POTTER_COMPUTE_DOCS_SKILL_308_PATHS.
  * Lobby same-host via potterHome308Response. Disk only. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -51,10 +51,6 @@ const GATEWAY_UNCHANGED = [
   ['/api-reference', API],
   ['/sdk', API],
   ['/cli', API],
-  ['/compute/sdk-docs', API],
-  ['/compute/api-reference', API],
-  ['/compute/sdk', API],
-  ['/compute/cli', API],
   ['/api/docs', API],
   ['/docs', API],
 ];
@@ -91,4 +87,4 @@ const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 assert.ok(!sitemapXml.includes(`${WWW}/compute/api/docs</loc>`), 'sitemap omits leftover /compute/api/docs');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/api/doc</loc>`), 'sitemap omits leftover /compute/api/doc');
 
-console.log('dasha-compute-api-docs-pretty-path: PASS (/compute/api/docs+/doc 308 skill.md www+lobby GET+HEAD; /sdk-docs stay /compute/api; no plugin.jup.ag)');
+console.log('dasha-compute-api-docs-pretty-path: PASS (/compute/api/docs+/doc 308 skill.md www+lobby GET+HEAD; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');
