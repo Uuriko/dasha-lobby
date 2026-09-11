@@ -9,8 +9,9 @@
  * /compute/factory|/api/factory stay dedicated → /compute/api/factory (JSON).
  * /llms stays AEO → /llms.txt. Exact /compute /privacy stay 200 (null dest).
  * Bare /price stays the 200 JSON token-price API. Skip /arcade /games
- * /multichain /room /project-room /connect /v1 /openai /openai-api /terms
- * /health /status /discord /slack /admin /waitlist. Disk only. No Designer.
+ * /multichain /room /connect /v1 /openai /openai-api /terms
+ * /health /status /discord /slack /admin /waitlist. /project-room folds
+ * via room leftover → /room (not this compute set). Disk only. No Designer.
  * Never plugin.jup.ag. PR-mirror only — no wrangler deploy.
  */
 import assert from 'node:assert/strict';
@@ -93,7 +94,6 @@ const LOCKS = [
   '/games', '/games/', '/Games',
   '/multichain', '/multichain/',
   '/room', '/room/', '/Room',
-  '/project-room', '/project-room/',
   '/connect', '/connect/', '/Connect',
   '/v1', '/v1/',
   '/openai', '/openai/', '/OpenAI',

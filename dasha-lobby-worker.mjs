@@ -4369,7 +4369,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // to plain /compute (no hash). Bare /factory = Compute factory face (product page);
   // /compute/factory|/api/factory stay dedicated → /compute/api/factory (JSON). Do NOT
   // put /compute/factory in this set. /llms stays AEO → /llms.txt (not this set).
-  // Skip locks: /arcade /games /multichain /room /project* /rooms /chatroom /connect
+  // Skip locks: /arcade /games /multichain /room /rooms /chatroom /connect
+  // /project-room folds via POTTER_ROOM_308_PATHS → /room (not this compute set).
   // /v1 /openai /openai-api /admin /blog /news /faq /waitlist /join /oauth /terms /tos
   // /legal /status /health /discord /slack. Never /price (200 JSON) /privacy.
   "/llm",
@@ -4710,6 +4711,16 @@ const POTTER_LOBBY_DOOR_308_PATHS = new Set([
   '/social', '/social/',
 ]);
 
+/** Leftover /project-room (2026-09-11): live /project-room +slash / Title-case
+ * / underscore /project_room html-404 while /room is 200 discovery on
+ * www+lobby. Fold to /room (lobby same-host). Do not invent /project-rooms.
+ * Keep Compute separate — no /compute/project-room tab. Exact /room stays 200.
+ * Skip /arcade /games /multichain /rooms /chatroom /connect. */
+const POTTER_ROOM_308_PATHS = new Set([
+  '/project-room', '/project-room/',
+  '/project_room', '/project_room/',
+]);
+
 
 /** Leftover /bounty (+slash / Title-case) still html-404 while /bounties is 200. */
 const POTTER_BOUNTIES_308_PATHS = new Set([
@@ -5017,6 +5028,7 @@ export function potterHome308Dest(path) {
   if (p === "/play" || p === "/play/" || p === "/game" || p === "/game/") {
     return "https://www.getdasha.com/lobby";
   }
+  if (POTTER_ROOM_308_PATHS.has(p)) return "https://www.getdasha.com/room";
   if (p === "/socials" || p === "/socials/" || p === "/social" || p === "/social/") {
     return "https://www.getdasha.com/lobby";
   }
@@ -5287,7 +5299,9 @@ export function potterHome308Response(request, url) {
     if (host === 'lobby.getdasha.com') {
       const u = new URL(dest);
       const src = String(path || '').toLowerCase();
-      if (
+      if (POTTER_ROOM_308_PATHS.has(src) && u.pathname === '/room') {
+        location = 'https://lobby.getdasha.com/room' + u.search + u.hash;
+      } else if (
         u.hostname === 'www.getdasha.com' &&
         (
           u.pathname === '/compute/api' ||
