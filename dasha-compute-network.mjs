@@ -145,11 +145,18 @@ export const SSE_KEEPALIVE_MS = 10_000;
 const MODELS = new Set(['qwen3-4b', 'qwen3-8b', 'gemma3-12b', 'gpt-oss-20b', 'qwen3-30b-a3b', 'gemma3-27b', 'gpt-oss-120b']);
 export const COMPUTE_CATALOG_MODELS = MODELS;
 
-/** Poll grows a Mac's allow-list to the live Worker catalog (qwen3-4b after older registers). */
-export function growAllowedModels(prior, catalog = MODELS) {
+/**
+ * Poll unions catalog models the Mac is advertising into allowedModels.
+ * Register-time allow-list stays until the kit actually polls a new catalog id
+ * (DASHA_MODEL_MAP add). Unknown / non-catalog ids stay out.
+ */
+export function growAllowedModels(prior, polled = [], catalog = MODELS) {
   const next = new Set();
-  for (const model of catalog) next.add(String(model));
   for (const model of prior || []) {
+    const id = String(model);
+    if (catalog.has(id)) next.add(id);
+  }
+  for (const model of polled || []) {
     const id = String(model);
     if (catalog.has(id)) next.add(id);
   }
@@ -1667,7 +1674,10 @@ export class ComputeNetwork {
       provider.lastSeenAt = now;
       const kitVersion = String(input.version || '').trim().slice(0, 32);
       if (kitVersion) provider.kitVersion = kitVersion;
-      provider.allowedModels = growAllowedModels(provider.allowedModels || provider.models || []);
+      provider.allowedModels = growAllowedModels(
+        provider.allowedModels || provider.models || [],
+        Array.isArray(input.models) ? input.models : [],
+      );
       if (Array.isArray(input.models)) provider.models = [...new Set(input.models.map(String).filter(model => provider.allowedModels.includes(model)))];
       else provider.models ||= [];
       const hardware = providerHardware(input, provider.allowedModels);

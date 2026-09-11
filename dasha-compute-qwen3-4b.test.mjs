@@ -86,20 +86,35 @@ const register = await lobby.fetch(new Request('https://lobby.getdasha.com/compu
 assert.equal(register.status, 201);
 const credentials = await register.json();
 assert.deepEqual(rows.get(`compute:provider:${credentials.provider_id}`).allowedModels, ['qwen3-4b', 'qwen3-8b', 'gemma3-12b']);
-assert.ok(growAllowedModels(['qwen3-8b']).includes('qwen3-4b'), 'catalog grow adds qwen3-4b');
+assert.deepEqual(growAllowedModels(['qwen3-8b'], ['qwen3-4b', 'qwen3-8b']).sort(), ['qwen3-4b', 'qwen3-8b']);
+assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-8b']).includes('qwen3-4b'), 'no poll of 4b → no 4b allow');
+assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-8b', 'not-a-model']).includes('not-a-model'), 'unknown stays out');
+assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-4b']).includes('gpt-oss-120b'), 'unpolled catalog ids stay locked');
 assert.ok([...COMPUTE_CATALOG_MODELS].includes('qwen3-4b'));
 
 const stale = rows.get(`compute:provider:${credentials.provider_id}`);
 stale.allowedModels = ['qwen3-8b'];
 stale.models = [];
+const still8 = await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/providers/poll', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${credentials.provider_token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ provider_id: credentials.provider_id, name: 'A4 Mac', models: ['qwen3-8b'] }),
+}));
+assert.equal(still8.status, 204);
+assert.deepEqual(rows.get(`compute:provider:${credentials.provider_id}`).allowedModels, ['qwen3-8b'], 'poll 8b-only does not unlock 4b');
+
 const grown = await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/providers/poll', {
   method: 'POST',
   headers: { Authorization: `Bearer ${credentials.provider_token}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ provider_id: credentials.provider_id, name: 'A4 Mac', models: ['qwen3-4b', 'qwen3-8b'] }),
+  body: JSON.stringify({ provider_id: credentials.provider_id, name: 'A4 Mac', models: ['qwen3-4b', 'qwen3-8b', 'not-a-model'] }),
 }));
-assert.equal(grown.status, 204, 'pre-4b allow-list can poll after catalog grow');
-assert.ok(rows.get(`compute:provider:${credentials.provider_id}`).allowedModels.includes('qwen3-4b'), 'poll grew allowedModels with qwen3-4b');
+assert.equal(grown.status, 204, 'pre-4b allow-list can poll 4b after MAP add');
+assert.ok(rows.get(`compute:provider:${credentials.provider_id}`).allowedModels.includes('qwen3-4b'), 'poll unioned catalog 4b');
+assert.ok(rows.get(`compute:provider:${credentials.provider_id}`).allowedModels.includes('qwen3-8b'), 'kept register 8b');
+assert.ok(!rows.get(`compute:provider:${credentials.provider_id}`).allowedModels.includes('not-a-model'), 'unknown not persisted');
+assert.ok(!rows.get(`compute:provider:${credentials.provider_id}`).allowedModels.includes('gpt-oss-120b'), 'did not unlock whole catalog');
 assert.ok(rows.get(`compute:provider:${credentials.provider_id}`).models.includes('qwen3-4b'), 'poll advertises qwen3-4b');
+assert.ok(!rows.get(`compute:provider:${credentials.provider_id}`).models.includes('not-a-model'), 'unknown not advertised');
 
 const providerHeaders = { Authorization: `Bearer ${credentials.provider_token}`, 'Content-Type': 'application/json' };
 const heartbeat = {
