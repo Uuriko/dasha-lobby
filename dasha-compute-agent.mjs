@@ -59,7 +59,9 @@ You want a Mac to run a prompt — or Hosted when no Mac is online. Not a ledger
 
 Sign in at https://www.getdasha.com/compute#build
 
-Guest key: POST /compute/api/guest-keys (mint deferred). 501 next points at Sign in → /compute#build.
+Guest key: POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP. Copy once.
+
+curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
 
 ${COMPUTE_FIRST_CALL_TXT}
 Pick \`model\` from the models list.
@@ -86,7 +88,8 @@ healthz ${COMPUTE_HEALTHZ}
 network ${COMPUTE_NETWORK}
 auth Bearer API key
 no key needed for healthz + network + models; key needed for chat
-guest key POST /compute/api/guest-keys — mint deferred; Sign in at /compute#build
+guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP
+curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
 
 First path: Sign in, create a key, change the base URL.
 
@@ -134,6 +137,14 @@ export const COMPUTE_AGENT_JSON = {
     scheme: 'Bearer',
     public_reads: ['healthz', 'network', 'models'],
     chat: 'bearer',
+    guest_key: {
+      method: 'POST',
+      path: '/compute/api/guest-keys',
+      ttl_seconds: 86_400,
+      scopes: ['chat', 'models'],
+      rate: '3/hour/IP',
+      curl: "curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'",
+    },
   },
   endpoints: {
     chat_completions: `${COMPUTE_API_BASE}/chat/completions`,

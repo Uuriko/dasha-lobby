@@ -79,7 +79,18 @@ import {
   makeHead,
 } from './dasha-compute-heads.mjs';
 import { X402_BILLING_DOCS, x402BillingDocsLine } from './dasha-compute-x402.mjs';
-import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
+import {
+  computeGuestKeyResponse,
+  guestKeyAllows,
+  guestKeyExpired,
+  handleGuestKeyWrite,
+  isComputeGuestKeyPath,
+  isGuestApiKey,
+  parseGuestApiToken,
+  takeGuestRate,
+  GUEST_KEY_CHAT_MAX,
+  GUEST_KEY_CHAT_WINDOW_MS,
+} from './dasha-compute-guest-key.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
 
 export { HOSTED_ASK_PRICE_CENTS };
@@ -285,7 +296,7 @@ function computeApiRootBody(env) {
     session_chat: ORIGIN_REQUIRED_HINT,
     usage: 'v1 chat/completions + Hosted /compute/api/chat SSE + jobs/:id when stored (see /compute/api/v1)',
     guest_keys: '/compute/api/guest-keys',
-    guest_key_mint: 'deferred',
+    guest_key_mint: 'live',
     billing: {
       chat_completions: "Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card",
       keys: `Create-time spend cap default $${API_KEY_LIMIT_DEFAULT_CENTS / 100}/month · 402 on exceed · see /caps`,
@@ -387,6 +398,30 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
       reason: 'job_in_flight',
       hint: 'Wait. Then GET /compute/api/jobs.',
       next: [{ path: '/compute/api/jobs' }],
+    };
+  }
+  if (/guest key rate limited/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'guest_key_rate_limited',
+      hint: 'Wait, then POST chat again. Or mint a new guest key.',
+      next: [
+        { path: '/compute/api/v1/chat/completions' },
+        { path: '/compute/api/guest-keys' },
+        { path: '/compute#build' },
+      ],
+    };
+  }
+  if (/guest key cannot/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'guest_key_scope',
+      hint: 'Guest keys are chat + models only. Sign in at /compute#build for a developer key.',
+      next: [
+        { path: '/compute/api/v1/chat/completions' },
+        { path: '/compute/api/v1/models' },
+        { path: '/compute#build' },
+      ],
     };
   }
   if (/community limit reached/i.test(msg)) {
@@ -964,6 +999,16 @@ export class ComputeNetwork {
 
   async apiKey(request) {
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+    const guest = parseGuestApiToken(token);
+    if (guest) {
+      const key = await this.state.storage.get(`compute:api-key:${guest.id}`);
+      if (!key || !isGuestApiKey(key) || !sameSecret(await sha256(token), key.tokenHash)) return null;
+      if (guestKeyExpired(key)) return null;
+      const now = Date.now();
+      const refreshed = { ...key, lastUsedAt: now };
+      await this.state.storage.put(`compute:api-key:${refreshed.id}`, refreshed);
+      return refreshed;
+    }
     const match = token.match(/^dsk_([A-Za-z0-9_-]{12})\.([A-Za-z0-9_-]{20,})$/);
     if (!match) return null;
     const key = await this.state.storage.get(`compute:api-key:key_${match[1]}`);
@@ -1097,8 +1142,11 @@ export class ComputeNetwork {
 
   async fetch(request, allowedOrigin) {
     const path = new URL(request.url).pathname, now = Date.now(), credentials = Boolean(allowedOrigin);
-    const guestKey = computeGuestKeyResponse(request);
-    if (guestKey) return guestKey;
+    if (isComputeGuestKeyPath(path)) {
+      const guestProbe = computeGuestKeyResponse(request);
+      if (guestProbe) return guestProbe;
+      return handleGuestKeyWrite(request, { storage: this.state.storage, rates: this.rates });
+    }
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const res = json(computeApiRootBody(this.env), 200, allowedOrigin || '*', credentials);
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
@@ -1232,7 +1280,9 @@ export class ComputeNetwork {
 
     const modelRetrieve = path.match(/^\/compute\/api\/v1\/models\/([A-Za-z0-9._-]+)\/?$/);
     if (modelRetrieve && (request.method === 'GET' || request.method === 'HEAD')) {
-      if (!await this.apiKey(request)) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      const modelKey = await this.apiKey(request);
+      if (!modelKey) return maybeHead(request, v1err('invalid API key', 401, 'authentication_error'));
+      if (!guestKeyAllows(modelKey, 'models')) return maybeHead(request, v1err('guest key cannot use this endpoint', 403, 'invalid_request_error'));
       await this.prune(now);
       const id = modelRetrieve[1];
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
@@ -1242,7 +1292,9 @@ export class ComputeNetwork {
     }
 
     if ((path === '/compute/api/v1/embeddings' || path === '/compute/api/v1/embeddings/') && request.method === 'POST') {
-      if (!await this.apiKey(request)) return v1err('invalid API key', 401, 'authentication_error');
+      const embedKey = await this.apiKey(request);
+      if (!embedKey) return v1err('invalid API key', 401, 'authentication_error');
+      if (!guestKeyAllows(embedKey, 'embeddings')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
       return v1err('embeddings are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
@@ -1252,7 +1304,9 @@ export class ComputeNetwork {
     }
 
     if ((path === '/compute/api/v1/completions' || path === '/compute/api/v1/completions/') && request.method === 'POST') {
-      if (!await this.apiKey(request)) return v1err('invalid API key', 401, 'authentication_error');
+      const completionKey = await this.apiKey(request);
+      if (!completionKey) return v1err('invalid API key', 401, 'authentication_error');
+      if (!guestKeyAllows(completionKey, 'completions')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
       return v1err('legacy completions are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
@@ -1262,7 +1316,9 @@ export class ComputeNetwork {
     }
 
     if ((path === '/compute/api/v1/responses' || path === '/compute/api/v1/responses/') && request.method === 'POST') {
-      if (!await this.apiKey(request)) return v1err('invalid API key', 401, 'authentication_error');
+      const responseKey = await this.apiKey(request);
+      if (!responseKey) return v1err('invalid API key', 401, 'authentication_error');
+      if (!guestKeyAllows(responseKey, 'responses')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
       return v1err('responses are not supported; use POST /v1/chat/completions', 400, 'invalid_request_error');
     }
 
@@ -1274,12 +1330,18 @@ export class ComputeNetwork {
     if ((path === '/compute/api/v1/chat/completions' || path === '/compute/api/v1/chat/completions/') && request.method === 'POST') {
       const key = await this.apiKey(request);
       if (!key) return v1err('invalid API key', 401, 'authentication_error');
+      if (!guestKeyAllows(key, 'chat')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
+      if (isGuestApiKey(key) && !takeGuestRate(this.rates, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS)) {
+        return v1err('guest key rate limited; try again shortly', 429, 'invalid_request_error');
+      }
       // v1: prepaid HOSTED_ASK_PRICE_CENTS per non-self API chat (community/mixture). Self-route free. Key limit_cents is runaway-only.
+      // Guest keys skip prepaid debit — tight mint + chat rate is the floor.
+      const guest = isGuestApiKey(key);
       const input = mergeRouteFromHeaders(await body(request, 12 * 1024), request);
       await this.prune(now);
       const providersPeek = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
       const peek = resolveJobRoute(key.owner, input, providersPeek, now);
-      if (peek.route !== 'self') {
+      if (peek.route !== 'self' && !guest) {
         const gate = await this.chargeApiKeySpend(key, HOSTED_ASK_PRICE_CENTS, now, { checkOnly: true });
         if (!gate.ok) return v1err(gate.error || 'key spend limit reached', gate.status || 402, 'invalid_request_error');
         const balPeek = Math.max(0, Math.floor(Number((await this.state.storage.get(`compute:credit-balance:${key.owner}`))?.cents) || 0));
@@ -1289,7 +1351,7 @@ export class ComputeNetwork {
       }
       const queued = await this.queueJob(key.owner, input, now);
       if (queued.error) return v1err(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error');
-      if (queued.job.route !== 'self') {
+      if (queued.job.route !== 'self' && !guest) {
         const debit = await this.debitCredits(key.owner, {
           cents: HOSTED_ASK_PRICE_CENTS,
           reason: 'api-chat',
@@ -2632,8 +2694,8 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 
 export async function computeApi(request, env, allowedOrigin) {
   const path = new URL(request.url).pathname, credentials = Boolean(allowedOrigin);
-  const guestKey = computeGuestKeyResponse(request);
-  if (guestKey) return guestKey;
+  const guestProbe = computeGuestKeyResponse(request);
+  if (guestProbe) return guestProbe;
   if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
     const res = json(computeApiRootBody(env), 200, allowedOrigin || '*', credentials);
     return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
@@ -2667,7 +2729,7 @@ export async function computeApi(request, env, allowedOrigin) {
     if (stub) return stub.fetch(request);
     return maybeHead(request, json({ error: 'login required', ...creditsCatalog(null) }, 401, allowedOrigin, Boolean(allowedOrigin)));
   }
-  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     return stub ? stub.fetch(request) : json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
   }
