@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Leftover pretty path: live GET/HEAD /compute/kit.tar.gz (+slash)
- * html-404s on www and JSON-404s on lobby while sibling open-alpha
- * aliases already 308 via potterHome308Dest KIT_TAR to the gzip kit.
- * Fold this guessed short kit URL to the canonical gzip — never /compute HTML.
- * Title-case /Compute/Kit.tar.gz is covered by existing dest toLowerCase
- * (same as peer /compute/open-alpha.tar.gz). Do not invent DEX peers
- * or apex /kit.tar.gz /assets/kit.tar.gz. /compute/kit stays tab leftover
- * → /compute. Exact /dasha-compute-open-alpha.tar.gz stays 200 (null dest).
+ * Leftover pretty path: live GET/HEAD /kit.tar.gz (+slash)
+ * html-404s on www while sibling /open-alpha.tar.gz and /compute/kit.tar.gz
+ * already 308 via potterHome308Dest KIT_TAR to the gzip kit.
+ * Fold this guessed apex kit URL to the canonical gzip — never /compute HTML.
+ * Title-case /Kit.tar.gz is covered by existing dest toLowerCase
+ * (same as peer /open-alpha.tar.gz). Do not invent DEX peers
+ * or /assets/kit.tar.gz. /compute/kit stays tab leftover → /compute.
+ * Exact /dasha-compute-open-alpha.tar.gz stays 200 (null dest).
  * Disk only. No Designer. Never plugin.jup.ag. PR-mirror only — no wrangler deploy.
  */
 import assert from 'node:assert/strict';
@@ -27,6 +27,9 @@ assert.match(
 );
 assert.match(workerSrc, /p === "\/compute\/kit\.tar\.gz"/, 'KIT_TAR block lists /compute/kit.tar.gz');
 assert.match(workerSrc, /p === "\/compute\/kit\.tar\.gz\/"/, 'KIT_TAR block lists /compute/kit.tar.gz/');
+assert.match(workerSrc, /p === "\/kit\.tar\.gz"/, 'KIT_TAR block lists /kit.tar.gz');
+assert.match(workerSrc, /p === "\/kit\.tar\.gz\/"/, 'KIT_TAR block lists /kit.tar.gz/');
+assert.doesNotMatch(workerSrc, /p === "\/assets\/kit\.tar\.gz"/, 'do not invent /assets/kit.tar.gz');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
 const WWW = 'https://www.getdasha.com';
@@ -34,6 +37,9 @@ const KIT = `${WWW}/dasha-compute-open-alpha.tar.gz`;
 const COMPUTE = `${WWW}/compute`;
 
 const FOLDS = [
+  '/kit.tar.gz',
+  '/kit.tar.gz/',
+  '/Kit.tar.gz',
   '/compute/kit.tar.gz',
   '/compute/kit.tar.gz/',
   '/Compute/Kit.tar.gz',
@@ -44,10 +50,9 @@ const PEERS = [
   '/compute/dasha-compute-open-alpha.tar.gz',
   '/assets/open-alpha.tar.gz',
   '/open-alpha.tar.gz',
+  '/open-alpha.tar.gz/',
 ];
 const SKIP = [
-  '/kit.tar.gz',
-  '/kit.tar.gz/',
   '/assets/kit.tar.gz',
   '/compute/jupiter',
   '/compute/orca',
@@ -91,6 +96,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 }
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
+assert.ok(!sitemapXml.includes(`${WWW}/kit.tar.gz</loc>`), 'sitemap omits leftover /kit.tar.gz');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/kit.tar.gz</loc>`), 'sitemap omits leftover /compute/kit.tar.gz');
 
-console.log('dasha-compute-kit-tar-pretty-path: PASS (/compute/kit.tar.gz+/compute/kit.tar.gz/ 308 gzip kit; Title-case /Compute/Kit.tar.gz; dest never /compute HTML; /compute/kit stays tab; canonical kit 200; no DEX /kit.tar.gz peers; www+lobby GET+HEAD; no plugin.jup.ag)');
+console.log('dasha-compute-kit-tar-pretty-path: PASS (/kit.tar.gz+/kit.tar.gz/ 308 gzip kit; Title-case /Kit.tar.gz; dest never /compute HTML; open-alpha peers unchanged; /compute/kit stays tab; canonical kit 200; no /assets/kit.tar.gz or DEX peers; www+lobby GET+HEAD; no plugin.jup.ag)');
