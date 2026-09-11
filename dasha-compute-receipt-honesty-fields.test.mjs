@@ -317,6 +317,15 @@ const origin = 'https://www.getdasha.com';
   assert.equal('first_edit_at' in body.receipt, false);
   assert.equal(typeof body.receipt.latency_ms, 'number');
   assert.ok(body.receipt.latency_ms >= 0);
+
+  const settledList = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/receipts', {
+    headers: userHeaders,
+  }), origin);
+  assert.equal(settledList.status, 200);
+  const settledBody = await settledList.json();
+  const settledRow = settledBody.receipts.find((row) => row.job_id === leased.id);
+  assert.ok(settledRow, 'result POST records a settled receipt for the leased job');
+  assert.equal(settledRow.model, 'qwen3-8b', 'job.model is threaded through the settle call site');
 }
 
 {
