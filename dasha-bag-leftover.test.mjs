@@ -36,6 +36,10 @@ assert.match(bag, /Mint-dead/);
 assert.match(bag, /Freeze-dead/);
 assert.match(bag, /Burned Raydium LP/);
 assert.match(bag, /jup\.ag\/tokens\/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/);
+assert.match(bag, /Mark price ≠ exit\./);
+assert.match(bag, /<form id="exit-form" action="\/bag\/api\/exit"/);
+assert.match(bag, /Copy receipt/);
+assert.doesNotMatch(bag, /auto-sell|signTransaction|private key/i);
 assert.match(
   bag,
   /<p>Compute\. <a href="https:\/\/www\.getdasha\.com\/compute#ask">Use a Mac<\/a> · <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a><\/p>/,
@@ -68,6 +72,7 @@ assert.doesNotMatch(full, /Holders can still burn/);
 assert.doesNotMatch(full, /No outstanding LP claim/);
 assert.doesNotMatch(full, /supply 0 on 2026-08-18/);
 assert.match(full, /8GDvsE3NbiKuo5uUFR9zgRY76mdhXuJfeDsy8hn7h3Aj/);
+assert.match(full, /Mark price ≠ exit/);
 assert.doesNotMatch(full, /t\.me/);
 
 const robots = extractConst('ROBOTS_TXT');
@@ -105,6 +110,9 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.match(body, /Freeze-dead/);
   assert.match(body, /Burned Raydium LP/);
   assert.match(body, /jup\.ag\/tokens\/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/);
+  assert.match(body, /Mark price ≠ exit\./);
+  assert.match(body, /Copy receipt/);
+  assert.doesNotMatch(body, /auto-sell|signTransaction|private key/i);
   assert.match(body, /href="https:\/\/www\.getdasha\.com\/compute#ask">Use a Mac/, `${origin} Use a Mac`);
   assert.match(body, /href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac/, `${origin} Join a Mac`);
   assert.doesNotMatch(body, /plugin\.jup\.ag/);

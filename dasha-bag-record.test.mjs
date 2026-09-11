@@ -65,8 +65,8 @@ assert.doesNotMatch(bag, /ansem\.io\/api/);
 assert.doesNotMatch(bag, /plugin\.jup\.ag/);
 assert.doesNotMatch(bag, /VVAIFU/);
 assert.doesNotMatch(bag, /t\.me/);
-assert.equal((bag.match(/<input\b/g) || []).length, 1);
-assert.equal((bag.match(/<button\b/g) || []).length, 1);
+assert.equal((bag.match(/<input\b/g) || []).length, 2);
+assert.equal((bag.match(/<button\b/g) || []).length, 2);
 
 const which = extractConst('WHICH_HTML');
 assert.doesNotMatch(which, /<form\b/);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Leftover Title-case /Digest /Digest.json /Chess/me|/queue /Bag/api/record
+ * Leftover Title-case /Digest /Digest.json /Chess/me|/queue /Bag/api/record|/exit
  * html-404 while lowercase siblings already 200 (or 400/405). 308 to canonical
  * lowercase on www; exact lowercase stays null so handlers run.
  * Chess subpaths keep remainder case (game/challenge/tournament ids).
@@ -32,6 +32,8 @@ const CASES = [
   ['/Chess/replay/AbCdEf', `${WWW}/chess/replay/AbCdEf`],
   ['/Bag/api/record', `${WWW}/bag/api/record`],
   ['/BAG/API/record', `${WWW}/bag/api/record`],
+  ['/Bag/api/exit', `${WWW}/bag/api/exit`],
+  ['/BAG/API/exit', `${WWW}/bag/api/exit`],
   ['/Bag/api', `${WWW}/bag/api`],
   ['/Digest/pack', `${WWW}/digest/pack`],
   ['/DIGEST/ingest', `${WWW}/digest/ingest`],
@@ -50,6 +52,7 @@ for (const path of [
   '/chess/QUEUE',
   '/chess/replay/AbCdEf',
   '/bag/api/record',
+  '/bag/api/exit',
   '/bag/api',
   '/digest/pack',
   '/digest/ingest',
