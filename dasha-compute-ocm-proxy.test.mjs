@@ -15,6 +15,11 @@ import {
   proxyComputeOcm,
   OCM_PREFIX,
 } from './dasha-compute-ocm-proxy.mjs';
+import {
+  isOcmLoggedOutGate,
+  polishOcmLoginHtml,
+  OCM_LOGIN_SKIN_ID,
+} from './dasha-compute-ocm-login-skin.mjs';
 import worker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 
 assert.equal(isComputeOcmPath('/compute/ocm'), true);
@@ -56,8 +61,21 @@ assert.match(rewriteOcmSetCookie('ocm_session=abc; Path=/; HttpOnly; Secure'), /
 assert.doesNotMatch(rewriteOcmSetCookie('ocm_session=abc; Path=/; Domain=ocm.getdasha.com; Secure'), /Domain=/);
 
 const stubHtml = `<!DOCTYPE html><html><body><h1>Open-Compute Marketplace</h1>
-<form method="post" action="/signin"><button>Sign in</button></form>
-<form method="post" action="/signup"></form>
+<p class="sub">Alpha.</p>
+<div class="row">
+  <div class="card"><h3>Sign in</h3>
+    <form method="post" action="/signin">
+      <input id="k" type="password" name="key" placeholder="ocm_live_…" required>
+      <button type="submit">Sign in</button>
+    </form>
+  </div>
+  <div class="card"><h3>Create an account</h3>
+    <form method="post" action="/signup">
+      <input id="e" type="email" name="email" required>
+      <button type="submit">Create account</button>
+    </form>
+  </div>
+</div>
 <a href="/">home</a></body></html>`;
 
 const calls = [];
@@ -95,6 +113,18 @@ const stubFetch = async (href, init = {}) => {
       headers: { 'content-type': 'application/json; charset=utf-8' },
     });
   }
+  if (u.pathname === '/signin' && (init.method || 'GET') === 'GET') {
+    return new Response(JSON.stringify({ error: { message: 'no route for GET /signin', type: 'invalid_request_error' } }), {
+      status: 404,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+    });
+  }
+  if (u.pathname === '/signup' && (init.method || 'GET') === 'GET') {
+    return new Response(JSON.stringify({ error: { message: 'no route for GET /signup', type: 'invalid_request_error' } }), {
+      status: 404,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+    });
+  }
   if (u.pathname === '/signin' && (init.method || 'GET') === 'POST') {
     return new Response(null, {
       status: 302,
@@ -110,18 +140,47 @@ const stubFetch = async (href, init = {}) => {
   });
 };
 
+assert.equal(isOcmLoggedOutGate(stubHtml), true);
+assert.equal(isOcmLoggedOutGate('<html><body><h1>Run a provider</h1></body></html>'), false);
+const skinned = polishOcmLoginHtml(rewriteOcmHtml(stubHtml));
+assert.match(skinned, /id="dasha-ocm-login-skin"/);
+assert.match(skinned, /dasha-ocm-gate/);
+assert.match(skinned, /dasha-ocm-primary/);
+assert.match(skinned, /dasha-ocm-secondary/);
+assert.match(skinned, /#dcff00/);
+assert.match(skinned, /<h1>Marketplace\.<\/h1>/);
+assert.match(skinned, /Paste a developer key/);
+assert.match(skinned, /href="\/compute"/);
+assert.match(skinned, /action="\/compute\/ocm\/signin"/);
+assert.match(skinned, /action="\/compute\/ocm\/signup"/);
+assert.match(skinned, /name="key"/);
+assert.match(skinned, /name="email"/);
+assert.equal(polishOcmLoginHtml(skinned), skinned, 'skin is idempotent');
+assert.equal(
+  polishOcmLoginHtml('<html><body><h1>Run a provider</h1><a href="/">console</a></body></html>'),
+  '<html><body><h1>Run a provider</h1><a href="/">console</a></body></html>',
+);
+
 const root = await proxyComputeOcm(new Request('https://www.getdasha.com/compute/ocm'), { fetch: stubFetch });
 assert.equal(root.status, 200);
 assert.equal(root.headers.get('x-dasha-edge'), 'compute-ocm');
 const rootBody = await root.text();
-assert.match(rootBody, /Open-Compute Marketplace/);
+assert.match(rootBody, /Marketplace\./);
+assert.match(rootBody, /id="dasha-ocm-login-skin"/);
+assert.match(rootBody, /dasha-ocm-primary/);
 assert.match(rootBody, /action="\/compute\/ocm\/signin"/);
 assert.match(rootBody, /action="\/compute\/ocm\/signup"/);
+assert.match(rootBody, /name="key"/);
+assert.doesNotMatch(rootBody, /action="\/signin"/);
 assert.equal(calls[0].href, 'https://ocm.getdasha.com/');
+assert.ok(OCM_LOGIN_SKIN_ID);
 
 const provider = await proxyComputeOcm(new Request('https://www.getdasha.com/compute/ocm/provider'), { fetch: stubFetch });
 assert.equal(provider.status, 200);
-assert.match(await provider.text(), /Run a provider/);
+const providerHtml = await provider.text();
+assert.match(providerHtml, /Run a provider/);
+assert.doesNotMatch(providerHtml, /dasha-ocm-login-skin/);
+assert.doesNotMatch(providerHtml, /dasha-ocm-primary/);
 assert.equal(calls.at(-1).href, 'https://ocm.getdasha.com/provider');
 
 const health = await proxyComputeOcm(new Request('https://lobby.getdasha.com/compute/ocm/healthz'), { fetch: stubFetch });
@@ -163,6 +222,11 @@ const setCookie = signin.headers.get('set-cookie') || '';
 assert.match(setCookie, /Path=\/compute\/ocm/);
 assert.doesNotMatch(setCookie, /Domain=/);
 
+const signinGet = await proxyComputeOcm(new Request('https://www.getdasha.com/compute/ocm/signin'), { fetch: stubFetch });
+assert.equal(signinGet.status, 404);
+const signupGet = await proxyComputeOcm(new Request('https://www.getdasha.com/compute/ocm/signup'), { fetch: stubFetch });
+assert.equal(signupGet.status, 404);
+
 // Worker integration (stub global fetch for OCM only)
 const prevFetch = globalThis.fetch;
 globalThis.fetch = async (input, init) => {
@@ -177,6 +241,8 @@ try {
   assert.equal(viaWorker.headers.get('x-dasha-edge'), 'compute-ocm');
   const viaBody = await viaWorker.text();
   assert.match(viaBody, /action="\/compute\/ocm\/signin"/);
+  assert.match(viaBody, /dasha-ocm-login-skin/);
+  assert.match(viaBody, /<h1>Marketplace\.<\/h1>/);
 
   const viaLobby = await worker.fetch(new Request('https://lobby.getdasha.com/compute/ocm/healthz'), {});
   assert.equal(viaLobby.status, 200);
@@ -207,6 +273,20 @@ try {
   const providerBody = await viaProvider.text();
   assert.match(providerBody, /Run a provider/);
   assert.match(providerBody, /href="\/compute\/ocm\/"/);
+  assert.doesNotMatch(providerBody, /dasha-ocm-login-skin/);
+
+  const viaSigninGet = await worker.fetch(new Request('https://www.getdasha.com/compute/ocm/signin'), {});
+  assert.equal(viaSigninGet.status, 404);
+
+  for (const path of ['/compute/marketplace', '/compute/marketplace/', '/compute/market', '/compute/Marketplace']) {
+    const dest = potterHome308Dest(path);
+    assert.equal(dest, 'https://www.getdasha.com/compute/ocm', path);
+    const res = await worker.fetch(new Request(`https://www.getdasha.com${path}`), {});
+    assert.equal(res.status, 308, path);
+    assert.equal(res.headers.get('location'), 'https://www.getdasha.com/compute/ocm', path);
+  }
+  assert.equal(potterHome308Dest('/marketplace'), 'https://www.getdasha.com/compute');
+  assert.equal(potterHome308Dest('/ocm'), 'https://www.getdasha.com/compute');
 
   const computePage = await worker.fetch(new Request('https://www.getdasha.com/compute'), {});
   assert.equal(computePage.status, 200);
@@ -229,4 +309,4 @@ assert.equal(potterHome308Dest('/COMPUTE/ocm/healthz'), 'https://www.getdasha.co
 assert.equal(potterHome308Dest('/compute/ocm'), null);
 assert.equal(potterHome308Dest('/compute/ocm/healthz'), null);
 
-console.log('dasha-compute-ocm-proxy: PASS (path map + healthz slash/HEAD + HTML rewrite + cookie/Location + worker www/lobby + api untouched + door)');
+console.log('dasha-compute-ocm-proxy: PASS (path map + login skin + marketplace→ocm + healthz slash/HEAD + HTML rewrite + cookie/Location + worker www/lobby + api untouched + door)');

@@ -14,6 +14,7 @@ Enroll this Mac with a one-time `ocm_enroll_` code, install the agent safely, pa
 - Apple Silicon (arm64) + macOS 14+. One outbound connection — no inbound ports.
 - Enrollment codes start `ocm_enroll_` (15 min, once). The installer exchanges the code for an `ocm_host_` token — you never paste a provider token on the command line.
 - A leftover `ocm_host_` token still works at the hidden prompt. Developer keys (`ocm_live_`) are refused.
+- Which key / which base: buyer `ocm_live_` hits https://www.getdasha.com/compute/ocm/v1. Compute chat is `dsk_` / `dgk_` on https://lobby.getdasha.com/compute/api/v1. Never swap. Host tokens stay `ocm_enroll_` / `ocm_host_`.
 - Status **Cold** means the model loads on the first request (~1 min); Ready and Serving answer in about a second. Cold is not broken Warming.
 - As a provider you can read every prompt routed here in plaintext; so can every other provider.
 

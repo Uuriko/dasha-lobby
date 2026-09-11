@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import worker from "./dasha-lobby-worker.mjs";
+import worker, { potterHome308Dest } from "./dasha-lobby-worker.mjs";
 import { COMPUTE_PAGE_HTML } from "./dasha-compute-page.mjs";
 import { OCM_HOST_SKILL_MD } from "./dasha-compute-skills.mjs";
 
@@ -27,6 +27,12 @@ function assertOcmFold(html, label) {
   assert.match(html, /id=["']market-host["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Host</, `${label} market-host`);
   assert.match(html, /id=["']provide-ocm-status["'][^>]*href=["']\/compute\/ocm\/status["']/, `${label} provide-ocm-status`);
   assert.match(html, /title=["']Cold loads on first request · Ready\/Serving ~1s["']/, `${label} Cold status title`);
+  assert.match(html, /id=["']ask-provide["'][^>]*>Provide</, `${label} Ask Provide`);
+  assert.match(html, /id=["']ask-ocm["'][^>]*>Marketplace</, `${label} Ask Marketplace`);
+  assert.match(html, /id=["']ask-host["'][^>]*>Host</, `${label} Ask Host`);
+  assert.match(html, /id=["']market-open["'][^>]*href=["']\/compute\/ocm["']/, `${label} Console → OCM`);
+  assert.match(html, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} Start Marketplace door`);
+  assert.match(html, /id=["']market-enroll-fine["'][^>]*>OCM uses ocm_live_ or email — not your Compute X login\.</, `${label} OCM key honesty`);
   assert.doesNotMatch(html, /New provider token/, `${label} no New provider token`);
   assert.doesNotMatch(html, /OCM_HOST_TOKEN="ocm_host_/, `${label} no argv OCM_HOST_TOKEN`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
@@ -46,6 +52,9 @@ assert.match(OCM_HOST_SKILL_MD, /sudo OCM_AGENT_ID="a-stable-name" sh install\.s
 assert.doesNotMatch(OCM_HOST_SKILL_MD, /New provider token/);
 assert.doesNotMatch(OCM_HOST_SKILL_MD, /OCM_HOST_TOKEN="ocm_host_/);
 assert.doesNotMatch(OCM_HOST_SKILL_MD, /plugin\.jup\.ag/);
+
+assert.equal(potterHome308Dest('/compute/marketplace'), 'https://www.getdasha.com/compute/ocm');
+assert.equal(potterHome308Dest('/compute/market'), 'https://www.getdasha.com/compute/ocm');
 
 const servedRes = await worker.fetch(new Request("https://www.getdasha.com/compute"), {});
 assert.equal(servedRes.status, 200);

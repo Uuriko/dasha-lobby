@@ -2,7 +2,11 @@
 /** GET+HEAD /compute/api/providers/{verify,poll} and trailing slash → 405; empty HEAD; POST bare+slash still 401 invalid token. */
 import assert from 'node:assert/strict';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork } from './dasha-compute-network.mjs';
+import { ComputeNetwork, growAllowedModels } from './dasha-compute-network.mjs';
+
+assert.deepEqual(growAllowedModels(['qwen3-8b'], ['qwen3-4b', 'qwen3-8b']).sort(), ['qwen3-4b', 'qwen3-8b']);
+assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-8b', 'not-a-model']).includes('not-a-model'));
+assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-4b']).includes('gpt-oss-120b'));
 
 const env = { LOBBY_SESSION_SECRET: 'providers-verify-poll-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();

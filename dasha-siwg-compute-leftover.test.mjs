@@ -28,17 +28,23 @@ const TABS = [
   '/compute/pay', '/compute/pay/',
   '/compute/credits', '/compute/credits/',
   '/compute/host', '/compute/host/',
-  '/compute/market', '/compute/market/',
-  '/compute/marketplace', '/compute/marketplace/',
   '/compute/you', '/compute/you/',
   '/compute/Ask', '/compute/Credits', '/compute/Pay',
 ];
+const MARKET = [
+  '/compute/market', '/compute/market/',
+  '/compute/marketplace', '/compute/marketplace/',
+];
+const OCM = 'https://www.getdasha.com/compute/ocm';
 
 for (const path of SIWG) {
   assert.equal(potterHome308Dest(path), LOGIN, path);
 }
 for (const path of TABS) {
   assert.equal(potterHome308Dest(path), COMPUTE, path);
+}
+for (const path of MARKET) {
+  assert.equal(potterHome308Dest(path), OCM, path);
 }
 assert.equal(potterHome308Dest('/compute'), null);
 assert.equal(potterHome308Dest('/compute/'), COMPUTE);
@@ -58,6 +64,11 @@ for (const method of ['GET', 'HEAD']) {
     assert.equal(res.status, 308, `${method} ${path}`);
     assert.equal(res.headers.get('location'), COMPUTE, `${method} ${path} dest`);
     assert.doesNotMatch(res.headers.get('location') || '', /#/, `${method} ${path} no hash`);
+  }
+  for (const path of MARKET) {
+    const res = await edgeWorker.fetch(new Request(`https://www.getdasha.com${path}`, { method }), {});
+    assert.equal(res.status, 308, `${method} ${path}`);
+    assert.equal(res.headers.get('location'), OCM, `${method} ${path} dest`);
   }
 }
 
