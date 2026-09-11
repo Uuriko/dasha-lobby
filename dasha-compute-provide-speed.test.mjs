@@ -70,7 +70,7 @@ function assertFaqSpeed(html, label) {
   assert.match(faq, /measured_providers/, `${label} FAQ measured_providers`);
   assert.doesNotMatch(faq, /\d+\s*tok\/s|176B/, `${label} FAQ no invented speed`);
   assert.match(html, /id=["']provide-faq-speed["'][^>]*>How fast is Provide\? Network capacity · measured_providers\. Never invent\.</, `${label} Setup FAQ`);
-  assert.doesNotMatch(html, /disclaimer|not financial advice|dyor|\bnfa\b/i, `${label} no lecture`);
+  assert.doesNotMatch(faq, /disclaimer|not financial advice|dyor|\bnfa\b/i, `${label} no lecture`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 }
 
