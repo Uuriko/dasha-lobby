@@ -133,6 +133,7 @@ import {
   COMPUTE_FIRST_CALL_TXT,
   COMPUTE_LLMS_DESCRIBEDBY,
   attachComputeLlmsHtmlLinks,
+  agentsDiscoveryResponse,
   computeAgentAeoResponse,
 } from './dasha-compute-agent.mjs';
 import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
@@ -3976,6 +3977,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   // Plans/prices/payout/payment/agents leftovers (2026-09-06): live /plan(s) /prices
   // /payout(s) /withdraw /cashout /payment(s) /checkout /getting_started /mac-setup
   // /mac_setup /agents|/agent /mcp /tools|/tool (+ /compute/* tabs, Title-case) html-404
+  // Leftover /agents|/compute/agents must not catch *.txt/*.json (exact faces stay 200).
   // while /pricing /pay /earn /getting-started /mac /kit peers already 308→/compute.
   // Do NOT fold bare /price (live 200 JSON token-price API). Only /compute/price folds.
   // Skip /terms /blog /news /admin /waitlist /tos /legal (/help shipped in help/credits block).
@@ -4681,9 +4683,10 @@ const POTTER_AGENTS_TXT_308_PATHS = new Set([
   '/agents.txt/',
   '/compute/agents.txt/',
 ]);
-/** Leftover /agents.json/ → /agents.json. Exact stays 200. */
+/** Leftover /agents.json/ /compute/agents.json/ → face. Exact stays 200. */
 const POTTER_AGENTS_JSON_308_PATHS = new Set([
   '/agents.json/',
+  '/compute/agents.json/',
 ]);
 /** /jobs /job /compute/jobs /compute/job /api/jobs /api/job → /compute/api/jobs. */
 const POTTER_COMPUTE_API_JOBS_308_PATHS = new Set([
@@ -4757,7 +4760,8 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/login', 'https://www.getdasha.com/login'],
   // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Agents.txt
   // /Agents.json html-404 while lowercase siblings already 200. Exact lowercase
-  // stays null so 200 handlers run. Bare /agents stays leftover → /compute.
+  // stays null so 200 handlers run. Bare leftover /agents|/compute/agents stay
+  // exact-path only — do not catch *.txt/*.json.
   // Do NOT put /forum /chat here — that would drop ?t=; use isForumChatAliasPath + forumToLobbyRedirect.
   ['/llms.txt', 'https://www.getdasha.com/llms.txt'],
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
@@ -4768,6 +4772,7 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/compute/llms-full.txt', 'https://www.getdasha.com/compute/llms-full.txt'],
   ['/compute/skill.md', 'https://www.getdasha.com/compute/skill.md'],
   ['/compute/agents.txt', 'https://www.getdasha.com/compute/agents.txt'],
+  ['/compute/agents.json', 'https://www.getdasha.com/compute/agents.json'],
   ['/.well-known/agent.json', 'https://www.getdasha.com/.well-known/agent.json'],
   ['/compute/.well-known/agent.json', 'https://www.getdasha.com/compute/.well-known/agent.json'],
   ['/compute/agent.json', 'https://www.getdasha.com/compute/agent.json'],
@@ -4861,7 +4866,18 @@ export function potterHome308Dest(path) {
       : "https://www.getdasha.com/agents.txt";
   }
   if (POTTER_AGENTS_JSON_308_PATHS.has(p)) {
-    return "https://www.getdasha.com/agents.json";
+    return p.startsWith("/compute/")
+      ? "https://www.getdasha.com/compute/agents.json"
+      : "https://www.getdasha.com/agents.json";
+  }
+  // Exact agents.txt / agents.json faces stay 200.
+  // Leftover /agents|/compute/agents must not catch *.txt/*.json.
+  if (p === "/agents.txt" || p === "/agents.json" || p === "/compute/agents.txt" || p === "/compute/agents.json") {
+    if (raw !== p) {
+      const dest = POTTER_PRODUCT_CASEFOLD_DEST.get(p);
+      if (dest) return dest;
+    }
+    return null;
   }
   if (p === "/llms-full" || p === "/llms-full/" || p === "/llms_full" || p === "/llms_full/") {
     return "https://www.getdasha.com/llms-full.txt";
@@ -4942,7 +4958,10 @@ export function potterHome308Dest(path) {
     if (raw !== "/dasha-compute-open-alpha.tar.gz") return KIT_TAR;
     return null;
   }
-  if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) return "https://www.getdasha.com/compute";
+  if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) {
+    if (p === "/agents.txt" || p === "/agents.json" || p === "/compute/agents.txt" || p === "/compute/agents.json") return null;
+    return "https://www.getdasha.com/compute";
+  }
   if (p === "/compute/" || p === "/compute/index.html") {
     return "https://www.getdasha.com/compute";
   }
@@ -10388,6 +10407,8 @@ async function digestEdge(request, env) {
 
 
 async function productEdge(request, url, env) {
+  const agentsFace = agentsDiscoveryResponse(request);
+  if (agentsFace) return agentsFace;
   const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
     const simpOg = await simpOgResponse(request, url, env);
@@ -11600,6 +11621,8 @@ export default {
       const room = await roomDiscoveryResponse(request, { fetch: env?.fetch || globalThis.fetch });
       if (room) return room;
     }
+    const agentsFace = agentsDiscoveryResponse(request);
+    if (agentsFace) return agentsFace;
     const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
     if (isMailSmokePath(url.pathname)) {
