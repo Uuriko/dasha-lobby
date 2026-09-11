@@ -4219,6 +4219,9 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/mac-setup/",
   "/compute/mac_setup",
   "/compute/mac_setup/",
+  // Exact /compute/agent|/compute/agents stay tab → /compute.
+  // Leftover /compute/agent.md|/compute/agents.md fold via
+  // POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS → skill.md.
   "/compute/agents",
   "/compute/agents/",
   "/compute/agent",
@@ -4911,6 +4914,25 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/setup', '/setup/',
   '/compute/setup', '/compute/setup/',
 ]);
+/** Live GET/HEAD /compute/agent.md /compute/agents.md /compute/AGENTS.md
+ *  /compute/README.md /compute/api.md /compute/create-key /compute/guest
+ *  /compute/guest-key /compute/guest-keys were HTML Not found 404 (not JSON
+ *  fail-loud) on www while /compute/skill.md is the agent contract. No
+ *  separate agent.md. Fold this path-family to the skill face.
+ *  Exact /compute/agent stays tab leftover → /compute (do not fold).
+ *  POST /compute/api/guest-keys stays 201 mint (do not 308 the API path).
+ *  Exact /compute/skill.md + /compute/mcp.json stay 200.
+ *  Do not invent /compute/readme (no .md) or DEX peers. */
+const POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS = new Set([
+  '/compute/agent.md', '/compute/agent.md/',
+  '/compute/agents.md', '/compute/agents.md/',
+  '/compute/readme.md', '/compute/readme.md/',
+  '/compute/api.md', '/compute/api.md/',
+  '/compute/create-key', '/compute/create-key/',
+  '/compute/guest', '/compute/guest/',
+  '/compute/guest-key', '/compute/guest-key/',
+  '/compute/guest-keys', '/compute/guest-keys/',
+]);
 /** Leftover /agents.txt/ /compute/agents.txt/ → face. Exact stays 200. Bare /agents stays leftover → /compute. */
 const POTTER_AGENTS_TXT_308_PATHS = new Set([
   '/agents.txt/',
@@ -5110,6 +5132,9 @@ export function potterHome308Dest(path) {
     return "https://www.getdasha.com/compute/skill.md";
   }
   if (POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/skill.md";
+  }
+  if (POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/skill.md";
   }
   if (POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS.has(p)) {
@@ -5312,7 +5337,8 @@ export function potterHome308Response(request, url) {
           u.pathname.startsWith('/compute/api/') ||
           (u.pathname === '/compute/skill.md' && (
             POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src) ||
-            POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src)
+            POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src) ||
+            POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src)
           ))
         )
       ) {
