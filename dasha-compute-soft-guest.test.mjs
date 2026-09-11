@@ -76,13 +76,14 @@ function assertAxKey(body) {
   assert.deepEqual(body, openaiErrorBody('invalid API key', 401, 'authentication_error'));
   assert.equal(body.status, 'action_required');
   assert.equal(body.reason, 'invalid_api_key');
-  assert.match(body.hint, /\/compute#build/);
-  assert.match(body.hint, /\/compute\/llms\.txt/);
-  assert.match(body.hint, /\/compute\/skill\.md/);
+  assert.match(body.hint, /dsk_|dgk_/);
+  assert.match(body.hint, /ocm_live_/);
+  assert.match(body.hint, /\/compute\/api\/v1/);
   assert.equal(body.next.some(s => s.path === '/compute#build'), true);
   assert.equal(body.next.some(s => s.path === '/compute/llms.txt'), true);
   assert.equal(body.next.some(s => s.path === '/compute/skill.md'), true);
   assert.equal(body.next.some(s => s.path === '/compute/api/guest-keys'), true);
+  assert.equal(body.next.some(s => s.path === '/compute/ocm/v1'), true);
   assert.doesNotMatch(JSON.stringify(body), /plugin\.jup\.ag/);
 }
 

@@ -3530,6 +3530,13 @@ const POTTER_LOGIN_308_PATHS = new Set([
   '/siwg', '/siwg/',
 ]);
 /** /signup /register /signin /sign-in /sign_in /sign-up /sign_up /log-in /log_in → plain /login (not login#grok). */
+/** /compute/marketplace + /compute/market leftover pretty-paths → OCM, not Start. chat. */
+const POTTER_COMPUTE_MARKET_OCM_308_PATHS = new Set([
+  "/compute/marketplace",
+  "/compute/marketplace/",
+  "/compute/market",
+  "/compute/market/",
+]);
 const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/use",
   "/compute/use/",
@@ -3541,8 +3548,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/build/",
   "/compute/sponsor",
   "/compute/sponsor/",
-  // Typeform doors + quiet peers: live Ask/Pay/Credits/Host/Marketplace/You html-404
-  // while Provide/Night/Sponsor already 308→/compute (Start. Do. Provide. Pay. Credits.).
+  // Typeform doors + quiet peers: Ask/Pay/Credits/Host/You leftover 308→/compute.
+  // Marketplace leftover pretty-paths are POTTER_COMPUTE_MARKET_OCM_308_PATHS → /compute/ocm.
   "/compute/ask",
   "/compute/ask/",
   // Compact FAQ lives on /compute#faq. Leftover /compute/faq (+slash) 308→/compute.
@@ -3554,10 +3561,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/credits/",
   "/compute/host",
   "/compute/host/",
-  "/compute/market",
-  "/compute/market/",
-  "/compute/marketplace",
-  "/compute/marketplace/",
   "/compute/you",
   "/compute/you/",
   // Profile synonym peers of /compute/you (You hub). Live /account /compute/account html-404.
@@ -5149,6 +5152,9 @@ export function potterHome308Dest(path) {
   ) {
     if (raw !== "/dasha-compute-open-alpha.tar.gz") return KIT_TAR;
     return null;
+  }
+  if (POTTER_COMPUTE_MARKET_OCM_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/ocm";
   }
   if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) {
     if (p === "/agents.txt" || p === "/agents.json" || p === "/compute/agents.txt" || p === "/compute/agents.json") return null;

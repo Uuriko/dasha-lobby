@@ -24,6 +24,8 @@ function assertHonesty(html, label) {
   assert.match(html, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide gate`);
   assert.match(html, /id=["']pick-pay["'][^>]*>Pay</, `${label} Pay gate`);
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits gate`);
+  assert.match(html, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} Start Marketplace → /compute/ocm`);
+  assert.match(html, /id=["']market-enroll-fine["'][^>]*>OCM uses ocm_live_ or email — not your Compute X login\.</, `${label} OCM ≠ Compute X`);
   assert.match(html, /id=["']market-open["'][^>]*href=["']\/compute\/ocm["'][^>]*>Console</, `${label} Console → /compute/ocm`);
   assert.match(html, /id=["']market-host["'][^>]*href=["']\/compute\/ocm\/provider["']/, `${label} Market Host → /compute/ocm/provider`);
   assert.match(html, /id=["']host-run["'][^>]*href=["']\/compute\/ocm\/provider["'][^>]*>Enroll</, `${label} Host Open → /compute/ocm/provider`);

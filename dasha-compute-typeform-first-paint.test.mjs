@@ -49,6 +49,8 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']pick-credits["'][^>]*title=["']Use prepaid["']/, `${label} Credits title`);
   assert.match(html, /tfStep==='gate'/, `${label} gate honesty top-state`);
   assert.doesNotMatch(html, /say something strange/, `${label} no strange phrase`);
+  assert.match(html, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} Start Marketplace → /compute/ocm`);
+  assert.match(html, /id=["']market-enroll-fine["'][^>]*>OCM uses ocm_live_ or email — not your Compute X login\.</, `${label} OCM key honesty`);
   assert.match(html, /id=["']market-open["'][^>]*href=["']\/compute\/ocm["']/, `${label} peek Console → /compute/ocm`);
   assert.match(html, /id=["']market-open["'][^>]*>Console</, `${label} market-open Console label`);
   assert.match(html, /id=["']step-market["'][^>]*data-tf=["']market["']/, `${label} market peek step`);

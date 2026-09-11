@@ -14,6 +14,7 @@ Get a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Commu
 - API billing: non-self `v1/chat/completions` spends prepaid credits via USDC/$dasha ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits · no card.
 - API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.
 - Marketplace: https://www.getdasha.com/compute/ocm
+- Which key / which base: Compute chat uses `dsk_` or guest `dgk_` on https://lobby.getdasha.com/compute/api/v1. OCM uses `ocm_live_` on https://www.getdasha.com/compute/ocm/v1. Never swap. Compute X login is not an OCM session.
 - Do not paste secrets into prompts. Community Mac operators can read assigned prompts.
 - Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.
 - Do top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.

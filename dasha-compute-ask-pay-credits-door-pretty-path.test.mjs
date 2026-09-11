@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Leftover 2026-09-04 keep-swarm: live /compute/ask|/pay|/credits|/host|/marketplace|/you
+ * Leftover 2026-09-04 keep-swarm: live /compute/ask|/pay|/credits|/host|/you
  * (+ Title-case) html-404 while /compute/provide|/night|/sponsor already 308→/compute.
+ * Marketplace leftover pretty-paths 308→/compute/ocm.
  * Typeform doors are Start. Ask. Provide. Pay. Credits.
  * Disk only. No Designer. Never plugin.jup.ag.
  */
@@ -16,17 +17,24 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
 const COMPUTE = 'https://www.getdasha.com/compute';
+const OCM = 'https://www.getdasha.com/compute/ocm';
 const DOORS = [
   '/compute/ask', '/compute/ask/', '/compute/Ask', '/compute/ASK',
   '/compute/pay', '/compute/pay/', '/compute/Pay',
   '/compute/credits', '/compute/credits/', '/compute/Credits',
   '/compute/host', '/compute/Host',
-  '/compute/market', '/compute/marketplace', '/compute/Marketplace',
   '/compute/you', '/compute/You',
+];
+const MARKET = [
+  '/compute/market', '/compute/marketplace', '/compute/Marketplace',
+  '/compute/marketplace/', '/compute/market/',
 ];
 
 for (const path of DOORS) {
   assert.equal(potterHome308Dest(path), COMPUTE, path);
+}
+for (const path of MARKET) {
+  assert.equal(potterHome308Dest(path), OCM, path);
 }
 assert.equal(potterHome308Dest('/compute'), null);
 assert.equal(potterHome308Dest('/compute/api'), null);
@@ -38,6 +46,11 @@ for (const method of ['GET', 'HEAD']) {
     const res = await edgeWorker.fetch(new Request(`https://www.getdasha.com${path}`, { method }), {});
     assert.equal(res.status, 308, `${method} ${path}`);
     assert.equal(res.headers.get('location'), COMPUTE, `${method} ${path}`);
+  }
+  for (const path of MARKET) {
+    const res = await edgeWorker.fetch(new Request(`https://www.getdasha.com${path}`, { method }), {});
+    assert.equal(res.status, 308, `${method} ${path}`);
+    assert.equal(res.headers.get('location'), OCM, `${method} ${path}`);
   }
   // regression: prior tabs still 308
   for (const path of ['/compute/provide', '/compute/night', '/compute/sponsor']) {

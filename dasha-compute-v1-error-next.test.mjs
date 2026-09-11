@@ -52,11 +52,20 @@ function assertAxNext(body, { message, type, reason, status = 'action_required' 
 {
   const key = openaiErrorBody('invalid API key', 401, 'authentication_error');
   assertAxNext(key, { message: 'invalid API key', type: 'authentication_error', reason: 'invalid_api_key' });
+  assert.match(key.hint, /dsk_|dgk_/);
+  assert.match(key.hint, /ocm_live_/);
   assert.equal(key.next.some(s => s.path === '/compute#build'), true);
   assert.equal(key.next.some(s => s.path === '/compute/llms.txt'), true);
   assert.equal(key.next.some(s => s.path === '/compute/skill.md'), true);
   assert.equal(key.next.some(s => s.path === '/compute/api/guest-keys'), true);
+  assert.equal(key.next.some(s => s.path === '/compute/ocm/v1'), true);
   assert.equal(key.next.some(s => /Authorization: Bearer \$DASHA_KEY/.test(s.command || '')), true);
+
+  const ocmKey = openaiErrorBody('ocm_live_ is an OCM key. Compute wants dsk_ or dgk_.', 401, 'authentication_error');
+  assertAxNext(ocmKey, { message: 'ocm_live_ is an OCM key. Compute wants dsk_ or dgk_.', type: 'authentication_error', reason: 'wrong_product_key' });
+  assert.match(ocmKey.hint, /ocm_live_/);
+  assert.equal(ocmKey.next.some(s => s.path === '/compute/ocm/v1'), true);
+  assert.equal(ocmKey.next.some(s => s.path === '/compute/api/guest-keys'), true);
 
   const credits = openaiErrorBody('top up credits', 402, 'invalid_request_error');
   assertAxNext(credits, { message: 'top up credits', type: 'invalid_request_error', reason: 'credits_required' });
@@ -156,6 +165,16 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const retrieveUnauth = await pair(host, '/compute/api/v1/models/qwen3-8b', {}, fetchImpl);
   assert.equal(retrieveUnauth.status, 401, `${host} retrieve 401`);
   assertAxNext(retrieveUnauth.body, { message: 'invalid API key', type: 'authentication_error', reason: 'invalid_api_key' });
+
+  const ocmOnCompute = await pair(host, '/compute/api/v1/models/qwen3-8b', {
+    headers: { Authorization: 'Bearer ocm_live_not_a_compute_key' },
+  }, fetchImpl);
+  assert.equal(ocmOnCompute.status, 401, `${host} ocm_live_ on Compute 401`);
+  assertAxNext(ocmOnCompute.body, {
+    message: 'ocm_live_ is an OCM key. Compute wants dsk_ or dgk_.',
+    type: 'authentication_error',
+    reason: 'wrong_product_key',
+  });
 
   const chat = await pair(host, '/compute/api/v1/chat/completions', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: chatBody,
