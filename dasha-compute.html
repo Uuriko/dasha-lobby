@@ -738,7 +738,6 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
     <div class="actions row">
       <button class="copy secondary" data-copy="code" type="button">Copy curl</button>
       <a class="secondary" id="key-login" href="/login?return=/compute%23build">Sign in</a>
-      <button class="primary" id="mint-guest-key" type="button">Guest key</button>
       <button class="primary" id="create-api-key" type="button" hidden disabled>Create API key</button>
       <button class="secondary" id="check" type="button">Run check</button>
     </div>
@@ -776,8 +775,10 @@ https://lobby.getdasha.com/compute/api/v1</pre>
     </section>
     <p class="fine" id="api-key-cap-hint">Credits · Cap $5 / month</p>
     <label class="field" id="api-key-limit-wrap" hidden>Spend cap (USD / month)<input id="api-key-limit" type="number" min="1" max="1000" step="1" value="5" inputmode="decimal" placeholder="5"></label>
-    <pre id="api-key-output" aria-live="polite">POST /compute/api/guest-keys</pre>
-    <div class="models" id="api-key-list"><p class="fine">POST /compute/api/guest-keys</p></div>
+    <p class="fine" id="guest-key-fine">24h · chat + models.</p>
+    <button class="tf-quiet" id="mint-guest-key" type="button">Get 24h guest key</button>
+    <pre id="api-key-output" aria-live="polite">Sign in for a developer key.</pre>
+    <div class="models" id="api-key-list"><p class="fine">Sign in for a developer key.</p></div>
     <pre id="check-result">Lobby v1 URL is set. Run check.</pre>
   </details>
 </section>
@@ -1641,8 +1642,9 @@ function updateProvideAuth(){
   if(macs)macs.hidden=!(loggedIn&&tfStep==='provide-done');
   if(loggedIn&&tfStep==='provide-done')paintProviderMacsSum();
   $('key-login').hidden=loggedIn;
-  const mint=$('mint-guest-key');
+  const mint=$('mint-guest-key'),guestFine=$('guest-key-fine');
   if(mint){mint.hidden=loggedIn;mint.disabled=loggedIn}
+  if(guestFine)guestFine.hidden=loggedIn;
   $('create-api-key').hidden=!loggedIn;
   $('create-api-key').disabled=!loggedIn;
   const limWrap=$('api-key-limit-wrap');if(limWrap)limWrap.hidden=!loggedIn;
