@@ -4911,6 +4911,9 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  Live GET /compute/provide/{enroll,setup,doctor,register} (+slash /
  *  Title-case) were HTML 404 on www + lobby while /compute/enroll|/setup|
  *  /doctor|/provide already 308 → /compute#provide. Same join family.
+ *  Live GET /compute/provide/{install,onboarding,guide,bootstrap,download,
+ *  token,key} (+slash / Title-case) still HTML 404 after that fold. Same
+ *  join family. Do not invent /compute/provide/foo peers.
  *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
@@ -4921,6 +4924,13 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/provide/setup', '/compute/provide/setup/',
   '/compute/provide/doctor', '/compute/provide/doctor/',
   '/compute/provide/register', '/compute/provide/register/',
+  '/compute/provide/install', '/compute/provide/install/',
+  '/compute/provide/onboarding', '/compute/provide/onboarding/',
+  '/compute/provide/guide', '/compute/provide/guide/',
+  '/compute/provide/bootstrap', '/compute/provide/bootstrap/',
+  '/compute/provide/download', '/compute/provide/download/',
+  '/compute/provide/token', '/compute/provide/token/',
+  '/compute/provide/key', '/compute/provide/key/',
   '/enroll', '/enroll/',
   '/compute/enroll', '/compute/enroll/',
   '/setup', '/setup/',
