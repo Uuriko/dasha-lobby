@@ -3,7 +3,8 @@
  * agents.txt / agents.json (CC0 vibe: https://agents-txt.com).
  * GET /agents.txt + /agents.json + /compute/agents.txt + /compute/agents.json
  * on apex+www+lobby. Skills → /compute/skill.md (+ lobby). Brief base_url + guest mint.
- * Exact path before leftover /agents fold. Bare /agents + /compute/agents stay 308 → /compute.
+ * Exact path before leftover /agents fold. Bare /agents|/agents/ 308 → /agents.txt.
+ * /compute/agents stays 308 → /compute.
  * No wrangler. No guest-mint rewrite. Never plugin.jup.ag. No people-data.
  */
 import assert from 'node:assert/strict';
@@ -55,7 +56,7 @@ assert.equal(
 }
 
 const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
-assert.match(tab, /["']\/agents["']/, 'leftover keeps bare /agents');
+assert.doesNotMatch(tab, /["']\/agents["']/, 'bare /agents left the compute-tab set');
 assert.match(tab, /["']\/compute\/agents["']/, 'leftover keeps bare /compute/agents');
 assert.doesNotMatch(tab, /["']\/agents\.txt["']/, 'leftover must not list /agents.txt');
 assert.doesNotMatch(tab, /["']\/agents\.json["']/, 'leftover must not list /agents.json');
@@ -130,9 +131,9 @@ assert.equal(potterHome308Dest('/Agents.txt'), AGENTS_TXT_URL, 'Title-case /agen
 assert.equal(potterHome308Dest('/Agents.json'), AGENTS_JSON_URL, 'Title-case /agents.json');
 assert.equal(potterHome308Dest('/Compute/Agents.txt'), COMPUTE_AGENTS_TXT_URL, 'Title-case /compute/agents.txt');
 assert.equal(potterHome308Dest('/Compute/Agents.json'), COMPUTE_AGENTS_JSON_URL, 'Title-case /compute/agents.json');
-assert.equal(potterHome308Dest('/agents'), COMPUTE, 'bare /agents stays leftover');
+assert.equal(potterHome308Dest('/agents'), AGENTS_TXT_URL, 'bare /agents → agents.txt');
 assert.equal(potterHome308Dest('/compute/agents'), COMPUTE, 'bare /compute/agents stays leftover');
-assert.equal(potterHome308Dest('/Agents'), COMPUTE, 'Title-case leftover /agents');
+assert.equal(potterHome308Dest('/Agents'), AGENTS_TXT_URL, 'Title-case leftover /agents → agents.txt');
 assert.equal(potterHome308Dest('/compute/agents/skill.md'), COMPUTE_SKILL_URL, '/compute/agents/skill.md stays skill face');
 
 {
@@ -191,9 +192,9 @@ for (const origin of ORIGINS) {
 for (const origin of ORIGINS) {
   const host = new URL(origin).hostname;
   for (const [path, dest] of [
-    ['/agents', COMPUTE],
+    ['/agents', AGENTS_TXT_URL],
     ['/compute/agents', COMPUTE],
-    ['/Agents', COMPUTE],
+    ['/Agents', AGENTS_TXT_URL],
     ['/agents.txt/', AGENTS_TXT_URL],
     ['/agents.json/', AGENTS_JSON_URL],
     ['/compute/agents.txt/', COMPUTE_AGENTS_TXT_URL],
@@ -208,4 +209,4 @@ for (const origin of ORIGINS) {
   }
 }
 
-console.log('dasha-agents-txt: PASS (/agents.txt + /agents.json + compute aliases 200 Skills/skill.md, leftover /agents 308, exact face before leftover fold, no plugin.jup.ag)');
+console.log('dasha-agents-txt: PASS (/agents.txt + /agents.json + compute aliases 200 Skills/skill.md, leftover /agents 308 agents.txt, exact face before leftover fold, no plugin.jup.ag)');

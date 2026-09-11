@@ -2,8 +2,9 @@
 /**
  * Leftover pretty path (Worker ef812bfe): live /plan(s) /prices /payout(s)
  * /withdraw /cashout /payment(s) /checkout /getting_started /mac-setup
- * /mac_setup /agents|/agent /tools|/tool (+ /compute/* tabs, Title-case)
- * html-404 → 308 /compute. /mcp|/compute/mcp fold via MCP catalog leftover
+ * /mac_setup /agent /tools|/tool (+ /compute/* tabs, Title-case)
+ * html-404 → 308 /compute. Bare /agents|/agents/ fold via agents.txt leftover
+ * (dasha-apex-agents-txt-pretty-path.test.mjs). /mcp|/compute/mcp fold via MCP catalog leftover
  * → /compute/mcp.json. /compute/price folds; bare /price stays the
  * 200 JSON token-price API. Peers /pricing /pay /earn /getting-started
  * /mac /kit still → /compute. /help now folds via help/credits leftover
@@ -23,7 +24,7 @@ assert.match(workerSrc, /POTTER_COMPUTE_TAB_308_PATHS/, 'compute-tab 308 set pre
 assert.match(
   workerSrc,
   /"\/payout",\n  "\/payout\/",/,
-  'leftover comment names plans/prices/payout/payment/agents family',
+  'leftover comment names plans/prices/payout/payment family',
 );
 assert.match(
   workerSrc,
@@ -41,7 +42,7 @@ const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s
 const COMPUTE_LEAVES = [
   'plan', 'plans', 'prices', 'payout', 'payouts', 'withdraw', 'cashout',
   'payment', 'payments', 'checkout', 'getting_started', 'mac-setup', 'mac_setup',
-  'agents', 'agent', 'tools', 'tool',
+  'agent', 'tools', 'tool',
 ];
 for (const leaf of COMPUTE_LEAVES) {
   assert.match(tab, new RegExp(`["']/${leaf}["']`));
@@ -115,7 +116,7 @@ for (const path of STAY_OUT) {
 
 const FETCH_SAMPLE = [
   '/plan', '/Plans/', '/prices', '/Payout', '/checkout',
-  '/getting_started', '/mac-setup', '/Agents', '/tools',
+  '/getting_started', '/mac-setup', '/agent', '/tools',
   '/compute/price', '/Compute/price/',
   '/pricing', '/pay', '/earn', '/getting-started', '/mac', '/kit',
 ];
@@ -174,10 +175,10 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 for (const path of [
-  '/plan', '/plans', '/prices', '/price', '/payout', '/agents', '/tools',
+  '/plan', '/plans', '/prices', '/price', '/payout', '/agents', '/agent', '/tools',
   '/compute/price', '/help', '/terms', '/admin', '/blog', '/waitlist', '/tos', '/legal',
 ]) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-apex-plans-payout-agents-pretty-path: PASS (/plan(s)+/prices+/payout(s)+/withdraw+/cashout+/payment(s)+/checkout+/getting_started+/mac-setup+/agents|/agent+/tools|/tool + /compute/* tabs 308 /compute; /mcp catalog leftover; /compute/price folds; bare /price untouched; /pricing+/pay+/earn+/getting-started+/mac+/kit peers; Title-case+slash; www+lobby GET+HEAD sample; /compute 200; /help now /compute; /terms+/admin+/blog+/waitlist+/tos+/legal stay out; no plugin.jup.ag)');
+console.log('dasha-apex-plans-payout-agents-pretty-path: PASS (/plan(s)+/prices+/payout(s)+/withdraw+/cashout+/payment(s)+/checkout+/getting_started+/mac-setup+/agent+/tools|/tool + /compute/* tabs 308 /compute; bare /agents is agents.txt leftover; /mcp catalog leftover; /compute/price folds; bare /price untouched; /pricing+/pay+/earn+/getting-started+/mac+/kit peers; Title-case+slash; www+lobby GET+HEAD sample; /compute 200; /help now /compute; /terms+/admin+/blog+/waitlist+/tos+/legal stay out; no plugin.jup.ag)');
