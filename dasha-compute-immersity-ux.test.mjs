@@ -79,6 +79,8 @@ function assertImmersitySteal(html, label) {
   assert.match(html, /Hosted is still there\./, `${label} FAQ no-Mac`);
   assert.match(html, /Provide\. Name the Mac\. Kit\. Doctor\./, `${label} FAQ enroll`);
   assert.match(html, /Is hosting safe for my Mac\?/, `${label} FAQ host safe`);
+  assert.match(html, /How fast is Provide\?/, `${label} FAQ provide speed`);
+  assert.match(html, /measured_providers/, `${label} FAQ measured_providers`);
   assert.match(html, /Keychain/, `${label} FAQ Keychain`);
   assert.match(html, /Ollama/, `${label} FAQ Ollama`);
   assert.match(html, /No remote shell/, `${label} FAQ no remote shell`);

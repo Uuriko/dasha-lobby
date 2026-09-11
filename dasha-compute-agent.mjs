@@ -85,6 +85,16 @@ export const AGENTS_JSON = {
   ],
 };
 
+/** Provide speed honesty. Shared by /compute/skill.md + /compute/llms.txt. */
+export const COMPUTE_PROVIDE_SPEED_TXT = `## Provide speed
+
+Community Macs publish measured tok/s via network capacity (measured_providers). Never invent.
+Kit uses OLLAMA_KEEP_ALIVE (launch agent / service — a shell export is not enough).
+Smaller is faster: qwen3-8b · gemma3-12b · gemma3-27b.
+Send a recipe — MLX / Ollama / llama.cpp Apple Silicon. We pin winners.
+Hosted-only when offered: Flash-class · DGX Spark · Qwen 3.8 Flash-Next. Never a Community Mac.
+`;
+
 /** Cursor/Claude-style skill. Stable GET /compute/skill.md. */
 export const COMPUTE_SKILL_MD = `---
 name: dasha-compute
@@ -119,6 +129,7 @@ Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
 Spend: read \`x-dasha-route\` (\`community\`|\`hosted\`) and \`x-dasha-model\` on chat/completions. \`x-dasha-spend-usd\` only when cost is known — Community omits USD when unknown.
 
+${COMPUTE_PROVIDE_SPEED_TXT}
 ## More
 
 packet ${COMPUTE_LLMS_URL}
@@ -147,6 +158,7 @@ Hosted: still there when no Mac is online.
 spend headers x-dasha-route · x-dasha-model · x-dasha-spend-usd when known (Community omits unknown USD)
 receipts include route community|hosted (same as x-dasha-route); turns only when counted — never invented
 
+${COMPUTE_PROVIDE_SPEED_TXT}
 compute https://www.getdasha.com/compute
 Use a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
