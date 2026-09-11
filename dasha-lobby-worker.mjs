@@ -4051,6 +4051,18 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/tools/",
   "/compute/tool",
   "/compute/tool/",
+  // ToolScout leftover (2026-09-11): live /tool/dasha-compute /tool/dasha
+  // /tools/dasha-compute /tools/dasha (+slash / Title-case) html-404 while
+  // /tool /tools already 308→/compute. ToolScout listing expects this door
+  // to reach Compute. Do NOT blanket-fold /tool/* or invent DEX peers.
+  "/tool/dasha-compute",
+  "/tool/dasha-compute/",
+  "/tool/dasha",
+  "/tool/dasha/",
+  "/tools/dasha-compute",
+  "/tools/dasha-compute/",
+  "/tools/dasha",
+  "/tools/dasha/",
   // Help/support/contact + Pay/Credits honesty leftovers (2026-09-06): live /help
   // /guide /tutorial /support /docs-help /getting-help /contact /free-credits
   // /buy-credits /get-credits (+ /compute/* tabs, Title-case) html-404 while /pay
