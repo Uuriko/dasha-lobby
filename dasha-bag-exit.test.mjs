@@ -24,6 +24,7 @@ import {
   parseJupQuote,
   quoteExit,
   rawToUi,
+  usdFromSwapValue,
 } from './dasha-bag-exit.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -68,6 +69,7 @@ const parsed = parseJupQuote({
 }, { decimals: 9 });
 assert.equal(parsed.haircutUi, '0.01194');
 assert.equal(parsed.fee, 'Jupiter quote fee 0');
+assert.equal(usdFromSwapValue({ swapUsdValue: '0.309506' }, 50), '0.307958');
 
 const receiptRow = {
   asOf: '2026-09-11T06:59:00.000Z',
@@ -109,6 +111,7 @@ assert.match(bag, /data-receipt="md">Copy receipt</);
 assert.match(bag, /data-receipt="json">JSON</);
 assert.match(bag, new RegExp(HERS_MINT));
 assert.match(bag, /fetch\('\/bag\/api\/exit\?amount='/);
+assert.match(bag, /j\.usd/);
 assert.match(bag, /fetch\('\/price'/);
 assert.match(bag, /getTokenAccountsByOwner/);
 assert.match(bag, /if \(p\.isConnected === false\) return '';/);
@@ -192,6 +195,20 @@ const fallbackFetch = async (url) => {
 const fell = await quoteExit('1000', fallbackFetch);
 assert.equal(fell.body.ok, true);
 assert.ok(fallbackSeen.some((u) => u.includes('quote-api.jup.ag/v6/quote')));
+
+const solOnlyFetch = async (url) => {
+  const u = String(url);
+  assert.doesNotMatch(u, /plugin\.jup\.ag/);
+  if (u.includes(WSOL)) {
+    return new Response(JSON.stringify({ ...solBody(), swapUsdValue: '0.309506' }), { status: 200 });
+  }
+  return new Response('no', { status: 503 });
+};
+const solOnly = await quoteExit('1000', solOnlyFetch);
+assert.equal(solOnly.body.ok, true);
+assert.equal(solOnly.body.usdc, null);
+assert.equal(solOnly.body.usd, '0.307958');
+assert.match(solOnly.body.receiptMd, /exitUsd: 0.307958/);
 
 const quiet = await quoteExit('1000', async () => new Response('no', { status: 503 }));
 assert.equal(quiet.status, 200);

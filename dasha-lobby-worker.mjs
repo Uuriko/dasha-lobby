@@ -763,10 +763,10 @@ const BAG_HTML = `<!doctype html>
       lastJson = j.receiptJson || '';
       if (copyRow) copyRow.hidden = !lastMd && !lastJson;
       var sol = j.sol && (j.sol.haircutUi || j.sol.outUi);
-      var usd = j.usdc && (j.usdc.haircutUi || j.usdc.outUi);
+      var usd = (j.usdc && (j.usdc.haircutUi || j.usdc.outUi)) || j.usd;
       var bits = [];
       if (sol) bits.push('<p>Exit ~' + esc(sol) + ' SOL after ' + esc(String(j.slippageBps)) + ' bps haircut.</p>');
-      if (usd) bits.push('<p>~' + esc(usd) + ' USDC.</p>');
+      if (usd) bits.push('<p>~' + esc(usd) + (j.usdc ? ' USDC' : ' USD') + '.</p>');
       bits.push('<p>' + esc(j.fee || 'Jupiter quote fee 0') + ' · slippage ' + esc(String(j.slippageBps)) + ' bps' + (j.impact ? ' · impact ' + esc(j.impact) + '%' : '') + '</p>');
       if (j.asOf) bits.push('<p><time datetime="' + esc(j.asOf) + '">' + esc(j.asOf) + '</time></p>');
       if (j.route && j.route.indexOf('https://jup.ag/swap?sell=' + MINT) === 0) {

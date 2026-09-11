@@ -80,6 +80,15 @@ export function quoteFeeLabel(quote) {
   return 'Jupiter quote fee 0';
 }
 
+export function usdFromSwapValue(quote, slippageBps = SLIPPAGE_BPS) {
+  const n = Number(quote && quote.swapUsdValue);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const bps = Number(slippageBps);
+  const cut = n * (1 - (Number.isFinite(bps) ? bps : 0) / 10000);
+  if (!Number.isFinite(cut) || cut <= 0) return '';
+  return String(Number(cut.toPrecision(6)));
+}
+
 export function parseJupQuote(quote, { decimals, slippageBps = SLIPPAGE_BPS } = {}) {
   if (!quote || quote.outAmount == null) return null;
   const out = String(quote.outAmount);
@@ -216,12 +225,13 @@ export async function quoteExit(amountUi, fetchImpl, timeoutMs = JUP_TIMEOUT_MS)
   }
   const usd = parseJupQuote(usdcQuote, { decimals: USDC_DECIMALS });
   const asOf = new Date().toISOString();
+  const exitUsd = usd ? (usd.haircutUi || usd.outUi) : usdFromSwapValue(solQuote, sol.slippageBps);
   const row = {
     asOf,
     mint: HERS_MINT,
     amount,
     exitSol: sol.haircutUi || sol.outUi,
-    exitUsd: usd ? (usd.haircutUi || usd.outUi) : '',
+    exitUsd,
     fee: sol.fee,
     slippageBps: sol.slippageBps,
     impact: sol.priceImpactPct,
@@ -243,6 +253,7 @@ export async function quoteExit(amountUi, fetchImpl, timeoutMs = JUP_TIMEOUT_MS)
         haircutUi: sol.haircutUi,
       },
       usdc: usd ? { outUi: usd.outUi, haircutUi: usd.haircutUi } : null,
+      usd: exitUsd || null,
       route: EXIT_ROUTE,
       receiptMd: exitReceiptMarkdown(row),
       receiptJson: exitReceiptJson(row),
