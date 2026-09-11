@@ -78,6 +78,10 @@ function assertImmersitySteal(html, label) {
   assert.match(html, /How do I start\?/, `${label} FAQ start`);
   assert.match(html, /Hosted is still there\./, `${label} FAQ no-Mac`);
   assert.match(html, /Provide\. Name the Mac\. Kit\. Doctor\./, `${label} FAQ enroll`);
+  assert.match(html, /How is hosting secure\?/, `${label} FAQ host secure`);
+  assert.match(html, /Keychain/, `${label} FAQ Keychain`);
+  assert.match(html, /local Ollama/, `${label} FAQ local Ollama`);
+  assert.match(html, /No remote shell/, `${label} FAQ no remote shell`);
   assert.match(html, /Goes to credits\./, `${label} FAQ pay`);
   assert.match(html, /Prepaid\. Use on Ask\./, `${label} FAQ credits`);
   assert.match(html, /Change the base URL\./, `${label} FAQ API`);
@@ -169,13 +173,16 @@ if (puppeteer && existsSync(chrome)) {
   await page.click('#faq-areas [data-faq-area="provide"]');
   const after = await page.evaluate(() => {
     const vis = (el) => !!(el && !el.hidden && !el.closest('[hidden]') && el.offsetParent);
+    const provideItems = [...document.querySelectorAll('#ux-faq-items [data-faq="provide"]')].filter((el) => vis(el));
     return {
-      provide: [...document.querySelectorAll('#ux-faq-items [data-faq="provide"]')].some((el) => vis(el)),
+      provide: provideItems.length,
       ask: [...document.querySelectorAll('#ux-faq-items [data-faq="ask"]')].some((el) => vis(el)),
+      hostSecure: provideItems.some((el) => /How is hosting secure\?/.test(el.textContent || '') && /Keychain/.test(el.textContent || '') && /local Ollama/.test(el.textContent || '') && /No remote shell/.test(el.textContent || '')),
     };
   });
-  assert.equal(after.provide, true, 'Provide FAQ after chip');
+  assert.ok(after.provide >= 2, 'Provide FAQ after chip');
   assert.equal(after.ask, false, 'Ask FAQ hidden after Provide chip');
+  assert.equal(after.hostSecure, true, 'host-secure FAQ visible on Provide');
 
   const demoVis = await page.evaluate(() => {
     const el = document.getElementById('ux-demo');
