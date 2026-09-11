@@ -153,6 +153,7 @@ Pick \`model\` from the models list.
 
 Receipts: signed, chained. GET https://www.getdasha.com/compute/api/receipts · verify https://www.getdasha.com/verify
 Job receipts include \`route\` (\`community\`|\`hosted\`, same as x-dasha-route). \`turns\` only when already counted — never invented.
+Verify a receipt without trusting this site: GET /compute/api/chain (receipts) + /keys.json (signer key). Rebuild the signed body as {"job_id":...,"engine":...,"tokens":...,"cents":...,"at":...,"prev_hash":...} - exactly those keys in that order (job_id string|null, engine string, tokens/cents non-negative integers, at unix-ms integer|null, prev_hash = previous receipt hash or "GENESIS"). receipt.hash = sha256(JSON.stringify(body)) hex; receipt.sig = ed25519 over the UTF-8 bytes of that hex string, verified with the signer's spki_pem; signer = first 16 hex chars of sha256(spki_pem). Chain continuity: each prev_hash equals the previous hash. Find your own receipt by the request_id you sent on chat/completions (echoed as receipt.request_id) or by job_id from the completion response. Machine verdict: GET /compute/api/verify?hash=<hash|job_id|request_id>.
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
 ${COMPUTE_HOSTED_FLASH_TXT}
@@ -189,6 +190,7 @@ Hosted: still there when no Mac is online.
 ${COMPUTE_HOSTED_FLASH_TXT}
 spend headers x-dasha-route · x-dasha-model · x-dasha-spend-usd when known (Community omits unknown USD)
 receipts include route community|hosted (same as x-dasha-route); turns only when counted — never invented
+Verify a receipt without trusting this site: GET /compute/api/chain (receipts) + /keys.json (signer key). Rebuild the signed body as {"job_id":...,"engine":...,"tokens":...,"cents":...,"at":...,"prev_hash":...} - exactly those keys in that order (job_id string|null, engine string, tokens/cents non-negative integers, at unix-ms integer|null, prev_hash = previous receipt hash or "GENESIS"). receipt.hash = sha256(JSON.stringify(body)) hex; receipt.sig = ed25519 over the UTF-8 bytes of that hex string, verified with the signer's spki_pem; signer = first 16 hex chars of sha256(spki_pem). Chain continuity: each prev_hash equals the previous hash. Find your own receipt by the request_id you sent on chat/completions (echoed as receipt.request_id) or by job_id from the completion response. Machine verdict: GET /compute/api/verify?hash=<hash|job_id|request_id>.
 
 ${COMPUTE_PROVIDE_SPEED_TXT}
 compute https://www.getdasha.com/compute
