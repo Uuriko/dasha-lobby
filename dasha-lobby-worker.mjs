@@ -12013,7 +12013,7 @@ export default {
       if (!headsKey) {
         return new Response(JSON.stringify({ error: 'signing not configured' }), {
           status: 503,
-          headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' },
+          headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=31536000' },
         });
       }
       return new Response(JSON.stringify({
@@ -12021,7 +12021,7 @@ export default {
         keys: [{ id: headsKey.signer, algo: 'ed25519', spki_pem: headsKey.pubPem, public_key_base64: headsKey.pubRawB64 }],
       }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*', 'X-Dasha-Edge': 'keys' },
+        headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*', 'X-Dasha-Edge': 'keys', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=31536000' },
       });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/heads' || url.pathname === '/heads/' || url.pathname.startsWith('/heads/archive/'))) {
