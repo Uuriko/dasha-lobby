@@ -5568,6 +5568,31 @@ export function injectLobbyForumTagCss(html) {
   return src + LOBBY_FORUM_TAG_STYLE;
 }
 
+/** Quiet Lobby → Compute acts. Below first chat paint, before Play. Not a door. Not Room. */
+export const LOBBY_ACTS_STYLE = '<style id="dasha-lobby-acts">.lobby-acts{margin:1.6rem 0 0;display:grid;gap:.5rem}.lobby-act{display:flex;align-items:center;min-height:48px;padding:.65rem .85rem;border:1px solid rgba(244,237,219,.28);background:var(--ink,#070608);color:var(--paper,#f4eddb);font:900 .88rem/1.15 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.02em;text-decoration:none;text-transform:uppercase}.lobby-act[data-lobby-act=provide]{border-color:var(--hot,#ff3b81)}.lobby-act[data-lobby-act=ask]{background:var(--acid,#dfff00);border-color:var(--acid,#dfff00);color:var(--ink,#070608)}.lobby-act[data-lobby-act=build]{border-color:#8b5cff}@media(min-width:560px){.lobby-acts{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(prefers-reduced-motion:no-preference){.lobby-act{transition:border-color .12s linear}}@media(prefers-reduced-motion:reduce){.lobby-act{transition:none}}</style>';
+
+export const LOBBY_ACTS_HTML = `<section class="lobby-acts" id="lobby-acts" aria-label="Do">
+<a class="lobby-act" data-lobby-act="provide" href="https://www.getdasha.com/compute#provide">Provide once today</a>
+<a class="lobby-act" data-lobby-act="ask" href="https://www.getdasha.com/compute#ask">Ask with a guest key</a>
+<a class="lobby-act" data-lobby-act="build" href="https://www.getdasha.com/compute#build">Build on Dasha</a>
+</section>
+`;
+
+export function injectLobbyComputeActs(html) {
+  let src = String(html || '');
+  if (!/id=["']dasha-lobby["']/.test(src)) return src;
+  if (!/id=["']dasha-lobby-acts["']/.test(src)) {
+    if (/<\/head>/i.test(src)) src = src.replace(/<\/head>/i, `${LOBBY_ACTS_STYLE}</head>`);
+    else src += LOBBY_ACTS_STYLE;
+  }
+  if (/id=["']lobby-acts["']/.test(src)) return src;
+  const play = /<section\b(?=[^>]*\bclass=["'][^"']*\bforum-play\b)[^>]*>/i;
+  if (play.test(src)) return src.replace(play, `${LOBBY_ACTS_HTML}$&`);
+  const now = /<section\b(?=[^>]*\bclass=["'][^"']*\bforum-now\b)[^>]*>[\s\S]*?<\/section>/i;
+  if (now.test(src)) return src.replace(now, `$&${LOBBY_ACTS_HTML}`);
+  return src;
+}
+
 export function forumTagFilterHtml(active) {
   const checked = validateForumTag(active);
   const on = checked.ok ? checked.tag : null;
@@ -5642,6 +5667,8 @@ export function rewriteLobbyForumChrome(html) {
   out = out.replace(/\s*·\s*<a href="\/chess">Chess<\/a>/g, '');
   /* Quiet forum-style topic chips on /lobby threads. Fixed 5 tags. No Room merge. */
   out = injectLobbyForumTagCss(out);
+  /* Quiet Lobby → Compute acts after first chat paint. Keep Room out. */
+  out = injectLobbyComputeActs(out);
   return out;
 }
 
