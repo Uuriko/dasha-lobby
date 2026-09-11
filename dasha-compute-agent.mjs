@@ -85,6 +85,9 @@ export const AGENTS_JSON = {
   ],
 };
 
+/** Hosted Flash option. Shared by skill.md + llms.txt. Never Community. Not a live SKU. */
+export const COMPUTE_HOSTED_FLASH_TXT = 'Hosted Flash: bigger-than-Mac (Spark / Engram-class Flash when offered). Never Community. Same base_url. Watch x-dasha-route.';
+
 /** Provide speed honesty. Shared by /compute/skill.md + /compute/llms.txt. */
 export const COMPUTE_PROVIDE_SPEED_TXT = `## Provide speed
 
@@ -127,6 +130,7 @@ Receipts: signed, chained. GET https://www.getdasha.com/compute/api/receipts · 
 Job receipts include \`route\` (\`community\`|\`hosted\`, same as x-dasha-route). \`turns\` only when already counted — never invented.
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
+${COMPUTE_HOSTED_FLASH_TXT}
 Spend: read \`x-dasha-route\` (\`community\`|\`hosted\`) and \`x-dasha-model\` on chat/completions. \`x-dasha-spend-usd\` only when cost is known — Community omits USD when unknown.
 
 ${COMPUTE_PROVIDE_SPEED_TXT}
@@ -155,6 +159,7 @@ First path: Sign in, create a key, change the base URL.
 ${COMPUTE_FIRST_CALL_TXT}
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
+${COMPUTE_HOSTED_FLASH_TXT}
 spend headers x-dasha-route · x-dasha-model · x-dasha-spend-usd when known (Community omits unknown USD)
 receipts include route community|hosted (same as x-dasha-route); turns only when counted — never invented
 

@@ -95,6 +95,7 @@ assert.match(COMPUTE_LLMS_TXT, /Authorization: Bearer \$DASHA_API_KEY/, 'packet 
 assert.match(COMPUTE_LLMS_TXT, /"model":"gemma3-27b"/, 'packet first-call model');
 assert.match(COMPUTE_LLMS_TXT, /^Community: a peer Mac runs the job\.$/m, 'Community one-liner');
 assert.match(COMPUTE_LLMS_TXT, /^Hosted: still there when no Mac is online\.$/m, 'Hosted one-liner');
+assert.match(COMPUTE_LLMS_TXT, /^Hosted Flash: bigger-than-Mac \(Spark \/ Engram-class Flash when offered\)\. Never Community\. Same base_url\. Watch x-dasha-route\.$/m, 'Hosted Flash option');
 assert.match(COMPUTE_LLMS_TXT, /x-dasha-route/, 'packet names spend route header');
 assert.match(COMPUTE_LLMS_TXT, /x-dasha-spend-usd/, 'packet names spend usd header');
 assert.match(COMPUTE_LLMS_TXT, /Community omits unknown USD/, 'packet honesty: no invented community USD');
