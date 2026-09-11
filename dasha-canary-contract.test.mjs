@@ -27,6 +27,8 @@ import edgeWorker, {
 } from './dasha-lobby-worker.mjs';
 import { DEFAULT, TG as DIGEST_TG, homeTapeItems } from './dasha-digest.mjs';
 import { SITEMAP_XML as GEN_SITEMAP } from './dasha-lobby-static-gen.mjs';
+import { PROVIDE_SKILL_MD } from './dasha-compute-skills.mjs';
+import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
@@ -542,5 +544,21 @@ assert.match(workerSrc, /export function stripHomeLeftoverDashaRootClass/);
 assert.match(workerSrc, /out = stripHomeLeftoverDashaRootClass\(out\);/);
 assert.equal(DIGEST_TG, TG);
 assert.doesNotMatch(workerSrc, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+
+// Provide enroll templates must advertise measured qwen3-4b (not 8b-only after #178).
+{
+  const provideDisk = readFileSync(join(root, 'dasha-compute-skills/PROVIDE.md'), 'utf8');
+  const computeDisk = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
+  for (const [label, body] of [
+    ['PROVIDE.md', provideDisk],
+    ['PROVIDE_SKILL_MD', PROVIDE_SKILL_MD],
+    ['dasha-compute.html', computeDisk],
+    ['COMPUTE_PAGE_HTML', COMPUTE_PAGE_HTML],
+  ]) {
+    assert.match(body, /DASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b/, `${label} dual MODEL_MAP`);
+    assert.match(body, /ollama pull qwen3:4b/, `${label} fast 4b pull`);
+    assert.doesNotMatch(body, /DASHA_MODEL_MAP=qwen3-8b=qwen3:8b(?:\s|\\|$)/, `${label} no 8b-only MODEL_MAP`);
+  }
+}
 
 console.log('dasha-canary-contract: PASS (rollback fixture fails, ship-src home/routes/sitemap/SIWG/digest pass)');

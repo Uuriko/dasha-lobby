@@ -45,6 +45,13 @@ assertCatalog(COMPUTE_PAGE_HTML, 'embed');
 assert.match(PROVIDE_SKILL_MD, /qwen3-4b=qwen3:4b/, 'PROVIDE skill map example');
 assert.match(PROVIDE_SKILL_MD, /qwen3:4b \(fast\).*qwen3:8b.*gemma3:12b/s, 'PROVIDE skill lists 4b alongside 8b/12b');
 assert.match(PROVIDE_SKILL_MD, /qwen3-8b=qwen3:8b/, 'PROVIDE skill keeps 8b map');
+assert.match(PROVIDE_SKILL_MD, /DASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b/, 'PROVIDE skill bash uses dual map');
+assert.match(PROVIDE_SKILL_MD, /ollama pull qwen3:4b/, 'PROVIDE skill pulls measured 4b');
+assert.doesNotMatch(
+  PROVIDE_SKILL_MD,
+  /DASHA_MODEL_MAP=qwen3-8b=qwen3:8b(?:\s|\\|$)/,
+  'PROVIDE skill bash must not regress to 8b-only MODEL_MAP',
+);
 assert.match(USE_SKILL_MD, /qwen3-4b \/ qwen3-8b \/ gemma3-12b/, 'USE skill Mixture prefer includes 4b');
 assert.match(COMPUTE_PROVIDE_SPEED_TXT, /qwen3-4b · qwen3-8b/, 'Provide speed lists 4b first among smaller-is-faster');
 assert.doesNotMatch(PROVIDE_SKILL_MD, STATIC_BANNED_TPS, 'PROVIDE skill no invented tok/s');
