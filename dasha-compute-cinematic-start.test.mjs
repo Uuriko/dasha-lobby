@@ -52,7 +52,8 @@ function assertCinematicStart(html, label) {
   assert.match(html, /#pick-ask\.tf-acid-rim\{background:var\(--acid\);border-color:var\(--acid\);color:var\(--ink\)/, `${label} acid rim stays ink on acid`);
   assert.match(gate, /id=["']gate-proof["'][^>]*>Measured Mac speed via network capacity\.</, `${label} honest proof chip`);
   assert.match(html, /function paintGateProof\(/, `${label} paintGateProof`);
-  assert.match(html, /n>=1&&live\.tpsLabel/, `${label} live tok\/s only when measured`);
+  assert.match(html, /function winningMeasuredCapacity\(/, `${label} winning measured capacity`);
+  assert.match(html, /n>=1&&win/, `${label} live tok\/s only when measured`);
   assert.match(html, /never invent teams/, `${label} no fake teams`);
   assert.match(html, /id=["']ux-triad["']/, `${label} Immersity triad stays`);
   assert.ok(gate.indexOf('Start.') < gate.indexOf('id="ux-triad"'), `${label} triad after Start.`);
@@ -147,7 +148,7 @@ if (puppeteer && existsSync(chrome)) {
         zero,
       };
     });
-    assert.equal(liveProof.live, '2 · 38 tok/s', 'measured providers + tok/s');
+    assert.equal(liveProof.live, '2 Macs · qwen3-8b ~38 tok/s', 'measured providers + tok/s');
     assert.equal(liveProof.zero, 'Measured Mac speed via network capacity.', 'zero fleet stays honest');
 
     await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
