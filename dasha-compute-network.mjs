@@ -251,6 +251,22 @@ function isComputeApiHealthzPath(path) {
     || path === '/compute/api/health' || path === '/compute/api/health/';
 }
 
+/**
+ * Leftover /compute/v1/chat/completions (agents omit /api).
+ * Same fail-loud chat handler as /compute/api/v1/chat/completions — not a 308, not opaque 404.
+ * Title-case via toLowerCase. Slash kept. Never fold bare /v1/chat/completions.
+ */
+export function rewriteComputeV1ChatCompletionsPath(pathname) {
+  const p = String(pathname || '').toLowerCase();
+  if (p === '/compute/v1/chat/completions') return '/compute/api/v1/chat/completions';
+  if (p === '/compute/v1/chat/completions/') return '/compute/api/v1/chat/completions/';
+  return null;
+}
+
+function computeApiPathname(pathname) {
+  return rewriteComputeV1ChatCompletionsPath(pathname) || String(pathname || '');
+}
+
 function withV1Cors(res, origin) {
   const headers = new Headers(res.headers);
   if (!headers.has('Access-Control-Allow-Origin')) {
@@ -1141,7 +1157,7 @@ export class ComputeNetwork {
   }
 
   async fetch(request, allowedOrigin) {
-    const path = new URL(request.url).pathname, now = Date.now(), credentials = Boolean(allowedOrigin);
+    const path = computeApiPathname(new URL(request.url).pathname), now = Date.now(), credentials = Boolean(allowedOrigin);
     if (isComputeGuestKeyPath(path)) {
       const guestProbe = computeGuestKeyResponse(request);
       if (guestProbe) return guestProbe;
@@ -2693,7 +2709,7 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 }
 
 export async function computeApi(request, env, allowedOrigin) {
-  const path = new URL(request.url).pathname, credentials = Boolean(allowedOrigin);
+  const path = computeApiPathname(new URL(request.url).pathname), credentials = Boolean(allowedOrigin);
   const guestProbe = computeGuestKeyResponse(request);
   if (guestProbe) return guestProbe;
   if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {

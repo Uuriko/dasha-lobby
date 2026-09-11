@@ -121,7 +121,7 @@ import {
   LOGIN_PAGE_HTML,
   ASSET_HASH,
 } from './dasha-lobby-static-gen.mjs';
-import { ComputeNetwork, computeApi } from './dasha-compute-network.mjs';
+import { ComputeNetwork, computeApi, rewriteComputeV1ChatCompletionsPath } from './dasha-compute-network.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
@@ -6178,9 +6178,11 @@ function computeSkillResponse(request, pathname) {
 }
 
 
-/** Bare /compute/api and /compute/api/ must hit computeApi (status), not html-404. */
+/** Bare /compute/api and /compute/api/ must hit computeApi (status), not html-404.
+ * Leftover /compute/v1/chat/completions (+slash / Title-case) is the same chat handler. */
 function isComputeApiPath(pathname) {
-  return pathname === '/compute/api' || pathname.startsWith('/compute/api/');
+  return pathname === '/compute/api' || pathname.startsWith('/compute/api/')
+    || Boolean(rewriteComputeV1ChatCompletionsPath(pathname));
 }
 
 
