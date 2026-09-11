@@ -3,7 +3,7 @@
  * Mirror live Dasha List (Worker 1013067e): GET/HEAD /listings 200 HTML,
  * GET/HEAD /listings.json 200 dasha.listings.v0. Pretty 308 leftover
  * /listing /listings/ /coins /coin /listed /list /dex /dexscreener /cmc /coingecko
- * (+slash / Title-case) → /listings. /market stays → /compute. /ca stays → /which.
+ * (+slash / Title-case) → /listings. /market leftover → /compute/ocm. /ca stays → /which.
  * Featured only $dasha / dash_eats. Venues from buy-sheet. Quiet #list-door after #grwm.
  * Quiet Compute Use a Mac / Join a Mac doors. Disk only. No Designer. Never plugin.jup.ag.
  */
@@ -30,8 +30,8 @@ assert.match(workerSrc, /POTTER_LISTINGS_308_PATHS/);
 assert.match(workerSrc, /export function listingsJsonBody/);
 assert.match(
   workerSrc,
-  /\/marketplace \/market \/you \/night \/build \/ocm already 308/,
-  'market folds to /compute with the tab peers',
+  /Apex \/marketplace \/market leftover pretty-paths are POTTER_COMPUTE_MARKET_OCM_308_PATHS/,
+  'market folds to /compute/ocm',
 );
 assert.match(workerSrc, /id=["']list-door["']/, 'quiet home list-door');
 
@@ -151,8 +151,8 @@ assert.equal(potterHome308Dest('/listings'), null, '/listings stays 200');
 assert.equal(potterHome308Dest('/listings.json'), null, '/listings.json stays 200');
 assert.equal(potterHome308Dest('/Listings'), `${WWW}/listings`, 'Title-case /Listings');
 assert.equal(potterHome308Dest('/Listings.json'), `${WWW}/listings.json`, 'Title-case /Listings.json');
-assert.equal(potterHome308Dest('/market'), `${WWW}/compute`, '/market stays compute');
-assert.equal(potterHome308Dest('/market/'), `${WWW}/compute`, '/market/ stays compute');
+assert.equal(potterHome308Dest('/market'), `${WWW}/compute/ocm`, '/market leftover → OCM');
+assert.equal(potterHome308Dest('/market/'), `${WWW}/compute/ocm`, '/market/ leftover → OCM');
 assert.equal(potterHome308Dest('/ca'), `${WWW}/which`, '/ca stays /which');
 assert.equal(potterHome308Dest('/verify'), null, '/verify is the real verifier page now (992/993)');
 
@@ -238,7 +238,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
   const market = await edgeWorker.fetch(new Request(`https://${host}/market`), env);
   assert.equal(market.status, 308, `${host} /market still 308`);
-  assert.equal(market.headers.get('location'), `${WWW}/compute`, `${host} /market stays /compute`);
+  assert.equal(market.headers.get('location'), `${WWW}/compute/ocm`, `${host} /market leftover → OCM`);
 
   const ca = await edgeWorker.fetch(new Request(`https://${host}/ca`), env);
   assert.equal(ca.status, 308, `${host} /ca still 308`);

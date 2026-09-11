@@ -359,7 +359,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Full text](https://www.getdasha.com/llms-full.txt)
 
 Grok Bot compatible. Login https://www.getdasha.com/login
-First path: Sign in, create a key, change the base URL.
+First path: POST /compute/api/guest-keys. Or sign in at /compute#build for dsk_.
 `;
 
 const AI_TXT = `# $dasha
@@ -464,7 +464,7 @@ Use a Mac: https://www.getdasha.com/compute#ask
 Join a Mac: https://www.getdasha.com/compute#provide
 Live benchmarks: https://www.getdasha.com/benchmarks
 OpenAI-compatible base URL: https://lobby.getdasha.com/compute/api/v1
-First path: Sign in, create a key, change the base URL.
+First path: POST /compute/api/guest-keys. Or sign in at /compute#build for dsk_.
 
 ${COMPUTE_FIRST_CALL_TXT}
 ## Compute buyer FAQ
@@ -3530,12 +3530,16 @@ const POTTER_LOGIN_308_PATHS = new Set([
   '/siwg', '/siwg/',
 ]);
 /** /signup /register /signin /sign-in /sign_in /sign-up /sign_up /log-in /log_in → plain /login (not login#grok). */
-/** /compute/marketplace + /compute/market leftover pretty-paths → OCM, not Start. chat. */
+/** /compute/marketplace + /compute/market + apex /marketplace /market leftover pretty-paths → OCM, not Start. chat. */
 const POTTER_COMPUTE_MARKET_OCM_308_PATHS = new Set([
   "/compute/marketplace",
   "/compute/marketplace/",
   "/compute/market",
   "/compute/market/",
+  "/marketplace",
+  "/marketplace/",
+  "/market",
+  "/market/",
 ]);
 const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/use",
@@ -3578,7 +3582,8 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/settings",
   "/compute/settings/",
   // Apex product doors: /provide /start /sponsor(s) /ask /pay /credits /host /use
-  // /marketplace /market /you /night /build /ocm already 308→/compute.
+  // /you /night /build /ocm already 308→/compute.
+  // Apex /marketplace /market leftover pretty-paths are POTTER_COMPUTE_MARKET_OCM_308_PATHS → /compute/ocm.
   // Leftover apex Product/Provider/Mac + Prefer-MLX (/mlx /prefer-mlx /kit) still
   // html-404 while peers 308. /api is dedicated → /compute/api (not this set).
   "/provide",
@@ -3605,10 +3610,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/host/",
   "/use",
   "/use/",
-  "/marketplace",
-  "/marketplace/",
-  "/market",
-  "/market/",
   "/you",
   "/you/",
   "/night",

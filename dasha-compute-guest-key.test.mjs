@@ -103,7 +103,8 @@ assert.match(COMPUTE_AGENT_JSON.auth.guest_key.curl, /POST https:\/\/lobby\.getd
   assert.equal(key.next.some(s => s.path === '/compute/llms.txt'), true);
   assert.equal(key.next.some(s => s.path === '/compute/skill.md'), true);
   assert.equal(key.next.some(s => s.path === '/compute/api/guest-keys'), true);
-  assert.match(key.hint, /\/compute\/skill\.md/);
+  assert.match(key.hint, /dsk_|dgk_/);
+  assert.match(key.hint, /ocm_live_/);
 }
 
 {

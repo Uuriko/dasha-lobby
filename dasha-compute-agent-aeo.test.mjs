@@ -97,7 +97,7 @@ assert.equal(
   1,
   'packet keeps one mint curl',
 );
-assert.match(COMPUTE_LLMS_TXT, /First path: Sign in, create a key, change the base URL\./, 'packet first path');
+assert.match(COMPUTE_LLMS_TXT, /First path: POST \/compute\/api\/guest-keys\. Or sign in at \/compute#build for dsk_\./, 'packet first path');
 assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_FIRST_CALL_TXT), true, 'packet embeds First call');
 assert.match(COMPUTE_LLMS_TXT, /^## First call$/m, 'packet First call heading');
 assert.match(COMPUTE_LLMS_TXT, /Authorization: Bearer \$DASHA_API_KEY/, 'packet keyed curl');
@@ -161,7 +161,7 @@ for (const [name, body] of [['LLMS_TXT', llms], ['LLMS_FULL_TXT', full]]) {
   assert.ok(body.includes(COMPUTE_AGENT_JSON_URL), `${name} points at /.well-known/agent.json`);
   assert.ok(body.includes(MINT), `${name} keeps associated mint`);
   assert.ok(body.includes(PAIR), `${name} keeps pair`);
-  assert.match(body, /First path: Sign in, create a key, change the base URL\./, `${name} first path`);
+  assert.match(body, /First path: POST \/compute\/api\/guest-keys\. Or sign in at \/compute#build for dsk_\./, `${name} first path`);
   assert.doesNotMatch(body, /plugin\.jup\.ag/, `${name} no plugin.jup.ag`);
 }
 
@@ -252,7 +252,7 @@ for (const origin of ORIGINS) {
   assert.ok(indexBody.includes(COMPUTE_SKILL_URL), `${origin}/llms.txt links compute skill`);
   assert.ok(indexBody.includes(COMPUTE_AGENT_JSON_URL), `${origin}/llms.txt links agent.json`);
   assert.ok(indexBody.includes(MINT), `${origin}/llms.txt keeps mint`);
-  assert.match(indexBody, /First path: Sign in, create a key, change the base URL\./);
+  assert.match(indexBody, /First path: POST \/compute\/api\/guest-keys\. Or sign in at \/compute#build for dsk_\./);
   assert.doesNotMatch(indexBody, /plugin\.jup\.ag/);
 
   const fullRes = await edgeWorker.fetch(new Request(`${origin}/llms-full.txt`), {});
@@ -262,7 +262,7 @@ for (const origin of ORIGINS) {
   assert.ok(fullBody.includes(COMPUTE_SKILL_URL), `${origin}/llms-full.txt links compute skill`);
   assert.ok(fullBody.includes(COMPUTE_AGENT_JSON_URL), `${origin}/llms-full.txt links agent.json`);
   assert.ok(fullBody.includes(MINT), `${origin}/llms-full.txt keeps mint`);
-  assert.match(fullBody, /First path: Sign in, create a key, change the base URL\./);
+  assert.match(fullBody, /First path: POST \/compute\/api\/guest-keys\. Or sign in at \/compute#build for dsk_\./);
   assert.equal(fullBody.includes(COMPUTE_FIRST_CALL_TXT), true, `${origin}/llms-full.txt First call`);
   assert.match(fullBody, /^## First call$/m, `${origin}/llms-full.txt First call heading`);
   assert.doesNotMatch(fullBody, /plugin\.jup\.ag/);

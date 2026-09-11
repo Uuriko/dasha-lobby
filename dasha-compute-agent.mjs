@@ -193,7 +193,7 @@ guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP
 curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
 
 ${COMPUTE_AGENTS_TXT}
-First path: Sign in, create a key, change the base URL.
+First path: POST /compute/api/guest-keys. Or sign in at /compute#build for dsk_.
 
 ${COMPUTE_FIRST_CALL_TXT}
 Community: a peer Mac runs the job.

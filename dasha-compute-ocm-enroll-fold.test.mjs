@@ -55,6 +55,10 @@ assert.doesNotMatch(OCM_HOST_SKILL_MD, /plugin\.jup\.ag/);
 
 assert.equal(potterHome308Dest('/compute/marketplace'), 'https://www.getdasha.com/compute/ocm');
 assert.equal(potterHome308Dest('/compute/market'), 'https://www.getdasha.com/compute/ocm');
+assert.equal(potterHome308Dest('/marketplace'), 'https://www.getdasha.com/compute/ocm');
+assert.equal(potterHome308Dest('/market'), 'https://www.getdasha.com/compute/ocm');
+assert.doesNotMatch(disk, /\/ocm\/provider\/(?:status|healthz)/, 'no invented /provider/status');
+assert.doesNotMatch(OCM_HOST_SKILL_MD, /\/provider\/(?:status|healthz)/, 'skill status is /ocm/status');
 
 const servedRes = await worker.fetch(new Request("https://www.getdasha.com/compute"), {});
 assert.equal(servedRes.status, 200);

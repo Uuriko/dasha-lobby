@@ -285,7 +285,8 @@ try {
     assert.equal(res.status, 308, path);
     assert.equal(res.headers.get('location'), 'https://www.getdasha.com/compute/ocm', path);
   }
-  assert.equal(potterHome308Dest('/marketplace'), 'https://www.getdasha.com/compute');
+  assert.equal(potterHome308Dest('/marketplace'), 'https://www.getdasha.com/compute/ocm');
+  assert.equal(potterHome308Dest('/market'), 'https://www.getdasha.com/compute/ocm');
   assert.equal(potterHome308Dest('/ocm'), 'https://www.getdasha.com/compute');
 
   const computePage = await worker.fetch(new Request('https://www.getdasha.com/compute'), {});

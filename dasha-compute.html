@@ -738,6 +738,7 @@ DASHA_MODEL_MAP=qwen3-8b=qwen3:8b python3 provider/agent.py --doctor</pre>
     <div class="actions row">
       <button class="copy secondary" data-copy="code" type="button">Copy curl</button>
       <a class="secondary" id="key-login" href="/login?return=/compute%23build">Sign in</a>
+      <button class="primary" id="mint-guest-key" type="button">Guest key</button>
       <button class="primary" id="create-api-key" type="button" hidden disabled>Create API key</button>
       <button class="secondary" id="check" type="button">Run check</button>
     </div>
@@ -775,8 +776,8 @@ https://lobby.getdasha.com/compute/api/v1</pre>
     </section>
     <p class="fine" id="api-key-cap-hint">Credits · Cap $5 / month</p>
     <label class="field" id="api-key-limit-wrap" hidden>Spend cap (USD / month)<input id="api-key-limit" type="number" min="1" max="1000" step="1" value="5" inputmode="decimal" placeholder="5"></label>
-    <pre id="api-key-output" aria-live="polite">Sign in to create a developer key.</pre>
-    <div class="models" id="api-key-list"><p class="fine">Sign in to create a developer key.</p></div>
+    <pre id="api-key-output" aria-live="polite">POST /compute/api/guest-keys</pre>
+    <div class="models" id="api-key-list"><p class="fine">POST /compute/api/guest-keys</p></div>
     <pre id="check-result">Lobby v1 URL is set. Run check.</pre>
   </details>
 </section>
@@ -997,7 +998,7 @@ $('clear-chat').addEventListener('click',clearConversation);
 async function api(path,options={}){
   const response=await fetch(API+path,{credentials:'include',cache:'no-store',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
   const data=response.status===204?null:await response.json();
-  if(!response.ok)throw Error(data?.error||'Request failed');
+  if(!response.ok)throw Error((typeof data?.error==='string'?data.error:data?.error?.message)||data?.hint||'Request failed');
   return data;
 }
 function preferOnlineModel(select,preferSub24){
@@ -1640,6 +1641,8 @@ function updateProvideAuth(){
   if(macs)macs.hidden=!(loggedIn&&tfStep==='provide-done');
   if(loggedIn&&tfStep==='provide-done')paintProviderMacsSum();
   $('key-login').hidden=loggedIn;
+  const mint=$('mint-guest-key');
+  if(mint){mint.hidden=loggedIn;mint.disabled=loggedIn}
   $('create-api-key').hidden=!loggedIn;
   $('create-api-key').disabled=!loggedIn;
   const limWrap=$('api-key-limit-wrap');if(limWrap)limWrap.hidden=!loggedIn;
@@ -2531,6 +2534,15 @@ $('create-api-key').addEventListener('click',async()=>{
     await loadApiKeys();
   }catch(error){$('api-key-output').textContent=error.message}
   finally{button.disabled=!loggedIn}
+});
+$('mint-guest-key')?.addEventListener('click',async()=>{
+  const button=$('mint-guest-key');if(!button||loggedIn)return;
+  button.disabled=true;
+  try{
+    const key=await api('/compute/api/guest-keys',{method:'POST',body:'{}'});
+    $('api-key-output').textContent="export DASHA_API_KEY='"+key.api_key+"'\n\nCopy now. 24h · chat + models.";
+  }catch(error){$('api-key-output').textContent=error.message}
+  finally{button.disabled=loggedIn}
 });
 
 $('api-key-list').addEventListener('click',async event=>{
