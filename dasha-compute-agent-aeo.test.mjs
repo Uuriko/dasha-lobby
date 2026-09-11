@@ -98,6 +98,8 @@ assert.match(COMPUTE_LLMS_TXT, /^Hosted: still there when no Mac is online\.$/m,
 assert.match(COMPUTE_LLMS_TXT, /x-dasha-route/, 'packet names spend route header');
 assert.match(COMPUTE_LLMS_TXT, /x-dasha-spend-usd/, 'packet names spend usd header');
 assert.match(COMPUTE_LLMS_TXT, /Community omits unknown USD/, 'packet honesty: no invented community USD');
+assert.match(COMPUTE_LLMS_TXT, /receipts include route community\|hosted/, 'packet names receipt route');
+assert.match(COMPUTE_LLMS_TXT, /turns only when counted/, 'packet never invents turns');
 assert.match(COMPUTE_LLMS_TXT, /https:\/\/www\.getdasha\.com\/llms\.txt/, 'packet links site llms');
 assert.match(COMPUTE_LLMS_TXT, /https:\/\/www\.getdasha\.com\/llms-full\.txt/, 'packet links site llms-full');
 assert.doesNotMatch(COMPUTE_LLMS_TXT, /plugin\.jup\.ag/, 'packet no plugin.jup.ag');
