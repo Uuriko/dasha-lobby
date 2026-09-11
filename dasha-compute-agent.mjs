@@ -111,6 +111,7 @@ Engram/SSD-stream local recipes stay Hosted/Provide-Max — not Air kit.`;
 export const COMPUTE_PROVIDE_SPEED_TXT = `## Provide speed
 
 Community Macs publish measured tok/s via network capacity (measured_providers). Never invent.
+Join a Mac at /compute#provide — kit soft-doctor and enroll-code live there.
 Kit uses OLLAMA_KEEP_ALIVE (launch agent / service — a shell export is not enough).
 Smaller is faster: qwen3-4b · qwen3-8b · gemma3-12b · gemma3-27b.
 Send a recipe — MLX / Ollama / llama.cpp Apple Silicon. We pin winners.

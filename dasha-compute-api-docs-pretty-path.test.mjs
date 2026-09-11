@@ -4,7 +4,8 @@
  * was JSON fail-loud 404 on www + lobby while /compute/skill.md is already
  * the agent docs face (200 markdown). Fold to that face.
  * Singular leftover /compute/api/doc still 404 after plural docs went live.
- * /compute/docs /sdk-docs /api-reference /sdk /cli stay 308 → /compute/api.
+ * /sdk-docs /api-reference /sdk /cli stay 308 → /compute/api.
+ * /compute/docs + /compute/openapi.json fold via POTTER_COMPUTE_DOCS_SKILL_308_PATHS.
  * Lobby same-host via potterHome308Response. Disk only. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -18,7 +19,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS/, 'api/docs leftover set');
 assert.match(workerSrc, /Live GET\/HEAD \/compute\/api\/docs/, 'live 404 comment');
-assert.match(workerSrc, /that's \/compute\/docs \/sdk-docs \/api-reference leftover dest/, 'gateway leftovers stay /compute/api');
+assert.match(workerSrc, /that's \/sdk-docs \/api-reference leftover dest/, 'gateway leftovers stay /compute/api');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
 const WWW = 'https://www.getdasha.com';
@@ -26,7 +27,6 @@ const LOBBY = 'https://lobby.getdasha.com';
 const SKILL = `${WWW}/compute/skill.md`;
 const LOBBY_SKILL = `${LOBBY}/compute/skill.md`;
 const API = `${WWW}/compute/api`;
-const LOBBY_API = `${LOBBY}/compute/api`;
 
 const FOLDS = [
   '/compute/api/docs',
@@ -46,9 +46,6 @@ const FOLDS = [
 ];
 
 const GATEWAY_UNCHANGED = [
-  ['/compute/docs', API],
-  ['/compute/docs/', API],
-  ['/Compute/docs', API],
   ['/sdk-docs', API],
   ['/sdk-docs/', API],
   ['/api-reference', API],
@@ -76,7 +73,6 @@ assert.notEqual(potterHome308Dest('/compute/api/documentation'), SKILL, 'do not 
 const env = { LOBBY_SESSION_SECRET: 'compute-api-docs-pretty-path-secret', AI: { run: async () => ({ response: 'ok' }) } };
 for (const host of ['www.getdasha.com', 'getdasha.com', 'lobby.getdasha.com']) {
   const skillLoc = host === 'lobby.getdasha.com' ? LOBBY_SKILL : SKILL;
-  const apiLoc = host === 'lobby.getdasha.com' ? LOBBY_API : API;
   for (const path of FOLDS) {
     for (const method of ['GET', 'HEAD']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
@@ -85,12 +81,6 @@ for (const host of ['www.getdasha.com', 'getdasha.com', 'lobby.getdasha.com']) {
       assert.doesNotMatch(res.headers.get('location') || '', /plugin\.jup\.ag/);
       if (method === 'HEAD') assert.equal(await res.text(), '');
     }
-  }
-  for (const method of ['GET', 'HEAD']) {
-    const docs = await edgeWorker.fetch(new Request(`https://${host}/compute/docs`, { method }), env);
-    assert.equal(docs.status, 308, `${host} /compute/docs ${method} still 308`);
-    assert.equal(docs.headers.get('location'), apiLoc, `${host} /compute/docs ${method} loc`);
-    if (method === 'HEAD') assert.equal(await docs.text(), '');
   }
   const face = await edgeWorker.fetch(new Request(`https://${host}/compute/skill.md`), env);
   assert.equal(face.status, 200, `${host} /compute/skill.md stays 200`);
@@ -101,4 +91,4 @@ const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 assert.ok(!sitemapXml.includes(`${WWW}/compute/api/docs</loc>`), 'sitemap omits leftover /compute/api/docs');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/api/doc</loc>`), 'sitemap omits leftover /compute/api/doc');
 
-console.log('dasha-compute-api-docs-pretty-path: PASS (/compute/api/docs+/doc 308 skill.md www+lobby GET+HEAD; /compute/docs still /compute/api; no plugin.jup.ag)');
+console.log('dasha-compute-api-docs-pretty-path: PASS (/compute/api/docs+/doc 308 skill.md www+lobby GET+HEAD; /sdk-docs stay /compute/api; no plugin.jup.ag)');
