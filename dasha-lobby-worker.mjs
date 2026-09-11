@@ -4908,12 +4908,19 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
 /** Live GET /compute/doctor was 308 → /compute (Ask first-paint). Soft-doctor
  *  / Provide enroll should land on Provide. Leftover /provide /enroll /setup
  *  /doctor (apex) + /compute/provide|/enroll|/setup still dumped to Ask.
+ *  Live GET /compute/provide/{enroll,setup,doctor,register} (+slash /
+ *  Title-case) were HTML 404 on www + lobby while /compute/enroll|/setup|
+ *  /doctor|/provide already 308 → /compute#provide. Same join family.
  *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
   '/doctor', '/doctor/',
   '/provide', '/provide/',
   '/compute/provide', '/compute/provide/',
+  '/compute/provide/enroll', '/compute/provide/enroll/',
+  '/compute/provide/setup', '/compute/provide/setup/',
+  '/compute/provide/doctor', '/compute/provide/doctor/',
+  '/compute/provide/register', '/compute/provide/register/',
   '/enroll', '/enroll/',
   '/compute/enroll', '/compute/enroll/',
   '/setup', '/setup/',
