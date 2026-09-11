@@ -14,6 +14,10 @@ function provideAddMac(html) {
 
 function assertPulse(html, label) {
   assert.match(html, /id=["']provide-beat["']/, `${label} #provide-beat`);
+  assert.match(html, /id=["']provide-queue["']/, `${label} #provide-queue`);
+  assert.match(html, /function applyJobsQueued\(/, `${label} applyJobsQueued`);
+  assert.match(html, /function paintProvideQueue\(/, `${label} paintProvideQueue`);
+  assert.match(html, /jobs_queued/, `${label} live jobs_queued`);
   assert.match(html, /ownMacOnline/, `${label} keys Online off ownMacOnline`);
   assert.match(html, /mine>=1&&!provideExpectingNew/, `${label} first-Mac lock`);
   assert.match(html, /'Online'|`\$\{mine\} online`/, `${label} Online / N online`);
@@ -80,6 +84,7 @@ try {
     showTf("provide-done");
     paintProvideBeat();
     const beat = document.getElementById("provide-beat");
+    const queue = document.getElementById("provide-queue");
     const tto = document.getElementById("provide-tto");
     const mlx = document.getElementById("provide-prefer-mlx");
     const ka = document.getElementById("provide-keepalive");
@@ -91,6 +96,8 @@ try {
       waiting: beat?.classList.contains("waiting"),
       acid: beat?.classList.contains("acid"),
       aria: beat?.getAttribute("aria-label") || "",
+      queueHidden: queue?.hidden === true,
+      queueText: queue?.textContent || "",
       ttoHidden: tto?.hidden === true,
       ttoText: (tto?.textContent || "").trim(),
       mlxHidden: mlx?.hidden === true,
@@ -105,6 +112,8 @@ try {
   assert.equal(waiting.waiting, true);
   assert.equal(waiting.acid, false, "waiting does not claim Online");
   assert.equal(waiting.aria, "Waiting");
+  assert.equal(waiting.queueHidden, true, "queue hidden while waiting");
+  assert.equal(waiting.queueText, "", "no invented queue while waiting");
   assert.equal(waiting.ttoHidden, false, "tto visible while waiting");
   assert.match(waiting.ttoText, /About 15–30 min to online\./);
   assert.equal(waiting.mlxHidden, false, "prefer-mlx visible while waiting");
@@ -118,6 +127,7 @@ try {
     provideExpectingNew = false;
     paintProvideBeat();
     const beat = document.getElementById("provide-beat");
+    const queue = document.getElementById("provide-queue");
     const tto = document.getElementById("provide-tto");
     const mlx = document.getElementById("provide-prefer-mlx");
     const ka = document.getElementById("provide-keepalive");
@@ -128,6 +138,8 @@ try {
       waiting: beat?.classList.contains("waiting"),
       acid: beat?.classList.contains("acid"),
       aria: beat?.getAttribute("aria-label") || "",
+      queueHidden: queue?.hidden === true,
+      queueText: queue?.textContent || "",
       ttoHidden: tto?.hidden === true,
       mlxHidden: mlx?.hidden === true,
       kaHidden: ka?.hidden === true,
@@ -139,6 +151,8 @@ try {
   assert.equal(online.waiting, false);
   assert.equal(online.acid, true);
   assert.equal(online.aria, "Online");
+  assert.equal(online.queueHidden, true, "queue hidden when jobs_queued is 0");
+  assert.equal(online.queueText, "", "no invented 0 queued");
   assert.equal(online.ttoHidden, true, "tto hidden when Online");
   assert.equal(online.mlxHidden, true, "prefer-mlx hidden when Online");
   assert.equal(online.kaHidden, true, "keepalive hidden when Online");
@@ -183,6 +197,52 @@ try {
     return document.getElementById("provide-beat")?.textContent || "";
   });
   assert.equal(many, "3 online");
+
+  const queued = await page.evaluate(() => {
+    loggedIn = true;
+    ownMacOnline = 1;
+    provideExpectingNew = false;
+    jobsQueued = 3;
+    showTf("provide-done");
+    paintProvideBeat();
+    const onlineQ = {
+      beat: document.getElementById("provide-beat")?.textContent || "",
+      queueHidden: document.getElementById("provide-queue")?.hidden === true,
+      queue: document.getElementById("provide-queue")?.textContent || "",
+    };
+    jobsQueued = 0;
+    applyJobsQueued({ jobs_queued: 2 });
+    paintProvideBeat();
+    const applied = {
+      stored: jobsQueued,
+      queue: document.getElementById("provide-queue")?.textContent || "",
+    };
+    applyJobsQueued({});
+    paintProvideBeat();
+    const missing = {
+      stored: jobsQueued,
+      queueHidden: document.getElementById("provide-queue")?.hidden === true,
+      queue: document.getElementById("provide-queue")?.textContent || "",
+    };
+    jobsQueued = 4;
+    ownMacOnline = 0;
+    paintProvideBeat();
+    const waitingQ = {
+      queueHidden: document.getElementById("provide-queue")?.hidden === true,
+      queue: document.getElementById("provide-queue")?.textContent || "",
+    };
+    return { onlineQ, applied, missing, waitingQ };
+  });
+  assert.equal(queued.onlineQ.beat, "Online");
+  assert.equal(queued.onlineQ.queueHidden, false, "queue shows when jobs_queued > 0");
+  assert.equal(queued.onlineQ.queue, "3 queued");
+  assert.equal(queued.applied.stored, 2);
+  assert.equal(queued.applied.queue, "2 queued");
+  assert.equal(queued.missing.stored, 0, "missing jobs_queued is not invented");
+  assert.equal(queued.missing.queueHidden, true);
+  assert.equal(queued.missing.queue, "");
+  assert.equal(queued.waitingQ.queueHidden, true, "queue stays off Waiting");
+  assert.equal(queued.waitingQ.queue, "");
 
   const addMac = await page.evaluate(() => {
     loggedIn = true;

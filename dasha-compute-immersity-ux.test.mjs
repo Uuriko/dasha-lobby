@@ -83,6 +83,8 @@ function assertImmersitySteal(html, label) {
   assert.match(html, /Provide\. Name the Mac\. Kit\. Doctor\./, `${label} FAQ enroll`);
   assert.match(html, /Is hosting safe for my Mac\?/, `${label} FAQ host safe`);
   assert.match(html, /How fast is Provide\?/, `${label} FAQ provide speed`);
+  assert.match(html, /When do I earn\?/, `${label} FAQ earn demand`);
+  assert.match(html, /Busy network · more jobs/, `${label} FAQ busy network`);
   assert.match(html, /measured_providers/, `${label} FAQ measured_providers`);
   assert.match(html, /Keychain/, `${label} FAQ Keychain`);
   assert.match(html, /Ollama/, `${label} FAQ Ollama`);

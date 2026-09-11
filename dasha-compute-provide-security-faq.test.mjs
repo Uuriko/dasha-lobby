@@ -31,7 +31,9 @@ function assertHostSafe(html, label) {
   const faq = faqBlock(html);
   assert.match(faq, /How do I enroll\?/, `${label} enroll Q stays`);
   assert.ok(faq.includes(HOST_ITEM), `${label} one hidden Provide host-safe item`);
-  assert.equal((faq.match(/data-faq="provide"/g) || []).length, 3, `${label} three Provide items`);
+  assert.equal((faq.match(/data-faq="provide"/g) || []).length, 4, `${label} four Provide items`);
+  assert.match(faq, /When do I earn\?/, `${label} earn demand Q`);
+  assert.match(faq, /Busy network · more jobs/, `${label} earn demand A`);
   assert.match(faq, /How fast is Provide\?/, `${label} Provide speed Q`);
   assert.match(faq, /measured_providers/, `${label} measured_providers`);
   assert.equal((faq.match(/Is hosting safe for my Mac\?/g) || []).length, 1, `${label} host-safe Q once`);
