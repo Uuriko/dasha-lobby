@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from './dasha-lobby-worker.mjs';
 import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
+const MODEL_PRICING_USD = { request: '0.05', prompt: '0', completion: '0', currency: 'USD', note: 'flat per chat completion (prepaid credits); self-route free' };
 
 const env = { LOBBY_SESSION_SECRET: 'v1-models-slash-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -72,7 +73,7 @@ await storage.put('compute:provider:mac_live', {
 });
 const live = await pair('/compute/api/v1/models', { headers: auth });
 assert.equal(live.status, 200);
-assert.deepEqual(live.body.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' }]);
+assert.deepEqual(live.body.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 }]);
 
 const lobby = {
   idFromName: () => 'public',
@@ -94,11 +95,11 @@ async function workerPair(host, path, init = {}) {
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const wUnauth = await workerPair(host, '/compute/api/v1/models');
   assert.equal(wUnauth.status, 200, `${host} unauth`);
-  assert.deepEqual(wUnauth.body.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' }]);
+  assert.deepEqual(wUnauth.body.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 }]);
   assert.match(wUnauth.type, /application\/json/);
   const wAuth = await workerPair(host, '/compute/api/v1/models', { headers: auth });
   assert.equal(wAuth.status, 200, `${host} authed`);
-  assert.deepEqual(wAuth.body.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' }]);
+  assert.deepEqual(wAuth.body.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 }]);
 }
 
 const wwwFoo = await worker.fetch(new Request('https://www.getdasha.com/compute/api/foo'), workerEnv);
