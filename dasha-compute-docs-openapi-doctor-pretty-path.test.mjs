@@ -19,6 +19,10 @@
  * /compute/enrol-code (+slash / Title-case) still HTML 404 on www while
  * /compute/enroll already 308 → /compute#provide. Same enroll-code family.
  * Do not invent doctor.md / PROVIDE.md / demigod peers.
+ * Live GET /compute/register /compute/bootstrap /compute/token
+ * (+slash / Title-case) still HTML 404 on www while
+ * /compute/provide/{register,bootstrap,token} already 308 → /compute#provide.
+ * Same provide-verb family. Do not invent join/pairing/claim/activate/connect.
  * Fold this join family to /compute#provide.
  * After #192/#193, leftover /compute/sdk /compute/sdk-docs /compute/cli
  * /compute/api-reference still dumped to the JSON gateway. Same family,
@@ -44,6 +48,7 @@ assert.match(workerSrc, /Leftover \/provide \/enroll \/setup/, 'provide join lef
 assert.match(workerSrc, /\/compute\/provide\/\{enroll,setup,doctor,register\}/, 'nested provide leftover comment');
 assert.match(workerSrc, /\/compute\/provide\/\{install,onboarding,guide,bootstrap,download,/, 'nested provide install leftover comment');
 assert.match(workerSrc, /Live GET \/compute\/enroll-code \/compute\/enroll_code/, 'enroll-code leftover comment');
+assert.match(workerSrc, /Live GET \/compute\/register \/compute\/bootstrap \/compute\/token/, 'bare provide-verb leftover comment');
 assert.match(workerSrc, /\/compute\/sdk \/compute\/sdk-docs \/compute\/cli \/compute\/api-reference still dumped/, 'sdk/cli leftover comment');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
@@ -244,6 +249,24 @@ const PROVIDE_JOIN = [
   '/COMPUTE/ENROL-CODE',
   '/Compute/Enrol-Code',
   '/Compute/Enrol-Code/',
+  '/compute/register',
+  '/compute/register/',
+  '/Compute/register',
+  '/COMPUTE/REGISTER',
+  '/Compute/Register',
+  '/Compute/Register/',
+  '/compute/bootstrap',
+  '/compute/bootstrap/',
+  '/Compute/bootstrap',
+  '/COMPUTE/BOOTSTRAP',
+  '/Compute/Bootstrap',
+  '/Compute/Bootstrap/',
+  '/compute/token',
+  '/compute/token/',
+  '/Compute/token',
+  '/COMPUTE/TOKEN',
+  '/Compute/Token',
+  '/Compute/Token/',
 ];
 
 const GATEWAY_UNCHANGED = [
@@ -265,6 +288,10 @@ const GATEWAY_UNCHANGED = [
 
 const TAB_UNCHANGED = [
   ['/compute/install', COMPUTE],
+  ['/compute/onboarding', COMPUTE],
+  ['/compute/guide', COMPUTE],
+  ['/compute/download', COMPUTE],
+  ['/compute/key', COMPUTE],
   ['/compute/use', COMPUTE],
   ['/compute/night', COMPUTE],
   ['/start', COMPUTE],
@@ -297,6 +324,10 @@ assert.notEqual(potterHome308Dest('/compute/provide/foo'), PROVIDE, 'do not inve
 assert.notEqual(potterHome308Dest('/compute/doctor.md'), PROVIDE, 'do not invent /compute/doctor.md');
 assert.notEqual(potterHome308Dest('/compute/PROVIDE.md'), PROVIDE, 'do not invent /compute/PROVIDE.md');
 assert.notEqual(potterHome308Dest('/compute/demigod'), PROVIDE, 'do not invent demigod');
+assert.notEqual(potterHome308Dest('/register'), PROVIDE, 'apex /register stays login');
+assert.notEqual(potterHome308Dest('/token'), PROVIDE, 'apex /token stays home');
+assert.equal(potterHome308Dest('/register'), 'https://www.getdasha.com/login', 'apex /register stays login');
+assert.equal(potterHome308Dest('/token'), 'https://www.getdasha.com/', 'apex /token stays home');
 assert.match(potterHome308Dest('/doctor') || '', /#provide$/, 'apex /doctor hashes #provide');
 
 const env = {
@@ -372,5 +403,8 @@ assert.ok(!sitemapXml.includes(`${WWW}/compute/enroll-code</loc>`), 'sitemap omi
 assert.ok(!sitemapXml.includes(`${WWW}/compute/enroll_code</loc>`), 'sitemap omits leftover /compute/enroll_code');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/enrollcode</loc>`), 'sitemap omits leftover /compute/enrollcode');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/enrol-code</loc>`), 'sitemap omits leftover /compute/enrol-code');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/register</loc>`), 'sitemap omits leftover /compute/register');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/bootstrap</loc>`), 'sitemap omits leftover /compute/bootstrap');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/token</loc>`), 'sitemap omits leftover /compute/token');
 
-console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json)+/sdk+/sdk-docs+/cli+/api-reference 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/* + /compute/provide/{enroll,setup,doctor,register,install,onboarding,guide,bootstrap,download,token,key} + /compute/enroll-code+/enroll_code+/enrollcode+/enrol-code 308 /compute#provide; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');
+console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json)+/sdk+/sdk-docs+/cli+/api-reference 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/* + /compute/provide/{enroll,setup,doctor,register,install,onboarding,guide,bootstrap,download,token,key} + /compute/enroll-code+/enroll_code+/enrollcode+/enrol-code + /compute/register+/bootstrap+/token 308 /compute#provide; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');

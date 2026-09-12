@@ -150,7 +150,7 @@ for (const path of ['/compute/use', '/compute/night', '/compute/build', '/comput
   assert.equal(res.status, 308, path);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/compute', path);
 }
-for (const path of ['/compute/provide', '/compute/provide/', '/Compute/provide', '/compute/provide/enroll', '/compute/provide/setup', '/compute/provide/doctor', '/compute/provide/register', '/compute/provide/install', '/compute/provide/onboarding', '/compute/provide/guide', '/compute/provide/bootstrap', '/compute/provide/download', '/compute/provide/token', '/compute/provide/key', '/compute/enroll-code', '/compute/enroll_code', '/compute/enrollcode', '/compute/enrol-code']) {
+for (const path of ['/compute/provide', '/compute/provide/', '/Compute/provide', '/compute/provide/enroll', '/compute/provide/setup', '/compute/provide/doctor', '/compute/provide/register', '/compute/provide/install', '/compute/provide/onboarding', '/compute/provide/guide', '/compute/provide/bootstrap', '/compute/provide/download', '/compute/provide/token', '/compute/provide/key', '/compute/enroll-code', '/compute/enroll_code', '/compute/enrollcode', '/compute/enrol-code', '/compute/register', '/compute/bootstrap', '/compute/token']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute#provide', path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
   assert.equal(res.status, 308, path);
