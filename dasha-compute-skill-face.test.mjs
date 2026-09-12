@@ -85,7 +85,10 @@ assert.match(COMPUTE_SKILL_MD, /Job receipts include `route` \(`community`\|`hos
 assert.match(COMPUTE_SKILL_MD, /`turns` only when already counted/, 'skill never invents turns');
 assert.match(COMPUTE_SKILL_MD, /https:\/\/www\.getdasha\.com\/compute\/api\/receipts/, 'receipts URL');
 assert.match(COMPUTE_SKILL_MD, /^Community: a peer Mac runs the job\.$/m, 'Community one-liner');
-assert.match(COMPUTE_SKILL_MD, /^Hosted: still there when no Mac is online\.$/m, 'Hosted one-liner');
+assert.match(COMPUTE_SKILL_MD, /^v1 chat\/completions: community Macs\. None advertise the model → no_mac_online \(poll \/compute\/api\/network · join \/compute#provide\)\.$/m, 'v1 fail-loud one-liner');
+assert.match(COMPUTE_SKILL_MD, /^Hosted Ask: browser POST \/compute\/api\/chat \(status\.live Workers AI\)\. Not a silent v1 swap\.$/m, 'Hosted Ask one-liner');
+assert.doesNotMatch(COMPUTE_SKILL_MD, /Hosted when none are online/, 'skill does not claim v1 Hosted fallback');
+assert.doesNotMatch(COMPUTE_SKILL_MD, /Hosted: still there when no Mac is online/, 'skill does not claim silent Hosted swap');
 assert.match(COMPUTE_SKILL_MD, /^Hosted Flash: bigger-than-Mac \(Spark \/ Engram-class Flash when offered\)\. Model id `deepseek-flash` \(Hosted\)\. Never Community\. Same base_url\. Watch x-dasha-route\.$/m, 'Hosted Flash option');
 assert.match(COMPUTE_SKILL_MD, /Model id `deepseek-flash` \(Hosted\)/, 'skill names deepseek-flash Hosted-when-offered');
 assert.match(COMPUTE_SKILL_MD, /^Engram\/SSD-stream local recipes stay Hosted\/Provide-Max — not Air kit\.$/m, 'skill local recipes stay Hosted/Provide-Max');

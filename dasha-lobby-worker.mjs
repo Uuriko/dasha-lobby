@@ -5144,6 +5144,21 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/digest.json', 'https://www.getdasha.com/digest.json'],
 ]);
 
+/** Leftover bare kit-name family (2026-09-11): live GET/HEAD
+ *  /compute/open-alpha /compute/open_alpha /dasha-compute-open-alpha
+ *  (+slash / Title-case via toLowerCase) html-404 on www while sibling
+ *  /compute/open-alpha.tar.gz /compute/kit.tar.gz /open-alpha.tar.gz
+ *  already 308 via KIT_TAR to the gzip kit.
+ *  Fold this leftover path-family to the canonical tarball — never /compute HTML.
+ *  Apex /open-alpha stays tab leftover → /compute (leave apex alone).
+ *  Exact /dasha-compute-open-alpha.tar.gz stays 200.
+ *  Do not invent DEX peers or apex /readme /install.sh. */
+const POTTER_KIT_NAME_308_PATHS = new Set([
+  '/compute/open-alpha', '/compute/open-alpha/',
+  '/compute/open_alpha', '/compute/open_alpha/',
+  '/dasha-compute-open-alpha', '/dasha-compute-open-alpha/',
+]);
+
 export function potterHome308Dest(path) {
   const raw = String(path || "");
   const p = raw.toLowerCase();
@@ -5339,6 +5354,7 @@ export function potterHome308Dest(path) {
   }
   const KIT_TAR = "https://www.getdasha.com/dasha-compute-open-alpha.tar.gz";
   if (
+    POTTER_KIT_NAME_308_PATHS.has(p) ||
     p === "/compute/open-alpha.tar.gz" ||
     p === "/compute/open-alpha.tar.gz/" ||
     p === "/compute/dasha-compute-open-alpha.tar.gz" ||
@@ -5473,7 +5489,8 @@ export function potterHome308Response(request, url) {
             POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src) ||
             POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src) ||
             POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src)
-          ))
+          )) ||
+          (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )
       ) {
         location = 'https://lobby.getdasha.com' + u.pathname + u.search + u.hash;

@@ -54,12 +54,12 @@ assert.match(COMPUTE_HOSTED_FLASH_TXT, /^Hosted Flash:/, 'shared Hosted Flash');
 assert.equal(COMPUTE_SKILL_MD.includes(COMPUTE_HOSTED_FLASH_TXT), true, 'skill embeds Hosted Flash');
 assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_HOSTED_FLASH_TXT), true, 'packet embeds Hosted Flash');
 assert.ok(
-  COMPUTE_SKILL_MD.indexOf('Hosted: still there when no Mac is online.')
+  COMPUTE_SKILL_MD.indexOf('Hosted Ask: browser POST /compute/api/chat (status.live Workers AI). Not a silent v1 swap.')
     < COMPUTE_SKILL_MD.indexOf(COMPUTE_HOSTED_FLASH_TXT),
   'skill Hosted Flash sits under Community/Hosted',
 );
 assert.ok(
-  COMPUTE_LLMS_TXT.indexOf('Hosted: still there when no Mac is online.')
+  COMPUTE_LLMS_TXT.indexOf('Hosted Ask: browser POST /compute/api/chat (status.live Workers AI). Not a silent v1 swap.')
     < COMPUTE_LLMS_TXT.indexOf(COMPUTE_HOSTED_FLASH_TXT),
   'packet Hosted Flash sits under Community/Hosted',
 );
