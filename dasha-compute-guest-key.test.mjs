@@ -20,6 +20,7 @@ import {
   COMPUTE_LLMS_TXT,
   COMPUTE_SKILL_MD,
 } from './dasha-compute-agent.mjs';
+const MODEL_PRICING_USD = { request: '0.05', prompt: '0', completion: '0', currency: 'USD', note: 'flat per chat completion (prepaid credits); self-route free' };
 import {
   COMPUTE_GUEST_KEYS_PATH,
   GUEST_KEY_CHAT_MAX,
@@ -369,7 +370,7 @@ const retrieve = await network.fetch(new Request('https://lobby.getdasha.com/com
   headers: { Authorization: `Bearer ${guest.api_key}` },
 }));
 assert.equal(retrieve.status, 200, 'guest models retrieve');
-assert.deepEqual(await retrieve.json(), { id: 'qwen3-8b', object: 'model', created: 0, owned_by: 'dasha-community' });
+assert.deepEqual(await retrieve.json(), { id: 'qwen3-8b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 });
 
 const embeddings = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/embeddings', {
   method: 'POST',
