@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from './dasha-lobby-worker.mjs';
 import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
+const MODEL_PRICING_USD = { request: '0.05', prompt: '0', completion: '0', currency: 'USD', note: 'flat per chat completion (prepaid credits); self-route free' };
 
 const env = { LOBBY_SESSION_SECRET: 'v1-models-retrieve-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -72,7 +73,7 @@ await storage.put('compute:provider:mac_retrieve', {
 });
 const hit = await getHead(network.fetch.bind(network), 'lobby.getdasha.com', '/compute/api/v1/models/gemma3-12b', { headers: auth });
 assert.equal(hit.status, 200);
-assert.deepEqual(hit.body, { id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' });
+assert.deepEqual(hit.body, { id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 });
 
 const miss = await getHead(network.fetch.bind(network), 'lobby.getdasha.com', '/compute/api/v1/models/qwen3-8b', { headers: auth });
 assert.equal(miss.status, 404);
@@ -97,7 +98,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
 const list = await worker.fetch(new Request('https://www.getdasha.com/compute/api/v1/models'), workerEnv);
 assert.equal(list.status, 200);
-assert.deepEqual(await list.json(), { object: 'list', data: [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' }] });
+assert.deepEqual(await list.json(), { object: 'list', data: [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 }] });
 const foo = await worker.fetch(new Request('https://www.getdasha.com/compute/api/foo'), workerEnv);
 assert.equal(foo.status, 404);
 assert.deepEqual(await foo.json(), openaiErrorBody('not found', 404));
