@@ -118,6 +118,10 @@ assert.match(COMPUTE_LLMS_TXT, /^Hosted Flash: bigger-than-Mac \(Spark \/ Engram
 assert.match(COMPUTE_LLMS_TXT, /Model id `deepseek-flash` \(Hosted\)/, 'packet names deepseek-flash Hosted-when-offered');
 assert.match(COMPUTE_LLMS_TXT, /^Engram\/SSD-stream local recipes stay Hosted\/Provide-Max — not Air kit\.$/m, 'packet local recipes stay Hosted/Provide-Max');
 assert.doesNotMatch(COMPUTE_LLMS_TXT, /Community.{0,80}(?:run|runs|serve|serves|host|hosts).{0,40}(?:Flash|763B|Engram|deepseek-flash)/i, 'packet NON-claim Community runs Flash/763B/Engram');
+assert.match(COMPUTE_LLMS_TXT, /^Hosted Astra: GPT-6 when offered\. Model id `gpt-6-astra` \(Hosted\)\. Never Community\. Same base_url\. Watch x-dasha-route · x-dasha-model\.$/m, 'Hosted Astra option');
+assert.match(COMPUTE_LLMS_TXT, /Model id `gpt-6-astra` \(Hosted\)/, 'packet names gpt-6-astra Hosted-when-offered');
+assert.match(COMPUTE_LLMS_TXT, /^Async tools \/ mid-turn steering \/ computer use stay Hosted-class only\.$/m, 'packet Astra Hosted-class only');
+assert.doesNotMatch(COMPUTE_LLMS_TXT, /Community.{0,80}(?:run|runs|serve|serves|host|hosts).{0,40}(?:Astra|gpt-6-astra|GPT-6)/i, 'packet NON-claim Community runs Astra');
 assert.match(COMPUTE_LLMS_TXT, /x-dasha-route/, 'packet names spend route header');
 assert.match(COMPUTE_LLMS_TXT, /x-dasha-spend-usd/, 'packet names spend usd header');
 assert.match(COMPUTE_LLMS_TXT, /Community omits unknown USD/, 'packet honesty: no invented community USD');

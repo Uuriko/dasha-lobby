@@ -107,6 +107,10 @@ export const AGENTS_JSON = {
 export const COMPUTE_HOSTED_FLASH_TXT = `Hosted Flash: bigger-than-Mac (Spark / Engram-class Flash when offered). Model id \`deepseek-flash\` (Hosted). Never Community. Same base_url. Watch x-dasha-route.
 Engram/SSD-stream local recipes stay Hosted/Provide-Max — not Air kit.`;
 
+/** Hosted Astra option. Shared by skill.md + llms.txt. Official API id gpt-6-astra when offered. Never Community. Not a live SKU. */
+export const COMPUTE_HOSTED_ASTRA_TXT = `Hosted Astra: GPT-6 when offered. Model id \`gpt-6-astra\` (Hosted). Never Community. Same base_url. Watch x-dasha-route · x-dasha-model.
+Async tools / mid-turn steering / computer use stay Hosted-class only.`;
+
 /** Provide speed honesty. Shared by /compute/skill.md + /compute/llms.txt. */
 export const COMPUTE_PROVIDE_SPEED_TXT = `## Provide speed
 
@@ -115,7 +119,7 @@ Join a Mac at /compute#provide — kit soft-doctor and enroll-code live there.
 Kit uses OLLAMA_KEEP_ALIVE (launch agent / service — a shell export is not enough).
 Smaller is faster: qwen3-4b · qwen3-8b · gemma3-12b · gemma3-27b.
 Send a recipe — MLX / Ollama / llama.cpp Apple Silicon. We pin winners.
-Hosted-only when offered: Flash-class · DGX Spark · Qwen 3.8 Flash-Next. Never a Community Mac.
+Hosted-only when offered: Flash-class · DGX Spark · Qwen 3.8 Flash-Next · Astra. Never a Community Mac.
 `;
 
 export const DASHA_ASSOCIATED_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
@@ -169,6 +173,7 @@ Verify a receipt without trusting this site: GET /compute/api/chain (receipts) +
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
 ${COMPUTE_HOSTED_FLASH_TXT}
+${COMPUTE_HOSTED_ASTRA_TXT}
 Spend: read \`x-dasha-route\` (\`community\`|\`hosted\`) and \`x-dasha-model\` on chat/completions. \`x-dasha-spend-usd\` only when cost is known — Community omits USD when unknown.
 
 ${COMPUTE_PROVIDE_SPEED_TXT}
@@ -202,6 +207,7 @@ ${COMPUTE_FIRST_CALL_TXT}
 Community: a peer Mac runs the job.
 Hosted: still there when no Mac is online.
 ${COMPUTE_HOSTED_FLASH_TXT}
+${COMPUTE_HOSTED_ASTRA_TXT}
 spend headers x-dasha-route · x-dasha-model · x-dasha-spend-usd when known (Community omits unknown USD)
 receipts include route community|hosted (same as x-dasha-route); turns only when counted — never invented
 Verify a receipt without trusting this site: GET /compute/api/chain (receipts) + /keys.json (signer key). Rebuild the signed body as {"job_id":...,"engine":...,"tokens":...,"cents":...,"at":...,"prev_hash":...} - exactly those keys in that order (job_id string|null, engine string, tokens/cents non-negative integers, at unix-ms integer|null, prev_hash = previous receipt hash or "GENESIS"). receipt.hash = sha256(JSON.stringify(body)) hex; receipt.sig = ed25519 over the UTF-8 bytes of that hex string, verified with the signer's spki_pem; signer = first 16 hex chars of sha256(spki_pem). Chain continuity: each prev_hash equals the previous hash. Find your own receipt by the request_id you sent on chat/completions (echoed as receipt.request_id) or by job_id from the completion response. Machine verdict: GET /compute/api/verify?hash=<hash|job_id|request_id> - the 64-hex chain hash, the job_ id, or your request_id; the rcp_ receipt id is not a lookup key.
