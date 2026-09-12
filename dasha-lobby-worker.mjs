@@ -4955,13 +4955,15 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
  *  /compute/README.md /compute/api.md /compute/create-key /compute/guest
  *  /compute/guest-key /compute/guest-keys were HTML Not found 404 (not JSON
  *  fail-loud) on www while /compute/skill.md is the agent contract.
- *  Apex siblings /agent.md /agents.md /AGENTS.md /README.md /api.md
+ *  Apex siblings /agent.md /agents.md /AGENTS.md /CLAUDE.md /README.md /api.md
  *  /create-key /guest /guest-key /guest-keys (+slash / Title-case via
  *  toLowerCase) same leftover family — agents guessing root paths, not
  *  under /compute, hit HTML-404 while skill is the contract.
  *  No separate agent.md. Fold this path-family to the skill face.
  *  Exact /compute/agent and singular /agent stay tab leftover → /compute
  *  (do not invent /agent → skill). Bare /agents → agents.txt (#199).
+ *  Bare /claude stays tab leftover → /compute (do not invent /claude → skill).
+ *  Do not invent /compute/claude.md (one apex family only).
  *  POST /compute/api/guest-keys stays 201 mint (do not 308 the API path).
  *  Exact /compute/skill.md + /compute/mcp.json stay 200.
  *  Exact /agents.txt + /agents.json stay 200.
@@ -4977,6 +4979,7 @@ const POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS = new Set([
   '/compute/guest-keys', '/compute/guest-keys/',
   '/agent.md', '/agent.md/',
   '/agents.md', '/agents.md/',
+  '/claude.md', '/claude.md/',
   '/readme.md', '/readme.md/',
   '/api.md', '/api.md/',
   '/create-key', '/create-key/',

@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 /**
  * Leftover pretty path: live GET/HEAD /agent.md /agents.md /AGENTS.md
- * /README.md /api.md /create-key /guest /guest-key /guest-keys
+ * /CLAUDE.md /README.md /api.md /create-key /guest /guest-key /guest-keys
  * (+slash / Title-case) were HTML Not found 404 on www + lobby while
  * /compute/skill.md is the agent contract (PR #196 already folded the
  * /compute/* peers). Agents guessing root paths hit HTML-404.
  * Fold this apex leftover family via the same
  * POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS set to
- * /compute/skill.md.
+ * /compute/skill.md. /CLAUDE.md mirrors /AGENTS.md (set stores lowercase
+ * /claude.md; Title-case via toLowerCase). Do not invent /compute/claude.md.
  * Singular /agent stays tab leftover → /compute (do not invent).
+ * Bare /claude stays tab leftover → /compute (do not invent).
  * Bare /agents → agents.txt (#199). Exact /agents.txt + /agents.json 200.
  * POST /compute/api/guest-keys stays 201 mint (do not 308 the API path).
  * Compute-prefixed peers stay skill.md. Exact /compute/skill.md 200.
@@ -26,15 +28,17 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS/, 'agent-discovery leftover set');
-assert.match(workerSrc, /Apex siblings \/agent\.md \/agents\.md \/AGENTS\.md/, 'apex leftover comment');
+assert.match(workerSrc, /Apex siblings \/agent\.md \/agents\.md \/AGENTS\.md \/CLAUDE\.md/, 'apex leftover comment');
 assert.match(workerSrc, /POST \/compute\/api\/guest-keys stays 201 mint/, 'API mint stays');
 assert.match(workerSrc, /do not invent \/agent → skill/, 'singular /agent stays tab');
+assert.match(workerSrc, /do not invent \/claude → skill/, 'bare /claude stays tab');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
 const discoverySet = workerSrc.match(/const POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 for (const path of [
   '/agent.md', '/agent.md/',
   '/agents.md', '/agents.md/',
+  '/claude.md', '/claude.md/',
   '/readme.md', '/readme.md/',
   '/api.md', '/api.md/',
   '/create-key', '/create-key/',
@@ -46,6 +50,8 @@ for (const path of [
 }
 assert.doesNotMatch(discoverySet, /['"]\/agent['"]/, 'do not invent singular /agent in discovery set');
 assert.doesNotMatch(discoverySet, /['"]\/agents['"]/, 'do not claim /agents (agents.txt leftover)');
+assert.doesNotMatch(discoverySet, /['"]\/claude['"]/, 'do not claim /claude (tab leftover → /compute)');
+assert.doesNotMatch(discoverySet, /['"]\/compute\/claude\.md['"]/, 'do not invent /compute/claude.md');
 assert.doesNotMatch(discoverySet, /['"]\/readme['"]/, 'do not invent /readme (no .md)');
 assert.doesNotMatch(discoverySet, /['"]\/compute\/api\/guest-keys['"]/, 'do not 308 the mint API path');
 
@@ -70,6 +76,13 @@ const FOLDS = [
   '/AGENTS.MD',
   '/Agents.md/',
   '/AGENTS.MD/',
+  '/claude.md',
+  '/claude.md/',
+  '/CLAUDE.md',
+  '/Claude.md',
+  '/CLAUDE.MD',
+  '/Claude.md/',
+  '/CLAUDE.MD/',
   '/README.md',
   '/readme.md',
   '/readme.md/',
@@ -129,6 +142,8 @@ for (const path of COMPUTE_PEERS) {
 }
 assert.equal(potterHome308Dest('/agent'), COMPUTE, 'singular /agent stays compute leftover');
 assert.equal(potterHome308Dest('/agent/'), COMPUTE, 'singular /agent/ stays compute leftover');
+assert.equal(potterHome308Dest('/claude'), COMPUTE, 'bare /claude stays compute leftover');
+assert.equal(potterHome308Dest('/claude/'), COMPUTE, 'bare /claude/ stays compute leftover');
 assert.equal(potterHome308Dest('/agents'), AGENTS_TXT, 'bare /agents stays agents.txt leftover');
 assert.equal(potterHome308Dest('/agents/'), AGENTS_TXT, 'bare /agents/ stays agents.txt leftover');
 assert.equal(potterHome308Dest('/agents.txt'), null, '/agents.txt stays 200');
@@ -140,6 +155,7 @@ assert.equal(potterHome308Dest('/compute/api/guest-keys/'), null, '/compute/api/
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.notEqual(potterHome308Dest('/readme'), SKILL, 'do not invent /readme');
 assert.notEqual(potterHome308Dest('/compute/readme'), SKILL, 'do not invent /compute/readme');
+assert.notEqual(potterHome308Dest('/compute/claude.md'), SKILL, 'do not invent /compute/claude.md');
 assert.notEqual(potterHome308Dest('/jupiter'), SKILL, 'do not invent DEX peer /jupiter');
 assert.notEqual(potterHome308Dest('/orca'), SKILL, 'do not invent DEX peer /orca');
 assert.notEqual(potterHome308Dest('/agent.mdx'), SKILL, 'do not invent /agent.mdx');
@@ -199,6 +215,12 @@ for (const host of ['www.getdasha.com', 'getdasha.com', 'lobby.getdasha.com']) {
     assert.equal(agents.status, 308, `${host} /agents ${method} stays agents.txt leftover`);
     assert.equal(agents.headers.get('location'), AGENTS_TXT, `${host} /agents ${method} loc`);
     if (method === 'HEAD') assert.equal(await agents.text(), '');
+
+    const claude = await edgeWorker.fetch(new Request(`https://${host}/claude`, { method }), env);
+    assert.equal(claude.status, 308, `${host} /claude ${method} stays tab`);
+    assert.equal(claude.headers.get('location'), COMPUTE, `${host} /claude ${method} loc`);
+    assert.doesNotMatch(claude.headers.get('location') || '', /skill\.md/, `${host} /claude ${method} not skill`);
+    if (method === 'HEAD') assert.equal(await claude.text(), '');
   }
   const face = await edgeWorker.fetch(new Request(`https://${host}/compute/skill.md`), env);
   assert.equal(face.status, 200, `${host} /compute/skill.md stays 200`);
@@ -229,6 +251,7 @@ for (const host of ['www.getdasha.com', 'getdasha.com', 'lobby.getdasha.com']) {
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 assert.ok(!sitemapXml.includes(`${WWW}/agent.md</loc>`), 'sitemap omits leftover /agent.md');
 assert.ok(!sitemapXml.includes(`${WWW}/agents.md</loc>`), 'sitemap omits leftover /agents.md');
+assert.ok(!sitemapXml.includes(`${WWW}/claude.md</loc>`), 'sitemap omits leftover /claude.md');
 assert.ok(!sitemapXml.includes(`${WWW}/readme.md</loc>`), 'sitemap omits leftover /readme.md');
 assert.ok(!sitemapXml.includes(`${WWW}/api.md</loc>`), 'sitemap omits leftover /api.md');
 assert.ok(!sitemapXml.includes(`${WWW}/create-key</loc>`), 'sitemap omits leftover /create-key');
@@ -236,4 +259,4 @@ assert.ok(!sitemapXml.includes(`${WWW}/guest</loc>`), 'sitemap omits leftover /g
 assert.ok(!sitemapXml.includes(`${WWW}/guest-key</loc>`), 'sitemap omits leftover /guest-key');
 assert.ok(!sitemapXml.includes(`${WWW}/guest-keys</loc>`), 'sitemap omits leftover /guest-keys');
 
-console.log('dasha-apex-agent-discovery-pretty-path: PASS (/agent.md+/agents.md+/AGENTS.md+/README.md+/api.md+/create-key+/guest+/guest-key+/guest-keys 308 skill.md www+lobby GET+HEAD +slash Title-case; compute peers stay; /agent stays /compute; /agents stays agents.txt; /agents.txt+/agents.json 200; POST /compute/api/guest-keys still mint; no plugin.jup.ag)');
+console.log('dasha-apex-agent-discovery-pretty-path: PASS (/agent.md+/agents.md+/AGENTS.md+/CLAUDE.md+/README.md+/api.md+/create-key+/guest+/guest-key+/guest-keys 308 skill.md www+lobby GET+HEAD +slash Title-case; compute peers stay; /agent+/claude stay /compute; /agents stays agents.txt; /agents.txt+/agents.json 200; POST /compute/api/guest-keys still mint; no plugin.jup.ag)');
