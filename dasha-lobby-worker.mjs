@@ -4963,6 +4963,9 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  /compute/plug-in (+slash / Title-case) still HTML 404 on www while
  *  /compute/doctor already 308 → /compute#provide. Same soft-doctor
  *  invent family. Do not invent doctor.md.
+ *  Live GET /compute/waitlist (+slash / Title-case) still HTML 404 on
+ *  www (Morgan growth door) while invent four already fold here.
+ *  Apex /waitlist stays skipped. Do not invent doctor.md.
  *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
@@ -4970,6 +4973,7 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/self-test', '/compute/self-test/',
   '/compute/plugin', '/compute/plugin/',
   '/compute/plug-in', '/compute/plug-in/',
+  '/compute/waitlist', '/compute/waitlist/',
   '/doctor', '/doctor/',
   '/provide', '/provide/',
   '/compute/provide', '/compute/provide/',
