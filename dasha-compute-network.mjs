@@ -876,6 +876,26 @@ export function measuredTokPerSecForModel(providers, model, now = Date.now()) {
   return Math.round(tps * 100) / 100;
 }
 
+// OpenRouter-style honest pricing. The only billing that exists is a flat
+// prepaid charge per chat completion (HOSTED_ASK_PRICE_CENTS); per-token fields
+// stay 0 because no per-token metering exists - never invent one.
+function v1ModelPricing() {
+  return {
+    request: (HOSTED_ASK_PRICE_CENTS / 100).toFixed(2),
+    prompt: '0',
+    completion: '0',
+    currency: 'USD',
+    note: 'flat per chat completion (prepaid credits); self-route free',
+  };
+}
+function v1ModelListing(id, providers, now) {
+  const entry = { id, object: 'model', created: 0, owned_by: 'dasha-community', pricing: v1ModelPricing() };
+  entry.providers_online = providers.filter((provider) => provider.models?.includes(id)).length;
+  const tps = measuredTokPerSecForModel(providers, id, now);
+  if (tps !== null) entry.measured_tok_per_sec = tps;
+  return entry;
+}
+
 export function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
   if (!job?.id) return null;
   const status = String(job.status || '');
@@ -1477,7 +1497,7 @@ export class ComputeNetwork {
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
-      return maybeHead(request, v1cors(json({ object: 'list', data: models.map(id => ({ id, object: 'model', created: 0, owned_by: 'dasha-community' })) })));
+      return maybeHead(request, v1cors(json({ object: 'list', data: models.map(id => v1ModelListing(id, providers, now)) })));
     }
 
     const modelRetrieve = path.match(/^\/compute\/api\/v1\/models\/([A-Za-z0-9._-]+)\/?$/);
@@ -1490,7 +1510,7 @@ export class ComputeNetwork {
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
       if (!models.includes(id)) return maybeHead(request, v1err(`The model '${id}' does not exist`, 404, 'invalid_request_error'));
-      return maybeHead(request, v1cors(json({ id, object: 'model', created: 0, owned_by: 'dasha-community' })));
+      return maybeHead(request, v1cors(json(v1ModelListing(id, providers, now))));
     }
 
     if ((path === '/compute/api/v1/embeddings' || path === '/compute/api/v1/embeddings/') && request.method === 'POST') {
