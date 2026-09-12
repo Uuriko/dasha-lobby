@@ -1,8 +1,10 @@
 /**
- * Project Room discovery reverse-proxy for getdasha edge.
- * Prefix-preserving: /room and /room/* discovery docs → origin bytes.
+ * Project Room reverse-proxy for getdasha edge.
+ * /room and /room/ → origin HTML door (Open/Join/Connect).
+ * /room/llms.txt + packet/card/health stay prefix-preserving discovery docs.
  * Does NOT overwrite site-root /.well-known/agent.json (Compute card).
- * Discovery only — no Room HTML UI. Never Jupiter plugin host.
+ * Leftover skill/card/health synonyms stay 308 (not this map).
+ * Never Jupiter plugin host.
  */
 
 export const ROOM_ORIGIN = 'https://project-room-staging.getdasha.workers.dev';
@@ -23,10 +25,10 @@ const HOP_BY_HOP = new Set([
   'set-cookie',
 ]);
 
-/** KEY_ROUTES aliases from project-room deploy/agent-discovery.mjs */
+/** Exact lobby doors → project-room-staging paths. HTML door is /room. */
 const ROOM_UPSTREAM = Object.freeze({
-  '/room': '/llms.txt',
-  '/room/': '/llms.txt',
+  '/room': '/room',
+  '/room/': '/room',
   '/room/llms.txt': '/llms.txt',
   '/room/llms-full.txt': '/llms-full.txt',
   '/room/.well-known/agent.json': '/.well-known/agent.json',
@@ -72,8 +74,9 @@ export function roomUpstreamUrl(pathname) {
   return ROOM_ORIGIN + upstream;
 }
 
-function allowedDiscoveryType(contentType) {
+function allowedUpstreamType(contentType, upstreamPath) {
   const ct = String(contentType || '').toLowerCase();
+  if (upstreamPath === '/room') return ct.includes('text/html');
   return ct.includes('text/plain') || ct.includes('application/json');
 }
 
@@ -113,8 +116,8 @@ function inboundResponseHeaders(upstream) {
 }
 
 /**
- * Reverse-proxy Room discovery. Query string is ignored for matching.
- * GET+HEAD only. Returns null when this request is not a Room discovery door.
+ * Reverse-proxy Room door + discovery. Query string is ignored for matching.
+ * GET+HEAD only. Returns null when this request is not a Room door.
  * @param {Request} request
  * @param {{ fetch?: typeof fetch }} [opts]
  */
@@ -128,6 +131,7 @@ export async function roomDiscoveryResponse(request, opts = {}) {
   } catch {
     return null;
   }
+  const upstreamPath = roomUpstreamPath(pathname);
   const upstreamHref = roomUpstreamUrl(pathname);
   if (!upstreamHref) return null;
 
@@ -149,7 +153,7 @@ export async function roomDiscoveryResponse(request, opts = {}) {
   }
 
   const ct = upstream.headers.get('content-type') || '';
-  if (upstream.status === 200 && !allowedDiscoveryType(ct)) {
+  if (upstream.status === 200 && !allowedUpstreamType(ct, upstreamPath)) {
     try { await upstream.arrayBuffer(); } catch { /* drain */ }
     return failClosed(502, 'room origin not discovery');
   }

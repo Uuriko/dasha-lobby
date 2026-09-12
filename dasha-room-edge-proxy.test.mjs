@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Project Room edge reverse-proxy: /room discovery on apex+www+lobby.
- * GET+HEAD. Query ignored. Site-root /.well-known/agent.json stays Compute.
+ * Project Room edge reverse-proxy: /room HTML door on apex+www+lobby.
+ * Packet at /room/llms.txt. GET+HEAD. Query ignored.
+ * Site-root /.well-known/agent.json stays Compute.
  * Disk only. No Designer. No wrangler deploy. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -33,14 +34,15 @@ assert.equal(
   1,
   'Room discovery once, early in default fetch',
 );
-assert.match(routesSrc, /\/room\/llms\.txt/, 'ROUTES.md names Room discovery');
-assert.doesNotMatch(proxySrc, /arcade|multichain|x402|people-data|ocm\//, 'proxy stays on Room discovery');
+assert.match(routesSrc, /\/room\/llms\.txt/, 'ROUTES.md names Room packet');
+assert.match(routesSrc, /HTML door via proxy/, 'ROUTES.md names /room HTML door');
+assert.doesNotMatch(proxySrc, /arcade|multichain|x402|people-data|ocm\//, 'proxy stays on Room door + discovery');
 
 assert.equal(ROOM_ORIGIN, 'https://project-room-staging.getdasha.workers.dev');
 assert.equal(normalizeRoomPath('/Room/LLMS.TXT/'), '/room/llms.txt');
 assert.equal(normalizeRoomPath('/room/'), '/room/');
-assert.equal(roomUpstreamPath('/room'), '/llms.txt');
-assert.equal(roomUpstreamPath('/room/'), '/llms.txt');
+assert.equal(roomUpstreamPath('/room'), '/room');
+assert.equal(roomUpstreamPath('/room/'), '/room');
 assert.equal(roomUpstreamPath('/room?cb=1'), null, 'pathname helper does not see query');
 assert.equal(roomUpstreamPath('/room/llms.txt'), '/llms.txt');
 assert.equal(roomUpstreamPath('/room/llms-full.txt'), '/llms-full.txt');
@@ -56,7 +58,8 @@ assert.equal(roomUpstreamPath('/room/agent.json'), null, 'do not invent Room age
 assert.equal(roomUpstreamPath('/room/health'), null, 'do not invent Room health leftover proxy');
 assert.equal(isRoomDiscoveryPath('/room'), true);
 assert.equal(isRoomDiscoveryPath('/.well-known/agent.json'), false);
-assert.equal(roomUpstreamUrl('/room'), `${ROOM_ORIGIN}/llms.txt`);
+assert.equal(roomUpstreamUrl('/room'), `${ROOM_ORIGIN}/room`);
+assert.equal(roomUpstreamUrl('/room/'), `${ROOM_ORIGIN}/room`);
 assert.equal(roomUpstreamUrl('/room/.well-known/agent.json'), `${ROOM_ORIGIN}/.well-known/agent.json`);
 assert.equal(potterHome308Dest('/room'), null, '/room is not a leftover 308');
 assert.equal(potterHome308Dest('/room/'), null, '/room/ is not a leftover 308');
@@ -64,12 +67,14 @@ assert.equal(potterHome308Dest('/room/skill.md'), 'https://www.getdasha.com/room
 assert.equal(potterHome308Dest('/room/agents.md'), 'https://www.getdasha.com/room/llms.txt', '/room/agents.md leftover → packet');
 assert.equal(potterHome308Dest('/skill.md'), 'https://www.getdasha.com/compute/skill.md', 'apex /skill.md stays Compute');
 
+const ROOM_HTML = '<!doctype html><title>Project Room</title><a>Open</a><a>Join</a><a>Connect</a>\n';
 const LLMS = '# Project Room\n\norigin mock\n';
 const LLMS_FULL = '# Project Room\n\nfull packet\n';
 const ROOM_AGENT = '{\n  "name": "Project Room",\n  "product": { "not": "run factory" }\n}\n';
 const HEALTH = '{"ok":true,"service":"project-room"}\n';
 
 const ORIGIN_DOCS = {
+  '/room': { type: 'text/html; charset=utf-8', body: ROOM_HTML },
   '/llms.txt': { type: 'text/plain; charset=utf-8', body: LLMS },
   '/llms-full.txt': { type: 'text/plain; charset=utf-8', body: LLMS_FULL },
   '/.well-known/agent.json': { type: 'application/json; charset=utf-8', body: ROOM_AGENT },
@@ -109,13 +114,28 @@ const stubFetch = async (href, init = {}) => {
 {
   const direct = await roomDiscoveryResponse(new Request('https://lobby.getdasha.com/room?cb=1'), { fetch: stubFetch });
   assert.equal(direct.status, 200);
-  assert.equal(direct.headers.get('content-type'), 'text/plain; charset=utf-8');
+  assert.equal(direct.headers.get('content-type'), 'text/html; charset=utf-8');
   assert.equal(direct.headers.get('cache-control'), 'no-store');
   assert.equal(direct.headers.get('x-dasha-edge'), ROOM_EDGE);
   assert.equal(direct.headers.get('set-cookie'), null, 'do not forward set-cookie');
   assert.equal(direct.headers.get('connection'), null, 'do not forward hop-by-hop');
-  assert.equal(await direct.text(), LLMS);
-  assert.equal(calls.at(-1).href, `${ROOM_ORIGIN}/llms.txt`);
+  assert.equal(await direct.text(), ROOM_HTML);
+  assert.equal(calls.at(-1).href, `${ROOM_ORIGIN}/room`);
+}
+
+{
+  const llmsRegression = async (href, init = {}) => {
+    const url = new URL(String(href?.url || href));
+    calls.push({ href: url.href, method: init.method || 'GET', headers: init.headers || new Headers(), search: url.search });
+    return new Response(LLMS, {
+      status: 200,
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    });
+  };
+  const closed = await roomDiscoveryResponse(new Request('https://lobby.getdasha.com/room'), { fetch: llmsRegression });
+  assert.equal(closed.status, 502, 'HTML door must not accept llms bytes');
+  assert.match(await closed.text(), /room origin not discovery/);
+  assert.equal(calls.at(-1).href, `${ROOM_ORIGIN}/room`);
 }
 
 assert.equal(
@@ -131,12 +151,13 @@ assert.equal(
 
 const HOSTS = ['getdasha.com', 'www.getdasha.com', 'lobby.getdasha.com'];
 const PATHS = [
-  { path: '/room', type: /text\/plain/, body: LLMS, upstream: '/llms.txt' },
-  { path: '/room/', type: /text\/plain/, body: LLMS, upstream: '/llms.txt' },
-  { path: '/room?cb=1', type: /text\/plain/, body: LLMS, upstream: '/llms.txt' },
+  { path: '/room', type: /text\/html/, body: ROOM_HTML, upstream: '/room' },
+  { path: '/room/', type: /text\/html/, body: ROOM_HTML, upstream: '/room' },
+  { path: '/room?cb=1', type: /text\/html/, body: ROOM_HTML, upstream: '/room' },
   { path: '/room/llms.txt', type: /text\/plain/, body: LLMS, upstream: '/llms.txt' },
   { path: '/room/llms-full.txt', type: /text\/plain/, body: LLMS_FULL, upstream: '/llms-full.txt' },
   { path: '/room/.well-known/agent.json', type: /application\/json/, body: ROOM_AGENT, upstream: '/.well-known/agent.json' },
+  { path: '/room/api/health', type: /application\/json/, body: HEALTH, upstream: '/api/health' },
 ];
 
 const prevFetch = globalThis.fetch;
@@ -186,4 +207,4 @@ try {
   globalThis.fetch = prevFetch;
 }
 
-console.log('dasha-room-edge-proxy: PASS (/room+/room/+/room?cb=1+/room/llms.txt+/room/.well-known/agent.json GET+HEAD 200 apex+www+lobby; site-root agent.json Compute; no plugin.jup.ag)');
+console.log('dasha-room-edge-proxy: PASS (/room+/room/+/room?cb=1 HTML door + /room/llms.txt+/room/.well-known/agent.json+/room/api/health GET+HEAD 200 apex+www+lobby; leftover skill/card/health stay out of map; site-root agent.json Compute; no plugin.jup.ag)');
