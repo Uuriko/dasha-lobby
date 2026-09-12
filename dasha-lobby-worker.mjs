@@ -4918,6 +4918,12 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  /compute/enrol-code (+slash / Title-case) still HTML 404 on www while
  *  /compute/enroll already 308 → /compute#provide. Same enroll-code family.
  *  Do not invent doctor.md / PROVIDE.md / demigod peers.
+ *  Live GET /compute/provide/enroll-code /compute/provide/enroll_code
+ *  /compute/provide/enrollcode /compute/provide/enrol-code (+slash /
+ *  Title-case) still HTML 404 on www + lobby while /compute/enroll-code
+ *  + /compute/provide/enroll already 308 → /compute#provide. Same
+ *  enroll-code family, nested under provide/ like #201.
+ *  Do not invent join/pairing/claim. Do not fold doctor.md / PROVIDE.md / CLAUDE.md.
  *  Live GET /compute/register /compute/bootstrap /compute/token
  *  (+slash / Title-case) still HTML 404 on www while
  *  /compute/provide/{register,bootstrap,token} already 308 → /compute#provide.
@@ -4929,6 +4935,10 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/provide', '/provide/',
   '/compute/provide', '/compute/provide/',
   '/compute/provide/enroll', '/compute/provide/enroll/',
+  '/compute/provide/enroll-code', '/compute/provide/enroll-code/',
+  '/compute/provide/enroll_code', '/compute/provide/enroll_code/',
+  '/compute/provide/enrollcode', '/compute/provide/enrollcode/',
+  '/compute/provide/enrol-code', '/compute/provide/enrol-code/',
   '/compute/provide/setup', '/compute/provide/setup/',
   '/compute/provide/doctor', '/compute/provide/doctor/',
   '/compute/provide/register', '/compute/provide/register/',
