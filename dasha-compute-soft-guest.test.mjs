@@ -14,6 +14,7 @@ import {
   openaiErrorBody,
 } from './dasha-compute-network.mjs';
 import { COMPUTE_AGENT_JSON, COMPUTE_LLMS_TXT } from './dasha-compute-agent.mjs';
+const MODEL_PRICING_USD = { request: '0.05', prompt: '0', completion: '0', currency: 'USD', note: 'flat per chat completion (prepaid credits); self-route free' };
 
 const src = readFileSync(new URL('./dasha-compute-network.mjs', import.meta.url), 'utf8');
 assert.match(src, /Soft-guest list: same advertised ids as public GET \/compute\/api\/network/);
@@ -67,8 +68,8 @@ const EMPTY_LIST = { object: 'list', data: [] };
 const LIVE_LIST = {
   object: 'list',
   data: [
-    { id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' },
-    { id: 'qwen3-8b', object: 'model', created: 0, owned_by: 'dasha-community' },
+    { id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 },
+    { id: 'qwen3-8b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 },
   ],
 };
 
