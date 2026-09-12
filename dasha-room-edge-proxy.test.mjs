@@ -51,6 +51,9 @@ assert.equal(roomUpstreamPath('/room/secret'), null, 'do not invent Room UI path
 assert.equal(roomUpstreamPath('/room/skill.md'), null, 'do not invent Room skill proxy');
 assert.equal(roomUpstreamPath('/room/agents.md'), null, 'do not invent Room agents.md proxy');
 assert.equal(roomUpstreamPath('/room/claude.md'), null, 'do not invent Room claude.md proxy');
+assert.equal(roomUpstreamPath('/room/skill'), null, 'do not invent Room skill leftover proxy');
+assert.equal(roomUpstreamPath('/room/agent.json'), null, 'do not invent Room agent.json leftover proxy');
+assert.equal(roomUpstreamPath('/room/health'), null, 'do not invent Room health leftover proxy');
 assert.equal(isRoomDiscoveryPath('/room'), true);
 assert.equal(isRoomDiscoveryPath('/.well-known/agent.json'), false);
 assert.equal(roomUpstreamUrl('/room'), `${ROOM_ORIGIN}/llms.txt`);

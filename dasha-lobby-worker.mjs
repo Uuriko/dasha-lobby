@@ -4719,18 +4719,28 @@ const POTTER_ROOM_308_PATHS = new Set([
   '/project_room', '/project_room/',
 ]);
 
-/** Leftover /room/skill.md (2026-09-11): live /room/skill.md /room/agents.md
- * (+slash / Title-case) html-404 while /room/llms.txt is the Project Room
- * packet. Staging has no /skill.md — 308 is honest. Fold this Room-prefix
- * family to /room/llms.txt (lobby same-host). /room/AGENTS.md /room/CLAUDE.md
+/** Leftover /room/skill.md (2026-09-11): extensionless + README/GEMINI/CURSOR
+ * family. Live /room/skill.md /room/agents.md /room/skill /room/agents
+ * /room/llms /room/README.md /room/GEMINI.md /room/CURSOR.md (+slash /
+ * Title-case) html-404 while /room/llms.txt is the Project Room packet.
+ * Staging has no /skill.md — 308 is honest. Fold this Room-prefix family
+ * to /room/llms.txt (lobby same-host). /room/AGENTS.md /room/CLAUDE.md
  * same dest (set stores lowercase /room/claude.md). Apex /skill.md /agents.md
  * /AGENTS.md /CLAUDE.md stay Compute → /compute/skill.md. Do not invent apex
  * /join. Do not overwrite site-root /.well-known/agent.json. Do not fold
- * Compute into Room. Exact /room /room/llms.txt stay 200. */
+ * Compute into Room. Exact /room /room/llms.txt stay 200. Card leftover
+ * /room/agent.json and probe leftover /room/health are dest special-cases
+ * (not this llms.txt set). */
 const POTTER_ROOM_AGENT_DISCOVERY_308_PATHS = new Set([
   '/room/skill.md', '/room/skill.md/',
   '/room/agents.md', '/room/agents.md/',
   '/room/claude.md', '/room/claude.md/',
+  '/room/skill', '/room/skill/',
+  '/room/agents', '/room/agents/',
+  '/room/llms', '/room/llms/',
+  '/room/readme.md', '/room/readme.md/',
+  '/room/gemini.md', '/room/gemini.md/',
+  '/room/cursor.md', '/room/cursor.md/',
 ]);
 
 
@@ -5149,6 +5159,16 @@ export function potterHome308Dest(path) {
   }
   if (POTTER_ROOM_308_PATHS.has(p)) return "https://www.getdasha.com/room";
   if (POTTER_ROOM_AGENT_DISCOVERY_308_PATHS.has(p)) return "https://www.getdasha.com/room/llms.txt";
+  // Leftover /room/agent.json (2026-09-11): live card synonym html-404 while
+  // /room/.well-known/agent.json is 200. Not the llms.txt discovery set.
+  if (p === "/room/agent.json" || p === "/room/agent.json/") {
+    return "https://www.getdasha.com/room/.well-known/agent.json";
+  }
+  // Leftover /room/health (2026-09-11): live probe synonym html-404 while
+  // /room/api/health is 200. Not the llms.txt discovery set.
+  if (p === "/room/health" || p === "/room/health/") {
+    return "https://www.getdasha.com/room/api/health";
+  }
   if (p === "/socials" || p === "/socials/" || p === "/social" || p === "/social/") {
     return "https://www.getdasha.com/lobby";
   }
@@ -5432,7 +5452,14 @@ export function potterHome308Response(request, url) {
       const u = new URL(dest);
       const src = String(path || '').toLowerCase();
       if (
-        (POTTER_ROOM_308_PATHS.has(src) || POTTER_ROOM_AGENT_DISCOVERY_308_PATHS.has(src)) &&
+        (
+          POTTER_ROOM_308_PATHS.has(src) ||
+          POTTER_ROOM_AGENT_DISCOVERY_308_PATHS.has(src) ||
+          src === '/room/agent.json' ||
+          src === '/room/agent.json/' ||
+          src === '/room/health' ||
+          src === '/room/health/'
+        ) &&
         u.hostname === 'www.getdasha.com' &&
         (u.pathname === '/room' || u.pathname.startsWith('/room/'))
       ) {
