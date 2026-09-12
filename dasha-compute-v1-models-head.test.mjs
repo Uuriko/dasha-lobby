@@ -3,8 +3,10 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody, v1HostedFloorListing } from './dasha-compute-network.mjs';
 const MODEL_PRICING_USD = { request: '0.05', prompt: '0', completion: '0', currency: 'USD', note: 'flat per chat completion (prepaid credits); self-route free' };
+const HOSTED_FLOOR = v1HostedFloorListing();
+const LIVE_GEMMA = { id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 };
 
 const env = { LOBBY_SESSION_SECRET: 'v1-models-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -46,14 +48,14 @@ for (const path of ['/compute/api/v1/models', '/compute/api/v1/models/']) {
   const unauth = await getHead(path);
   assert.equal(unauth.status, 200);
   assert.equal(unauth.getBody.object, 'list');
-  assert.deepEqual(unauth.getBody.data, []);
+  assert.deepEqual(unauth.getBody.data, [HOSTED_FLOOR]);
 }
 
 const auth = { Authorization: `Bearer ${token}` };
 for (const path of ['/compute/api/v1/models', '/compute/api/v1/models/']) {
   const empty = await getHead(path, { headers: auth });
   assert.equal(empty.status, 200);
-  assert.deepEqual(empty.getBody.data, []);
+  assert.deepEqual(empty.getBody.data, [HOSTED_FLOOR]);
 }
 
 await storage.put('compute:provider:mac_live', {
@@ -65,7 +67,7 @@ await storage.put('compute:provider:mac_live', {
 });
 const live = await getHead('/compute/api/v1/models', { headers: auth });
 assert.equal(live.status, 200);
-assert.deepEqual(live.getBody.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 }]);
+assert.deepEqual(live.getBody.data, [HOSTED_FLOOR, LIVE_GEMMA]);
 
 const lobby = {
   idFromName: () => 'public',
