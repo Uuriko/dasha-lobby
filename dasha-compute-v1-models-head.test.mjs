@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from './dasha-lobby-worker.mjs';
 import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
+const MODEL_PRICING_USD = { request: '0.05', prompt: '0', completion: '0', currency: 'USD', note: 'flat per chat completion (prepaid credits); self-route free' };
 
 const env = { LOBBY_SESSION_SECRET: 'v1-models-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -64,7 +65,7 @@ await storage.put('compute:provider:mac_live', {
 });
 const live = await getHead('/compute/api/v1/models', { headers: auth });
 assert.equal(live.status, 200);
-assert.deepEqual(live.getBody.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community' }]);
+assert.deepEqual(live.getBody.data, [{ id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 }]);
 
 const lobby = {
   idFromName: () => 'public',
