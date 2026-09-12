@@ -29,7 +29,7 @@ assert.match(
   /Leftover \/room\/skill\.md \(2026-09-11\)/,
   'leftover comment names /room/skill.md family',
 );
-assert.match(workerSrc, /staging has no \/skill\.md/, 'honest: staging has no skill bytes');
+assert.match(workerSrc, /Staging has no \/skill\.md/, 'honest: staging has no skill bytes');
 assert.match(workerSrc, /Apex \/skill\.md \/agents\.md/, 'apex Compute discovery stays Compute');
 assert.doesNotMatch(workerSrc, /["']\/join["']/, 'do not invent apex /join');
 
@@ -113,9 +113,10 @@ const env = {
   AI: { run: async () => ({ response: 'ok' }) },
 };
 
+const APEX_DISCOVERY = new Set(['/agents.md', '/agents.md/', '/claude.md', '/claude.md/']);
+
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const packet = host === 'lobby.getdasha.com' ? LOBBY_PACKET : ROOM_PACKET;
-  const computeSkill = host === 'lobby.getdasha.com' ? LOBBY_COMPUTE_SKILL : COMPUTE_SKILL;
   for (const path of FOLDS) {
     for (const method of ['GET', 'HEAD']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
@@ -128,6 +129,9 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     }
   }
   for (const path of APEX_COMPUTE) {
+    const computeSkill = host === 'lobby.getdasha.com' && APEX_DISCOVERY.has(path.toLowerCase())
+      ? LOBBY_COMPUTE_SKILL
+      : COMPUTE_SKILL;
     for (const method of ['GET', 'HEAD']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
       assert.equal(res.status, 308, `${host} ${path} ${method} stays Compute leftover`);
