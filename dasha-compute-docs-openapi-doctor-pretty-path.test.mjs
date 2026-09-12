@@ -18,13 +18,13 @@
  * Live GET /compute/enroll-code /compute/enroll_code /compute/enrollcode
  * /compute/enrol-code (+slash / Title-case) still HTML 404 on www while
  * /compute/enroll already 308 → /compute#provide. Same enroll-code family.
- * Do not invent doctor.md / PROVIDE.md / demigod peers.
+ * Soft-doctor docs family (doctor.md/Doctor.md/soft-doctor/kit/doctor/docs/doctor) folds #provide. Do not invent PROVIDE.md / demigod peers.
  * Live GET /compute/provide/enroll-code /compute/provide/enroll_code
  * /compute/provide/enrollcode /compute/provide/enrol-code (+slash /
  * Title-case) still HTML 404 on www + lobby while /compute/enroll-code
  * + /compute/provide/enroll already 308 → /compute#provide. Same
  * enroll-code family, nested under provide/ like #201.
- * Do not invent join/pairing/claim. Do not fold doctor.md / PROVIDE.md / CLAUDE.md.
+ * Do not invent join/pairing/claim. Do not invent PROVIDE.md / CLAUDE.md.
  * Live GET /compute/register /compute/bootstrap /compute/token
  * (+slash / Title-case) still HTML 404 on www while
  * /compute/provide/{register,bootstrap,token} already 308 → /compute#provide.
@@ -136,6 +136,16 @@ const DOCS_SKILL = [
 const PROVIDE_JOIN = [
   '/compute/doctor',
   '/compute/doctor/',
+  '/compute/doctor.md',
+  '/compute/doctor.md/',
+  '/compute/Doctor.md',
+  '/compute/Doctor.md/',
+  '/compute/soft-doctor',
+  '/compute/soft-doctor/',
+  '/compute/kit/doctor',
+  '/compute/kit/doctor/',
+  '/compute/docs/doctor',
+  '/compute/docs/doctor/',
   '/Compute/doctor',
   '/COMPUTE/DOCTOR',
   '/Compute/Doctor',
@@ -382,7 +392,6 @@ assert.equal(potterHome308Dest('/compute/readme.md'), SKILL, '/compute/readme.md
 assert.notEqual(potterHome308Dest('/v1'), PROVIDE, 'do not fold bare /v1 into provide');
 assert.notEqual(potterHome308Dest('/compute/ocm'), PROVIDE, 'do not fold ocm/ into provide');
 assert.notEqual(potterHome308Dest('/compute/provide/foo'), PROVIDE, 'do not invent /compute/provide/foo');
-assert.notEqual(potterHome308Dest('/compute/doctor.md'), PROVIDE, 'do not invent /compute/doctor.md');
 assert.notEqual(potterHome308Dest('/compute/PROVIDE.md'), PROVIDE, 'do not invent /compute/PROVIDE.md');
 assert.notEqual(potterHome308Dest('/compute/demigod'), PROVIDE, 'do not invent demigod');
 assert.notEqual(potterHome308Dest('/compute/provide/join'), PROVIDE, 'do not invent /compute/provide/join');
