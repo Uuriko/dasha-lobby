@@ -7230,10 +7230,17 @@ function computeProofPageResponse(request) {
  * same public endpoints the page reads, live, so every field is one click from
  * its source. Subfetch failures degrade to null with an error note - the proof
  * surface never invents a number. */
-async function computeProofJsonResponse(request) {
+async function computeProofJsonResponse(request, env) {
+  /* Same-zone subrequests (fetch(origin+path)) 404/522 from inside the Worker;
+   * fan out through the LOBBY DO stub instead, like the chess API proxy. */
   const origin = new URL(request.url).origin;
+  if (!env?.LOBBY) return new Response(JSON.stringify({ schema: 'proof.compute.v0', error: 'lobby stub unavailable' }), {
+    status: 503,
+    headers: htmlHeaders({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Dasha-Edge': 'compute-proof' }),
+  });
+  const stub = env.LOBBY.get(env.LOBBY.idFromName('public'));
   const pull = async (path) => {
-    const res = await fetch(origin + path, { headers: { Accept: 'application/json' } });
+    const res = await stub.fetch(new Request('https://lobby.getdasha.com' + path, { headers: { Accept: 'application/json' } }));
     if (!res.ok) throw new Error(path + ' -> ' + res.status);
     return res.json();
   };
@@ -10986,7 +10993,7 @@ async function productEdge(request, url, env) {
       return computeProofPageResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
-      return computeProofJsonResponse(request);
+      return computeProofJsonResponse(request, env);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputePagePath(url.pathname)) {
       return computePageResponse(request);
@@ -12211,7 +12218,7 @@ export default {
       return computeProofPageResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
-      return computeProofJsonResponse(request);
+      return computeProofJsonResponse(request, env);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputePagePath(url.pathname)) {
       return computePageResponse(request);

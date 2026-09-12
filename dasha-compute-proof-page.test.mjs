@@ -20,6 +20,9 @@ assert.equal(worker.split("url.pathname === '/compute/proof.json'").length - 1, 
 assert.match(worker, /url\.pathname === '\/compute\/proof\.json'/);
 assert.match(worker, /computeProofPageResponse/);
 assert.match(worker, /computeProofJsonResponse/);
+// proof.json fans out through the LOBBY DO stub, never same-zone HTTP subrequests.
+assert.match(worker, /computeProofJsonResponse\(request, env\)/);
+assert.equal(worker.split('return computeProofJsonResponse(request, env);').length - 1, 2, 'env passed at both call sites');
 assert.match(worker, /dasha-compute-proof-page\.mjs/);
 
 // Six sections, spec order.
@@ -54,6 +57,8 @@ assert.match(worker, /no_mac_online/);
 // House rules.
 assert.doesNotMatch(html, /plugin\.jup\.ag/);
 const proofBlock = worker.slice(worker.indexOf('function computeProofPageResponse'), worker.indexOf('function computeKitResponse'));
+assert.match(proofBlock, /env\.LOBBY\.get\(env\.LOBBY\.idFromName\('public'\)\)/);
+assert.doesNotMatch(proofBlock, /fetch\(origin \+ path\)/);
 assert.doesNotMatch(proofBlock, /potter[_-]?key|DASHA_POTTER|people-data/i);
 
 console.log('dasha-compute-proof-page: ok');
