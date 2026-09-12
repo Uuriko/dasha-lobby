@@ -4914,6 +4914,10 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  Live GET /compute/provide/{install,onboarding,guide,bootstrap,download,
  *  token,key} (+slash / Title-case) still HTML 404 after that fold. Same
  *  join family. Do not invent /compute/provide/foo peers.
+ *  Live GET /compute/enroll-code /compute/enroll_code /compute/enrollcode
+ *  /compute/enrol-code (+slash / Title-case) still HTML 404 on www while
+ *  /compute/enroll already 308 → /compute#provide. Same enroll-code family.
+ *  Do not invent doctor.md / PROVIDE.md / demigod peers.
  *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
@@ -4933,6 +4937,10 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/provide/key', '/compute/provide/key/',
   '/enroll', '/enroll/',
   '/compute/enroll', '/compute/enroll/',
+  '/compute/enroll-code', '/compute/enroll-code/',
+  '/compute/enroll_code', '/compute/enroll_code/',
+  '/compute/enrollcode', '/compute/enrollcode/',
+  '/compute/enrol-code', '/compute/enrol-code/',
   '/setup', '/setup/',
   '/compute/setup', '/compute/setup/',
 ]);
