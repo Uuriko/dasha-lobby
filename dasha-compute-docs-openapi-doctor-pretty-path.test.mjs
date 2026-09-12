@@ -35,6 +35,10 @@
  * → /compute (tab, no hash) and /compute/enroll-code already 308 →
  * /compute#provide. Same kit leftover family. Do not serve raw
  * install.sh/agent.py. Do not invent DEX peers or apex /readme.
+ * Live GET /compute/doctor.txt /compute/self-test /compute/plugin
+ * /compute/plug-in (+slash / Title-case) still HTML 404 on www while
+ * /compute/doctor already 308 → /compute#provide. Same soft-doctor
+ * invent family. Do not invent doctor.md.
  * Fold this join family to /compute#provide.
  * After #192/#193, leftover /compute/sdk /compute/sdk-docs /compute/cli
  * /compute/api-reference still dumped to the JSON gateway. Same family,
@@ -63,6 +67,13 @@ assert.match(workerSrc, /Live GET \/compute\/enroll-code \/compute\/enroll_code/
 assert.match(workerSrc, /Live GET \/compute\/provide\/enroll-code \/compute\/provide\/enroll_code/, 'nested provide enroll-code leftover comment');
 assert.match(workerSrc, /Live GET \/compute\/register \/compute\/bootstrap \/compute\/token/, 'bare provide-verb leftover comment');
 assert.match(workerSrc, /Live GET \/compute\/install\.sh \/compute\/agent\.py \/compute\/readme/, 'kit leftover comment');
+assert.match(workerSrc, /Live GET \/compute\/doctor\.txt \/compute\/self-test \/compute\/plugin/, 'soft-doctor invent leftover comment');
+assert.match(
+  workerSrc,
+  /'\/compute\/doctor', '\/compute\/doctor\/',\n  '\/compute\/doctor\.txt', '\/compute\/doctor\.txt\/',\n  '\/compute\/self-test', '\/compute\/self-test\/',\n  '\/compute\/plugin', '\/compute\/plugin\/',\n  '\/compute\/plug-in', '\/compute\/plug-in\/',/,
+  'invent family in POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS'
+);
+assert.doesNotMatch(workerSrc, /'\/compute\/doctor\.md'/, 'do not invent doctor.md in 308 set');
 assert.match(workerSrc, /\/compute\/sdk \/compute\/sdk-docs \/compute\/cli \/compute\/api-reference still dumped/, 'sdk/cli leftover comment');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
@@ -461,6 +472,10 @@ assert.ok(!sitemapXml.includes(`${WWW}/compute/sdk-docs</loc>`), 'sitemap omits 
 assert.ok(!sitemapXml.includes(`${WWW}/compute/cli</loc>`), 'sitemap omits leftover /compute/cli');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/api-reference</loc>`), 'sitemap omits leftover /compute/api-reference');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/doctor</loc>`), 'sitemap omits leftover /compute/doctor');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/doctor.txt</loc>`), 'sitemap omits leftover /compute/doctor.txt');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/self-test</loc>`), 'sitemap omits leftover /compute/self-test');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/plugin</loc>`), 'sitemap omits leftover /compute/plugin');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/plug-in</loc>`), 'sitemap omits leftover /compute/plug-in');
 assert.ok(!sitemapXml.includes(`${WWW}/provide</loc>`), 'sitemap omits leftover /provide');
 assert.ok(!sitemapXml.includes(`${WWW}/enroll</loc>`), 'sitemap omits leftover /enroll');
 assert.ok(!sitemapXml.includes(`${WWW}/setup</loc>`), 'sitemap omits leftover /setup');
@@ -492,4 +507,4 @@ assert.ok(!sitemapXml.includes(`${WWW}/compute/agent.py</loc>`), 'sitemap omits 
 assert.ok(!sitemapXml.includes(`${WWW}/compute/readme</loc>`), 'sitemap omits leftover /compute/readme');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/README</loc>`), 'sitemap omits leftover /compute/README');
 
-console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json)+/sdk+/sdk-docs+/cli+/api-reference 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/* + /compute/provide/{enroll,setup,doctor,register,install,onboarding,guide,bootstrap,download,token,key} + /compute/enroll-code+/enroll_code+/enrollcode+/enrol-code + /compute/provide/enroll-code+/enroll_code+/enrollcode+/enrol-code + /compute/register+/bootstrap+/token + /compute/install.sh+/agent.py+/readme 308 /compute#provide; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');
+console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json)+/sdk+/sdk-docs+/cli+/api-reference 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/doctor.txt+/self-test+/plugin+/plug-in + /compute/* + /compute/provide/{enroll,setup,doctor,register,install,onboarding,guide,bootstrap,download,token,key} + /compute/enroll-code+/enroll_code+/enrollcode+/enrol-code + /compute/provide/enroll-code+/enroll_code+/enrollcode+/enrol-code + /compute/register+/bootstrap+/token + /compute/install.sh+/agent.py+/readme 308 /compute#provide; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');

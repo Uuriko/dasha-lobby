@@ -4959,9 +4959,17 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  /compute#provide. Same kit leftover family — agents guess kit files
  *  at /compute/*. Do not serve raw install.sh/agent.py. Kit stays the
  *  tarball. Do not invent DEX peers or apex /readme.
+ *  Live GET /compute/doctor.txt /compute/self-test /compute/plugin
+ *  /compute/plug-in (+slash / Title-case) still HTML 404 on www while
+ *  /compute/doctor already 308 → /compute#provide. Same soft-doctor
+ *  invent family. Do not invent doctor.md.
  *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
+  '/compute/doctor.txt', '/compute/doctor.txt/',
+  '/compute/self-test', '/compute/self-test/',
+  '/compute/plugin', '/compute/plugin/',
+  '/compute/plug-in', '/compute/plug-in/',
   '/doctor', '/doctor/',
   '/provide', '/provide/',
   '/compute/provide', '/compute/provide/',
