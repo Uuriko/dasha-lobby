@@ -30,6 +30,8 @@ Get a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Commu
 
 ## Optional API
 
+v1 `chat/completions` is community Macs. None advertise the model → fail-loud `no_mac_online` (poll `/compute/api/network` · join `/compute#provide`). Hosted Ask is the browser `POST /compute/api/chat` — not a silent v1 swap.
+
 ```bash
 export DASHA_API_KEY='your-key'
 curl https://lobby.getdasha.com/compute/api/v1/chat/completions \
@@ -43,5 +45,5 @@ curl https://lobby.getdasha.com/compute/api/v1/chat/completions \
 - On stream, read `usage` from the final stop chunk (not earlier deltas)
 
 ## If stuck
-- Hard-refresh, confirm login, switch to Hosted if community shows 0 Macs
+- Hard-refresh, confirm login. UI Ask falls to Hosted when community shows 0 Macs. v1 stays fail-loud `no_mac_online`.
 - Telegram: https://t.me/+xB7S8mIQaKFiZjRh
