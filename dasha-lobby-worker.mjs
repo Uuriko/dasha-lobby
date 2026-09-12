@@ -123,6 +123,7 @@ import {
 } from './dasha-lobby-static-gen.mjs';
 import { ComputeNetwork, computeApi, rewriteComputeV1ChatCompletionsPath } from './dasha-compute-network.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
+import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
@@ -7214,6 +7215,75 @@ function computePageResponse(request) {
   });
 }
 
+function computeProofPageResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(COMPUTE_PROOF_PAGE_HTML), {
+    status: 200,
+    headers: htmlHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'compute-proof',
+    }),
+  });
+}
+
+/* /compute/proof.json: machine-readable twin of the proof page. Aggregates the
+ * same public endpoints the page reads, live, so every field is one click from
+ * its source. Subfetch failures degrade to null with an error note - the proof
+ * surface never invents a number. */
+async function computeProofJsonResponse(request) {
+  const origin = new URL(request.url).origin;
+  const pull = async (path) => {
+    const res = await fetch(origin + path, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(path + ' -> ' + res.status);
+    return res.json();
+  };
+  const [network, readyz, verify, factory, pricing] = await Promise.allSettled([
+    pull('/compute/api/network'), pull('/compute/api/readyz'), pull('/compute/api/verify'),
+    pull('/compute/api/factory'), pull('/compute/api/pricing'),
+  ]);
+  const val = (s) => (s.status === 'fulfilled' ? s.value : null);
+  const err = (s) => (s.status === 'fulfilled' ? null : String(s.reason && s.reason.message || s.reason));
+  const net = val(network), rdz = val(readyz), ver = val(verify), fac = val(factory), prc = val(pricing);
+  const body = {
+    schema: 'proof.compute.v0',
+    generated_at: new Date().toISOString(),
+    sources: {
+      network: origin + '/compute/api/network', readyz: origin + '/compute/api/readyz',
+      verify: origin + '/compute/api/verify', chain: origin + '/compute/api/chain',
+      metrics: origin + '/compute/api/metrics', factory: origin + '/compute/api/factory',
+      pricing: origin + '/compute/api/pricing', keys: origin + '/keys.json',
+      receipt_format: origin + '/compute/llms.txt',
+    },
+    right_now: net ? {
+      providers_online: net.providers_online, models_available: net.models_available,
+      capacity: net.capacity, jobs_queued: net.jobs_queued,
+      can_serve: rdz ? rdz.can_serve : null, readyz_reason: rdz ? rdz.reason : null,
+    } : { error: err(network) },
+    chain: ver ? {
+      length: ver.chain.length, tip: ver.chain.tip, verdict: ver.verdict, checked_at: ver.checked_at,
+    } : { error: err(verify) },
+    settled_24h: fac ? fac.settled_24h : null,
+    jobs: fac ? fac.jobs : null,
+    pricing: prc ? {
+      unit: prc.unit, request_usd: prc.request_usd, currency: prc.currency,
+      card_available: prc.card_available, card_note: prc.card_note,
+    } : { error: err(pricing) },
+    deepseek_reference: 'https://api-docs.deepseek.com/quick_start/pricing',
+    fail_loud_contract: {
+      status: 'action_required', reason: 'no_mac_online',
+      hint: 'Join a Mac or poll GET /compute/api/network.',
+    },
+  };
+  return new Response(request.method === 'HEAD' ? null : JSON.stringify(body, null, 2), {
+    status: 200,
+    headers: htmlHeaders({
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'compute-proof',
+    }),
+  });
+}
+
 function computeKitResponse(request, env) {
   if (!env?.ASSETS?.fetch) return new Response(null, { status: 404, headers: { 'X-Dasha-Edge': 'compute-kit' } });
   return env.ASSETS.fetch(request);
@@ -10911,6 +10981,12 @@ async function productEdge(request, url, env) {
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputeSkillPath(url.pathname)) {
       return computeSkillResponse(request, url.pathname);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof' || url.pathname === '/compute/proof/')) {
+      return computeProofPageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
+      return computeProofJsonResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputePagePath(url.pathname)) {
       return computePageResponse(request);
