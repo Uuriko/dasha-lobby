@@ -4719,6 +4719,20 @@ const POTTER_ROOM_308_PATHS = new Set([
   '/project_room', '/project_room/',
 ]);
 
+/** Leftover /room/skill.md (2026-09-11): live /room/skill.md /room/agents.md
+ * (+slash / Title-case) html-404 while /room/llms.txt is the Project Room
+ * packet. Staging has no /skill.md — 308 is honest. Fold this Room-prefix
+ * family to /room/llms.txt (lobby same-host). /room/AGENTS.md /room/CLAUDE.md
+ * same dest (set stores lowercase /room/claude.md). Apex /skill.md /agents.md
+ * /AGENTS.md /CLAUDE.md stay Compute → /compute/skill.md. Do not invent apex
+ * /join. Do not overwrite site-root /.well-known/agent.json. Do not fold
+ * Compute into Room. Exact /room /room/llms.txt stay 200. */
+const POTTER_ROOM_AGENT_DISCOVERY_308_PATHS = new Set([
+  '/room/skill.md', '/room/skill.md/',
+  '/room/agents.md', '/room/agents.md/',
+  '/room/claude.md', '/room/claude.md/',
+]);
+
 
 /** Leftover /bounty (+slash / Title-case) still html-404 while /bounties is 200. */
 const POTTER_BOUNTIES_308_PATHS = new Set([
@@ -5134,6 +5148,7 @@ export function potterHome308Dest(path) {
     return "https://www.getdasha.com/lobby";
   }
   if (POTTER_ROOM_308_PATHS.has(p)) return "https://www.getdasha.com/room";
+  if (POTTER_ROOM_AGENT_DISCOVERY_308_PATHS.has(p)) return "https://www.getdasha.com/room/llms.txt";
   if (p === "/socials" || p === "/socials/" || p === "/social" || p === "/social/") {
     return "https://www.getdasha.com/lobby";
   }
@@ -5416,8 +5431,12 @@ export function potterHome308Response(request, url) {
     if (host === 'lobby.getdasha.com') {
       const u = new URL(dest);
       const src = String(path || '').toLowerCase();
-      if (POTTER_ROOM_308_PATHS.has(src) && u.pathname === '/room') {
-        location = 'https://lobby.getdasha.com/room' + u.search + u.hash;
+      if (
+        (POTTER_ROOM_308_PATHS.has(src) || POTTER_ROOM_AGENT_DISCOVERY_308_PATHS.has(src)) &&
+        u.hostname === 'www.getdasha.com' &&
+        (u.pathname === '/room' || u.pathname.startsWith('/room/'))
+      ) {
+        location = 'https://lobby.getdasha.com' + u.pathname + u.search + u.hash;
       } else if (
         u.hostname === 'www.getdasha.com' &&
         (

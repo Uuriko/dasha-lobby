@@ -48,12 +48,18 @@ assert.equal(roomUpstreamPath('/room/.well-known/agent.json'), '/.well-known/age
 assert.equal(roomUpstreamPath('/room/api/health'), '/api/health');
 assert.equal(roomUpstreamPath('/.well-known/agent.json'), null, 'site-root agent.json is not Room');
 assert.equal(roomUpstreamPath('/room/secret'), null, 'do not invent Room UI paths');
+assert.equal(roomUpstreamPath('/room/skill.md'), null, 'do not invent Room skill proxy');
+assert.equal(roomUpstreamPath('/room/agents.md'), null, 'do not invent Room agents.md proxy');
+assert.equal(roomUpstreamPath('/room/claude.md'), null, 'do not invent Room claude.md proxy');
 assert.equal(isRoomDiscoveryPath('/room'), true);
 assert.equal(isRoomDiscoveryPath('/.well-known/agent.json'), false);
 assert.equal(roomUpstreamUrl('/room'), `${ROOM_ORIGIN}/llms.txt`);
 assert.equal(roomUpstreamUrl('/room/.well-known/agent.json'), `${ROOM_ORIGIN}/.well-known/agent.json`);
 assert.equal(potterHome308Dest('/room'), null, '/room is not a leftover 308');
 assert.equal(potterHome308Dest('/room/'), null, '/room/ is not a leftover 308');
+assert.equal(potterHome308Dest('/room/skill.md'), 'https://www.getdasha.com/room/llms.txt', '/room/skill.md leftover → packet');
+assert.equal(potterHome308Dest('/room/agents.md'), 'https://www.getdasha.com/room/llms.txt', '/room/agents.md leftover → packet');
+assert.equal(potterHome308Dest('/skill.md'), 'https://www.getdasha.com/compute/skill.md', 'apex /skill.md stays Compute');
 
 const LLMS = '# Project Room\n\norigin mock\n';
 const LLMS_FULL = '# Project Room\n\nfull packet\n';
