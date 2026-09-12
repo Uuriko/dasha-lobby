@@ -90,6 +90,10 @@ assert.match(COMPUTE_SKILL_MD, /^Hosted Flash: bigger-than-Mac \(Spark \/ Engram
 assert.match(COMPUTE_SKILL_MD, /Model id `deepseek-flash` \(Hosted\)/, 'skill names deepseek-flash Hosted-when-offered');
 assert.match(COMPUTE_SKILL_MD, /^Engram\/SSD-stream local recipes stay Hosted\/Provide-Max — not Air kit\.$/m, 'skill local recipes stay Hosted/Provide-Max');
 assert.doesNotMatch(COMPUTE_SKILL_MD, /Community.{0,80}(?:run|runs|serve|serves|host|hosts).{0,40}(?:Flash|763B|Engram|deepseek-flash)/i, 'skill NON-claim Community runs Flash/763B/Engram');
+assert.match(COMPUTE_SKILL_MD, /^Hosted Astra: GPT-6 when offered\. Model id `gpt-6-astra` \(Hosted\)\. Never Community\. Same base_url\. Watch x-dasha-route · x-dasha-model\.$/m, 'Hosted Astra option');
+assert.match(COMPUTE_SKILL_MD, /Model id `gpt-6-astra` \(Hosted\)/, 'skill names gpt-6-astra Hosted-when-offered');
+assert.match(COMPUTE_SKILL_MD, /^Async tools \/ mid-turn steering \/ computer use stay Hosted-class only\.$/m, 'skill Astra Hosted-class only');
+assert.doesNotMatch(COMPUTE_SKILL_MD, /Community.{0,80}(?:run|runs|serve|serves|host|hosts).{0,40}(?:Astra|gpt-6-astra|GPT-6)/i, 'skill NON-claim Community runs Astra');
 assert.match(COMPUTE_SKILL_MD, /x-dasha-route/, 'skill names spend route header');
 assert.match(COMPUTE_SKILL_MD, /x-dasha-spend-usd/, 'skill names spend usd header');
 assert.match(COMPUTE_SKILL_MD, /Community omits USD when unknown/, 'skill honesty: no invented community USD');
