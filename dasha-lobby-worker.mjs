@@ -4928,6 +4928,13 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  (+slash / Title-case) still HTML 404 on www while
  *  /compute/provide/{register,bootstrap,token} already 308 → /compute#provide.
  *  Same provide-verb family. Do not invent join/pairing/claim/activate/connect.
+ *  Live GET /compute/install.sh /compute/agent.py /compute/readme
+ *  /compute/README (+slash / Title-case / Install.sh via toLowerCase)
+ *  still HTML 404 on www while /compute/install|/download already 308
+ *  → /compute (tab, no hash) and /compute/enroll-code already 308 →
+ *  /compute#provide. Same kit leftover family — agents guess kit files
+ *  at /compute/*. Do not serve raw install.sh/agent.py. Kit stays the
+ *  tarball. Do not invent DEX peers or apex /readme.
  *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
@@ -4960,6 +4967,9 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/register', '/compute/register/',
   '/compute/bootstrap', '/compute/bootstrap/',
   '/compute/token', '/compute/token/',
+  '/compute/install.sh', '/compute/install.sh/',
+  '/compute/agent.py', '/compute/agent.py/',
+  '/compute/readme', '/compute/readme/',
 ]);
 /** Live GET/HEAD /compute/agent.md /compute/agents.md /compute/AGENTS.md
  *  /compute/README.md /compute/api.md /compute/create-key /compute/guest
@@ -4977,7 +4987,8 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
  *  POST /compute/api/guest-keys stays 201 mint (do not 308 the API path).
  *  Exact /compute/skill.md + /compute/mcp.json stay 200.
  *  Exact /agents.txt + /agents.json stay 200.
- *  Do not invent /compute/readme or /readme (no .md) or DEX peers. */
+ *  Do not invent /compute/readme as a skill dest (bare leftover folds
+ *  via doctor-provide). Do not invent /readme (no .md) or DEX peers. */
 const POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS = new Set([
   '/compute/agent.md', '/compute/agent.md/',
   '/compute/agents.md', '/compute/agents.md/',

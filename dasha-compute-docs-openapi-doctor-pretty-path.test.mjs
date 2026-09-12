@@ -29,6 +29,12 @@
  * (+slash / Title-case) still HTML 404 on www while
  * /compute/provide/{register,bootstrap,token} already 308 → /compute#provide.
  * Same provide-verb family. Do not invent join/pairing/claim/activate/connect.
+ * Live GET /compute/install.sh /compute/agent.py /compute/readme
+ * /compute/README (+slash / Title-case / Install.sh via toLowerCase)
+ * still HTML 404 on www while /compute/install|/download already 308
+ * → /compute (tab, no hash) and /compute/enroll-code already 308 →
+ * /compute#provide. Same kit leftover family. Do not serve raw
+ * install.sh/agent.py. Do not invent DEX peers or apex /readme.
  * Fold this join family to /compute#provide.
  * After #192/#193, leftover /compute/sdk /compute/sdk-docs /compute/cli
  * /compute/api-reference still dumped to the JSON gateway. Same family,
@@ -56,6 +62,7 @@ assert.match(workerSrc, /\/compute\/provide\/\{install,onboarding,guide,bootstra
 assert.match(workerSrc, /Live GET \/compute\/enroll-code \/compute\/enroll_code/, 'enroll-code leftover comment');
 assert.match(workerSrc, /Live GET \/compute\/provide\/enroll-code \/compute\/provide\/enroll_code/, 'nested provide enroll-code leftover comment');
 assert.match(workerSrc, /Live GET \/compute\/register \/compute\/bootstrap \/compute\/token/, 'bare provide-verb leftover comment');
+assert.match(workerSrc, /Live GET \/compute\/install\.sh \/compute\/agent\.py \/compute\/readme/, 'kit leftover comment');
 assert.match(workerSrc, /\/compute\/sdk \/compute\/sdk-docs \/compute\/cli \/compute\/api-reference still dumped/, 'sdk/cli leftover comment');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
@@ -298,6 +305,26 @@ const PROVIDE_JOIN = [
   '/COMPUTE/TOKEN',
   '/Compute/Token',
   '/Compute/Token/',
+  '/compute/install.sh',
+  '/compute/install.sh/',
+  '/Compute/install.sh',
+  '/COMPUTE/INSTALL.SH',
+  '/Compute/Install.sh',
+  '/Compute/Install.sh/',
+  '/compute/agent.py',
+  '/compute/agent.py/',
+  '/Compute/agent.py',
+  '/COMPUTE/AGENT.PY',
+  '/Compute/Agent.py',
+  '/Compute/Agent.py/',
+  '/compute/readme',
+  '/compute/readme/',
+  '/Compute/readme',
+  '/COMPUTE/README',
+  '/Compute/Readme',
+  '/Compute/Readme/',
+  '/compute/README',
+  '/compute/README/',
 ];
 
 const GATEWAY_UNCHANGED = [
@@ -348,7 +375,10 @@ assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.notEqual(potterHome308Dest('/compute/openapi.yaml'), SKILL, 'do not invent /compute/openapi.yaml');
 assert.notEqual(potterHome308Dest('/compute/swagger.yaml'), SKILL, 'do not invent swagger.yaml');
 assert.notEqual(potterHome308Dest('/compute/swagger.json'), SKILL, 'do not invent swagger→skill');
-assert.notEqual(potterHome308Dest('/compute/readme'), SKILL, 'do not invent /compute/readme');
+assert.equal(potterHome308Dest('/compute/readme'), PROVIDE, 'bare /compute/readme kit leftover → #provide');
+assert.equal(potterHome308Dest('/compute/README'), PROVIDE, 'Title-case /compute/README folds via toLowerCase');
+assert.notEqual(potterHome308Dest('/compute/readme'), SKILL, 'bare /compute/readme is not skill dest');
+assert.equal(potterHome308Dest('/compute/readme.md'), SKILL, '/compute/readme.md stays skill dest');
 assert.notEqual(potterHome308Dest('/v1'), PROVIDE, 'do not fold bare /v1 into provide');
 assert.notEqual(potterHome308Dest('/compute/ocm'), PROVIDE, 'do not fold ocm/ into provide');
 assert.notEqual(potterHome308Dest('/compute/provide/foo'), PROVIDE, 'do not invent /compute/provide/foo');
@@ -363,6 +393,10 @@ assert.notEqual(potterHome308Dest('/register'), PROVIDE, 'apex /register stays l
 assert.notEqual(potterHome308Dest('/token'), PROVIDE, 'apex /token stays home');
 assert.equal(potterHome308Dest('/register'), 'https://www.getdasha.com/login', 'apex /register stays login');
 assert.equal(potterHome308Dest('/token'), 'https://www.getdasha.com/', 'apex /token stays home');
+assert.notEqual(potterHome308Dest('/readme'), PROVIDE, 'do not invent apex /readme');
+assert.notEqual(potterHome308Dest('/install.sh'), PROVIDE, 'do not invent apex /install.sh');
+assert.notEqual(potterHome308Dest('/agent.py'), PROVIDE, 'do not invent apex /agent.py');
+assert.equal(potterHome308Dest('/dasha-compute-open-alpha.tar.gz'), null, 'canonical kit tarball stays 200');
 assert.match(potterHome308Dest('/doctor') || '', /#provide$/, 'apex /doctor hashes #provide');
 
 const env = {
@@ -445,5 +479,9 @@ assert.ok(!sitemapXml.includes(`${WWW}/compute/enrol-code</loc>`), 'sitemap omit
 assert.ok(!sitemapXml.includes(`${WWW}/compute/register</loc>`), 'sitemap omits leftover /compute/register');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/bootstrap</loc>`), 'sitemap omits leftover /compute/bootstrap');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/token</loc>`), 'sitemap omits leftover /compute/token');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/install.sh</loc>`), 'sitemap omits leftover /compute/install.sh');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/agent.py</loc>`), 'sitemap omits leftover /compute/agent.py');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/readme</loc>`), 'sitemap omits leftover /compute/readme');
+assert.ok(!sitemapXml.includes(`${WWW}/compute/README</loc>`), 'sitemap omits leftover /compute/README');
 
-console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json)+/sdk+/sdk-docs+/cli+/api-reference 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/* + /compute/provide/{enroll,setup,doctor,register,install,onboarding,guide,bootstrap,download,token,key} + /compute/enroll-code+/enroll_code+/enrollcode+/enrol-code + /compute/provide/enroll-code+/enroll_code+/enrollcode+/enrol-code + /compute/register+/bootstrap+/token 308 /compute#provide; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');
+console.log('dasha-compute-docs-openapi-doctor-pretty-path: PASS (/compute/docs+/documentation+/openapi(+.json)+/sdk+/sdk-docs+/cli+/api-reference 308 skill.md www+lobby GET+HEAD; /provide+/enroll+/setup+/doctor + /compute/* + /compute/provide/{enroll,setup,doctor,register,install,onboarding,guide,bootstrap,download,token,key} + /compute/enroll-code+/enroll_code+/enrollcode+/enrol-code + /compute/provide/enroll-code+/enroll_code+/enrollcode+/enrol-code + /compute/register+/bootstrap+/token + /compute/install.sh+/agent.py+/readme 308 /compute#provide; apex /sdk-docs stay /compute/api; no plugin.jup.ag)');
