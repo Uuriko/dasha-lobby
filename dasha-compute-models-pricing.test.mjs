@@ -60,9 +60,13 @@ const list = await network.fetch(new Request('https://lobby.getdasha.com/compute
 assert.equal(list.status, 200, await list.clone().text());
 const body = await list.json();
 assert.equal(body.object, 'list');
+const hosted = body.data.find(m => m.id === 'gpt-oss-20b');
 const qwen = body.data.find(m => m.id === 'qwen3-8b');
 const gemma = body.data.find(m => m.id === 'gemma3-12b');
-assert.ok(qwen && gemma, 'both serving models listed');
+assert.ok(hosted && qwen && gemma, 'Hosted floor + both serving models listed');
+assert.equal(hosted.owned_by, 'dasha-hosted', 'Hosted floor is not Community');
+assert.equal(hosted.providers_online, 0, 'Hosted floor does not invent Community Macs');
+assert.equal('measured_tok_per_sec' in hosted, false, 'Hosted floor does not invent tok/s');
 for (const entry of [qwen, gemma]) {
   assert.deepEqual(entry.pricing, {
     request: '0.05', prompt: '0', completion: '0', currency: 'USD',

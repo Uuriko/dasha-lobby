@@ -270,7 +270,7 @@ assert.equal('tokenHash' in listedKeys.keys[0], false);
 assert.equal((await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/models', { headers: { Authorization: 'Bearer wrong' } }))).status, 200);
 const apiHeaders = { Authorization: `Bearer ${developerKey.api_key}`, 'Content-Type': 'application/json' };
 const apiModels = await (await lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/models', { headers: apiHeaders }))).json();
-assert.deepEqual(apiModels.data.map(model => model.id), ['qwen3-8b']);
+assert.deepEqual(apiModels.data.map(model => model.id), ['gpt-oss-20b', 'qwen3-8b']);
 const apiCompletionPromise = lobby.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/chat/completions', { method: 'POST', headers: apiHeaders, body: JSON.stringify({ model: 'qwen3-8b', messages: [{ role: 'user', content: 'Use the SDK.' }], temperature: 0, max_tokens: 99 }) }));
 await new Promise(resolve => setTimeout(resolve, 0));
 let apiPoll;

@@ -12,6 +12,7 @@ import {
   ComputeNetwork,
   openaiErrorAx,
   openaiErrorBody,
+  v1HostedFloorListing,
 } from './dasha-compute-network.mjs';
 
 const src = readFileSync(new URL('./dasha-compute-network.mjs', import.meta.url), 'utf8');
@@ -172,7 +173,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const unauth = await pair(host, '/compute/api/v1/models', {}, fetchImpl);
   assert.equal(unauth.status, 200, `${host} models soft-guest`);
   assert.equal(unauth.body.object, 'list');
-  assert.deepEqual(unauth.body.data, []);
+  assert.deepEqual(unauth.body.data, [v1HostedFloorListing()]);
 
   const retrieveUnauth = await pair(host, '/compute/api/v1/models/qwen3-8b', {}, fetchImpl);
   assert.equal(retrieveUnauth.status, 401, `${host} retrieve 401`);

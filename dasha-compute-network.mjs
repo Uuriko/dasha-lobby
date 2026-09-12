@@ -896,6 +896,31 @@ function v1ModelListing(id, providers, now) {
   return entry;
 }
 
+/** Hosted Ask floor. Always listed on /v1/models. Never a Community Mac. No invented tok/s. */
+export const HOSTED_FLOOR_MODEL_ID = 'gpt-oss-20b';
+export const HOSTED_FLOOR_OWNED_BY = 'dasha-hosted';
+
+export function v1HostedFloorListing() {
+  return {
+    id: HOSTED_FLOOR_MODEL_ID,
+    object: 'model',
+    created: 0,
+    owned_by: HOSTED_FLOOR_OWNED_BY,
+    description: 'Hosted · Cloudflare Workers AI',
+    pricing: v1ModelPricing(),
+    providers_online: 0,
+  };
+}
+
+/** Soft-guest /v1/models data: Hosted floor first, then advertised Community ids. Never Astra/Flash SKUs. */
+export function v1ModelsListData(providers = [], now = Date.now()) {
+  const advertised = [...new Set((Array.isArray(providers) ? providers : []).flatMap((provider) => provider.models || []))];
+  const community = advertised
+    .filter((id) => id !== HOSTED_FLOOR_MODEL_ID)
+    .map((id) => v1ModelListing(id, providers, now));
+  return [v1HostedFloorListing(), ...community];
+}
+
 export function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
   if (!job?.id) return null;
   const status = String(job.status || '');
@@ -1493,11 +1518,10 @@ export class ComputeNetwork {
     const v1cors = (res) => withV1Cors(res, v1Origin);
     const v1err = (message, status = 400, type = 'invalid_request_error', extra = {}) => v1cors(openaiError(message, status, type, extra));
     if ((path === '/compute/api/v1/models' || path === '/compute/api/v1/models/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      // Soft-guest list: same advertised ids as public GET /compute/api/network.
+      // Soft-guest list: Hosted floor gpt-oss-20b always, plus advertised Community ids (same as GET /compute/api/network).
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
-      const models = [...new Set(providers.flatMap(provider => provider.models || []))];
-      return maybeHead(request, v1cors(json({ object: 'list', data: models.map(id => v1ModelListing(id, providers, now)) })));
+      return maybeHead(request, v1cors(json({ object: 'list', data: v1ModelsListData(providers, now) })));
     }
 
     const modelRetrieve = path.match(/^\/compute\/api\/v1\/models\/([A-Za-z0-9._-]+)\/?$/);
@@ -1509,6 +1533,7 @@ export class ComputeNetwork {
       const id = modelRetrieve[1];
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
+      if (id === HOSTED_FLOOR_MODEL_ID) return maybeHead(request, v1cors(json(v1HostedFloorListing())));
       if (!models.includes(id)) return maybeHead(request, v1err(`The model '${id}' does not exist`, 404, 'invalid_request_error'));
       return maybeHead(request, v1cors(json(v1ModelListing(id, providers, now))));
     }
