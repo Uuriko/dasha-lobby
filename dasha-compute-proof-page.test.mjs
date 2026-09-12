@@ -15,7 +15,8 @@ const worker = readFileSync(new URL('./dasha-lobby-worker.mjs', import.meta.url)
 const html = COMPUTE_PROOF_PAGE_HTML;
 
 // Routes registered in the main worker.
-assert.match(worker, /url\.pathname === '\/compute\/proof'/);
+assert.equal(worker.split("url.pathname === '/compute/proof'").length - 1, 2, 'proof route at both dispatch sites');
+assert.equal(worker.split("url.pathname === '/compute/proof.json'").length - 1, 2, 'proof.json route at both dispatch sites');
 assert.match(worker, /url\.pathname === '\/compute\/proof\.json'/);
 assert.match(worker, /computeProofPageResponse/);
 assert.match(worker, /computeProofJsonResponse/);

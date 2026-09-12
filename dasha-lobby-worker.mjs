@@ -12207,6 +12207,12 @@ export default {
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputeSkillPath(url.pathname)) {
       return computeSkillResponse(request, url.pathname);
     }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof' || url.pathname === '/compute/proof/')) {
+      return computeProofPageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
+      return computeProofJsonResponse(request);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputePagePath(url.pathname)) {
       return computePageResponse(request);
     }
