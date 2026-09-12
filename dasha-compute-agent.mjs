@@ -159,7 +159,7 @@ curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-T
 Or sign in at https://www.getdasha.com/compute#build for lasting dsk_.
 
 ${COMPUTE_FIRST_CALL_TXT}
-Pick \`model\` from the models list.
+Pick \`model\` from the models list. Each entry carries pricing (pricing.request USD per chat - flat, no per-token metering) and measured tok/s when benchmarked.
 
 ## Receipts / Community / Hosted
 
@@ -191,6 +191,7 @@ network ${COMPUTE_NETWORK}
 auth Bearer API key
 no key needed for healthz + network + models; key needed for chat
 live 24h counters GET /compute/api/factory settled_24h — tokens/jobs/cents, no key needed
+models entries carry pricing.request (USD per chat, flat - no per-token metering) + measured tok/s when benchmarked
 guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP
 curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
 
