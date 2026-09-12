@@ -14,7 +14,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { PROVIDE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import worker from './dasha-lobby-worker.mjs';
 
-const LIVE_KIT_SHA256 = '43df0883a900058320ceca36bf029b82d2495b2f2f17086495d31219cc3fec24';
+const LIVE_KIT_SHA256 = '40f7ba9a6de260810560f73738b88ceee0782acbfbad55fcca30bc20559f1ead';
 const root = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
 const provideDisk = readFileSync(join(root, 'dasha-compute-skills/PROVIDE.md'), 'utf8');

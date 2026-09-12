@@ -80,8 +80,8 @@ assert.match(net, /kit_versions/, '/api/network exposes version skew');
 assert.match(net, /kit_version: provider\.kitVersion \|\| null/, 'owner provider list shows kit_version');
 
 const worker = await readFile(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
-assert.match(worker, /const COMPUTE_KIT_JSON = \{[\s\S]*?version: '0\.3\.1'[\s\S]*?min_version: '0\.3\.1'[\s\S]*?43df0883a900058320ceca36bf029b82d2495b2f2f17086495d31219cc3fec24/, 'kit.json manifest serves 0.3.1 (tar refreshed)');
-assert.match(worker, /sha256: '43df0883a900058320ceca36bf029b82d2495b2f2f17086495d31219cc3fec24'/, 'kit.json sha256 pins the live tar');
+assert.match(worker, /const COMPUTE_KIT_JSON = \{[\s\S]*?version: '0\.3\.1'[\s\S]*?min_version: '0\.3\.1'[\s\S]*?40f7ba9a6de260810560f73738b88ceee0782acbfbad55fcca30bc20559f1ead/, 'kit.json manifest serves 0.3.1 (tar refreshed)');
+assert.match(worker, /sha256: '40f7ba9a6de260810560f73738b88ceee0782acbfbad55fcca30bc20559f1ead'/, 'kit.json sha256 pins the live tar');
 assert.match(worker, /isComputeKitJsonPath/);
 
 console.log('dasha-compute-kit-v031: PASS');

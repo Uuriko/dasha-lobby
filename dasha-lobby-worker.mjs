@@ -6733,7 +6733,7 @@ const COMPUTE_KIT_JSON = {
   version: '0.3.1',
   min_version: '0.3.1',
   url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
-  sha256: '43df0883a900058320ceca36bf029b82d2495b2f2f17086495d31219cc3fec24',
+  sha256: '40f7ba9a6de260810560f73738b88ceee0782acbfbad55fcca30bc20559f1ead',
 };
 
 function isComputeKitJsonPath(pathname) {
