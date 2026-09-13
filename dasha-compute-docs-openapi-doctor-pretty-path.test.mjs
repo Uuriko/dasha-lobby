@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
- * Leftover pretty path: live GET/HEAD /compute/docs + /compute/openapi.json
- * (+slash / Title-case) were 308 → /compute/api (JSON gateway) on www + lobby.
- * Agents/humans asking for docs landed on raw JSON. No OpenAPI file exists —
- * do not invent one. Fold this path-family to /compute/skill.md.
+ * /compute/docs + /compute/openapi.json|yaml are now REAL routes (docs page
+ * + OpenAPI 3.1 spec served by the worker - replayed from live). They no
+ * longer fold; remaining leftovers in the family still 308 → /compute/skill.md.
  * Leftover /compute/documentation + /compute/openapi (no .json) still dumped
  * to the JSON gateway after #192 — same family, same skill dest.
  * Live GET/HEAD /compute/doctor was 308 → /compute (Ask first-paint). Soft-doctor
@@ -59,7 +58,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_COMPUTE_DOCS_SKILL_308_PATHS/, 'docs/openapi leftover set');
 assert.match(workerSrc, /POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS/, 'doctor leftover set');
-assert.match(workerSrc, /Live GET \/compute\/docs \+ \/compute\/openapi\.json/, 'live docs comment');
+assert.match(workerSrc, /\/compute\/docs \+ \/compute\/openapi\.json\|yaml are\n \*  now REAL routes/, 'docs now real routes comment');
 assert.match(workerSrc, /Live GET \/compute\/doctor was 308/, 'live doctor comment');
 assert.match(workerSrc, /\/compute\/documentation \+ \/compute\/openapi \(no \.json\)/, 'documentation leftover comment');
 assert.match(workerSrc, /Leftover \/provide \/enroll \/setup/, 'provide join leftover comment');
@@ -90,20 +89,6 @@ const API = `${WWW}/compute/api`;
 const COMPUTE = `${WWW}/compute`;
 
 const DOCS_SKILL = [
-  '/compute/docs',
-  '/compute/docs/',
-  '/Compute/docs',
-  '/COMPUTE/DOCS',
-  '/Compute/Docs',
-  '/Compute/Docs/',
-  '/COMPUTE/DOCS/',
-  '/compute/openapi.json',
-  '/compute/openapi.json/',
-  '/Compute/openapi.json',
-  '/COMPUTE/OPENAPI.JSON',
-  '/Compute/Openapi.json',
-  '/Compute/Openapi.Json/',
-  '/COMPUTE/OPENAPI.JSON/',
   '/compute/documentation',
   '/compute/documentation/',
   '/Compute/documentation',
@@ -421,6 +406,10 @@ for (const [path, dest] of TAB_UNCHANGED) {
 }
 assert.equal(potterHome308Dest('/compute/skill.md'), null, '/compute/skill.md stays 200');
 assert.equal(potterHome308Dest('/compute/api'), null, '/compute/api stays JSON');
+assert.equal(potterHome308Dest('/compute/docs'), null, '/compute/docs is a real page now');
+assert.equal(potterHome308Dest('/compute/docs/'), null, '/compute/docs/ is a real page now');
+assert.equal(potterHome308Dest('/compute/openapi.json'), null, '/compute/openapi.json is a real spec now');
+assert.equal(potterHome308Dest('/compute/openapi.yaml'), null, '/compute/openapi.yaml is a real spec now');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.notEqual(potterHome308Dest('/compute/openapi.yaml'), SKILL, 'do not invent /compute/openapi.yaml');
 assert.notEqual(potterHome308Dest('/compute/swagger.yaml'), SKILL, 'do not invent swagger.yaml');

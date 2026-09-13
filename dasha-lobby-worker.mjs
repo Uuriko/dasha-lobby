@@ -126,6 +126,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { LAUNCH_PAGE_HTML, VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
+import { DOCS_OPENAPI_JSON, DOCS_OPENAPI_YAML, DOCS_PAGE_HTML } from './dasha-docs-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import { isComputeOcmPath, proxyComputeOcm } from './dasha-compute-ocm-proxy.mjs';
@@ -4914,16 +4915,14 @@ const POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS = new Set([
   '/compute/api/docs', '/compute/api/docs/',
   '/compute/api/doc', '/compute/api/doc/',
 ]);
-/** Live GET /compute/docs + /compute/openapi.json were 308 → /compute/api (JSON
- *  gateway). Agents/humans asking for docs landed on raw JSON. No OpenAPI file
- *  exists — do not invent one. Fold this path-family to the skill face.
- *  /compute/documentation + /compute/openapi (no .json) same leftover family.
+/** Leftover docs-skill family. /compute/docs + /compute/openapi.json|yaml are
+ *  now REAL routes (docs page + OpenAPI 3.1 spec served below - replayed from
+ *  live). Remaining leftovers still fold to the skill face:
+ *  /compute/documentation + /compute/openapi (no .json),
  *  /compute/sdk /compute/sdk-docs /compute/cli /compute/api-reference still dumped
  *  to the JSON gateway after #192/#193 — same family, same skill dest.
  *  Do not invent swagger.yaml / readme peers. Apex /sdk-docs /cli /api-reference stay gateway. */
 const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
-  '/compute/docs', '/compute/docs/',
-  '/compute/openapi.json', '/compute/openapi.json/',
   '/compute/documentation', '/compute/documentation/',
   '/compute/openapi', '/compute/openapi/',
   '/compute/sdk', '/compute/sdk/',
@@ -12523,6 +12522,26 @@ export default {
           'X-Dasha-Edge': 'verify',
           Link: LLMS_DESCRIBEDBY,
         }),
+      });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && ['/compute/docs', '/compute/docs/'].includes(String(url.pathname || '').toLowerCase())) {
+      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(DOCS_PAGE_HTML), {
+        headers: htmlHeaders({
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+          'X-Dasha-Edge': 'compute-docs',
+          Link: LLMS_DESCRIBEDBY,
+        }),
+      });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && ['/compute/openapi.json', '/compute/openapi.json/', '/compute/openapi.yaml', '/compute/openapi.yaml/'].includes(String(url.pathname || '').toLowerCase())) {
+      const isYaml = String(url.pathname || '').toLowerCase().indexOf('yaml') !== -1;
+      return new Response(request.method === 'HEAD' ? null : (isYaml ? DOCS_OPENAPI_YAML : DOCS_OPENAPI_JSON), {
+        headers: {
+          'Content-Type': isYaml ? 'application/yaml; charset=utf-8' : 'application/json; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+          'X-Dasha-Edge': 'compute-openapi',
+        },
       });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/which') {
