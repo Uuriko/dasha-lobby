@@ -208,7 +208,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.match(live.proof, /qwen3-4b/, 'Start proof chip names fastest measured 4b');
     assert.match(live.proof, /tok\/s/, 'Start proof chip shows live tok/s');
     assert.equal(live.adopted, 'qwen3-4b', 'optional Community default follows fastest measured when 27b is offline');
-    assert.equal(live.keep27, 'gemma3-27b', 'advertised gemma3-27b still wins Community default');
+    assert.equal(live.keep27, 'qwen3-4b', 'fastest measured model wins even when Gemma 27B is online');
   } finally {
     await browser.close();
   }
