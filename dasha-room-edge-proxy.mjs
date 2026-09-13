@@ -1,7 +1,10 @@
 /**
  * Project Room reverse-proxy for getdasha edge.
  * /room and /room/ → origin HTML door (Open/Join/Connect).
+ * Accept: text/plain on /room (+slash) → origin /room packet (same bytes as
+ * /room/llms.txt). Browsers keep the HTML door.
  * /room/llms.txt + packet/card/health stay prefix-preserving discovery docs.
+ * /room/kits (+ kits.txt family) → origin /kits.txt catalog. Not Compute.
  * Does NOT overwrite site-root /.well-known/agent.json (Compute card).
  * Leftover skill/card/health synonyms stay 308 (not this map).
  * Never Jupiter plugin host.
@@ -25,7 +28,8 @@ const HOP_BY_HOP = new Set([
   'set-cookie',
 ]);
 
-/** Exact lobby doors → project-room-staging paths. HTML door is /room. */
+/** Exact lobby doors → project-room-staging paths. HTML door is /room.
+ *  Kits family maps to origin /kits.txt (staging /kits + /kit 404). */
 const ROOM_UPSTREAM = Object.freeze({
   '/room': '/room',
   '/room/': '/room',
@@ -33,6 +37,12 @@ const ROOM_UPSTREAM = Object.freeze({
   '/room/llms-full.txt': '/llms-full.txt',
   '/room/.well-known/agent.json': '/.well-known/agent.json',
   '/room/api/health': '/api/health',
+  '/room/kits': '/kits.txt',
+  '/room/kit': '/kits.txt',
+  '/room/kits.txt': '/kits.txt',
+  '/room/kits.md': '/kits.txt',
+  '/room/kit.txt': '/kits.txt',
+  '/room/kit.md': '/kits.txt',
 });
 
 function extraHopByHop(headers) {
@@ -74,9 +84,19 @@ export function roomUpstreamUrl(pathname) {
   return ROOM_ORIGIN + upstream;
 }
 
-function allowedUpstreamType(contentType, upstreamPath) {
+/** Live www+lobby: Accept text/plain (and no text/html) on /room serves the
+ *  packet. text/html anywhere in Accept keeps the HTML door. */
+export function roomAcceptsPlain(request) {
+  const accept = String(request?.headers?.get?.('accept') || '').toLowerCase();
+  return accept.includes('text/plain') && !accept.includes('text/html');
+}
+
+function allowedUpstreamType(contentType, upstreamPath, request) {
   const ct = String(contentType || '').toLowerCase();
-  if (upstreamPath === '/room') return ct.includes('text/html');
+  if (upstreamPath === '/room') {
+    if (roomAcceptsPlain(request)) return ct.includes('text/plain');
+    return ct.includes('text/html');
+  }
   return ct.includes('text/plain') || ct.includes('application/json');
 }
 
@@ -153,7 +173,7 @@ export async function roomDiscoveryResponse(request, opts = {}) {
   }
 
   const ct = upstream.headers.get('content-type') || '';
-  if (upstream.status === 200 && !allowedUpstreamType(ct, upstreamPath)) {
+  if (upstream.status === 200 && !allowedUpstreamType(ct, upstreamPath, request)) {
     try { await upstream.arrayBuffer(); } catch { /* drain */ }
     return failClosed(502, 'room origin not discovery');
   }

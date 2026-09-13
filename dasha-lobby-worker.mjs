@@ -123,6 +123,7 @@ import {
 } from './dasha-lobby-static-gen.mjs';
 import { ComputeNetwork, computeApi, rewriteComputeV1ChatCompletionsPath } from './dasha-compute-network.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
+import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
@@ -7232,6 +7233,175 @@ function computePageResponse(request) {
   });
 }
 
+function computeProofPageResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(COMPUTE_PROOF_PAGE_HTML), {
+    status: 200,
+    headers: htmlHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'compute-proof',
+    }),
+  });
+}
+
+/* /compute/proof.json + /compute/proof.md: machine-readable twins of the proof
+ * page. Aggregates the same public endpoints the page reads, live, so every
+ * field is one click from its source. Subfetch failures degrade to null with
+ * an error note - the proof surface never invents a number. */
+async function computeProofDocument(request, env) {
+  /* Same-zone subrequests (fetch(origin+path)) 404/522 from inside the Worker;
+   * fan out through the LOBBY DO stub instead, like the chess API proxy. */
+  const origin = new URL(request.url).origin;
+  if (!env?.LOBBY) {
+    return {
+      status: 503,
+      body: { schema: 'proof.compute.v0', error: 'lobby stub unavailable' },
+    };
+  }
+  const stub = env.LOBBY.get(env.LOBBY.idFromName('public'));
+  const pull = async (path) => {
+    const res = await stub.fetch(new Request('https://lobby.getdasha.com' + path, { headers: { Accept: 'application/json' } }));
+    if (!res.ok) throw new Error(path + ' -> ' + res.status);
+    return res.json();
+  };
+  const [network, readyz, verify, factory, pricing] = await Promise.allSettled([
+    pull('/compute/api/network'), pull('/compute/api/readyz'), pull('/compute/api/verify'),
+    pull('/compute/api/factory'), pull('/compute/api/pricing'),
+  ]);
+  const val = (s) => (s.status === 'fulfilled' ? s.value : null);
+  const err = (s) => (s.status === 'fulfilled' ? null : String(s.reason && s.reason.message || s.reason));
+  const net = val(network), rdz = val(readyz), ver = val(verify), fac = val(factory), prc = val(pricing);
+  return {
+    status: 200,
+    body: {
+      schema: 'proof.compute.v0',
+      generated_at: new Date().toISOString(),
+      sources: {
+        network: origin + '/compute/api/network', readyz: origin + '/compute/api/readyz',
+        verify: origin + '/compute/api/verify', chain: origin + '/compute/api/chain',
+        metrics: origin + '/compute/api/metrics', factory: origin + '/compute/api/factory',
+        pricing: origin + '/compute/api/pricing', keys: origin + '/keys.json',
+        receipt_format: origin + '/compute/llms.txt',
+      },
+      right_now: net ? {
+        providers_online: net.providers_online, models_available: net.models_available,
+        capacity: net.capacity, jobs_queued: net.jobs_queued,
+        can_serve: rdz ? rdz.can_serve : null, readyz_reason: rdz ? rdz.reason : null,
+      } : { error: err(network) },
+      chain: ver ? {
+        length: ver.chain.length, tip: ver.chain.tip, verdict: ver.verdict, checked_at: ver.checked_at,
+      } : { error: err(verify) },
+      settled_24h: fac ? fac.settled_24h : null,
+      jobs: fac ? fac.jobs : null,
+      pricing: prc ? {
+        unit: prc.unit, request_usd: prc.request_usd, currency: prc.currency,
+        card_available: prc.card_available, card_note: prc.card_note,
+      } : { error: err(pricing) },
+      deepseek_reference: 'https://api-docs.deepseek.com/quick_start/pricing',
+      fail_loud_contract: {
+        status: 'action_required', reason: 'no_mac_online',
+        hint: 'Join a Mac or poll GET /compute/api/network.',
+      },
+    },
+  };
+}
+
+function renderComputeProofMarkdown(body) {
+  const rn = body.right_now || {};
+  const models = Array.isArray(rn.models_available) ? rn.models_available : [];
+  const capacity = Array.isArray(rn.capacity) ? rn.capacity : [];
+  const chain = body.chain || {};
+  const pricing = body.pricing || {};
+  const fail = body.fail_loud_contract || {};
+  const sources = body.sources || {};
+  const modelLines = models.length ? models.map((m) => `- \`${m}\``) : ['- none'];
+  const capLines = capacity.length
+    ? capacity.map((c) => `- \`${c.model}\` — ${c.tokens_per_second} tok/s (providers ${c.providers ?? 1})`)
+    : ['- none'];
+  const sourceLines = Object.entries(sources).map(([k, v]) => `- ${k}: ${v}`);
+  const verdict = chain.verdict == null
+    ? 'null'
+    : (typeof chain.verdict === 'object' ? JSON.stringify(chain.verdict) : String(chain.verdict));
+  const lines = [
+    '---',
+    `schema: ${body.schema || 'proof.compute.v0'}`,
+    `generated_at: ${body.generated_at || ''}`,
+    '---',
+    '',
+    '# Dasha Compute proof',
+    '',
+    'Live numbers only — twin of `/compute/proof.json` (Knap template on disk: phase0-publish/knap).',
+    '',
+    '## Right now',
+    '',
+    `- providers_online: **${rn.providers_online ?? 'null'}**`,
+    `- can_serve: **${rn.can_serve ?? 'null'}**`,
+    `- readyz_reason: \`${rn.readyz_reason ?? ''}\``,
+    `- jobs_queued: ${rn.jobs_queued ?? 'null'}`,
+    '',
+    '### Models available',
+    '',
+    ...modelLines,
+    '',
+    '### Capacity',
+    '',
+    ...capLines,
+    '',
+    '## Chain',
+    '',
+    `- length: **${chain.length ?? 'null'}**`,
+    `- tip: \`${chain.tip ?? ''}\``,
+    `- verdict: **${verdict}**`,
+    `- checked_at: ${chain.checked_at ?? ''}`,
+    '',
+    '## Pricing',
+    '',
+    `- unit: \`${pricing.unit ?? ''}\``,
+    `- request_usd: **${pricing.request_usd ?? 'null'}**`,
+    `- currency: ${pricing.currency ?? ''}`,
+    `- card_available: **${pricing.card_available ?? 'null'}**`,
+    `- note: ${pricing.card_note ?? ''}`,
+    '',
+    '## Fail loud',
+    '',
+    `- status: \`${fail.status ?? ''}\``,
+    `- reason: \`${fail.reason ?? ''}\``,
+    `- hint: ${fail.hint ?? ''}`,
+    '',
+    '## Sources',
+    '',
+    ...sourceLines,
+    '',
+    `DeepSeek reference: ${body.deepseek_reference || 'https://api-docs.deepseek.com/quick_start/pricing'}`,
+    '',
+  ];
+  return lines.join('\n');
+}
+
+async function computeProofJsonResponse(request, env) {
+  const doc = await computeProofDocument(request, env);
+  return new Response(request.method === 'HEAD' ? null : JSON.stringify(doc.body, null, 2), {
+    status: doc.status,
+    headers: htmlHeaders({
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'compute-proof',
+    }),
+  });
+}
+
+async function computeProofMdResponse(request, env) {
+  const doc = await computeProofDocument(request, env);
+  return new Response(request.method === 'HEAD' ? null : renderComputeProofMarkdown(doc.body), {
+    status: doc.status,
+    headers: htmlHeaders({
+      'Content-Type': 'text/markdown; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'compute-proof',
+    }),
+  });
+}
+
 function computeKitResponse(request, env) {
   if (!env?.ASSETS?.fetch) return new Response(null, { status: 404, headers: { 'X-Dasha-Edge': 'compute-kit' } });
   return env.ASSETS.fetch(request);
@@ -10930,6 +11100,15 @@ async function productEdge(request, url, env) {
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputeSkillPath(url.pathname)) {
       return computeSkillResponse(request, url.pathname);
     }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof' || url.pathname === '/compute/proof/')) {
+      return computeProofPageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
+      return computeProofJsonResponse(request, env);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.md' || url.pathname === '/compute/proof.md/')) {
+      return computeProofMdResponse(request, env);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputePagePath(url.pathname)) {
       return computePageResponse(request);
     }
@@ -12148,6 +12327,15 @@ export default {
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputeSkillPath(url.pathname)) {
       return computeSkillResponse(request, url.pathname);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof' || url.pathname === '/compute/proof/')) {
+      return computeProofPageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
+      return computeProofJsonResponse(request, env);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.md' || url.pathname === '/compute/proof.md/')) {
+      return computeProofMdResponse(request, env);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputePagePath(url.pathname)) {
       return computePageResponse(request);
