@@ -4793,10 +4793,13 @@ const POTTER_FAUCET_DOOR_308_PATHS = new Set([
   "/once_a_day",
   "/once_a_day/"
 ]);
-/** Pretty health probes: live /compute/health(z) (+slash) 308 → /compute/api/healthz. */
+/** Pretty health probes: live /compute/health(z) (+slash) 308 → /compute/api/healthz.
+ *  Leftover /compute/readyz (+slash / Title-case) 308 → /compute/api/readyz
+ *  (parallel to healthz). Do not invent /compute/ready /compute/ping /readyz. */
 const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
   '/compute/health', '/compute/health/',
   '/compute/healthz', '/compute/healthz/',
+  '/compute/readyz', '/compute/readyz/',
   // apex /api/{jobs,status,network,healthz,health} — health aliases land here.
   '/api/healthz', '/api/healthz/',
   '/api/health', '/api/health/',
@@ -5357,6 +5360,9 @@ export function potterHome308Dest(path) {
   }
   if (p === "/compute/healthz" || p === "/compute/healthz/" || p === "/compute/health" || p === "/compute/health/" || p === "/api/healthz" || p === "/api/healthz/" || p === "/api/health" || p === "/api/health/") {
     return "https://www.getdasha.com/compute/api/healthz";
+  }
+  if (p === "/compute/readyz" || p === "/compute/readyz/") {
+    return "https://www.getdasha.com/compute/api/readyz";
   }
   if (p === "/compute/v1" || p === "/compute/v1/") {
     return "https://www.getdasha.com/compute/api/v1";

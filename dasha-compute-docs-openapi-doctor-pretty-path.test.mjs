@@ -161,6 +161,31 @@ const PROVIDE_JOIN = [
   '/compute/plug-in/',
   '/compute/waitlist',
   '/compute/waitlist/',
+  '/Compute/doctor.txt',
+  '/COMPUTE/DOCTOR.TXT',
+  '/Compute/Doctor.txt',
+  '/Compute/Doctor.Txt/',
+  '/COMPUTE/DOCTOR.TXT/',
+  '/Compute/self-test',
+  '/COMPUTE/SELF-TEST',
+  '/Compute/Self-test',
+  '/Compute/Self-Test/',
+  '/COMPUTE/SELF-TEST/',
+  '/Compute/plugin',
+  '/COMPUTE/PLUGIN',
+  '/Compute/Plugin',
+  '/Compute/Plugin/',
+  '/COMPUTE/PLUGIN/',
+  '/Compute/plug-in',
+  '/COMPUTE/PLUG-IN',
+  '/Compute/Plug-in',
+  '/Compute/Plug-In/',
+  '/COMPUTE/PLUG-IN/',
+  '/Compute/waitlist',
+  '/COMPUTE/WAITLIST',
+  '/Compute/Waitlist',
+  '/Compute/Waitlist/',
+  '/COMPUTE/WAITLIST/',
   '/Compute/doctor',
   '/COMPUTE/DOCTOR',
   '/Compute/Doctor',
@@ -410,6 +435,11 @@ assert.notEqual(potterHome308Dest('/compute/provide/foo'), PROVIDE, 'do not inve
 assert.notEqual(potterHome308Dest('/compute/doctor.md'), PROVIDE, 'do not invent /compute/doctor.md');
 assert.equal(potterHome308Dest('/compute/waitlist'), PROVIDE, '/compute/waitlist → #provide');
 assert.equal(potterHome308Dest('/compute/waitlist/'), PROVIDE, '/compute/waitlist/ → #provide');
+assert.equal(potterHome308Dest('/Compute/Waitlist'), PROVIDE, 'Title-case /compute/waitlist → #provide');
+assert.equal(potterHome308Dest('/COMPUTE/DOCTOR.TXT'), PROVIDE, 'Title-case /compute/doctor.txt → #provide');
+assert.equal(potterHome308Dest('/Compute/Self-Test'), PROVIDE, 'Title-case /compute/self-test → #provide');
+assert.equal(potterHome308Dest('/COMPUTE/PLUGIN'), PROVIDE, 'Title-case /compute/plugin → #provide');
+assert.equal(potterHome308Dest('/Compute/Plug-In'), PROVIDE, 'Title-case /compute/plug-in → #provide');
 assert.notEqual(potterHome308Dest('/waitlist'), PROVIDE, 'apex /waitlist stays skipped');
 assert.notEqual(potterHome308Dest('/compute/PROVIDE.md'), PROVIDE, 'do not invent /compute/PROVIDE.md');
 assert.notEqual(potterHome308Dest('/compute/demigod'), PROVIDE, 'do not invent demigod');
