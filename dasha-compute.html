@@ -234,6 +234,26 @@ footer.listed-on img{display:block;height:32px;width:auto}
 #pick-pay.tf-lift{animation-delay:.3s}
 #pick-credits.tf-lift{animation-delay:.44s}
 @media(prefers-reduced-motion:reduce){#step-gate .tf-lift,#pick-ask.tf-acid-rim,#pick-ask.tf-acid-rim.tf-lift{animation:none!important;transform:none}#step-gate.gate-cinematic::before{filter:none}}
+/* transitions-top-tps-pop:2026-09-12 — measured tok/s only (capacity.measured_providers≥1); never invent */
+:root{
+  --digit-dur:500ms;
+  --digit-distance:8px;
+  --digit-stagger:70ms;
+  --digit-blur:2px;
+  --digit-ease:cubic-bezier(0.34,1.45,0.64,1);
+  --digit-dir-x:0;
+  --digit-dir-y:1;
+}
+@keyframes t-digit-pop-in{
+  0%{transform:translate(calc(var(--digit-distance)*var(--digit-dir-x)),calc(var(--digit-distance)*var(--digit-dir-y)));opacity:0;filter:blur(var(--digit-blur))}
+  100%{transform:translate(0,0);opacity:1;filter:blur(0)}
+}
+#top-state .t-digit-group{display:inline-flex;align-items:baseline;font-variant-numeric:tabular-nums}
+#top-state .t-digit{display:inline-block;will-change:transform,opacity,filter}
+#top-state .t-digit-group.is-animating .t-digit{animation:t-digit-pop-in var(--digit-dur) var(--digit-ease) both}
+#top-state .t-digit-group.is-animating .t-digit[data-stagger="1"]{animation-delay:var(--digit-stagger)}
+#top-state .t-digit-group.is-animating .t-digit[data-stagger="2"]{animation-delay:calc(var(--digit-stagger)*2)}
+@media(prefers-reduced-motion:reduce){#top-state .t-digit-group .t-digit{animation:none!important;filter:none!important;transform:none!important}}
 </style>
 <link rel="describedby" href="/llms.txt" type="text/plain"><link rel="describedby" href="/llms-full.txt" type="text/plain"></head>
 <body data-step="gate"><a href="/launch" style="position:fixed;right:14px;bottom:14px;z-index:9999;background:#070608;border:1px solid #dfff00;color:#dfff00;font:800 12px/1 Arial,Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:10px 14px;border-radius:999px;text-decoration:none">Product Hunt · Sep 18</a>
@@ -1389,6 +1409,37 @@ function fleetMeasuredLabel(){
   const tpsLabel=(mp>=1&&Number.isFinite(tps)&&tps>0)?formatTokPerSec(tps):'';
   return {model,tpsLabel};
 }
+function paintTopTpsPop(top,tpsLabel){
+  if(!top)return;
+  if(!tpsLabel){top.removeAttribute('data-tps');return}
+  const prev=top.getAttribute('data-tps')||'';
+  top.setAttribute('data-tps',tpsLabel);
+  const full=top.textContent||'';
+  const token=tpsLabel+' tok/s';
+  const idx=full.lastIndexOf(token);
+  if(idx<0)return;
+  const before=full.slice(0,idx);
+  top.replaceChildren();
+  if(before)top.appendChild(document.createTextNode(before));
+  const group=document.createElement('span');
+  group.className='t-digit-group';
+    const chars=[...tpsLabel];
+  chars.forEach((ch,i)=>{
+    const d=document.createElement('span');
+    d.className='t-digit';
+    d.textContent=ch;
+    if(i===chars.length-2)d.dataset.stagger='1';
+    else if(i===chars.length-1)d.dataset.stagger='2';
+    group.appendChild(d);
+  });
+  top.appendChild(group);
+  top.appendChild(document.createTextNode(' tok/s'));
+  // Visually identical string; screen readers still get top text via textContent.
+  if(prev===tpsLabel)return; // same measured value — no re-pop
+  if(prefersAskReducedMotion())return;
+  void group.offsetHeight;
+  group.classList.add('is-animating');
+}
 function paintSplit(){
   const top=$('top-state');
   const n=Number.isInteger(providersOnline)?providersOnline:0;
@@ -1407,15 +1458,17 @@ function paintSplit(){
   if(top){
     // Gate: never Community boast on Start. — quiet chrome; count only past gate.
     // Measured tok/s only when capacity.measured_providers≥1 — never invent.
-    if(tfStep==='gate'){top.textContent=!window.__dashaAuthReady?'·':'';}
+    if(tfStep==='gate'){top.textContent=!window.__dashaAuthReady?'·':'';top.removeAttribute('data-tps')}
     else if(n>=1){
       const tpsLabel=formatTokPerSec(measuredTps);
       if(modelName&&tpsLabel)top.textContent=`${n} · ${modelName} · ${tpsLabel} tok/s`;
       else if(modelName)top.textContent=`${n} · ${modelName}`;
       else top.textContent=`${n}`;
+      // Number pop-in on Do top-state when capacity has real benchmarks only.
+      paintTopTpsPop(top,tpsLabel);
     }
-    else if(!window.__dashaAuthReady)top.textContent='·';
-    else top.textContent='';
+    else if(!window.__dashaAuthReady){top.textContent='·';top.removeAttribute('data-tps')}
+    else {top.textContent='';top.removeAttribute('data-tps')}
   }
   // Quiet Ask Marketplace plain (no · N). Count lives on peek Console · N only.
   const askOcm=$('ask-ocm');
