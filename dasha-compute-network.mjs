@@ -310,10 +310,12 @@ const METRIC_CLIENT_EVENTS = new Set(['page', 'provide', 'ask', 'pay', 'signin',
 const metricDay = () => new Date().toISOString().slice(0, 10);
 const metricHour = (now) => new Date(now).toISOString().slice(0, 13);
 
-/** Public compute health probe. /compute/api/health is a fail-loud alias of healthz (same 200 JSON, not 308). */
+/** Public compute health probe. /compute/api/health and /compute/api/readyz
+ *  are fail-loud aliases of healthz (same 200 JSON, not 308). */
 function isComputeApiHealthzPath(path) {
   return path === '/compute/api/healthz' || path === '/compute/api/healthz/'
-    || path === '/compute/api/health' || path === '/compute/api/health/';
+    || path === '/compute/api/health' || path === '/compute/api/health/'
+    || path === '/compute/api/readyz' || path === '/compute/api/readyz/';
 }
 
 /**

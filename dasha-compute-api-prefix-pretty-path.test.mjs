@@ -86,6 +86,9 @@ const FOLDS = [
   ['/compute/health', HEALTHZ],
   ['/compute/health/', HEALTHZ],
   ['/Compute/health', HEALTHZ],
+  ['/compute/readyz', `${WWW}/compute/api/readyz`],
+  ['/compute/readyz/', `${WWW}/compute/api/readyz`],
+  ['/Compute/readyz', `${WWW}/compute/api/readyz`],
 ];
 
 const STAY_OUT = [
@@ -98,6 +101,7 @@ const STAY_OUT = [
   '/compute/api/network', '/compute/api/network/',
   '/compute/api/healthz', '/compute/api/healthz/',
   '/compute/api/health', '/compute/api/health/',
+  '/compute/api/readyz', '/compute/api/readyz/',
   '/compute/ocm/healthz',
   '/api/sponsors', '/api/providers',
 ];
@@ -136,6 +140,9 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     const alias = await edgeWorker.fetch(new Request(`https://${host}/compute/api/health`, { method }), env);
     assert.equal(alias.status, 200, `${host} /compute/api/health ${method}`);
     if (method === 'HEAD') assert.equal(await alias.text(), '');
+    const readyz = await edgeWorker.fetch(new Request(`https://${host}/compute/api/readyz`, { method }), env);
+    assert.equal(readyz.status, 200, `${host} /compute/api/readyz ${method}`);
+    if (method === 'HEAD') assert.equal(await readyz.text(), '');
   }
 }
 

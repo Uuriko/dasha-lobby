@@ -4793,10 +4793,13 @@ const POTTER_FAUCET_DOOR_308_PATHS = new Set([
   "/once_a_day",
   "/once_a_day/"
 ]);
-/** Pretty health probes: live /compute/health(z) (+slash) 308 → /compute/api/healthz. */
+/** Pretty health probes: live /compute/health(z) (+slash) 308 → /compute/api/healthz.
+ *  Leftover /compute/readyz (+slash / Title-case) 308 → /compute/api/readyz
+ *  (parallel to healthz). Do not invent /compute/ready /compute/ping /readyz. */
 const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
   '/compute/health', '/compute/health/',
   '/compute/healthz', '/compute/healthz/',
+  '/compute/readyz', '/compute/readyz/',
   // apex /api/{jobs,status,network,healthz,health} — health aliases land here.
   '/api/healthz', '/api/healthz/',
   '/api/health', '/api/health/',
@@ -4959,9 +4962,21 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  /compute#provide. Same kit leftover family — agents guess kit files
  *  at /compute/*. Do not serve raw install.sh/agent.py. Kit stays the
  *  tarball. Do not invent DEX peers or apex /readme.
+ *  Live GET /compute/doctor.txt /compute/self-test /compute/plugin
+ *  /compute/plug-in (+slash / Title-case) still HTML 404 on www while
+ *  /compute/doctor already 308 → /compute#provide. Same soft-doctor
+ *  invent family. Do not invent doctor.md.
+ *  Live GET /compute/waitlist (+slash / Title-case) still HTML 404 on
+ *  www (Morgan growth door) while invent four already fold here.
+ *  Apex /waitlist stays skipped. Do not invent doctor.md.
  *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
+  '/compute/doctor.txt', '/compute/doctor.txt/',
+  '/compute/self-test', '/compute/self-test/',
+  '/compute/plugin', '/compute/plugin/',
+  '/compute/plug-in', '/compute/plug-in/',
+  '/compute/waitlist', '/compute/waitlist/',
   '/doctor', '/doctor/',
   '/provide', '/provide/',
   '/compute/provide', '/compute/provide/',
@@ -5345,6 +5360,9 @@ export function potterHome308Dest(path) {
   }
   if (p === "/compute/healthz" || p === "/compute/healthz/" || p === "/compute/health" || p === "/compute/health/" || p === "/api/healthz" || p === "/api/healthz/" || p === "/api/health" || p === "/api/health/") {
     return "https://www.getdasha.com/compute/api/healthz";
+  }
+  if (p === "/compute/readyz" || p === "/compute/readyz/") {
+    return "https://www.getdasha.com/compute/api/readyz";
   }
   if (p === "/compute/v1" || p === "/compute/v1/") {
     return "https://www.getdasha.com/compute/api/v1";
