@@ -6739,7 +6739,7 @@ function isComputeApiPath(pathname) {
 /** Heads ladder (992/993): /heads + /heads/archive/<day>.json are ComputeNetwork routes, reached through the lobby DO like /compute/api/*. */
 function isHeadsPath(pathname) {
   const path = String(pathname || '');
-  return path === '/heads' || path === '/heads/' || path.startsWith('/heads/archive/');
+  return path === '/heads' || path === '/heads/' || path === '/heads/checkpoint' || path === '/heads/checkpoint/' || path.startsWith('/heads/archive/');
 }
 
 /** Public compute status badge: served by the ComputeNetwork DO like /heads. */
@@ -12502,7 +12502,7 @@ export default {
         headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*', 'X-Dasha-Edge': 'keys', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=31536000' },
       });
     }
-    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/heads' || url.pathname === '/heads/' || url.pathname.startsWith('/heads/archive/'))) {
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/heads' || url.pathname === '/heads/' || url.pathname === '/heads/checkpoint' || url.pathname === '/heads/checkpoint/' || url.pathname.startsWith('/heads/archive/'))) {
       const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
       if (!stub) return new Response(JSON.stringify({ error: 'missing lobby' }), { status: 503, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
       return stub.fetch(request);

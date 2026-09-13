@@ -56,6 +56,10 @@ function rawFromSpkiPem(pem) {
 
 const keyCache = new Map();
 /** null when unconfigured. {seed, pubRaw, pubPem, signer} */
+export async function signTextBase64(key, text) {
+  return b64encode(new Uint8Array(await ed.signAsync(te.encode(String(text)), key.seed)));
+}
+
 export async function headsSigningKey(env) {
   const sk = String(env?.DASHA_HEADS_ED25519_SK || '').trim();
   if (!sk) return null;

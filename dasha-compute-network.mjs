@@ -79,6 +79,7 @@ import {
   listHeads,
   listHeadsForDay,
   makeHead,
+  signTextBase64,
 } from './dasha-compute-heads.mjs';
 import { X402_BILLING_DOCS, x402BillingDocsLine } from './dasha-compute-x402.mjs';
 import {
@@ -2219,7 +2220,32 @@ export class ComputeNetwork {
         }
       }
       const heads = await listHeads(this.state.storage, { sinceMs: now - 86400000, now });
-      return maybeHead(request, json(heads, 200, '*', false, { 'Cache-Control': 'no-cache' }));
+      const headsTruncated = heads.length > 0 && String(heads[0].prev_head_hash || 'GENESIS') !== 'GENESIS';
+      return maybeHead(request, json(heads, 200, '*', false, { 'Cache-Control': 'no-cache', ...(headsTruncated ? { 'X-Dasha-Heads-Truncated': 'true', 'X-Dasha-Heads-Window': '24h', Link: `</heads/archive/${new Date(Number(heads[0].ts)).toISOString().slice(0, 10)}.json>; rel="prev-archive"` } : { 'X-Dasha-Heads-Window': '24h' }) }));
+    }
+    if ((path === '/heads/checkpoint' || path === '/heads/checkpoint/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const key = await headsSigningKey(this.env);
+      if (!key) return maybeHead(request, json({ error: 'signing not configured' }, 503, '*'));
+      const now = Date.now();
+      const tip = await chainTip(this.state.storage);
+      if (tip === 'GENESIS') return maybeHead(request, json({ error: 'chain empty' }, 503, '*'));
+      const recent = await listHeads(this.state.storage, { sinceMs: now - HEAD_MAX_AGE_MS, now });
+      if (!recent.some((h) => h.tip === tip)) {
+        await appendHead(this.state.storage, await makeHead(key, tip, await headsTip(this.state.storage)));
+      }
+      const heads = await listHeads(this.state.storage, { sinceMs: now - 86400000, now });
+      const head = [...heads].reverse().find((h) => h.tip === tip);
+      if (!head) return maybeHead(request, json({ error: 'no head covers tip' }, 503, '*'));
+      const text = `dasha-checkpoint-v1\n${key.signer}\n${head.ts}\n${head.hash}\n${tip}\n`;
+      const sig = await signTextBase64(key, text);
+      return maybeHead(request, json({
+        schema: 'dasha.checkpoint.v0',
+        checkpoint: { format: 'dasha-checkpoint-v1: signer / ts(unix-ms) / head_hash / chain_tip, newline-separated, trailing newline', text, sig, signer: key.signer },
+        head,
+        tip,
+        issued_at: new Date(now).toISOString(),
+        verify: 'checkpoint.sig = ed25519 over the UTF-8 bytes of checkpoint.text with the signer key from /keys.json; head.hash = sha256(JSON.stringify({ts,tip,prev_head_hash})); head.sig per /compute/llms.txt. Store a checkpoint and compare against future /heads responses to catch a rewritten tail.',
+      }, 200, '*', false, { 'Cache-Control': 'no-cache' }));
     }
     const headsArchiveMatch = path.match(/^\/heads\/archive\/(\d{4}-\d{2}-\d{2})\.json$/);
     if (headsArchiveMatch && (request.method === 'GET' || request.method === 'HEAD')) {
