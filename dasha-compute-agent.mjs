@@ -70,6 +70,11 @@ base_url ${COMPUTE_AGENTS_BASE}
 OpenAI-compatible. OpenAI SDK, Aider, Goose, OpenHands (BYOK).
 Mint: POST /compute/api/guest-keys
 reasoning_effort low|medium|high (alias effort). Hosted applies it. Community may ignore — honesty on dasha.
+MCP catalog (static, not streamable): ${COMPUTE_MCP_JSON_URL}
+Connect a tool via skill + kit. Not a video CMS.
+v1 chat/completions = community Macs. None advertise the model → fail-loud \`no_mac_online\`
+(poll /compute/api/network · join /compute#provide). Hosted Ask = browser POST /compute/api/chat
+(status.live Workers AI) — never a silent v1 swap.
 
 ${COMPUTE_WHICH_KEY_TXT}`;
 
@@ -251,7 +256,7 @@ ${COMPUTE_SKILL_MD}
 
 export const COMPUTE_AGENT_JSON = {
   name: 'Dasha Compute',
-  description: 'OpenAI-compatible inference marketplace. Mac run factory — not a ledger.',
+  description: 'OpenAI-compatible inference. A run factory, not a ledger. Not Room. Agents attach via skill + static MCP catalog. Not a video CMS.',
   url: 'https://www.getdasha.com/compute',
   base_url: COMPUTE_API_BASE,
   base_url_www: COMPUTE_API_BASE_WWW,
@@ -296,12 +301,12 @@ export const COMPUTE_AGENT_JSON = {
 /** Static MCP catalog. Points at existing HTTP tools — not a second chat protocol. */
 export const COMPUTE_MCP_JSON = {
   name: 'Dasha Compute',
-  description: 'OpenAI-compatible inference. A run factory, not a ledger. Not Room.',
+  description: 'OpenAI-compatible inference. A run factory, not a ledger. Not Room. Agents attach via skill + static MCP catalog. Not a video CMS.',
   url: 'https://www.getdasha.com/compute',
   skill: COMPUTE_SKILL_URL,
   protocol: 'catalog',
   transport: 'http',
-  note: 'Static MCP catalog. Call the existing HTTP tools or the OpenAI-compatible base_url. Chat needs Bearer. Not a streamable MCP session.',
+  note: 'Static MCP catalog. Call the existing HTTP tools or the OpenAI-compatible base_url. Chat needs Bearer. Not a streamable MCP session. Catalog lists tools; it is not a live session. Fail-loud no_mac_online when Community has zero Macs; Hosted Ask is separate from v1. Not a video CMS.',
   base_url: COMPUTE_API_BASE,
   base_url_www: COMPUTE_API_BASE_WWW,
   auth: {
