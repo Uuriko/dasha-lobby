@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Project Room edge reverse-proxy: /room HTML door on apex+www+lobby.
- * Packet at /room/llms.txt. GET+HEAD. Query ignored.
+ * Packet at /room/llms.txt. Accept: text/plain /room → packet.
+ * /room/kits + kits.txt family → origin /kits.txt.
+ * GET+HEAD. Query ignored.
  * Site-root /.well-known/agent.json stays Compute.
  * Disk only. No Designer. No wrangler deploy. Never plugin.jup.ag.
  */
@@ -16,6 +18,7 @@ import {
   ROOM_ORIGIN,
   isRoomDiscoveryPath,
   normalizeRoomPath,
+  roomAcceptsPlain,
   roomDiscoveryResponse,
   roomUpstreamPath,
   roomUpstreamUrl,
@@ -36,6 +39,8 @@ assert.equal(
 );
 assert.match(routesSrc, /\/room\/llms\.txt/, 'ROUTES.md names Room packet');
 assert.match(routesSrc, /HTML door via proxy/, 'ROUTES.md names /room HTML door');
+assert.match(routesSrc, /\/room\/kits/, 'ROUTES.md names Room kits catalog');
+assert.match(routesSrc, /Accept: text\/plain/, 'ROUTES.md names Accept text/plain /room packet');
 assert.doesNotMatch(proxySrc, /arcade|multichain|x402|people-data|ocm\//, 'proxy stays on Room door + discovery');
 
 assert.equal(ROOM_ORIGIN, 'https://project-room-staging.getdasha.workers.dev');
@@ -48,6 +53,15 @@ assert.equal(roomUpstreamPath('/room/llms.txt'), '/llms.txt');
 assert.equal(roomUpstreamPath('/room/llms-full.txt'), '/llms-full.txt');
 assert.equal(roomUpstreamPath('/room/.well-known/agent.json'), '/.well-known/agent.json');
 assert.equal(roomUpstreamPath('/room/api/health'), '/api/health');
+assert.equal(roomUpstreamPath('/room/kits'), '/kits.txt', '/room/kits → origin kits.txt');
+assert.equal(roomUpstreamPath('/room/kits/'), '/kits.txt', '/room/kits/ strips to kits');
+assert.equal(roomUpstreamPath('/room/kit'), '/kits.txt', '/room/kit family');
+assert.equal(roomUpstreamPath('/room/kits.txt'), '/kits.txt');
+assert.equal(roomUpstreamPath('/room/kits.md'), '/kits.txt');
+assert.equal(roomUpstreamPath('/room/kit.txt'), '/kits.txt');
+assert.equal(roomUpstreamPath('/room/kit.md'), '/kits.txt');
+assert.equal(roomUpstreamPath('/room/kits.json'), null, 'do not invent kits.json');
+assert.equal(roomUpstreamPath('/compute/kits'), null, 'do not fold Compute kits into Room');
 assert.equal(roomUpstreamPath('/.well-known/agent.json'), null, 'site-root agent.json is not Room');
 assert.equal(roomUpstreamPath('/room/secret'), null, 'do not invent Room UI paths');
 assert.equal(roomUpstreamPath('/room/skill.md'), null, 'do not invent Room skill proxy');
@@ -63,6 +77,13 @@ assert.equal(roomUpstreamUrl('/room/'), `${ROOM_ORIGIN}/room`);
 assert.equal(roomUpstreamUrl('/room/.well-known/agent.json'), `${ROOM_ORIGIN}/.well-known/agent.json`);
 assert.equal(potterHome308Dest('/room'), null, '/room is not a leftover 308');
 assert.equal(potterHome308Dest('/room/'), null, '/room/ is not a leftover 308');
+assert.equal(potterHome308Dest('/room/kits'), null, '/room/kits is a 200 catalog, not leftover 308');
+assert.equal(potterHome308Dest('/room/kits.txt'), null, '/room/kits.txt is a 200 catalog');
+assert.equal(roomAcceptsPlain(new Request('https://www.getdasha.com/room', { headers: { Accept: 'text/plain' } })), true);
+assert.equal(roomAcceptsPlain(new Request('https://www.getdasha.com/room', { headers: { Accept: 'text/plain, */*' } })), true);
+assert.equal(roomAcceptsPlain(new Request('https://www.getdasha.com/room', { headers: { Accept: 'text/html, text/plain' } })), false);
+assert.equal(roomAcceptsPlain(new Request('https://www.getdasha.com/room', { headers: { Accept: '*/*' } })), false);
+assert.equal(roomAcceptsPlain(new Request('https://www.getdasha.com/room', { headers: { Accept: 'text/plain;q=0.9, text/html;q=0.8' } })), false);
 assert.equal(potterHome308Dest('/room/skill.md'), 'https://www.getdasha.com/room/llms.txt', '/room/skill.md leftover → packet');
 assert.equal(potterHome308Dest('/room/agents.md'), 'https://www.getdasha.com/room/llms.txt', '/room/agents.md leftover → packet');
 assert.equal(potterHome308Dest('/skill.md'), 'https://www.getdasha.com/compute/skill.md', 'apex /skill.md stays Compute');
@@ -70,6 +91,7 @@ assert.equal(potterHome308Dest('/skill.md'), 'https://www.getdasha.com/compute/s
 const ROOM_HTML = '<!doctype html><title>Project Room</title><a>Open</a><a>Join</a><a>Connect</a>\n';
 const LLMS = '# Project Room\n\norigin mock\n';
 const LLMS_FULL = '# Project Room\n\nfull packet\n';
+const KITS = '# Project Room kits\n\nThis is a catalog. Not an App Store.\n';
 const ROOM_AGENT = '{\n  "name": "Project Room",\n  "product": { "not": "run factory" }\n}\n';
 const HEALTH = '{"ok":true,"service":"project-room"}\n';
 
@@ -77,6 +99,7 @@ const ORIGIN_DOCS = {
   '/room': { type: 'text/html; charset=utf-8', body: ROOM_HTML },
   '/llms.txt': { type: 'text/plain; charset=utf-8', body: LLMS },
   '/llms-full.txt': { type: 'text/plain; charset=utf-8', body: LLMS_FULL },
+  '/kits.txt': { type: 'text/plain; charset=utf-8', body: KITS },
   '/.well-known/agent.json': { type: 'application/json; charset=utf-8', body: ROOM_AGENT },
   '/api/health': { type: 'application/json; charset=utf-8', body: HEALTH },
 };
@@ -84,14 +107,25 @@ const ORIGIN_DOCS = {
 const calls = [];
 const stubFetch = async (href, init = {}) => {
   const url = new URL(String(href?.url || href));
+  const headersIn = init.headers instanceof Headers ? init.headers : new Headers(init.headers || {});
   calls.push({
     href: url.href,
     method: init.method || 'GET',
-    headers: init.headers || new Headers(),
+    headers: headersIn,
     search: url.search,
   });
   assert.equal(url.origin, ROOM_ORIGIN, 'upstream stays on Room origin');
   assert.equal(url.search, '', 'do not forward query to origin');
+  if (url.pathname === '/room' && roomAcceptsPlain({ headers: headersIn })) {
+    return new Response(LLMS, {
+      status: 200,
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'public, max-age=9',
+        connection: 'keep-alive',
+      },
+    });
+  }
   const doc = ORIGIN_DOCS[url.pathname];
   if (!doc) {
     return new Response('{"error":"nope"}', {
@@ -136,6 +170,14 @@ const stubFetch = async (href, init = {}) => {
   assert.equal(closed.status, 502, 'HTML door must not accept llms bytes');
   assert.match(await closed.text(), /room origin not discovery/);
   assert.equal(calls.at(-1).href, `${ROOM_ORIGIN}/room`);
+  const plain = await roomDiscoveryResponse(
+    new Request('https://lobby.getdasha.com/room', { headers: { Accept: 'text/plain' } }),
+    { fetch: stubFetch },
+  );
+  assert.equal(plain.status, 200, 'Accept text/plain /room is the packet');
+  assert.equal(plain.headers.get('content-type'), 'text/plain; charset=utf-8');
+  assert.equal(await plain.text(), LLMS);
+  assert.equal(calls.at(-1).href, `${ROOM_ORIGIN}/room`);
 }
 
 assert.equal(
@@ -156,6 +198,13 @@ const PATHS = [
   { path: '/room?cb=1', type: /text\/html/, body: ROOM_HTML, upstream: '/room' },
   { path: '/room/llms.txt', type: /text\/plain/, body: LLMS, upstream: '/llms.txt' },
   { path: '/room/llms-full.txt', type: /text\/plain/, body: LLMS_FULL, upstream: '/llms-full.txt' },
+  { path: '/room/kits', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
+  { path: '/room/kits/', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
+  { path: '/room/kits.txt', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
+  { path: '/room/kits.md', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
+  { path: '/room/kit', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
+  { path: '/room/kit.txt', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
+  { path: '/room/kit.md', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
   { path: '/room/.well-known/agent.json', type: /application\/json/, body: ROOM_AGENT, upstream: '/.well-known/agent.json' },
   { path: '/room/api/health', type: /application\/json/, body: HEALTH, upstream: '/api/health' },
 ];
@@ -202,9 +251,25 @@ try {
       assert.equal(unknown.status, 404, 'lobby unknown Room path stays 404');
       assert.deepEqual(await unknown.json(), { error: 'not found' });
     }
+
+    for (const method of ['GET', 'HEAD']) {
+      const plain = await edgeWorker.fetch(new Request(`https://${host}/room`, {
+        method,
+        headers: { Accept: 'text/plain' },
+      }), env);
+      assert.equal(plain.status, 200, `${host} /room Accept text/plain ${method}`);
+      assert.match(plain.headers.get('content-type') || '', /text\/plain/, `${host} /room Accept text/plain ${method} type`);
+      assert.equal(plain.headers.get('x-dasha-edge'), ROOM_EDGE, `${host} /room Accept text/plain ${method} edge`);
+      if (method === 'HEAD') {
+        assert.equal(await plain.text(), '', `${host} /room Accept text/plain HEAD empty`);
+      } else {
+        assert.equal(await plain.text(), LLMS, `${host} /room Accept text/plain GET packet`);
+      }
+      assert.equal(calls.at(-1).href, `${ROOM_ORIGIN}/room`, `${host} /room Accept text/plain origin`);
+    }
   }
 } finally {
   globalThis.fetch = prevFetch;
 }
 
-console.log('dasha-room-edge-proxy: PASS (/room+/room/+/room?cb=1 HTML door + /room/llms.txt+/room/.well-known/agent.json+/room/api/health GET+HEAD 200 apex+www+lobby; leftover skill/card/health stay out of map; site-root agent.json Compute; no plugin.jup.ag)');
+console.log('dasha-room-edge-proxy: PASS (/room+/room/+/room?cb=1 HTML door + Accept text/plain /room packet + /room/kits family + /room/llms.txt+/room/.well-known/agent.json+/room/api/health GET+HEAD 200 apex+www+lobby; leftover skill/card/health stay out of map; site-root agent.json Compute; no plugin.jup.ag)');
