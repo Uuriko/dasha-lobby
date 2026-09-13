@@ -149,6 +149,34 @@ def model_map():
 MODELS = model_map()
 
 
+def no_think_tokens():
+    raw = os.getenv("DASHA_NO_THINK", "qwen")
+    return [token.strip().lower() for token in raw.split(",") if token.strip()]
+
+
+NO_THINK = no_think_tokens()
+
+
+def think_disabled(local_model):
+    name = str(local_model or "").lower()
+    return any(token in name for token in NO_THINK)
+
+
+def chat_payload(job, stream):
+    local = MODELS[job["model"]]
+    payload = {"model": local, "messages": job["messages"], "stream": stream, "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)}}
+    if think_disabled(local):
+        payload["think"] = False
+    return payload
+
+
+def answer_content(message, local):
+    content = str(message.get("content") or "")
+    if not content and not think_disabled(local):
+        content = str(message.get("thinking") or message.get("reasoning") or "")
+    return content
+
+
 def make_request(url, method="GET", payload=None, token=None):
     data = None if payload is None else json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json", "User-Agent": f"dasha-compute-provider/{KIT_VERSION}"}
@@ -202,11 +230,11 @@ def run_ollama(job):
     result = request_json(
         f"{OLLAMA_URL}/api/chat",
         method="POST",
-        payload={"model": MODELS[job["model"]], "messages": job["messages"], "stream": False, "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)}},
+        payload=chat_payload(job, False),
         timeout=600,
     )
     message = result.get("message") or {}
-    content = str(message.get("content") or "") or str(message.get("thinking") or message.get("reasoning") or "")
+    content = answer_content(message, MODELS[job["model"]])
     if not content.strip():
         raise RuntimeError("empty completion")
     return {"content": content, "finish_reason": "stop", "usage": usage_from(result)}
@@ -241,7 +269,7 @@ def stream_ollama(job, cancelled):
     request = make_request(
         f"{OLLAMA_URL}/api/chat",
         method="POST",
-        payload={"model": MODELS[job["model"]], "messages": job["messages"], "stream": True, "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)}},
+        payload=chat_payload(job, True),
     )
     final = {}
     sent = False
@@ -256,10 +284,9 @@ def stream_ollama(job, cancelled):
                 raise RuntimeError(str(event["error"]))
             final = event
             message = event.get("message") or {}
-            # Prefer assistant content; if a thinking/reasoning-only chunk arrives, forward it so Ask is not blank.
-            content = str(message.get("content") or "")
-            if not content:
-                content = str(message.get("thinking") or message.get("reasoning") or "")
+            # Prefer assistant content. Thinking/reasoning-only chunks are forwarded only when the model
+            # is allowed to think; no-think models never leak chain-of-thought as answer deltas.
+            content = answer_content(message, MODELS[job["model"]])
             if content:
                 report_chunk(job["id"], delta=content)
                 sent = True
