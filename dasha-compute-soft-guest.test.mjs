@@ -18,7 +18,7 @@ import { COMPUTE_AGENT_JSON, COMPUTE_LLMS_TXT } from './dasha-compute-agent.mjs'
 const MODEL_PRICING_USD = { request: '0.05', prompt: '0', completion: '0', currency: 'USD', note: 'flat per chat completion (prepaid credits); self-route free' };
 
 const src = readFileSync(new URL('./dasha-compute-network.mjs', import.meta.url), 'utf8');
-assert.match(src, /Soft-guest list: Hosted floor gpt-oss-20b always, plus advertised Community ids/);
+assert.match(src, /Hosted floor gpt-oss-20b NOT LISTED while not serving/);
 assert.match(src, /path: '\/compute\/llms\.txt'/);
 assert.doesNotMatch(src, /plugin\.jup\.ag/);
 assert.doesNotMatch(src, /potter[_-]?key|DASHA_POTTER|people-data/i);
@@ -65,11 +65,10 @@ await storage.put('compute:provider:mac_softguest', {
   lastSeenAt: Date.now(),
 });
 
-const EMPTY_LIST = { object: 'list', data: [v1HostedFloorListing()] };
+const EMPTY_LIST = { object: 'list', data: [] };
 const LIVE_LIST = {
   object: 'list',
   data: [
-    v1HostedFloorListing(),
     { id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 },
     { id: 'qwen3-8b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 },
   ],

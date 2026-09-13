@@ -508,6 +508,17 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
       ],
     };
   }
+  if (/Hosted gpt-oss-20b is offline/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'hosted_offline',
+      hint: 'Hosted gpt-oss-20b is not serving right now; pick a community model from GET /compute/api/v1/models.',
+      next: [
+        { path: '/compute/api/v1/models' },
+        { path: '/compute/api/network' },
+      ],
+    };
+  }
   if (/No Mac is online/i.test(msg)) {
     return {
       status: 'action_required',
@@ -920,7 +931,7 @@ export function v1ModelsListData(providers = [], now = Date.now()) {
   const community = advertised
     .filter((id) => id !== HOSTED_FLOOR_MODEL_ID)
     .map((id) => v1ModelListing(id, providers, now));
-  return [v1HostedFloorListing(), ...community];
+  return [...community];
 }
 
 export function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
@@ -1297,6 +1308,8 @@ export class ComputeNetwork {
     if (route === 'self') {
       if (!ownedOnline.length) return { error: 'Your Mac is offline.', status: 503 };
     } else if (!anyOnline) {
+      if (String(input?.model || '') === HOSTED_FLOOR_MODEL_ID)
+        return { error: 'Hosted gpt-oss-20b is offline right now (no Workers AI serve). It is a dasha-hosted listing, not a community Mac - community Macs advertise the models on GET /compute/api/v1/models.', status: 503 };
       return { error: 'No Mac is online.', status: 503 };
     }
     if ([...(await this.state.storage.list({ prefix: 'compute:job:' })).values()].some(job => job.owner === owner && ['queued', 'leased'].includes(job.status))) return { error: 'finish your current community request first', status: 409 };
@@ -1520,7 +1533,7 @@ export class ComputeNetwork {
     const v1cors = (res) => withV1Cors(res, v1Origin);
     const v1err = (message, status = 400, type = 'invalid_request_error', extra = {}) => v1cors(openaiError(message, status, type, extra));
     if ((path === '/compute/api/v1/models' || path === '/compute/api/v1/models/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      // Soft-guest list: Hosted floor gpt-oss-20b always, plus advertised Community ids (same as GET /compute/api/network).
+      // Soft-guest list: advertised Community ids only - Hosted floor gpt-oss-20b NOT LISTED while not serving (direct calls fail loud hosted_offline).
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       return maybeHead(request, v1cors(json({ object: 'list', data: v1ModelsListData(providers, now) })));
@@ -1535,7 +1548,6 @@ export class ComputeNetwork {
       const id = modelRetrieve[1];
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const models = [...new Set(providers.flatMap(provider => provider.models || []))];
-      if (id === HOSTED_FLOOR_MODEL_ID) return maybeHead(request, v1cors(json(v1HostedFloorListing())));
       if (!models.includes(id)) return maybeHead(request, v1err(`The model '${id}' does not exist`, 404, 'invalid_request_error'));
       return maybeHead(request, v1cors(json(v1ModelListing(id, providers, now))));
     }

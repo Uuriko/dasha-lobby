@@ -48,14 +48,14 @@ for (const path of ['/compute/api/v1/models', '/compute/api/v1/models/']) {
   const unauth = await getHead(path);
   assert.equal(unauth.status, 200);
   assert.equal(unauth.getBody.object, 'list');
-  assert.deepEqual(unauth.getBody.data, [HOSTED_FLOOR]);
+  assert.deepEqual(unauth.getBody.data, []);
 }
 
 const auth = { Authorization: `Bearer ${token}` };
 for (const path of ['/compute/api/v1/models', '/compute/api/v1/models/']) {
   const empty = await getHead(path, { headers: auth });
   assert.equal(empty.status, 200);
-  assert.deepEqual(empty.getBody.data, [HOSTED_FLOOR]);
+  assert.deepEqual(empty.getBody.data, []);
 }
 
 await storage.put('compute:provider:mac_live', {
@@ -67,7 +67,7 @@ await storage.put('compute:provider:mac_live', {
 });
 const live = await getHead('/compute/api/v1/models', { headers: auth });
 assert.equal(live.status, 200);
-assert.deepEqual(live.getBody.data, [HOSTED_FLOOR, LIVE_GEMMA]);
+assert.deepEqual(live.getBody.data, [LIVE_GEMMA]);
 
 const lobby = {
   idFromName: () => 'public',

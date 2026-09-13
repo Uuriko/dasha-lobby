@@ -173,7 +173,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const unauth = await pair(host, '/compute/api/v1/models', {}, fetchImpl);
   assert.equal(unauth.status, 200, `${host} models soft-guest`);
   assert.equal(unauth.body.object, 'list');
-  assert.deepEqual(unauth.body.data, [v1HostedFloorListing()]);
+  assert.deepEqual(unauth.body.data, [], 'Hosted floor unlisted while not serving');
 
   const retrieveUnauth = await pair(host, '/compute/api/v1/models/qwen3-8b', {}, fetchImpl);
   assert.equal(retrieveUnauth.status, 401, `${host} retrieve 401`);

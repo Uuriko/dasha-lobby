@@ -46,13 +46,13 @@ async function pair(path, init = {}) {
 const unauth = await pair('/compute/api/v1/models');
 assert.equal(unauth.status, 200);
 assert.equal(unauth.body.object, 'list');
-assert.deepEqual(unauth.body.data, [HOSTED_FLOOR]);
+assert.deepEqual(unauth.body.data, [], 'Hosted floor unlisted while not serving');
 
 const auth = { Authorization: `Bearer ${token}` };
 const empty = await pair('/compute/api/v1/models', { headers: auth });
 assert.equal(empty.status, 200);
 assert.equal(empty.body.object, 'list');
-assert.deepEqual(empty.body.data, [HOSTED_FLOOR]);
+assert.deepEqual(empty.body.data, []);
 assert.equal(empty.body.data.some(row => row.owned_by === 'dasha-community'), false);
 
 await storage.put('compute:provider:mac_stale', {
@@ -64,7 +64,7 @@ await storage.put('compute:provider:mac_stale', {
 });
 const stale = await pair('/compute/api/v1/models', { headers: auth });
 assert.equal(stale.status, 200);
-assert.deepEqual(stale.body.data, [HOSTED_FLOOR], 'stale Mac is not a listed community model');
+assert.deepEqual(stale.body.data, [], 'stale Mac is not a listed community model');
 
 await storage.put('compute:provider:mac_live', {
   id: 'mac_live',
@@ -75,7 +75,7 @@ await storage.put('compute:provider:mac_live', {
 });
 const live = await pair('/compute/api/v1/models', { headers: auth });
 assert.equal(live.status, 200);
-assert.deepEqual(live.body.data, [HOSTED_FLOOR, LIVE_GEMMA]);
+assert.deepEqual(live.body.data, [LIVE_GEMMA]);
 
 const lobby = {
   idFromName: () => 'public',
@@ -97,11 +97,11 @@ async function workerPair(host, path, init = {}) {
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   const wUnauth = await workerPair(host, '/compute/api/v1/models');
   assert.equal(wUnauth.status, 200, `${host} unauth`);
-  assert.deepEqual(wUnauth.body.data, [HOSTED_FLOOR, LIVE_GEMMA]);
+  assert.deepEqual(wUnauth.body.data, [LIVE_GEMMA]);
   assert.match(wUnauth.type, /application\/json/);
   const wAuth = await workerPair(host, '/compute/api/v1/models', { headers: auth });
   assert.equal(wAuth.status, 200, `${host} authed`);
-  assert.deepEqual(wAuth.body.data, [HOSTED_FLOOR, LIVE_GEMMA]);
+  assert.deepEqual(wAuth.body.data, [LIVE_GEMMA]);
 }
 
 const wwwFoo = await worker.fetch(new Request('https://www.getdasha.com/compute/api/foo'), workerEnv);
