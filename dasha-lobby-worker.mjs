@@ -124,7 +124,7 @@ import {
 import { ComputeNetwork, computeApi, rewriteComputeV1ChatCompletionsPath } from './dasha-compute-network.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
-import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
+import { LAUNCH_PAGE_HTML, VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
 import { PROVIDE_SKILL_MD, USE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
@@ -3750,8 +3750,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/show_hn/",
   "/showhn",
   "/showhn/",
-  "/launch",
-  "/launch/",
   "/demo",
   "/demo/",
   "/alpha",
@@ -12506,6 +12504,16 @@ export default {
       const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
       if (!stub) return new Response(JSON.stringify({ error: 'missing lobby' }), { status: 503, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
       return stub.fetch(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && ['/launch', '/launch/'].includes(String(url.pathname || '').toLowerCase())) {
+      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LAUNCH_PAGE_HTML), {
+        headers: htmlHeaders({
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
+          'X-Dasha-Edge': 'launch',
+          Link: LLMS_DESCRIBEDBY,
+        }),
+      });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && ['/verify','/verify/'].includes(String(url.pathname || '').toLowerCase())) {
       return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(VERIFY_PAGE_HTML), {
