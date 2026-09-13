@@ -822,6 +822,10 @@ export function withModelIdentityHint(messages, model) {
   return [{ role: 'system', content: tip }, ...messages];
 }
 
+function stripThinkTraces(text) {
+  return String(text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think>/gi, '').trim();
+}
+
 function chatMessages(input) {
   const rows = Array.isArray(input?.messages) ? input.messages : typeof input?.prompt === 'string' ? [{ role: 'user', content: input.prompt }] : [];
   if (!rows.length || rows.length > 12) return null;
@@ -1300,6 +1304,7 @@ export class ComputeNetwork {
     const model = String(input.model || '');
     let messages = chatMessages(input);
     if (!messages) return { error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total', status: 400 };
+    if (input.tools != null || input.tool_choice != null || input.functions != null || input.function_call != null) return { error: 'tools and function calling are not supported on this gateway yet; strip tools/tool_choice and send plain messages', status: 400 };
     if (!MODELS.has(model)) return { error: 'unsupported model', status: 400 };
     messages = withModelIdentityHint(messages, model);
     if (!takeRate(this.rates, owner, 5)) return { error: 'community limit reached; try again shortly', status: 429 };
@@ -1868,7 +1873,7 @@ export class ComputeNetwork {
       if (!provider) return computeApiError('invalid provider token', 401);
       if (!job || job.status !== 'leased' || job.providerId !== provider.id || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
       if (job.stream) return json({ error: 'stream jobs must use the chunk endpoint' }, 409);
-      const answer = String(input.content || '').trim(), error = String(input.error || '').trim().slice(0, 300);
+      const answer = stripThinkTraces(input.content), error = String(input.error || '').trim().slice(0, 300);
       if (!error && (!answer || answer.length > 20_000)) return json({ error: 'result must be 1–20000 characters' }, 400);
       provider.lastSeenAt = now; await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       const usage = tokenUsage(input);
@@ -1912,8 +1917,9 @@ export class ComputeNetwork {
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       const rawError = String(input.error || '').trim().slice(0, 300);
       const chunks = !rawError && delta ? [...(job.chunks || []), delta] : job.chunks || [];
+      const joinedStripped = stripThinkTraces(chunks.join(''));
       let streamError = normalizeStreamProviderError(rawError);
-      if (!streamError && input.done && !String(chunks.join('') || '').trim()) {
+      if (!streamError && input.done && !joinedStripped) {
         streamError = 'empty completion';
       }
       if (!streamError && rawError) streamError = rawError.slice(0, 300);
@@ -1943,9 +1949,9 @@ export class ComputeNetwork {
       const failed = Boolean(streamError);
       const finished = failed || Boolean(input.done);
       if (failed) await this.refundJobDebit(job, now, streamError);
-      await this.state.storage.put(key, { ...job, chunks: failed ? [] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
       if (finished) {
-        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : chunks.join(''), streamError || null, now);
+        await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : joinedStripped, streamError || null, now);
         await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
       }
       return json({ accepted: true }, 202);

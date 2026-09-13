@@ -86,7 +86,7 @@ assert.equal(contract.curl, GUEST_KEY_MINT_CURL);
 assert.doesNotMatch(JSON.stringify(contract), /plugin\.jup\.ag/);
 assert.doesNotMatch(JSON.stringify(contract), /guest-agent/i);
 
-assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — 24h chat\+models, 3\/hour\/IP$/m);
+assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — 24h chat\+models, 3\/hour\/IP \(scope: chat \+ models only; other endpoints 403 guest_key_scope; tools\/function calling 400s\)$/m);
 assert.match(COMPUTE_LLMS_TXT, /curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/);
 assert.match(COMPUTE_SKILL_MD, /Guest key: POST \/compute\/api\/guest-keys — 24h chat\+models/);
 assert.match(COMPUTE_SKILL_MD, /curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/);

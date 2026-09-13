@@ -198,7 +198,7 @@ auth Bearer API key
 no key needed for healthz + network + models; key needed for chat
 live 24h counters GET /compute/api/factory settled_24h — tokens/jobs/cents, no key needed
 models entries carry pricing.request (USD per chat, flat - no per-token metering) + measured tok/s when benchmarked
-guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP
+guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP (scope: chat + models only; other endpoints 403 guest_key_scope; tools/function calling 400s)
 curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
 
 ${COMPUTE_AGENTS_TXT}

@@ -154,7 +154,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
 const list = await worker.fetch(new Request('https://www.getdasha.com/compute/api/v1/models'), workerEnv);
 assert.equal(list.status, 200);
-assert.deepEqual(await list.json(), { object: 'list', data: [v1HostedFloorListing()] });
+assert.deepEqual(await list.json(), { object: 'list', data: [] }, 'Hosted floor unlisted while not serving');
 const retrieve = await worker.fetch(new Request('https://www.getdasha.com/compute/api/v1/models/qwen3-8b'), workerEnv);
 assert.equal(retrieve.status, 401);
 assert.equal((await retrieve.json()).error.message, 'invalid API key');
