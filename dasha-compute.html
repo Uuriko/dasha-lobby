@@ -1002,11 +1002,36 @@ $('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.sh
 $('clear-chat').addEventListener('click',clearConversation);
 
 async function api(path,options={}){
-  const response=await fetch(API+path,{credentials:'include',cache:'no-store',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
-  const data=response.status===204?null:await response.json();
-  if(!response.ok)throw Error((typeof data?.error==='string'?data.error:data?.error?.message)||data?.hint||'Request failed');
-  return data;
+  const controller=new AbortController();
+  const parent=options.signal||(path.startsWith('/compute/api/jobs')&&options.method!=='DELETE'?runAbort?.signal:null);
+  const abort=()=>controller.abort(parent.reason);
+  if(parent?.aborted)abort();
+  else parent?.addEventListener('abort',abort,{once:true});
+  const timer=setTimeout(()=>controller.abort(Error('Request timed out. Try again.')),15000);
+  try{
+    const response=await fetch(API+path,{credentials:'include',cache:'no-store',...options,signal:controller.signal,headers:{'Content-Type':'application/json',...(options.headers||{})}});
+    const data=response.status===204?null:await response.json();
+    if(!response.ok)throw Error((typeof data?.error==='string'?data.error:data?.error?.message)||data?.hint||'Request failed');
+    return data;
+  }finally{clearTimeout(timer);parent?.removeEventListener('abort',abort)}
 }
+let runWatchTimer=null,runProgressAt=0,runHasProgress=false,runTimeoutMessage='';
+function clearRunWatch(){if(runWatchTimer!==null)clearInterval(runWatchTimer);runWatchTimer=null}
+function noteRunProgress(){runProgressAt=Date.now();runHasProgress=true}
+function startRunWatch(){
+  clearRunWatch();runTimeoutMessage='';runProgressAt=Date.now();runHasProgress=false;
+  const started=runProgressAt,controller=runAbort;
+  runWatchTimer=setInterval(()=>{
+    const now=Date.now();
+    if(now-started<300000&&now-runProgressAt<(runHasProgress?45000:90000))return;
+    runTimeoutMessage=runHasProgress?'Reply stalled. Retry or choose a faster model.':'No response after 90 seconds. Retry or choose a faster model.';
+    clearRunWatch();
+    controller.abort(Error(runTimeoutMessage));
+    // Cancel only this known job; never resubmit or change the paid route automatically.
+    if(activeJob)api('/compute/api/jobs/'+activeJob,{method:'DELETE'}).catch(()=>{});
+  },1000);
+}
+
 function preferOnlineModel(select,preferSub24){
   if(!networkModels.size)return;
   if(networkModels.has(select.value))return;
@@ -1016,7 +1041,6 @@ function preferOnlineModel(select,preferSub24){
 }
 function preferAdvertisedCommunityModel(select){
   if(!select||!networkModels.size)return;
-  if(networkModels.has('gemma3-27b')){select.value='gemma3-27b';return}
   const win=typeof winningMeasuredCapacity==='function'?winningMeasuredCapacity():null;
   if(win&&win.model&&networkModels.has(win.model)){select.value=win.model;return}
   preferOnlineModel(select,false);
@@ -1108,7 +1132,7 @@ function paintCommunityStillOnline(){
   paintHonestyPanel();
 }
 function paintCommunityJobProgress(data){
-  if(data?.answer){$('answer').textContent=data.answer;onFirstToken();return}
+  if(data?.answer){if($('answer').textContent!==data.answer)noteRunProgress();$('answer').textContent=data.answer;onFirstToken();return}
   const cur=String($('answer')?.textContent||'').trim();
   if(cur==='Still online.')return;
   $('answer').textContent='A Mac is working.';
@@ -2022,6 +2046,10 @@ function startRunTick(waiting){
   runStartedAt=Date.now();
   if(waiting){
     paintCommunityWorkingFace();
+    runTickTimer=setInterval(()=>{
+      const seconds=Math.floor((Date.now()-runStartedAt)/1000);
+      $('answer').textContent='A Mac is working. '+seconds+'s'+(seconds>=20?' · Waiting for the first token.':'');
+    },1000);
     return;
   }
   const label='Thinking';
@@ -2164,7 +2192,7 @@ async function readSse(response){
         if(payload?.error){const e=Error(payload.error.message||payload.error||'stream error');e.code=payload.error.code||null;throw e;}
         if(payload?.usage&&typeof payload.usage==='object')lastSseUsage=payload.usage;if(payload?.settle&&typeof payload.settle==='object')lastSseSettle=payload.settle;if(payload?.receipt&&typeof payload.receipt==='object')lastSseReceipt=payload.receipt;
         const delta=typeof payload?.choices?.[0]?.delta?.content==='string'?payload.choices[0].delta.content:typeof payload?.choices?.[0]?.delta==='string'?payload.choices[0].delta:typeof payload?.response==='string'?payload.response:typeof payload?.delta==='string'?payload.delta:'';
-        if(delta){if(!saw){saw=true;onFirstToken()}out+=delta;node.textContent=out}
+        if(delta){noteRunProgress();if(!saw){saw=true;onFirstToken()}out+=delta;node.textContent=out}
       }
     }
   }
@@ -2231,6 +2259,7 @@ $('run-demo').addEventListener('click',async()=>{
   window.__dashaStreamResumeOnce=false;
   if(runAbort){try{runAbort.abort()}catch{}}
   runAbort=new AbortController();
+  startRunWatch();
   $('cancel-job').hidden=false;$('cancel-job').disabled=false;
   startRunTick(!!community);
   try{
@@ -2354,7 +2383,13 @@ $('run-demo').addEventListener('click',async()=>{
     // Mid-stream provider die (URLError / provider_cut) — fail loud + Retry; never settle/success face.
     const providerCut=error?.code==='provider_cut'||/provider inference failed|provider cut|URLError|stream ended before completion/i.test(msg);
     const hostedCut=!community&&(error?.code==='hosted_cut'||/hosted demo unavailable|model request failed|Workers AI|AI binding/i.test(msg));
-    if(jobCancelled||error?.name==='AbortError'){
+    if(runTimeoutMessage&&!jobCancelled){
+      clearAnswerMoney();
+      $('answer-title').textContent='Request timed out.';
+      if(runHasProgress)$('answer').textContent+='\n\n'+runTimeoutMessage;
+      else $('answer').textContent=runTimeoutMessage;
+      const retry=$('answer-retry');if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+    }else if(jobCancelled||error?.name==='AbortError'){
       // Keep partial tokens already painted; only replace waiting placeholders.
       const cur=String($('answer')?.textContent||'');
       const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|A Mac is working\.|Still online\.|Queued)/.test(cur);
@@ -2421,7 +2456,7 @@ $('run-demo').addEventListener('click',async()=>{
       else {clearAnswerMoney();$('answer').textContent=msg||'Request failed';}
     }
   }
-  finally{clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();if(stayAskChat)showTf('ask');else $('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
+  finally{clearRunWatch();clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();if(stayAskChat)showTf('ask');else $('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
 });
 document.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.engine==='hosted'&&window.__dashaAuthReady&&hostedLive===false)return;if(b.dataset.engine==='hosted')hostedChosenThisSession=true;setEngine(b.dataset.engine,true)}));
 $('model').addEventListener('change',updateRun);
