@@ -38,6 +38,8 @@ export const COMPUTE_AGENTS_JSON_URL = 'https://www.getdasha.com/compute/agents.
 /** Copy-paste first call. Shared by /compute/llms.txt and site /llms-full.txt. */
 export const COMPUTE_FIRST_CALL_TXT = `## First call
 
+Start with qwen3-4b - 27b-class picks can wait minutes for a Mac, and cold users hit that first.
+
 base ${COMPUTE_API_BASE}
 www ${COMPUTE_API_BASE_WWW}
 

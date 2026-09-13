@@ -303,11 +303,28 @@ export const DOCS_OPENAPI_JSON = `{
     },
     "/compute/api/verify": {
       "get": {
-        "summary": "JSON verdict. Optional hash param (receipt hash | job_id | request_id)",
+        "summary": "JSON verdict. Optional lookup param: hash | job_id | request_id (any one)",
         "parameters": [
           {
             "name": "hash",
             "in": "query",
+            "description": "receipt hash, job_id, or request_id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "query",
+            "description": "alias of hash",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "request_id",
+            "in": "query",
+            "description": "alias of hash",
             "schema": {
               "type": "string"
             }
@@ -315,7 +332,58 @@ export const DOCS_OPENAPI_JSON = `{
         ],
         "responses": {
           "200": {
-            "description": "settled.verify.v0 - ANCHORED | SELF-CONSISTENT | INVALID + chain state + query result"
+            "description": "settled.verify.v0 - ANCHORED | SELF-CONSISTENT | INVALID + chain state + query result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["schema", "verdict", "chain", "checked_at"],
+                  "properties": {
+                    "schema": {
+                      "const": "settled.verify.v0"
+                    },
+                    "verdict": {
+                      "type": "object",
+                      "properties": {
+                        "tier": {
+                          "enum": ["ANCHORED", "SELF-CONSISTENT", "INVALID"]
+                        },
+                        "why": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "chain": {
+                      "type": "object",
+                      "properties": {
+                        "length": {
+                          "type": "integer"
+                        },
+                        "tip": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "query": {
+                      "type": "string",
+                      "description": "echo of the lookup value; present only when a lookup param was given"
+                    },
+                    "found": {
+                      "type": "boolean",
+                      "description": "present only when a lookup param was given; true = receipt matched"
+                    },
+                    "receipt": {
+                      "type": "object",
+                      "description": "present only when found is true; full receipt with id, engine, tokens, cents, at, job_id, request_id, model, latency_ms, kind, prev_hash, hash, sig, signer"
+                    },
+                    "checked_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -567,16 +635,61 @@ paths:
           machine-readable: null
   /compute/api/verify:
     get:
-      summary: JSON verdict. Optional hash param (receipt hash | job_id | request_id)
+      summary: 'JSON verdict. Optional lookup param: hash | job_id | request_id (any one)'
       parameters:
       - name: hash
         in: query
+        description: receipt hash, job_id, or request_id
+        schema:
+          type: string
+      - name: job_id
+        in: query
+        description: alias of hash
+        schema:
+          type: string
+      - name: request_id
+        in: query
+        description: alias of hash
         schema:
           type: string
       responses:
         '200':
           description: settled.verify.v0 - ANCHORED | SELF-CONSISTENT | INVALID +
             chain state + query result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [schema, verdict, chain, checked_at]
+                properties:
+                  schema:
+                    const: settled.verify.v0
+                  verdict:
+                    type: object
+                    properties:
+                      tier:
+                        enum: [ANCHORED, SELF-CONSISTENT, INVALID]
+                      why:
+                        type: string
+                  chain:
+                    type: object
+                    properties:
+                      length:
+                        type: integer
+                      tip:
+                        type: string
+                  query:
+                    type: string
+                    description: echo of the lookup value; present only when a lookup param was given
+                  found:
+                    type: boolean
+                    description: present only when a lookup param was given; true = receipt matched
+                  receipt:
+                    type: object
+                    description: present only when found is true; full receipt with id, engine, tokens, cents, at, job_id, request_id, model, latency_ms, kind, prev_hash, hash, sig, signer
+                  checked_at:
+                    type: string
+                    format: date-time
   /compute/api/chain:
     get:
       summary: Full receipt chain (public)
