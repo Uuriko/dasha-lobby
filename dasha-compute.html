@@ -178,6 +178,10 @@ footer.listed-on img{display:block;height:32px;width:auto}
 #step-gate.gate-cinematic>*{position:relative;z-index:1}
 #step-gate.gate-cinematic>.tf-q{margin-bottom:12px}
 #step-gate .gate-proof{margin:0 0 24px;color:var(--muted);font:400 13px/1.4 Arial,Helvetica,sans-serif}
+#step-gate .gate-inspect-wrap{margin:-16px 0 22px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px}
+#step-gate .gate-inspect-wrap .tf-quiet{font:400 13px/1.4 Arial,Helvetica,sans-serif;color:var(--muted);padding:0}
+#step-gate .gate-inspect-wrap .tf-quiet:hover,#step-gate .gate-inspect-wrap .tf-quiet:focus-visible{color:var(--paper)}
+#step-gate .gate-inspect-wrap .tf-micro{color:var(--muted);font:400 12px/1.3 Arial,Helvetica,sans-serif}
 #pick-ask.tf-acid-rim{background:var(--acid);border-color:var(--acid);color:var(--ink);box-shadow:0 0 0 1px color-mix(in srgb,var(--acid) 80%,transparent),0 0 22px color-mix(in srgb,var(--acid) 40%,transparent)}
 #pick-ask.tf-acid-rim:hover,#pick-ask.tf-acid-rim:focus-visible{background:var(--acid);border-color:var(--acid);color:var(--ink)}
 @keyframes gate-acid-glow{0%,100%{box-shadow:0 0 0 1px color-mix(in srgb,var(--acid) 68%,transparent),0 0 16px color-mix(in srgb,var(--acid) 26%,transparent)}50%{box-shadow:0 0 0 1px color-mix(in srgb,var(--acid) 95%,transparent),0 0 30px color-mix(in srgb,var(--acid) 50%,transparent)}}
@@ -205,6 +209,12 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <h1 class="tf-q">Start.</h1>
   <!-- gate-proof-live:2026-09-11 -->
   <p class="gate-proof" id="gate-proof">Measured Mac speed via network capacity.</p>
+  <!-- chatgpt-sites-inspect:2026-09-12 — quiet proof/readyz/network; live Macs only -->
+  <p class="gate-inspect-wrap" id="gate-inspect-wrap">
+    <a class="tf-quiet" id="gate-inspect" href="/compute/proof" title="Proof · readyz · network">Inspect</a>
+    <span class="honesty-sep" id="gate-inspect-sep" aria-hidden="true" hidden>·</span>
+    <span class="tf-micro" id="gate-inspect-live" hidden></span>
+  </p>
   <div class="tf-choices" role="group" aria-label="Start.">
     <div class="tf-door">
       <button type="button" class="tf-choice primary tf-acid-rim tf-lift" id="pick-ask" title="Run a prompt">Do</button>
@@ -2773,9 +2783,23 @@ function paintGateProof(){
   // Measured tok/s only — never invent teams or pad providers.
   if(n>=1&&win){
     el.textContent=formatGateProofLine(n,win);
-    return;
+  }else{
+    el.textContent='Measured Mac speed via network capacity.';
   }
-  el.textContent='Measured Mac speed via network capacity.';
+  // Inspect chip: providers_online only — never invent tok/s on this face.
+  const live=$('gate-inspect-live');
+  const sep=$('gate-inspect-sep');
+  if(live){
+    if(n>=1){
+      live.hidden=false;
+      if(sep)sep.hidden=false;
+      live.textContent=n===1?'1 Mac':n+' Macs';
+    }else{
+      live.hidden=true;
+      live.textContent='';
+      if(sep)sep.hidden=true;
+    }
+  }
 }
 function paintPresenceActBoot(){
   paintGateProof();
