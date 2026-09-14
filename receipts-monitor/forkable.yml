@@ -1,0 +1,59 @@
+name: dasha-chain-monitor
+on:
+  schedule: [{ cron: "17 * * * *" }]  # hourly at :17, off the top-of-hour rush
+  workflow_dispatch: {}
+permissions:
+  issues: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install cryptography
+      - name: verify chain (hash-walk + every Ed25519 signature)
+        run: |
+          python3 - <<'PY'
+          import json, hashlib, sys, base64, urllib.request
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+          from cryptography.hazmat.primitives import serialization
+          B="https://www.getdasha.com"
+          def get(p):
+              req=urllib.request.Request(B+p,headers={"User-Agent":"chain-monitor/1.0"})
+              return json.load(urllib.request.urlopen(req,timeout=30))
+          keys,chain=get("/keys.json"),get("/compute/api/chain")
+          pub=Ed25519PublicKey.from_public_bytes(
+              serialization.load_pem_public_key(keys["keys"][0]["spki_pem"].encode()).public_bytes(
+                  serialization.Encoding.Raw,serialization.PublicFormat.Raw))
+          prev,n="GENESIS",0
+          for r in chain["receipts"]:
+              body=json.dumps({k:r[k] for k in ("job_id","engine","tokens","cents","at","prev_hash")},separators=(",",":"),ensure_ascii=False))
+              h=hashlib.sha256(body.encode()).hexdigest()
+              ok = h==r["hash"] and r["prev_hash"]==prev
+              try: pub.verify(base64.b64decode(r["sig"]),h.encode())
+              except Exception: ok=False
+              if not ok: sys.exit(f"FAIL at {r['job_id']}")
+              prev=r["hash"]; n+=1
+          print(f"OK: {n} receipts, 0 failures. Tip {prev[:16]}...")
+          PY
+      - name: verify heads cover tip
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request, sys
+          def get(p):
+              req=urllib.request.Request("https://www.getdasha.com"+p,headers={"User-Agent":"chain-monitor/1.0"})
+              return json.load(urllib.request.urlopen(req,timeout=30))
+          chain,heads=get("/compute/api/chain"),get("/heads")
+          heads=heads if isinstance(heads,list) else heads.get("heads",[])
+          tip=chain["receipts"][-1]["hash"]
+          if not any(h["tip"]==tip for h in heads): sys.exit("FAIL: no head covers tip")
+          print("OK: tip covered by", len(heads), "heads")
+          PY
+      - name: open issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({owner: context.repo.owner, repo: context.repo.repo,
+              title: `Dasha chain monitor FAILED ${new Date().toISOString()}`,
+              body: `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`});
