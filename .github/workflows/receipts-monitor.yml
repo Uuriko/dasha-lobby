@@ -1,0 +1,60 @@
+name: receipts-chain-monitor
+
+# Independent third-party-style verification of the Dasha receipts chain.
+# Hourly: recompute every receipt hash + prev_hash link + ed25519 signature,
+# verify the heads log and the signed checkpoint, and cross-check the site's
+# own /compute/api/verify verdict. On hard failure, file an issue.
+# Anyone can watch this run - do not trust us, watch the verifier.
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pynacl
+      - name: Verify the receipts chain
+        id: verify
+        run: python3 receipts-monitor/verify.py | tee verify-output.txt
+      - name: File an issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request
+          token, repo = os.environ["GH_TOKEN"], os.environ["REPO"]
+          def gh(method, path, payload=None):
+              req = urllib.request.Request(
+                  f"https://api.github.com/repos/{repo}{path}",
+                  method=method,
+                  headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+                  data=json.dumps(payload).encode() if payload else None)
+              return json.loads(urllib.request.urlopen(req).read().decode())
+          marker = "receipts-chain-monitor"
+          open_issues = gh("GET", "/issues?state=open&per_page=50")
+          for i in open_issues:
+              if marker in (i.get("title") or ""):
+                  gh("POST", f"/issues/{i['number']}/comments", {"body": "Monitor failed again. See the latest workflow run for details."})
+                  print("commented on existing issue", i["number"])
+                  break
+          else:
+              output = open("verify-output.txt").read()[-3000:] if os.path.exists("verify-output.txt") else "(no output captured)"
+              gh("POST", "/issues", {
+                  "title": f"{marker}: receipts chain verification FAILED",
+                  "body": f"The hourly independent receipts-chain monitor failed.\n\n```\n{output}\n```\n\nWorkflow run: {os.environ.get('RUN_URL','see Actions tab')}",
+              })
+              print("filed new issue")
+          EOF
