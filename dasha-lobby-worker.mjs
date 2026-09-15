@@ -6756,6 +6756,86 @@ function isComputeKitJsonPath(pathname) {
   return pathname === '/compute/kit.json' || pathname === '/compute/kit.json/';
 }
 
+const LEADERBOARD_PAGE_HTML = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Network board \xB7 Dasha Compute</title>
+<meta name="description" content="Live public board for Dasha Compute: settled jobs, tokens and revenue on the signed receipt chain, plus live measured tokens/second from community Macs. No lab numbers.">
+<link rel="canonical" href="https://www.getdasha.com/compute/leaderboard">
+<style>
+body{margin:0;background:#070608;color:#f4eddb;font:18px/1.45 Arial,Helvetica,sans-serif}
+main{max-width:40rem;margin:0 auto;padding:48px 20px}
+.kicker{color:#dfff00;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800}
+h1{font-size:clamp(30px,6vw,46px);line-height:1;letter-spacing:-.03em;text-transform:uppercase;margin:10px 0 16px}
+p.lede{color:#e6dcc4;margin:0 0 24px}
+h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#b7ad93;margin:34px 0 8px}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:8px 0 18px}
+th{color:#b7ad93;font-size:12px;letter-spacing:.08em;text-transform:uppercase;text-align:left;padding:6px 8px;border-bottom:1px solid #33301f}
+td{padding:8px;border-bottom:1px solid #1c1a12;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.num{color:#dfff00;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:8px 0 18px}
+.stat{border:1px solid #1c1a12;border-radius:10px;padding:12px}
+.stat b{display:block;font-size:22px;color:#dfff00}
+.stat span{color:#b7ad93;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.note{color:#b7ad93;font-size:13px;margin:18px 0 0}
+a{color:#dfff00}
+#state{color:#b7ad93;font-size:14px;font-family:ui-monospace,Menlo,monospace}
+</style></head><body>
+<main>
+<div class="kicker">Dasha Compute \xB7 network board</div>
+<h1>The network, in public.</h1>
+<p class="lede">Every settled job on Dasha Compute lands on a signed, public receipt chain. This board reads that chain and the live network API directly - the same data anyone can pull. No lab numbers, no private counters.</p>
+<p id="state">loading live network\u2026</p>
+<h2>Live network</h2>
+<div class="stats">
+<div class="stat"><b id="s-prov">-</b><span>providers online</span></div>
+<div class="stat"><b id="s-queue">-</b><span>jobs queued</span></div>
+<div class="stat"><b id="s-verdict">-</b><span>chain verdict</span></div>
+</div>
+<table id="models"><tr><th>Model</th><th>Providers</th><th>Measured tok/s</th></tr></table>
+<h2>Settled chain</h2>
+<div class="stats">
+<div class="stat"><b id="s-jobs">-</b><span>jobs settled</span></div>
+<div class="stat"><b id="s-tokens">-</b><span>tokens settled</span></div>
+<div class="stat"><b id="s-cents">-</b><span>revenue</span></div>
+<div class="stat"><b id="s-24">-</b><span>last 24h</span></div>
+</div>
+<p class="note">Chain tip <span id="s-tip">-</span> \xB7 verify any receipt yourself at <a href="/verify">/verify</a> or with GET /compute/api/chain + /keys.json.</p>
+<h2>Run a Mac, get paid</h2>
+<p class="lede">Community Macs serve the jobs on this chain and earn per settled job. <a href="/compute#provide">Join with your Mac</a> - the kit installs in minutes.</p>
+<p class="note">Per-provider identities are not public today by design; this board reports what the public chain actually proves. Provider handles land with multi-provider. Machine-readable version: <a href="/compute/llms.txt">the compute packet</a>.</p>
+</main>
+<script>
+(function(){
+function $(id){return document.getElementById(id)}
+function fmt(n){n=String(n);var o='';while(n.length>3){o=','+n.slice(-3)+o;n=n.slice(0,-3)}return n+o}
+function cents(c){return '$'+(c/100).toFixed(2)}
+fetch('/compute/api/network').then(function(r){return r.json()}).then(function(n){
+  $('s-prov').textContent=n.providers_online;
+  $('s-queue').textContent=n.jobs_queued;
+  var t=$('models');
+  (n.capacity||[]).forEach(function(m){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+m.model+'<\/td><td class="num">'+m.providers+'<\/td><td class="num">'+(m.tokens_per_second!=null?m.tokens_per_second:'-')+'<\/td>';
+    t.appendChild(tr);
+  });
+  $('state').textContent='live - updated just now';
+}).catch(function(){$('state').textContent='network API unreachable - retry'});
+fetch('/compute/api/chain').then(function(r){return r.json()}).then(function(c){
+  var rs=c.receipts||[],tok=0,cen=0,j24=0,t24=0,now=Date.now();
+  rs.forEach(function(x){tok+=x.tokens||0;cen+=x.cents||0;if(x.at&&now-x.at<86400000){j24++;t24+=x.tokens||0}});
+  $('s-jobs').textContent=fmt(rs.length);
+  $('s-tokens').textContent=fmt(tok);
+  $('s-cents').textContent=cents(cen);
+  $('s-24').textContent=fmt(j24)+' jobs / '+fmt(t24)+' tok';
+  if(rs.length)$('s-tip').textContent=String(rs[rs.length-1].hash).slice(0,12)+'\u2026';
+}).catch(function(){});
+fetch('/compute/api/verify').then(function(r){return r.json()}).then(function(v){
+  if(v.verdict&&v.verdict.tier)$('s-verdict').textContent=v.verdict.tier;
+}).catch(function(){});
+})();
+<\/script>
+</body></html>`;
+
 function benchmarksPageResponse(request) {
   return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(BENCHMARKS_PAGE_HTML), {
     headers: htmlHeaders({
@@ -12515,6 +12595,16 @@ export default {
           'Content-Type': 'text/html; charset=utf-8',
           'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
           'X-Dasha-Edge': 'launch',
+          Link: LLMS_DESCRIBEDBY,
+        }),
+      });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && ['/compute/leaderboard', '/compute/leaderboard/'].includes(String(url.pathname || '').toLowerCase())) {
+      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LEADERBOARD_PAGE_HTML), {
+        headers: htmlHeaders({
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+          'X-Dasha-Edge': 'leaderboard',
           Link: LLMS_DESCRIBEDBY,
         }),
       });

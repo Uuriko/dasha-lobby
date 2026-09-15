@@ -84,7 +84,7 @@ assert.match(COMPUTE_SKILL_MD, /Which key \/ which base/, 'skill names which key
 assert.equal(COMPUTE_AGENT_JSON.ocm.base_url, OCM_API_BASE);
 assert.equal(COMPUTE_AGENT_JSON.ocm.key, 'ocm_live_');
 assert.equal(COMPUTE_AGENT_JSON.endpoints.ocm_v1, OCM_API_BASE);
-assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — 24h chat\+models, 3\/hour\/IP$/m, 'packet guest key mint');
+assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — 24h chat\+models, 3\/hour\/IP \(scope: chat \+ models only; other endpoints 403 guest_key_scope; tools\/function calling 400s\)$/m, 'packet guest key mint');
 assert.match(COMPUTE_LLMS_TXT, /curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/, 'packet guest mint curl');
 assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_AGENTS_TXT), true, 'packet embeds Agents');
 assert.match(COMPUTE_LLMS_TXT, /^## Agents$/m, 'packet Agents');
@@ -137,7 +137,7 @@ assert.match(COMPUTE_LLMS_TXT, /https:\/\/www\.getdasha\.com\/llms\.txt/, 'packe
 assert.match(COMPUTE_LLMS_TXT, /https:\/\/www\.getdasha\.com\/llms-full\.txt/, 'packet links site llms-full');
 assert.doesNotMatch(COMPUTE_LLMS_TXT, /plugin\.jup\.ag/, 'packet no plugin.jup.ag');
 assert.doesNotMatch(COMPUTE_LLMS_TXT, /disclaimer|not financial advice|dyor|\bnfa\b/i, 'packet no lecture');
-assert.doesNotMatch(COMPUTE_LLMS_TXT, /people.?data|email|phone|seed phrase/i, 'packet no people-data');
+assert.doesNotMatch(COMPUTE_LLMS_TXT, /people.?data|seed phrase|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|\b\d{3}[-. ]\d{3}[-. ]\d{4}\b/i, 'packet no people-data');
 assert.doesNotMatch(COMPUTE_LLMS_TXT, /project-room|guest-agent/i, 'packet stays Compute, not Room');
 
 assert.ok(COMPUTE_LLMS_FULL_TXT.startsWith(COMPUTE_LLMS_TXT), 'full packet starts with short packet');
@@ -146,10 +146,10 @@ assert.ok(COMPUTE_LLMS_FULL_TXT.includes(COMPUTE_AGENT_JSON_ALIAS_URL), 'full pa
 assert.ok(COMPUTE_LLMS_FULL_TXT.includes(COMPUTE_SKILL_MD), 'full packet embeds skill');
 assert.match(COMPUTE_LLMS_FULL_TXT, /^## Discovery$/m, 'full packet Discovery');
 assert.doesNotMatch(COMPUTE_LLMS_FULL_TXT, /plugin\.jup\.ag/, 'full packet no plugin.jup.ag');
-assert.doesNotMatch(COMPUTE_LLMS_FULL_TXT, /people.?data|email|phone|seed phrase/i, 'full packet no people-data');
+assert.doesNotMatch(COMPUTE_LLMS_FULL_TXT, /people.?data|seed phrase|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|\b\d{3}[-. ]\d{3}[-. ]\d{4}\b/i, 'full packet no people-data');
 
 assert.equal(COMPUTE_AGENT_JSON.name, 'Dasha Compute');
-assert.match(COMPUTE_AGENT_JSON.description, /OpenAI-compatible inference marketplace/);
+assert.match(COMPUTE_AGENT_JSON.description, /OpenAI-compatible inference\. A run factory, not a ledger\./);
 assert.match(COMPUTE_AGENT_JSON.description, /run factory/);
 assert.equal(COMPUTE_AGENT_JSON.base_url, COMPUTE_API_BASE);
 assert.equal(COMPUTE_AGENT_JSON.base_url_www, COMPUTE_API_BASE_WWW);
