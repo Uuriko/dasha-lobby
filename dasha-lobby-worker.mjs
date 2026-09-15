@@ -124,6 +124,7 @@ import {
 import { ComputeNetwork, computeApi, rewriteComputeV1ChatCompletionsPath } from './dasha-compute-network.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
+import { CAPS_PAGE_HTML } from './dasha-compute-caps-page.mjs';
 import { LAUNCH_PAGE_HTML, VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { DOCS_OPENAPI_JSON, DOCS_OPENAPI_YAML, DOCS_PAGE_HTML } from './dasha-docs-page.mjs';
@@ -213,6 +214,7 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/digest</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/proof</loc><lastmod>2026-09-15</lastmod></url>
+  <url><loc>https://www.getdasha.com/caps</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/how-to-buy</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/chess</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/privacy</loc><lastmod>2026-09-04</lastmod></url>
@@ -348,6 +350,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Compute](https://www.getdasha.com/compute)
 - [Compute packet](https://www.getdasha.com/compute/llms.txt)
 - [Compute proof](https://www.getdasha.com/compute/proof)
+- [Compute spend caps](https://www.getdasha.com/caps)
 - [Compute agent.json](https://www.getdasha.com/.well-known/agent.json)
 - [Compute skill](https://www.getdasha.com/compute/skill.md)
 - [Compute MCP](https://www.getdasha.com/compute/mcp.json)
@@ -4446,8 +4449,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/download/",
   "/spend",
   "/spend/",
-  "/caps",
-  "/caps/",
   "/limits",
   "/limits/",
   "/free",
@@ -4462,8 +4463,6 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/download/",
   "/compute/spend",
   "/compute/spend/",
-  "/compute/caps",
-  "/compute/caps/",
   "/compute/limits",
   "/compute/limits/",
   "/compute/free",
@@ -5400,6 +5399,7 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_MARKET_OCM_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/ocm";
   }
+  if (p === "/compute/caps" || p === "/compute/caps/") return "https://www.getdasha.com/caps";
   if (POTTER_COMPUTE_TAB_308_PATHS.has(p)) {
     if (p === "/agents.txt" || p === "/agents.json" || p === "/compute/agents.txt" || p === "/compute/agents.json") return null;
     return "https://www.getdasha.com/compute";
@@ -7321,6 +7321,17 @@ function computeProofPageResponse(request) {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-store',
       'X-Dasha-Edge': 'compute-proof',
+    }),
+  });
+}
+
+function capsPageResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(CAPS_PAGE_HTML), {
+    status: 200,
+    headers: htmlHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'caps',
     }),
   });
 }
@@ -11184,6 +11195,9 @@ async function productEdge(request, url, env) {
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof' || url.pathname === '/compute/proof/')) {
       return computeProofPageResponse(request);
     }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/caps' || url.pathname === '/caps/')) {
+      return capsPageResponse(request);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
       return computeProofJsonResponse(request, env);
     }
@@ -12416,6 +12430,9 @@ export default {
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof' || url.pathname === '/compute/proof/')) {
       return computeProofPageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/caps' || url.pathname === '/caps/')) {
+      return capsPageResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
       return computeProofJsonResponse(request, env);

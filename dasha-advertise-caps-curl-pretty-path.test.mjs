@@ -30,7 +30,8 @@ assert.match(workerSrc, /(?:String\(path \|\| ''\)|raw)\.toLowerCase\(\)/, '308 
 
 
 const COMPUTE_LEAVES = [
-  'tutorials', 'advertise', 'download', 'spend', 'caps', 'limits', 'free',
+  // 'caps' left this set Sep 15: /caps is a real page now (dasha-compute-caps-page).
+  'tutorials', 'advertise', 'download', 'spend', 'limits', 'free',
 ];
 const API_LEAVES = ['curl', 'openai-compat', 'completions', 'compat'];
 
@@ -115,6 +116,11 @@ for (const path of TO_API) {
   assert.equal(potterHome308Dest(path), API, path);
   assert.notEqual(potterHome308Dest(path), COMPUTE, `${path} is not bare /compute`);
 }
+assert.equal(potterHome308Dest('/caps'), null, '/caps stays 200 handler');
+assert.equal(potterHome308Dest('/caps/'), null, '/caps/ stays 200 handler');
+assert.equal(potterHome308Dest('/compute/caps'), `${WWW}/caps`, '/compute/caps folds to /caps');
+assert.equal(potterHome308Dest('/compute/caps/'), `${WWW}/caps`, '/compute/caps/ folds to /caps');
+assert.equal(potterHome308Dest('/Compute/CAPS'), `${WWW}/caps`, 'case-fold /Compute/CAPS folds to /caps');
 for (const path of PRIOR_COMPUTE_PEERS) {
   assert.equal(potterHome308Dest(path), COMPUTE, `peer ${path}`);
 }
@@ -142,8 +148,8 @@ function expectLoc(host, dest) {
 
 const FETCH_COMPUTE = [
   '/tutorials', '/tutorials/', '/Tutorials', '/ADVERTISE',
-  '/download', '/spend', '/caps', '/limits', '/free', '/Free/',
-  '/compute/advertise', '/Compute/caps/', '/compute/free',
+  '/download', '/spend', '/limits', '/free', '/Free/',
+  '/compute/advertise', '/compute/free',
 ];
 const FETCH_API = [
   '/curl', '/curl/', '/Curl',
@@ -233,4 +239,4 @@ for (const path of [
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-advertise-caps-curl-pretty-path: PASS (/tutorials+/advertise+/download+/spend+/caps+/limits+/free + /compute/* tabs 308 /compute; /enroll folds via provide leftover; /curl+/openai-compat+/completions+/compat + /compute/* tabs 308 /compute/api; Title-case+slash; www+lobby GET+HEAD; /compute+/compute/api+/privacy+/price 200; /arcade+/games+/multichain+/room+/openai+/v1+/status+/health+/x402 stay out; no plugin.jup.ag)');
+console.log('dasha-advertise-caps-curl-pretty-path: PASS (/tutorials+/advertise+/download+/spend+/limits+/free + /compute/* tabs 308 /compute; /enroll folds via provide leftover; /curl+/openai-compat+/completions+/compat + /compute/* tabs 308 /compute/api; Title-case+slash; www+lobby GET+HEAD; /compute+/compute/api+/privacy+/price 200; /arcade+/games+/multichain+/room+/openai+/v1+/status+/health+/x402 stay out; no plugin.jup.ag)');
