@@ -70,7 +70,7 @@ assert.match(workerSrc, /\[\'\/compute\/llms-full\.txt\'/, 'compute llms-full in
 assert.match(workerSrc, /POTTER_COMPUTE_SKILL_FACE_308_PATHS/, 'leftover pretty skill → face');
 
 assert.match(COMPUTE_LLMS_TXT, /^# Dasha Compute/m, 'packet H1');
-assert.match(COMPUTE_LLMS_TXT, /run factory, not a ledger/, 'packet names run factory');
+assert.match(COMPUTE_LLMS_TXT, /run factory with a public signed receipt chain, not an account ledger/, 'packet names run factory + receipt chain');
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^base ${COMPUTE_API_BASE.replace(/\./g, '\\.')}$`, 'm'));
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^www ${COMPUTE_API_BASE_WWW.replace(/\./g, '\\.')}$`, 'm'));
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^healthz ${COMPUTE_HEALTHZ.replace(/\./g, '\\.')}$`, 'm'));
@@ -149,7 +149,7 @@ assert.doesNotMatch(COMPUTE_LLMS_FULL_TXT, /plugin\.jup\.ag/, 'full packet no pl
 assert.doesNotMatch(COMPUTE_LLMS_FULL_TXT, /people.?data|seed phrase|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|\b\d{3}[-. ]\d{3}[-. ]\d{4}\b/i, 'full packet no people-data');
 
 assert.equal(COMPUTE_AGENT_JSON.name, 'Dasha Compute');
-assert.match(COMPUTE_AGENT_JSON.description, /OpenAI-compatible inference\. A run factory, not a ledger\./);
+assert.match(COMPUTE_AGENT_JSON.description, /OpenAI-compatible inference\. A run factory with a public signed receipt chain, not an account ledger\./);
 assert.match(COMPUTE_AGENT_JSON.description, /run factory/);
 assert.equal(COMPUTE_AGENT_JSON.base_url, COMPUTE_API_BASE);
 assert.equal(COMPUTE_AGENT_JSON.base_url_www, COMPUTE_API_BASE_WWW);
@@ -228,7 +228,7 @@ for (const origin of ORIGINS) {
   assert.match(packet.headers.get('content-type') || '', /text\/plain/);
   const packetBody = await packet.text();
   assert.equal(packetBody, COMPUTE_LLMS_TXT);
-  assert.match(packetBody, /Mac Ask \/ Provide \/ OpenAI-compatible API/);
+  assert.match(packetBody, /Mac Ask \/ Provide \/ OpenAI-compatible chat completions/);
   assert.match(packetBody, /https:\/\/lobby\.getdasha\.com\/compute\/api\/v1/);
   assert.doesNotMatch(packetBody, /plugin\.jup\.ag/);
 

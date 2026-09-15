@@ -23,7 +23,7 @@ a{color:#dfff00}
 <main>
 <p class="kicker">Product Hunt - September 18, 2026</p>
 <h1>Dasha Compute launches on Product Hunt Sep 18.</h1>
-<p>AI inference on a network of community Macs - OpenAI-compatible, pay per job, every settled job on a public, verifiable receipt chain.</p>
+<p>AI inference on a network of community Macs - OpenAI-compatible chat completions, flat 5\xA2 per successful job from prepaid credits, every settled job on a public, verifiable receipt chain.</p>
 <form id="f"><input id="e" type="email" required placeholder="you@example.com" aria-label="Email address"><button type="submit">Notify me</button></form>
 <p class="note" id="msg"></p>
 <p class="note"><span id="c">-</span> on the list. No spam - one email at launch.</p>

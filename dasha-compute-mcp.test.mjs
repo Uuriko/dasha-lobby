@@ -71,7 +71,7 @@ assert.equal(isComputeMcpJsonPath('/compute/mcp'), false, 'bare /compute/mcp sta
 assert.equal(isComputeMcpJsonPath('/mcp.json'), false, '/mcp.json leftover folds to catalog');
 
 assert.equal(COMPUTE_MCP_JSON.name, 'Dasha Compute');
-assert.match(COMPUTE_MCP_JSON.description, /run factory, not a ledger/);
+assert.match(COMPUTE_MCP_JSON.description, /run factory with a public signed receipt chain, not an account ledger/);
 assert.match(COMPUTE_MCP_JSON.description, /Not Room/);
 assert.equal(COMPUTE_MCP_JSON.protocol, 'catalog');
 assert.equal(COMPUTE_MCP_JSON.transport, 'http');

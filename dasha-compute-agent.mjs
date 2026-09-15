@@ -153,7 +153,7 @@ description: First call on Dasha Compute. OpenAI-compatible v1 chat/completions 
 
 # Dasha Compute
 
-OpenAI-compatible inference. A run factory, not a ledger.
+OpenAI-compatible inference. A run factory with a public signed receipt chain, not an account ledger.
 
 ${COMPUTE_BUILD_ON_DASHA_TXT}
 ## When to use
@@ -194,7 +194,7 @@ MCP: ${COMPUTE_MCP_JSON_URL}
 
 export const COMPUTE_LLMS_TXT = `# Dasha Compute
 
-Mac Ask / Provide / OpenAI-compatible API. A run factory, not a ledger.
+Mac Ask / Provide / OpenAI-compatible chat completions. A run factory with a public signed receipt chain, not an account ledger.
 
 ${COMPUTE_BUILD_ON_DASHA_TXT}
 base ${COMPUTE_API_BASE}
@@ -260,7 +260,7 @@ ${COMPUTE_SKILL_MD}
 
 export const COMPUTE_AGENT_JSON = {
   name: 'Dasha Compute',
-  description: 'OpenAI-compatible inference. A run factory, not a ledger. Not Room. Agents attach via skill + static MCP catalog. Not a video CMS.',
+  description: 'OpenAI-compatible inference. A run factory with a public signed receipt chain, not an account ledger. Not Room. Agents attach via skill + static MCP catalog. Not a video CMS.',
   url: 'https://www.getdasha.com/compute',
   base_url: COMPUTE_API_BASE,
   base_url_www: COMPUTE_API_BASE_WWW,
@@ -305,7 +305,7 @@ export const COMPUTE_AGENT_JSON = {
 /** Static MCP catalog. Points at existing HTTP tools — not a second chat protocol. */
 export const COMPUTE_MCP_JSON = {
   name: 'Dasha Compute',
-  description: 'OpenAI-compatible inference. A run factory, not a ledger. Not Room. Agents attach via skill + static MCP catalog. Not a video CMS.',
+  description: 'OpenAI-compatible inference. A run factory with a public signed receipt chain, not an account ledger. Not Room. Agents attach via skill + static MCP catalog. Not a video CMS.',
   url: 'https://www.getdasha.com/compute',
   skill: COMPUTE_SKILL_URL,
   protocol: 'catalog',
