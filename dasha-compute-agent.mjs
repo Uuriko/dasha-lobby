@@ -229,6 +229,7 @@ Org enroll: POST /compute/api/org-enroll (login; mints a quota+expiry code) -> s
 
 ${COMPUTE_PROVIDE_SPEED_TXT}
 compute https://www.getdasha.com/compute
+proof https://www.getdasha.com/compute/proof - live proof page; machine twin GET /compute/proof.json
 Use a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
 agent.json ${COMPUTE_AGENT_JSON_URL}

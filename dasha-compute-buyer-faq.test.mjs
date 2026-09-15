@@ -19,7 +19,7 @@ const FAQ_LINES = [
   'How do I start? Guest dgk_, or Sign in for dsk_. Change the base URL. https://lobby.getdasha.com/compute/api/v1',
   'What is live? The Mac that is advertising. Read /compute/api/network.',
   'What if no Mac is online? Hosted is still there.',
-  'What does $0.05/job mean? Provider Earn. Not the buyer price.',
+  'What does $0.05/job mean? Buyer price: $0.05 per successful chat completion, USD-denominated, billed from prepaid credits. Top-ups: $DASHA at a 5% discount, USDC at 3%; the $DASHA token amount locks from a live price quote at top-up time. Provider earn is separate: $0.05/job + $0.01/1k completion tokens, paid in USDC or $DASHA (+5% bonus in $DASHA).',
 ];
 const FAQ_BLOCK = FAQ_LINES.join('\n');
 
@@ -44,7 +44,9 @@ function assertBuyerFaq(full, label) {
   assert.doesNotMatch(faq, /\d+\s*Mac|Macs · \d|providers_online=\d/i, `${label} no invented Mac count`);
   assert.doesNotMatch(faq, /always on|always-on|always free|free-qwen|gpt-oss|qwen3/i, `${label} no always-on model`);
   assert.doesNotMatch(faq, /plugin\.jup\.ag/, `${label} no plugin`);
-  assert.match(faq, /What does \$0\.05\/job mean\? Provider Earn\. Not the buyer price\./, `${label} Earn not buyer price`);
+  assert.match(faq, /What does \$0\.05\/job mean\? Buyer price: \$0\.05 per successful chat completion/, `${label} buyer price stated plainly`);
+  assert.match(faq, /\$DASHA at a 5% discount, USDC at 3%/, `${label} exact utility line`);
+  assert.match(faq, /Provider earn is separate/, `${label} buyer vs provider separated`);
   const before = String(full).split('## Compute buyer FAQ')[0];
   assert.doesNotMatch(before, /\$0\.05\/job/, `${label} $0.05/job stays off buyer one-path lines`);
 }

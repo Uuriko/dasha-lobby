@@ -211,7 +211,8 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/listings.json</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/crew</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/digest</loc><lastmod>2026-09-01</lastmod></url>
-  <url><loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-01</lastmod></url>
+  <url><loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-15</lastmod></url>
+  <url><loc>https://www.getdasha.com/compute/proof</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/how-to-buy</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/chess</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/privacy</loc><lastmod>2026-09-04</lastmod></url>
@@ -346,6 +347,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Crew](https://www.getdasha.com/crew)
 - [Compute](https://www.getdasha.com/compute)
 - [Compute packet](https://www.getdasha.com/compute/llms.txt)
+- [Compute proof](https://www.getdasha.com/compute/proof)
 - [Compute agent.json](https://www.getdasha.com/.well-known/agent.json)
 - [Compute skill](https://www.getdasha.com/compute/skill.md)
 - [Compute MCP](https://www.getdasha.com/compute/mcp.json)
@@ -474,7 +476,7 @@ ${COMPUTE_FIRST_CALL_TXT}
 How do I start? Guest dgk_, or Sign in for dsk_. Change the base URL. https://lobby.getdasha.com/compute/api/v1
 What is live? The Mac that is advertising. Read /compute/api/network.
 What if no Mac is online? Hosted is still there.
-What does $0.05/job mean? Provider Earn. Not the buyer price.
+What does $0.05/job mean? Buyer price: $0.05 per successful chat completion, USD-denominated, billed from prepaid credits. Top-ups: $DASHA at a 5% discount, USDC at 3%; the $DASHA token amount locks from a live price quote at top-up time. Provider earn is separate: $0.05/job + $0.01/1k completion tokens, paid in USDC or $DASHA (+5% bonus in $DASHA).
 
 Login: Grok Bot first, then X, then wallet. https://www.getdasha.com/login
 

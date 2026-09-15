@@ -91,7 +91,7 @@ assert.match(full, /^## Compute buyer FAQ$/m, 'llms-full Compute buyer FAQ');
 assert.match(full, /^How do I start\? Guest dgk_, or Sign in for dsk_\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1$/m, 'llms-full FAQ how');
 assert.match(full, /^What is live\? The Mac that is advertising\. Read \/compute\/api\/network\.$/m, 'llms-full FAQ live');
 assert.match(full, /^What if no Mac is online\? Hosted is still there\.$/m, 'llms-full FAQ hosted');
-assert.match(full, /^What does \$0\.05\/job mean\? Provider Earn\. Not the buyer price\.$/m, 'llms-full FAQ earn');
+assert.match(full, /^What does \$0\.05\/job mean\? Buyer price: \$0\.05 per successful chat completion, USD-denominated, billed from prepaid credits\. Top-ups: \$DASHA at a 5% discount, USDC at 3%; the \$DASHA token amount locks from a live price quote at top-up time\. Provider earn is separate: \$0\.05\/job \+ \$0\.01\/1k completion tokens, paid in USDC or \$DASHA \(\+5% bonus in \$DASHA\)\.$/m, 'llms-full FAQ earn');
 assert.doesNotMatch(llms, /\$0\.05\/job/, 'llms.txt buyer lines have no provider Earn rate');
 assert.doesNotMatch(llms, /## Compute buyer FAQ/, 'FAQ stays off the short index');
 assert.doesNotMatch(full.split('## Compute buyer FAQ')[0], /\$0\.05\/job/, 'llms-full buyer lines have no provider Earn rate');
@@ -172,7 +172,6 @@ for (const loc of [
   'https://www.getdasha.com/llms.txt',
   'https://www.getdasha.com/llms-full.txt',
   'https://www.getdasha.com/contribute',
-  'https://www.getdasha.com/compute',
   'https://www.getdasha.com/bounties',
   'https://www.getdasha.com/bag',
   'https://www.getdasha.com/crew',
@@ -185,6 +184,14 @@ for (const loc of [
     `sitemap lastmod 2026-09-01 for ${loc}`,
   );
 }
+assert.ok(
+  sitemap.includes('<loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-15</lastmod>'),
+  'compute lastmod 2026-09-15 (this build)',
+);
+assert.ok(
+  sitemap.includes('<loc>https://www.getdasha.com/compute/proof</loc><lastmod>2026-09-15</lastmod>'),
+  'compute/proof in sitemap at 2026-09-15',
+);
 assert.ok(
   sitemap.includes('<loc>https://www.getdasha.com/forum</loc><lastmod>2026-09-01</lastmod>'),
   'forum stays lastmod 2026-09-01 (308, not indexable 200)',
@@ -239,7 +246,7 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   }
   assert.doesNotMatch(fullBody, /plugin\.jup\.ag/);
   assert.doesNotMatch(fullBody, /t\.me/);
-  assert.match(fullBody, /^What does \$0\.05\/job mean\? Provider Earn\. Not the buyer price\.$/m, `${origin}/llms-full.txt FAQ earn`);
+  assert.match(fullBody, /^What does \$0\.05\/job mean\? Buyer price: \$0\.05 per successful chat completion, USD-denominated, billed from prepaid credits\. Top-ups: \$DASHA at a 5% discount, USDC at 3%; the \$DASHA token amount locks from a live price quote at top-up time\. Provider earn is separate: \$0\.05\/job \+ \$0\.01\/1k completion tokens, paid in USDC or \$DASHA \(\+5% bonus in \$DASHA\)\.$/m, `${origin}/llms-full.txt FAQ earn`);
   assert.equal(fullBody.includes(COMPUTE_FIRST_CALL_TXT), true, `${origin}/llms-full.txt First call`);
   assert.match(fullBody, /^## First call$/m, `${origin}/llms-full.txt First call heading`);
   assert.match(fullBody, /Authorization: Bearer \$DASHA_API_KEY/, `${origin}/llms-full.txt keyed curl`);
