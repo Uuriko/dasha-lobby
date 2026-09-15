@@ -29,6 +29,7 @@ const REQUIRED_PATHS = [
   '/compute/api/guest-keys',
   '/compute/api/v1/models',
   '/compute/api/v1/chat/completions',
+  '/compute/api/kit-sig',
   '/compute/api/verify',
   '/compute/api/chain',
   '/heads',
@@ -54,6 +55,7 @@ const ROUTE_EVIDENCE = {
   '/compute/api/guest-keys': [network, "startsWith('/compute/api/guest-keys')"],
   '/compute/api/v1/models': [network, "'/compute/api/v1/models'"],
   '/compute/api/v1/chat/completions': [network, "'/compute/api/v1/chat/completions'"],
+  '/compute/api/kit-sig': [network, "'/compute/api/kit-sig'"],
   '/compute/api/verify': [network, "'/compute/api/verify'"],
   '/compute/api/chain': [network, "'/compute/api/chain'"],
   '/heads': [network, "'/heads'"],
@@ -70,6 +72,13 @@ const ROUTE_EVIDENCE = {
   '/compute/api/v1/responses': [network, "'/compute/api/v1/responses'"],
   '/compute/api/receipts': [network, "'/compute/api/receipts'"],
 };
+// Kit manifest parity: the signed-manifest const in the network module must name
+// the same tar sha256 as the published kit.json const in the lobby worker.
+const kitNet = /COMPUTE_KIT_MANIFEST = \{[\s\S]*?sha256: '([0-9a-f]{64})'/.exec(network);
+const kitWorker = /COMPUTE_KIT_JSON = \{[\s\S]*?sha256: '([0-9a-f]{64})'/.exec(worker);
+assert.ok(kitNet && kitWorker, 'kit manifest consts present');
+assert.equal(kitNet[1], kitWorker[1], 'kit manifest sha256 parity');
+
 for (const [p, [src, needle]] of Object.entries(ROUTE_EVIDENCE)) {
   assert.ok(src.includes(needle), `route exists for documented ${p} (${needle})`);
 }

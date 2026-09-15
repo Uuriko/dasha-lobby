@@ -2258,6 +2258,31 @@ export class ComputeNetwork {
         receipts,
       }, 200, '*', false, { 'Cache-Control': 'no-cache' }));
     }
+    // --- Block 34: signed kit installer manifest (the DO signs the worker-injected
+    // canonical statement; verify sig against /keys.json and sha256 against the tar) ---
+    if ((path === '/compute/api/kit-sig' || path === '/compute/api/kit-sig/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const kitQ = new URL(request.url).searchParams;
+      const kitSha = String(kitQ.get('sha256') || '').toLowerCase();
+      const kitVersion = String(kitQ.get('version') || '').trim();
+      const kitMin = String(kitQ.get('min_version') || '').trim();
+      const kitDlUrl = String(kitQ.get('url') || '').trim();
+      if (!/^[0-9a-f]{64}$/.test(kitSha) || !kitVersion) return maybeHead(request, json({ error: 'sha256 and version required' }, 400, '*'));
+      const key = await headsSigningKey(this.env);
+      if (!key) return maybeHead(request, json({ error: 'signing not configured' }, 503, '*'));
+      const statement = `dasha-kit:${kitVersion}:${kitSha}`;
+      return maybeHead(request, json({
+        schema: 'dasha.kit-sig.v0',
+        statement,
+        version: kitVersion,
+        min_version: kitMin || null,
+        url: kitDlUrl || null,
+        sha256: kitSha,
+        sig: await signTextBase64(key, statement),
+        signer: key.signer,
+        at: new Date().toISOString(),
+        verify: 'sig = ed25519 over the UTF-8 bytes of statement with the signer key from /keys.json; sha256 must equal the sha256 of the downloaded tar and the sha256 in /compute/kit.json',
+      }, 200, '*', false, { 'Cache-Control': 'public, max-age=60' }));
+    }
     // --- Block 32: machine-readable receipt verdict for agents (mirrors /verify page) ---
     if ((path === '/compute/api/verify' || path === '/compute/api/verify/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const key = await headsSigningKey(this.env);
@@ -3211,6 +3236,16 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
   }
 }
 
+/** Signed kit installer manifest (mirrors COMPUTE_KIT_JSON in dasha-lobby-worker.mjs;
+ *  parity asserted in dasha-openapi-contract.test.mjs). The worker injects these values
+ *  into the kit-sig DO call so callers can never get an attacker-chosen statement signed. */
+const COMPUTE_KIT_MANIFEST = {
+  version: '0.3.2',
+  min_version: '0.3.1',
+  url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
+  sha256: '725e78e6bae3a4d785a78396284f27e994fff1b82fbdb50c5d546b79a1ab159c',
+};
+
 export async function computeApi(request, env, allowedOrigin) {
   const path = computeApiPathname(new URL(request.url).pathname), credentials = Boolean(allowedOrigin);
   const guestProbe = computeGuestKeyResponse(request);
@@ -3247,6 +3282,18 @@ export async function computeApi(request, env, allowedOrigin) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (stub) return stub.fetch(request);
     return maybeHead(request, json({ error: 'login required', ...creditsCatalog(null) }, 401, allowedOrigin, Boolean(allowedOrigin)));
+  }
+  if (path === '/compute/api/kit-sig' || path === '/compute/api/kit-sig/') {
+    const kitStub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
+    if (!kitStub) return json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
+    // The worker injects the canonical manifest values so the DO only ever signs
+    // the real published manifest, never caller-supplied text.
+    const kitSigUrl = new URL(request.url);
+    kitSigUrl.searchParams.set('sha256', COMPUTE_KIT_MANIFEST.sha256);
+    kitSigUrl.searchParams.set('version', COMPUTE_KIT_MANIFEST.version);
+    kitSigUrl.searchParams.set('min_version', COMPUTE_KIT_MANIFEST.min_version);
+    kitSigUrl.searchParams.set('url', COMPUTE_KIT_MANIFEST.url);
+    return kitStub.fetch(new Request(kitSigUrl.href, request));
   }
   if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));

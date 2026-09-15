@@ -311,6 +311,23 @@ export const DOCS_OPENAPI_JSON = `{
         }
       }
     },
+    "/compute/api/kit-sig": {
+      "get": {
+        "summary": "Signed kit installer manifest (dasha.kit-sig.v0): ed25519 over dasha-kit:<version>:<sha256>",
+        "responses": {
+          "200": {
+            "description": "statement + sha256 + sig + signer; verify the sig with /keys.json and the sha256 against the downloaded tar and /compute/kit.json",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/compute/api/verify": {
       "get": {
         "summary": "JSON verdict. Optional lookup param: hash | job_id | request_id (any one)",
@@ -722,6 +739,16 @@ paths:
           description: no_mac_online (community down) | hosted_offline (hosted model
             unavailable) - fail-loud
           machine-readable: null
+  /compute/api/kit-sig:
+    get:
+      summary: 'Signed kit installer manifest (dasha.kit-sig.v0): ed25519 over dasha-kit:<version>:<sha256>'
+      responses:
+        '200':
+          description: statement + sha256 + sig + signer; verify the sig with /keys.json and the sha256 against the downloaded tar and /compute/kit.json
+          content:
+            application/json:
+              schema:
+                type: object
   /compute/api/verify:
     get:
       summary: 'JSON verdict. Optional lookup param: hash | job_id | request_id (any one)'
