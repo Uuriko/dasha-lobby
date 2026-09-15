@@ -53,6 +53,17 @@ assert.match(html, /api-docs\.deepseek\.com\/quick_start\/pricing/);
 assert.match(html, /founding provider/);
 assert.match(html, /\$0\.05\/job \+ \$0\.01\/1k completion/); // published provider terms
 
+// readyz honesty (Sep 15 mobile defect): the endpoint is a healthz alias
+// ({ok, service, version}) - it never had can_serve/reason. The card must
+// render what readyz actually says and derive can_serve from /network presence.
+assert.doesNotMatch(html, /readyz\.value\.can_serve/);          // never read a field readyz does not have
+assert.doesNotMatch(html, /readyz\.value\.reason/);
+assert.match(html, /z\.ok\?'ok':'fail'/);                       // render the real readyz verdict
+assert.match(html, /providers_online='\+on/);                    // can_serve derived from live presence
+assert.match(html, /no_mac_online/);                              // zero-provider reason named
+assert.match(worker, /can_serve: net\.providers_online > 0/);    // proof.json same source of truth
+assert.doesNotMatch(worker, /rdz \? rdz\.can_serve/);
+
 // proof.json aggregates the same endpoints server-side with explicit sources.
 assert.match(worker, /schema: 'proof\.compute\.v0'/);
 assert.match(worker, /receipt_format: origin \+ '\/compute\/llms\.txt'/);

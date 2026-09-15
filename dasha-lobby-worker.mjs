@@ -7363,7 +7363,7 @@ async function computeProofDocument(request, env) {
       right_now: net ? {
         providers_online: net.providers_online, models_available: net.models_available,
         capacity: net.capacity, jobs_queued: net.jobs_queued,
-        can_serve: rdz ? rdz.can_serve : null, readyz_reason: rdz ? rdz.reason : null,
+        can_serve: net.providers_online > 0, readyz_reason: net.providers_online > 0 ? 'providers_online=' + net.providers_online : 'no_mac_online',
       } : { error: err(network) },
       chain: ver ? {
         length: ver.chain.length, tip: ver.chain.tip, verdict: ver.verdict, checked_at: ver.checked_at,

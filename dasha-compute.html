@@ -364,7 +364,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
         <p class="ux-reveal">Change the base URL.</p>
         <div class="ux-more">
           <a class="tf-quiet" href="/compute/skill.md">skill</a>
-          <a class="tf-quiet" href="/compute/mcp.json">mcp</a>
+          <a class="tf-quiet" href="/compute/mcp.json">mcp catalog</a>
           <a class="tf-quiet" href="/compute/llms.txt">llms.txt</a>
           <a class="tf-quiet" href="/compute/api">API</a>
         </div>
@@ -1139,21 +1139,32 @@ $('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.sh
 $('clear-chat').addEventListener('click',clearConversation);
 $('guide-hide').addEventListener('click',hideGuide);
 $('guide').addEventListener('click',(e)=>{if(e.target.closest('#guide-step-verify a')){try{localStorage.setItem(GUIDE_KEY,'done')}catch{}}});
-let marketData=null;
+let marketData=null,marketError='';
 async function loadMarket(){
+  marketError='';
   try{
     const res=await fetch('/compute/api/v1/models',{headers:{accept:'application/json'}});
+    if(!res.ok)throw new Error('models '+res.status);
     const data=await res.json();
     marketData=Array.isArray(data&&data.data)?data.data:[];
-  }catch{marketData=[]}
+  }catch(e){marketData=[];marketError=String(e&&e.message||e||'load failed')}
   paintMarket();
 }
 function paintMarket(){
   const body=$('market-rows');
   if(!body)return;
   const q=String(($('market-filter')||{}).value||'').trim().toLowerCase();
-  const rows=(marketData||[]).filter(m=>!q||String(m.id||'').toLowerCase().includes(q));
+  let rows=(marketData||[]).filter(m=>!q||String(m.id||'').toLowerCase().includes(q));
+  // Fallback: model list empty/unreachable but Macs advertise capacity - paint
+  // from /compute/api/network so the table never contradicts the page. Sep 15.
+  if(!rows.length&&!q&&(networkCapacity||[]).length){
+    rows=(networkCapacity||[]).filter(c=>c&&c.model).map(c=>({id:c.model,pricing:null,measured_tok_per_sec:c.tokens_per_second,providers_online:c.providers}));
+  }
   const td=(t)=>{const d=document.createElement('td');d.textContent=t;return d};
+  if(!rows.length){
+    const tr=document.createElement('tr'),d=td(q?'No models match that filter.':(marketError?('Model list unreachable ('+marketError+'). Close and reopen Compare models to retry.'):'Nothing online right now.'));
+    d.colSpan=5;tr.append(d);body.replaceChildren(tr);return;
+  }
   body.replaceChildren(...rows.map(m=>{
     const caps=Array.isArray(networkCapacity)?networkCapacity.find(c=>c&&c.model===m.id):null;
     const tpsN=Number(m.measured_tok_per_sec);

@@ -130,7 +130,12 @@ if(network.status==='fulfilled'){
   $('p-models').innerHTML=(n.capacity||[]).map(c=>'<span class="pill">'+c.model+' &middot; '+(c.tokens_per_second??'?')+' tok/s</span>').join('')||'<span class="pill warn">no community models online</span>';
   window.__net=n;
 }else{$('p-online').textContent='unreachable';$('p-online').className='big zero';}
-if(readyz.status==='fulfilled'){$('p-readyz').textContent='readyz: can_serve='+readyz.value.can_serve+' ('+readyz.value.reason+')';}
+if(readyz.status==='fulfilled'){
+  const z=readyz.value,net=window.__net,on=net?net.providers_online:null;
+  const cs=on==null?'unknown':(on>0?'yes':'no');
+  const why=on==null?'network endpoint unreachable':(on>0?'providers_online='+on:'no_mac_online');
+  $('p-readyz').textContent='readyz: '+(z.ok?'ok':'fail')+' (dasha-compute v'+(z.version||'?')+') - can_serve='+cs+' ('+why+')';
+}
 if(verify.status==='fulfilled'){
   const v=verify.value;$('c-len').textContent=v.chain.length;$('c-verdict').textContent=v.verdict.tier+' - '+v.verdict.why;
   $('c-tip').textContent=v.chain.tip.slice(0,24)+'\u2026';
