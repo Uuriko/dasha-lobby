@@ -76,7 +76,7 @@ print("recomputed:",h); print("chain has :",r["hash"]); print("match:",h==r["has
 <pre>curl -s https://www.getdasha.com/compute/api/verify</pre>
 
 <h2>4. Fail loud, not silent</h2>
-<p class="fine">When no community Mac is online, the API does not pretend. Calls answer with a machine-readable <code>no_mac_online</code> reason:</p>
+<p class="fine">When no community Mac advertises the requested model, the Community v1 route fails loud with a machine-readable <code>no_mac_online</code> reason. The browser Hosted door is separate and may remain available:</p>
 <pre>{
   "status": "action_required",
   "reason": "no_mac_online",

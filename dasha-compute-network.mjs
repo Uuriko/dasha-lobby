@@ -384,7 +384,7 @@ function computeApiRootBody(env) {
     guest_key_mint: 'live',
     billing: {
       chat_completions: "Prepaid credits via USDC/$dasha ($0.05/job) for community/mixture; self-route free; key spend cap is runaway protection; no card",
-      keys: `Create-time spend cap default $${API_KEY_LIMIT_DEFAULT_CENTS / 100}/month · 402 on exceed · see /caps`,
+      keys: `Create-time spend cap default $${API_KEY_LIMIT_DEFAULT_CENTS / 100}/month · 402 on exceed · see /compute#api`,
       // Honesty only — COMPUTE_X402_POC default off; no facilitator / settle this hop.
       x402: x402BillingDocsLine(env),
     },
