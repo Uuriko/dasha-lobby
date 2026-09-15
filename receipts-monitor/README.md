@@ -29,3 +29,12 @@ Don't trust our uptime claims - run our monitor against us.
 2. Done. It runs hourly at :17 (or Actions -> Run workflow), and opens an issue in YOUR repo if our chain ever fails verification.
 
 No API keys, no account, no secrets - it reads only the public endpoints any client already uses.
+
+## Bad-chain corpus: we test the verifier against bad chains
+
+`receipts-monitor/badchain/` holds 7 fixtures built from the live chain: one good control plus six tamper classes (modified amount, broken prev_hash, invalid signature, reordered receipts, non-ASCII field, uncovered tip). The same Actions workflow runs `badchain/check_corpus.py` hourly - the control must pass and every tampered chain must FAIL loudly, or CI files an issue. Run it yourself:
+
+```bash
+pip install cryptography
+python3 receipts-monitor/badchain/check_corpus.py
+```

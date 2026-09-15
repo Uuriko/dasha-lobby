@@ -1,0 +1,92 @@
+{
+ "keys": {
+  "schema": "dasha.keys.v0",
+  "keys": [
+   {
+    "id": "ac2017e9e7e6e75c",
+    "algo": "ed25519",
+    "spki_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEACMibGWOaHOCTRFR/2p23FnoXUztvOWATl/pl31HtXSs=\n-----END PUBLIC KEY-----\n",
+    "public_key_base64": "CMibGWOaHOCTRFR/2p23FnoXUztvOWATl/pl31HtXSs="
+   }
+  ]
+ },
+ "receipts": [
+  {
+   "id": "rcp_PNZbqVctjJHctA",
+   "engine": "community",
+   "tokens": 75,
+   "cents": 5,
+   "at": 1788830423207,
+   "job_id": "job_EUFI1XLCSJZU",
+   "request_id": null,
+   "kind": "paid-inference",
+   "prev_hash": "GENESIS",
+   "hash": "d78bf9870e792d72603fd33d735d6865dc490a8e63378b88b5785c838e2e0466",
+   "sig": "O4lUtgTt/PuLRNkDWRpsZLygJXigJH3E3A6Gen21Leu9q86WcF6FZl6X+OBDuQiRHjKm6vKGbvj9y339E14JBA==",
+   "signer": "ac2017e9e7e6e75c"
+  },
+  {
+   "id": "rcp_ibF8tTBfOV7vQQ",
+   "engine": "community",
+   "tokens": 75,
+   "cents": 5,
+   "at": 1788835930173,
+   "job_id": "job_Iu5RjrZ3yoaX",
+   "request_id": null,
+   "kind": "paid-inference",
+   "prev_hash": "d78bf9870e792d72603fd33d735d6865dc490a8e63378b88b5785c838e2e0466",
+   "hash": "abe2f0a11dfc6ca3c309442b6ee0df1f989b4f9b10048f87e6d61e88cc1e6214",
+   "sig": "lYQkq3j7m+AVH4ygnwPmyLcNqICpZUtCZGjqOsLhmnFHaIYJt5wExqjKS6ffruRAB4hwJbMNWQJ3mIiWxe0CDg==",
+   "signer": "ac2017e9e7e6e75c"
+  },
+  {
+   "id": "rcp_AmS_nad9a-W69A",
+   "engine": "community",
+   "tokens": 117,
+   "cents": 5,
+   "at": 1788837341932,
+   "job_id": "job_HPvmk2Ev4abp",
+   "request_id": null,
+   "kind": "paid-inference",
+   "prev_hash": "abe2f0a11dfc6ca3c309442b6ee0df1f989b4f9b10048f87e6d61e88cc1e6214",
+   "hash": "9497dc49ac5ed7b99a1ed451a00143a621b75aef8b1ddd67786e19bbc353a8d2",
+   "sig": "nK5f6y/8WpbRsevsexzMbbcv6bxa5mApgm3k6XSomvw5LE/nFt3xjm3StVgyv1FT4LaAfsRfKm8CacBepUDvAw==",
+   "signer": "ac2017e9e7e6e75c"
+  },
+  {
+   "id": "rcp_1ALHmLo-8q799w",
+   "engine": "community",
+   "tokens": 75,
+   "cents": 5,
+   "at": 1788838728747,
+   "job_id": "job_CxrS3AL6vEYp",
+   "request_id": null,
+   "kind": "paid-inference",
+   "prev_hash": "9497dc49ac5ed7b99a1ed451a00143a621b75aef8b1ddd67786e19bbc353a8d2",
+   "hash": "d85d7c606a9112830483df50b44e979db4a1dd7031ecd6bb08dd53d2069b79d0",
+   "sig": "cJXnLScF96uOFK1+YmU/DHGwrGDyyWSpq1BpQk0Hxfqy2vvCaRBq/P6net8o2isjXcZ3VMlbIdmft8sjX6/tCQ==",
+   "signer": "ac2017e9e7e6e75c"
+  },
+  {
+   "id": "rcp_iRLyYxQyOqPl7g",
+   "engine": "community",
+   "tokens": 75,
+   "cents": 5,
+   "at": 1788840379724,
+   "job_id": "job_MEwh5R2lxICK",
+   "request_id": null,
+   "kind": "paid-inference",
+   "prev_hash": "d85d7c606a9112830483df50b44e979db4a1dd7031ecd6bb08dd53d2069b79d0",
+   "hash": "d90d4efd760c0435a4b7fbc65168f5373450a531da58242d337283f2f6096e2f",
+   "sig": "rSqcbU9vtqkM/Sp+a0FO0UNNZuQnhe+pyCoB46WAsVp5smt+cUFK3JUTlsX1cL3hzKi3GohtZEstNOe0C+AEBw==",
+   "signer": "ac2017e9e7e6e75c"
+  }
+ ],
+ "heads": [
+  {
+   "name": "fixture-head",
+   "tip": "d85d7c606a9112830483df50b44e979db4a1dd7031ecd6bb08dd53d2069b79d0",
+   "sig": "fixture"
+  }
+ ]
+}
