@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork, openaiErrorBody, v1HostedFloorListing } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 
 const env = { LOBBY_SESSION_SECRET: 'v1-chat-slash-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();
@@ -96,7 +96,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
 const modelsSlash = await worker.fetch(new Request('https://www.getdasha.com/compute/api/v1/models/'), workerEnv);
 assert.equal(modelsSlash.status, 200);
-assert.deepEqual(await modelsSlash.json(), { object: 'list', data: [v1HostedFloorListing()] });
+// Hosted gpt-oss-20b is honestly NOT LISTED while it is not serving (no floor listing).
+assert.deepEqual(await modelsSlash.json(), { object: 'list', data: [] });
 
 const wwwFoo = await worker.fetch(new Request('https://www.getdasha.com/compute/api/foo'), workerEnv);
 assert.equal(wwwFoo.status, 404);

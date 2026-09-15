@@ -113,8 +113,9 @@ async function pollJob() {
   assert.equal(res.status, 200);
   assert.match(res.headers.get('content-type') || '', /text\/event-stream/);
   const text = await res.text();
-  assert.match(text, /"content":"hi "/);
-  assert.match(text, /"content":"there"/);
+  // On done the DO stores the joined think-stripped text; the SSE replays that,
+  // so the deterministic assertion is the joined content, not chunk boundaries.
+  assert.match(text, /"content":"hi there"/);
   assert.match(text, /"finish_reason":"stop"/);
   assert.match(text, /"prompt_tokens":5/);
   assert.match(text, /"completion_tokens":2/);

@@ -3,9 +3,8 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from './dasha-lobby-worker.mjs';
-import { ComputeNetwork, openaiErrorBody, v1HostedFloorListing } from './dasha-compute-network.mjs';
+import { ComputeNetwork, openaiErrorBody } from './dasha-compute-network.mjs';
 const MODEL_PRICING_USD = { request: '0.05', prompt: '0', completion: '0', currency: 'USD', note: 'flat per chat completion (prepaid credits); self-route free' };
-const HOSTED_FLOOR = v1HostedFloorListing();
 const LIVE_GEMMA = { id: 'gemma3-12b', object: 'model', created: 0, owned_by: 'dasha-community', pricing: MODEL_PRICING_USD, providers_online: 1 };
 
 const env = { LOBBY_SESSION_SECRET: 'v1-models-retrieve-secret', AI: { run: async () => ({ response: 'ok' }) } };
@@ -63,7 +62,8 @@ for (const path of ['/compute/api/v1/models/qwen3-8b', '/compute/api/v1/models/q
 
 const listed = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/models', { headers: auth }));
 assert.equal(listed.status, 200);
-assert.deepEqual((await listed.json()).data, [HOSTED_FLOOR]);
+// Hosted gpt-oss-20b is honestly NOT LISTED while it is not serving (no floor listing).
+assert.deepEqual((await listed.json()).data, []);
 assert.equal([...rows.keys()].some(key => key.startsWith('compute:provider:') && key !== 'compute:api-key:' + id), false);
 
 await storage.put('compute:provider:mac_retrieve', {
@@ -100,7 +100,7 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
 const list = await worker.fetch(new Request('https://www.getdasha.com/compute/api/v1/models'), workerEnv);
 assert.equal(list.status, 200);
-assert.deepEqual(await list.json(), { object: 'list', data: [HOSTED_FLOOR, LIVE_GEMMA] });
+assert.deepEqual(await list.json(), { object: 'list', data: [LIVE_GEMMA] });
 const foo = await worker.fetch(new Request('https://www.getdasha.com/compute/api/foo'), workerEnv);
 assert.equal(foo.status, 404);
 assert.deepEqual(await foo.json(), openaiErrorBody('not found', 404));

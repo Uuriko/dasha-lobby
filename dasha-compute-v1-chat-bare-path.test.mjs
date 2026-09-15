@@ -29,7 +29,9 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugi
 assert.match(networkSrc, /rewriteComputeV1ChatCompletionsPath/, 'shared leftover rewrite helper');
 assert.match(networkSrc, /\/compute\/v1\/chat\/completions/, 'leftover chat alias path');
 assert.doesNotMatch(networkSrc, /\/compute\/v1\/chat\/completion'/, 'do not invent singular leftover');
-assert.doesNotMatch(networkSrc, /\/compute\/ocm/, 'must not fold ocm');
+// OCM (/compute/ocm/v1, ocm_live_ keys) is a deliberate separate surface now - the
+// anti-fold rule lives on: the leftover rewrite must never touch OCM paths.
+assert.doesNotMatch(networkSrc, /rewriteComputeV1ChatCompletionsPath\(['"]\/compute\/ocm/, 'must not fold ocm into the leftover rewrite');
 assert.doesNotMatch(guestSrc, /\/compute\/v1\/chat\/completions/, 'guest-key mint must not advertise leftover path');
 
 assert.equal(rewriteComputeV1ChatCompletionsPath('/compute/v1/chat/completions'), '/compute/api/v1/chat/completions');
@@ -40,6 +42,7 @@ assert.equal(rewriteComputeV1ChatCompletionsPath('/compute/api/v1/chat/completio
 assert.equal(rewriteComputeV1ChatCompletionsPath('/v1/chat/completions'), null, 'do not invent bare /v1');
 assert.equal(rewriteComputeV1ChatCompletionsPath('/compute/v1/chat/completion'), null, 'do not invent singular');
 assert.equal(rewriteComputeV1ChatCompletionsPath('/compute/v1/models'), null, 'models stays 308 family');
+assert.equal(rewriteComputeV1ChatCompletionsPath('/compute/ocm/v1/chat/completions'), null, 'OCM paths are never rewritten');
 
 const CANON = '/compute/api/v1/chat/completions';
 const ALIAS = [

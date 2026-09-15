@@ -106,6 +106,11 @@ assert.equal(stream.status, 200);
 assert.match(stream.headers.get('content-type') || '', /text\/event-stream/, 'stream SSE type');
 assertCors(stream, 'POST chat stream 200');
 await stream.body?.cancel().catch(() => {});
+// The gateway allows one open community request per owner (409 otherwise):
+// clear the abandoned stream job before the non-stream call.
+for (const [key, row] of await storage.list({ prefix: 'compute:job:' })) {
+  if (['queued', 'leased'].includes(row.status)) await storage.delete(key);
+}
 
 // 6b. non-stream success: complete the queued job mid-poll, 200 carries ACAO
 const done = (async () => {
