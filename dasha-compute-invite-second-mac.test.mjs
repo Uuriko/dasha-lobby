@@ -19,7 +19,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.equal(disk, COMPUTE_PAGE_HTML, 'embed matches dasha-compute.html');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 
-const CARD = '$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%';
+const CARD = '$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +5%';
 const INVITE = 'Invite a second Mac. Join a Mac.';
 const JOIN = 'https://www.getdasha.com/compute#provide';
 
@@ -66,8 +66,8 @@ function assertInviteFace(html, label) {
     /id=["']earn-invite-second["'][^>]*>Invite a second Mac\. <a href="https:\/\/www\.getdasha\.com\/compute#provide">Join a Mac<\/a>\.</,
     `${label} Earn invite + Join`,
   );
-  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%</, `${label} Setup rates stay`);
-  assert.match(earn, /id=["']earn-rates["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%</, `${label} Earn rates stay`);
+  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} Setup rates stay`);
+  assert.match(earn, /id=["']earn-rates["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} Earn rates stay`);
   assert.match(done, /id=["']provide-earn-receipt["']/, `${label} jobs+\$ receipt stays`);
   assert.match(html, /function walletOnFile\(/, `${label} wallet on file stays`);
   assert.match(html, /function earnInviteEmpty\(/, `${label} earnInviteEmpty`);

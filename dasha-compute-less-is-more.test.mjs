@@ -46,7 +46,7 @@ function assertLess(html, label) {
   assert.match(html, /id=["']step-credits["']/, `${label} step-credits`);
   assert.match(html, /id=["']step-earn["']/, `${label} step-earn`);
   assert.match(html, /id=["']you-earn["'][^>]*>Earnings</, `${label} you Earnings`);
-  assert.match(html, /\$dasha · \+10%/, `${label} dasha +10% label`);
+  assert.match(html, /\$dasha · \+5%/, `${label} dasha +5% label`);
   assert.match(html, /USDC face/, `${label} USDC face label`);
   assert.doesNotMatch(html, /auto-chain|Stripe|plugin\.jup\.ag/, `${label} no auto-chain/Stripe in UI`);
 

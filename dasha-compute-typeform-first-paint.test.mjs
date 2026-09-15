@@ -255,7 +255,7 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']step-earn["'][^>]*data-tf=["']earn["'][^>]*hidden/, `${label} step-earn hidden first paint`);
   assert.match(html, /<h1 class=["']tf-q["']>Earn\.<\/h1>/, `${label} Earn H1`);
   assert.match(html, /id=["']earn-usdc["'][^>]*>USDC</, `${label} earn USDC`);
-  assert.match(html, /id=["']earn-dasha["'][^>]*>\$dasha · \+10%</, `${label} earn dasha +10%`);
+  assert.match(html, /id=["']earn-dasha["'][^>]*>\$dasha · \+5%</, `${label} earn dasha +5%`);
   assert.match(html, /id=["']earn-payout["'][^>]*>Request payout</, `${label} Request payout`);
   assert.match(html, /id=["']provide-done-earn["'][^>]*>Earnings</, `${label} provide-done Earnings`);
   assert.match(html, /function paintEarn\(/, `${label} paintEarn`);

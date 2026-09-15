@@ -18,7 +18,7 @@ assert.equal(disk, COMPUTE_PAGE_HTML, 'embed matches dasha-compute.html');
 
 const DEMAND = 'Busy network · more jobs. Stay warm. Same rate.';
 const FAQ_A = 'Busy network · more jobs. Stay warm. Same $0.05/job.';
-const CARD = '$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%';
+const CARD = '$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +5%';
 
 const FAQ_ITEM = `<div class="ux-faq-item" data-faq="provide" hidden>
         <p class="ux-faq-q">When do I earn?</p>
@@ -61,9 +61,9 @@ function assertDemand(html, label) {
   assert.match(html, /id=["']provide-earn-demand["'][^>]*>Busy network · more jobs\. Stay warm\. Same rate\.</, `${label} Setup card`);
   assert.match(html, /id=["']earn-demand["'][^>]*>Busy network · more jobs\. Stay warm\. Same rate\.</, `${label} Earn card`);
 
-  assert.match(html, /id=["']earn-rates["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%</, `${label} rates stay`);
-  assert.match(html, /id=["']provide-name-earn["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%</, `${label} name rates stay`);
-  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%</, `${label} setup rates stay`);
+  assert.match(html, /id=["']earn-rates["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} rates stay`);
+  assert.match(html, /id=["']provide-name-earn["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} name rates stay`);
+  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} setup rates stay`);
 
   assert.match(html, /function applyJobsQueued\(/, `${label} applyJobsQueued`);
   assert.match(html, /function paintProvideQueue\(/, `${label} paintProvideQueue`);

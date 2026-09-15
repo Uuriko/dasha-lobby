@@ -33,10 +33,10 @@ assert.equal(earnCentsForJob({ completion_tokens: 999 }), 5);
 assert.equal(earnCentsForJob({ completion_tokens: 1000 }), 6);
 assert.equal(earnCentsForJob({ completion_tokens: 2500 }), 7);
 assert.equal(earnCentsForJob(null), 5);
-assert.equal(dashaPayoutCents(100), 110);
+assert.equal(dashaPayoutCents(100), 105);
 assert.equal(dashaPayoutCents(2), 2);
 assert.deepEqual(payoutAmounts(100, 'usdc'), { method: 'usdc', usdc_cents: 100, payout_cents: 100 });
-assert.deepEqual(payoutAmounts(100, 'dasha'), { method: 'dasha', usdc_cents: 100, payout_cents: 110 });
+assert.deepEqual(payoutAmounts(100, 'dasha'), { method: 'dasha', usdc_cents: 100, payout_cents: 105 });
 
 assert.equal(normalizePayoutPref({ method: 'usdc', wallet: 'not-valid' }).ok, false);
 assert.equal(normalizePayoutPref({ method: 'btc', wallet: '3KNdL8kYP6ynpspjBgASfyKv2G5exQeQPStyTyS8eaqN' }).ok, false);
@@ -122,7 +122,7 @@ const pay = await createPendingPayout(storage, {
 assert.equal(pay.ok, true);
 assert.equal(pay.payout.status, 'pending');
 assert.equal(pay.payout.usdc_cents, 100);
-assert.equal(pay.payout.payout_cents, 110);
+assert.equal(pay.payout.payout_cents, 105);
 assert.equal(pay.payout.method, 'dasha');
 assert.match(pay.payout.note, /does not auto-chain-send/);
 assert.equal((await storage.get('compute:provider-earn:mac_test1')).usdc_cents, 0);

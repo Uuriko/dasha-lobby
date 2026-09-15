@@ -15,7 +15,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const disk = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
 assert.equal(disk, COMPUTE_PAGE_HTML, 'embed matches dasha-compute.html');
 
-const CARD = '$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%';
+const CARD = '$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +5%';
 
 function gateBlock(html) {
   const m = html.match(/<section[^>]*id=["']step-gate["'][^>]*>[\s\S]*?<\/section>/);
@@ -54,11 +54,11 @@ function assertEarnCard(html, label) {
   assert.doesNotMatch(gate, /\$0\.05\/job/, `${label} no earn rate on Start`);
   assert.doesNotMatch(gate, /\$dasha payout/, `${label} no payout lecture on Start`);
 
-  assert.match(name, /id=["']provide-name-earn["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%</, `${label} Provide name card`);
-  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%</, `${label} Setup card`);
-  assert.match(html, /id=["']earn-rates["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%</, `${label} Earn card`);
+  assert.match(name, /id=["']provide-name-earn["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} Provide name card`);
+  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} Setup card`);
+  assert.match(html, /id=["']earn-rates["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} Earn card`);
 
-  assert.match(html, /pending operator settle · \$dasha payout \+10%/, `${label} formatEarnRatesLine dasha +10%`);
+  assert.match(html, /pending operator settle · \$dasha payout \+5%/, `${label} formatEarnRatesLine dasha +5%`);
   assert.match(html, /const pn=\$\(['"]provide-name-earn['"]\);/, `${label} paintEarnRates name`);
   assert.match(html, /if\(step==='provide-name'\)[\s\S]*?paintEarnRates\(earnRates\)/, `${label} name paints rates`);
   assert.match(html, /if\(step==='provide-done'\)[\s\S]*?paintEarnRates\(earnRates\)/, `${label} Setup paints rates`);

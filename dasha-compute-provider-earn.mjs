@@ -9,8 +9,8 @@ import { base58Decode, isValidSolanaAddress } from './dasha-simp-actions.mjs';
 
 export const PROVIDER_JOB_CENTS = 5;
 export const PROVIDER_TOKEN_CENTS_PER_1K = 1;
-export const PROVIDER_DASHA_BONUS = 1.1;
-export const PROVIDER_DASHA_BONUS_FRAC = 0.1;
+export const PROVIDER_DASHA_BONUS = 1.05;
+export const PROVIDER_DASHA_BONUS_FRAC = 0.05;
 export const PROVIDER_MIN_PAYOUT_CENTS = 100;
 export const PROVIDER_PAYOUT_METHODS = ['usdc', 'dasha'];
 /** Worker never auto-sends; operator/treasury settles pending rows. */

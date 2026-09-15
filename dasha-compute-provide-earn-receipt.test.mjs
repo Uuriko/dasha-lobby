@@ -16,7 +16,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const disk = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
 assert.equal(disk, COMPUTE_PAGE_HTML, 'embed matches dasha-compute.html');
 
-const CARD = '$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +10%';
+const CARD = '$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +5%';
 const EMPTY = 'No jobs yet · $0 pending';
 const VIBE = 'Leave it on. Earn.';
 
@@ -49,7 +49,7 @@ function assertReceiptFace(html, label) {
   assert.match(done, /id=["']provide-earn-vibe["'][^>]*>Leave it on\. Earn\.</, `${label} vibe on Setup`);
   assert.match(done, /id=["']provide-earn-receipt["'][^>]*hidden/, `${label} receipt hidden until paint`);
   assert.match(done, /id=["']provide-earn-receipt["'][^>]*aria-live=["']polite["']/, `${label} receipt aria-live`);
-  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+10%</, `${label} rate card stays`);
+  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} rate card stays`);
   assert.match(html, /function provideEarnReceiptLine\(/, `${label} provideEarnReceiptLine`);
   assert.match(html, /function paintProvideEarnReceipt\(/, `${label} paintProvideEarnReceipt`);
   assert.match(html, /No jobs yet · \$0 pending/, `${label} honest empty copy`);

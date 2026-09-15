@@ -12,6 +12,16 @@ export const COMPUTE_PROOF_PAGE_HTML = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Proof - Dasha Compute</title>
 <meta name="description" content="Live proof for Dasha Compute: providers online, signed receipts, machine verdict, fail-loud behavior, real pricing, and the provider wall. Every number re-checkable in one click.">
+<link rel="canonical" href="https://www.getdasha.com/compute/proof">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.getdasha.com/compute/proof">
+<meta property="og:title" content="Proof - Dasha Compute">
+<meta property="og:description" content="Proof, not promises: providers online, signed receipts, and a machine verdict you can re-check live.">
+<meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Proof - Dasha Compute">
+<meta name="twitter:description" content="Proof, not promises: providers online, signed receipts, and a machine verdict you can re-check live.">
+<meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
 <style>
 :root{color-scheme:dark}
 body{margin:0;background:#0b0b10;color:#e8e8ef;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -108,7 +118,7 @@ print("recomputed:",h); print("chain has :",r["hash"]); print("match:",h==r["has
 <p class="fine">Source: <a href="/compute/api/network">/compute/api/network</a></p>
 <div class="card">
 <p id="w-line" style="font-size:18px;margin:4px 0">&hellip;</p>
-<p class="fine">Community side runs on spare Macs people plug in. Provider terms as published on the Provide door: $0.05/job + $0.01/1k completion tokens, $1 minimum payout, pending operator settle, +10% if you take $dasha. One more always-on Mac changes the reliability story more than any ad - <a href="/compute#provide">become a founding provider</a>.</p>
+<p class="fine">Community side runs on spare Macs people plug in. Provider terms as published on the Provide door: $0.05/job + $0.01/1k completion tokens, $1 minimum payout, pending operator settle, +5% if you take $dasha. One more always-on Mac changes the reliability story more than any ad - <a href="/compute#provide">become a founding provider</a>.</p>
 </div>
 
 <p class="src">Page rendered from live endpoints at <span id="rendered-at">&hellip;</span>. If an endpoint is unreachable its section says so instead of guessing.</p>
