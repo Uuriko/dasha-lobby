@@ -67,3 +67,12 @@ const windowHeads = await headsRes.json();
 assert.ok(windowHeads.length >= 1, 'window non-empty');
 assert.ok(windowHeads.every((h) => Number(h.ts) >= now - DAY), 'display window stays 24h');
 assert.ok(windowHeads.length < 13, 'deep history not leaked into the display window');
+
+// Sep 15: the /verify page client must walk /heads archives back to GENESIS.
+// /heads is a rolling 24h window; without the walk every client-side verdict
+// read SELF-CONSISTENT "heads chain break" on a healthy log (live break at
+// ts 1789373680391 was the window seam, not the log).
+import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
+assert.match(VERIFY_PAGE_HTML, /\/heads\/archive\//, 'verify client fetches day archives');
+assert.match(VERIFY_PAGE_HTML, /prev-archive/, 'verify client follows the prev-archive Link');
+assert.match(VERIFY_PAGE_HTML, /GENESIS/, 'verify client walks until GENESIS');

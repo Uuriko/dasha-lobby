@@ -87,17 +87,48 @@ function render(verdict) {
   }
 }
 
+// /heads serves a rolling 24h window; when the window's oldest head links
+// backward out of the window it carries X-Dasha-Heads-Truncated + a
+// prev-archive Link. Client verification needs GENESIS continuity, so walk
+// the daily archives back until the log links to GENESIS (dedupe by hash -
+// the window and the day archive overlap). Sep 15: without this walk every
+// receipt verdicted SELF-CONSISTENT "heads chain break" on a healthy log.
+async function fetchFullHeads() {
+  const res = await fetch('/heads', { cache: 'no-store' });
+  if (!res.ok) return [];
+  let heads = await res.json();
+  const link = res.headers.get('link') || '';
+  let next = (link.match(/<([^>]+)>;\s*rel="prev-archive"/) || [])[1] || null;
+  let guard = 0;
+  while (heads.length && String(heads[0].prev_head_hash || 'GENESIS') !== 'GENESIS' && guard < 31) {
+    let url = next;
+    next = null;
+    if (!url) {
+      const day = new Date(Number(heads[0].ts));
+      day.setUTCDate(day.getUTCDate() - 1);
+      url = '/heads/archive/' + day.toISOString().slice(0, 10) + '.json';
+    }
+    const ar = await fetch(url, { cache: 'no-store' });
+    if (!ar.ok) break;
+    const older = await ar.json();
+    if (!Array.isArray(older) || !older.length) break;
+    const seen = new Set(heads.map((h) => h.hash));
+    heads = older.filter((h) => !seen.has(h.hash)).concat(heads);
+    guard++;
+  }
+  return heads;
+}
+
 async function loadCtx() {
-  const [keysRes, headsRes, chainRes] = await Promise.all([
+  const [keysRes, heads, chainRes] = await Promise.all([
     fetch('/keys.json', { cache: 'no-store' }),
-    fetch('/heads', { cache: 'no-store' }),
+    fetchFullHeads(),
     fetch('/compute/api/chain', { cache: 'no-store' }),
   ]);
   if (!keysRes.ok) throw new Error('keys.json unavailable (' + keysRes.status + ') - signing not configured yet');
   const keys = await keysRes.json();
   const pemById = {};
   for (const k of keys.keys || []) pemById[k.id] = k.spki_pem;
-  const heads = headsRes.ok ? await headsRes.json() : [];
   const chain = chainRes.ok ? (await chainRes.json()).receipts || [] : [];
   return { pemById, heads, chain };
 }
