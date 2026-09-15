@@ -1,0 +1,26 @@
+{
+  "schema": "dasha.x402-offer.v0",
+  "enabled": false,
+  "status": "owner_configuration_required",
+  "protocol": { "version": 2, "scheme": "exact", "transport": "http" },
+  "resource": {
+    "method": "POST",
+    "path": "/compute/api/x402/v1/chat/completions",
+    "openai_compatible": true,
+    "description": "One allow-listed Dasha Compute inference route"
+  },
+  "payment": {
+    "currency": "USDC",
+    "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+    "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "amount": null,
+    "payTo": null
+  },
+  "receipt": {
+    "existing_schema": "dasha.receipt.v0",
+    "binding_schema": "dasha.x402-receipt-binding.v0",
+    "verify_url_template": "https://www.getdasha.com/compute/api/verify?hash={receipt_hash}"
+  },
+  "constraints": { "no_bearer_auth": true, "settle_before_inference": true, "single_route": true },
+  "blockers": ["flag_off", "price_unset", "pay_to_unset", "facilitator_unset", "fee_payer_unset"]
+}
