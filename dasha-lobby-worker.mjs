@@ -7303,7 +7303,9 @@ function computePageResponse(request) {
     status: 200,
     headers: htmlHeaders({
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=120',
+      // no-store: page JS must match live API behavior; a 120s edge-cached copy
+      // ran stale market/proof code against fresh APIs (Sep 15 UX re-capture).
+      'Cache-Control': 'no-store',
       'X-Dasha-Edge': 'compute',
       Link: `${LLMS_DESCRIBEDBY}, ${COMPUTE_LLMS_DESCRIBEDBY}`,
     }),

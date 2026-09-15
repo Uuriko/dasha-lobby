@@ -1142,6 +1142,10 @@ $('guide').addEventListener('click',(e)=>{if(e.target.closest('#guide-step-verif
 let marketData=null,marketError='';
 async function loadMarket(){
   marketError='';
+  // Paint a loading row synchronously - the table is never header-only blank
+  // while the model list is in flight (Sep 15 UX re-capture).
+  const lb=$('market-rows');
+  if(lb){const tr=document.createElement('tr'),d=document.createElement('td');d.colSpan=5;d.textContent='Loading models...';tr.append(d);lb.replaceChildren(tr);}
   try{
     const res=await fetch('/compute/api/v1/models',{headers:{accept:'application/json'}});
     if(!res.ok)throw new Error('models '+res.status);

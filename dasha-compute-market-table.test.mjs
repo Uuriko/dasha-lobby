@@ -12,6 +12,8 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 
+const worker = readFileSync(new URL('./dasha-lobby-worker.mjs', import.meta.url), 'utf8');
+
 const html = readFileSync(new URL('./dasha-compute.html', import.meta.url), 'utf8');
 assert.equal(html, COMPUTE_PAGE_HTML, 'disk == embedded page (page.mjs regenerated from dasha-compute.html)');
 
@@ -91,8 +93,30 @@ rows = await runCase({
 assert.equal(rows.length, 1);
 assert.match(rowText(rows[0]), /No models match that filter\./);
 
+// Loading row paints synchronously on open - never header-only blank in flight.
+{
+  const byId = { 'market-rows': el('tbody'), 'market-filter': el('input'), 'model': null, 'market': null, 'prompt': null };
+  let resolveFetch;
+  const context = vm.createContext({
+    document: { createElement: el },
+    $: (id) => byId[id] || null,
+    fetch: () => new Promise((r) => { resolveFetch = r; }),
+    networkCapacity: [],
+  });
+  vm.runInContext(src + '\nthis.__load=loadMarket;', context);
+  const pending = vm.runInContext('this.__load()', context);
+  const mid = byId['market-rows'].children;
+  assert.equal(mid.length, 1, 'loading row present while fetch in flight');
+  assert.match(rowText(mid[0]), /Loading models/);
+  resolveFetch({ ok: true, json: async () => ({ data: [] }) });
+  await pending;
+  assert.match(rowText(byId['market-rows'].children[0]), /Nothing online right now\./, 'settles into named state');
+}
+
 // Static pins: the failure mode and its fix.
 assert.match(html, /marketError/, 'error state tracked');
+assert.match(html, /Loading models\.\.\./);
+assert.match(worker, /no-store: page JS must match live API behavior/);
 assert.match(html, /Fallback: model list empty\/unreachable/);
 assert.match(html, /Live from \/compute\/api\/network \+ \/compute\/api\/v1\/models\. No rows means nothing online\./);
 
