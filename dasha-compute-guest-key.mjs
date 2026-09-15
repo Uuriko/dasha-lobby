@@ -73,7 +73,7 @@ export function isComputeGuestKeyPath(pathname) {
     || /^\/compute\/api\/guest-keys\/[A-Za-z0-9._-]+\/?$/.test(path);
 }
 
-export function guestKeyResponse(status, body, { head = false } = {}) {
+export function guestKeyResponse(status, body, { head = false, headers = {} } = {}) {
   return new Response(head ? null : JSON.stringify(body), {
     status,
     headers: {
@@ -81,6 +81,7 @@ export function guestKeyResponse(status, body, { head = false } = {}) {
       ...CORS,
       'Content-Type': 'application/json; charset=utf-8',
       'X-Dasha-Edge': 'compute-guest-key',
+      ...headers,
     },
   });
 }
@@ -144,6 +145,19 @@ export function takeGuestRate(rates, key, max, windowMs = 60_000) {
   return true;
 }
 
+/** takeGuestRate with observability: remaining + reset for Retry-After / X-RateLimit-* headers. */
+export function guestRateInfo(rates, key, max, windowMs = 60_000) {
+  const now = Date.now();
+  const recent = (rates.get(key) || []).filter((at) => now - at < windowMs);
+  if (recent.length >= max) {
+    const resetAtMs = Math.min(...recent) + windowMs;
+    return { ok: false, remaining: 0, resetAtMs, retryAfterSeconds: Math.max(1, Math.ceil((resetAtMs - now) / 1000)) };
+  }
+  recent.push(now);
+  rates.set(key, recent);
+  return { ok: true, remaining: max - recent.length, resetAtMs: Math.min(...recent) + windowMs, retryAfterSeconds: 0 };
+}
+
 async function sha256Hex(value) {
   const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value))));
   return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -179,27 +193,43 @@ export async function mintGuestKey({ storage, rates, ip = 'unknown', pairing = '
     };
   }
   const ipKey = `guest-mint:ip:${ip || 'unknown'}`;
-  if (!takeGuestRate(rates, ipKey, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS)) {
+  const mintRate = guestRateInfo(rates, ipKey, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS);
+  if (!mintRate.ok) {
     return {
       status: 429,
       body: guestKeyAx(
         'guest key rate limited; try again later',
         GUEST_KEY_RATE_LIMITED_REASON,
         'Wait, then POST /compute/api/guest-keys again. Or sign in at /compute#build.',
-        { fields: { retry_after_seconds: 3600 } },
+        { fields: { retry_after_seconds: mintRate.retryAfterSeconds } },
       ),
+      headers: {
+        'Retry-After': String(mintRate.retryAfterSeconds),
+        'X-RateLimit-Limit': String(GUEST_KEY_MINT_MAX),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': String(Math.floor(mintRate.resetAtMs / 1000)),
+      },
     };
   }
-  if (pairingNorm && !takeGuestRate(rates, `guest-mint:pair:${pairingNorm}`, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS)) {
-    return {
-      status: 429,
-      body: guestKeyAx(
-        'guest key rate limited; try again later',
-        GUEST_KEY_RATE_LIMITED_REASON,
-        'That pairing code is hot. Wait, or mint without a code.',
-        { fields: { retry_after_seconds: 3600 } },
-      ),
-    };
+  if (pairingNorm) {
+    const pairRate = guestRateInfo(rates, `guest-mint:pair:${pairingNorm}`, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS);
+    if (!pairRate.ok) {
+      return {
+        status: 429,
+        body: guestKeyAx(
+          'guest key rate limited; try again later',
+          GUEST_KEY_RATE_LIMITED_REASON,
+          'That pairing code is hot. Wait, or mint without a code.',
+          { fields: { retry_after_seconds: pairRate.retryAfterSeconds } },
+        ),
+        headers: {
+          'Retry-After': String(pairRate.retryAfterSeconds),
+          'X-RateLimit-Limit': String(GUEST_KEY_MINT_MAX),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(Math.floor(pairRate.resetAtMs / 1000)),
+        },
+      };
+    }
   }
   const slug = randomUrlToken(9);
   const token = `dgk_${slug}.${randomUrlToken(24)}`;
@@ -299,7 +329,7 @@ export async function handleGuestKeyWrite(request, { storage, rates, now = Date.
       name: input.name,
       now,
     });
-    return guestKeyResponse(minted.status, minted.body);
+    return guestKeyResponse(minted.status, minted.body, { headers: minted.headers || {} });
   }
   if (method === 'DELETE') {
     const idMatch = path.match(/^\/compute\/api\/guest-keys\/([A-Za-z0-9._-]+)\/?$/);

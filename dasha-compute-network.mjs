@@ -91,6 +91,7 @@ import {
   isGuestApiKey,
   parseGuestApiToken,
   takeGuestRate,
+  guestRateInfo,
   COMPUTE_GUEST_KEYS_PATH,
   GUEST_KEY_CHAT_MAX,
   GUEST_KEY_CHAT_WINDOW_MS,
@@ -1545,6 +1546,26 @@ export class ComputeNetwork {
       return maybeHead(request, v1cors(json({ object: 'list', data: v1ModelsListData(providers, now) })));
     }
 
+    if ((path === '/compute/api/models' || path === '/compute/api/models/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      // Bare-models alias: the versioned list is the canonical route.
+      return new Response(null, { status: 308, headers: { location: '/compute/api/v1/models', 'cache-control': 'no-store' } });
+    }
+    if ((path === '/compute/api/pricing' || path === '/compute/api/pricing/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      // Live pricing (documented in OpenAPI + consumed by /compute/proof and proof.json).
+      return maybeHead(request, v1cors(json({
+        object: 'pricing.compute.v0',
+        unit: 'successful_chat_completion',
+        request_usd: (HOSTED_ASK_PRICE_CENTS / 100).toFixed(2),
+        prompt_usd: '0',
+        completion_usd: '0',
+        currency: 'USD',
+        card_available: stripeConfigured(this.env),
+        card_note: 'Prepaid guest credits; cards not yet accepted.',
+        note: 'flat per chat completion (prepaid credits); self-route free',
+        checked_at: new Date(now).toISOString(),
+      })));
+    }
+
     const modelRetrieve = path.match(/^\/compute\/api\/v1\/models\/([A-Za-z0-9._-]+)\/?$/);
     if (modelRetrieve && (request.method === 'GET' || request.method === 'HEAD')) {
       const modelKey = await this.apiKey(request);
@@ -1598,8 +1619,46 @@ export class ComputeNetwork {
       const key = await this.apiKey(request);
       if (!key) return v1err(invalidApiKeyMessage(request), 401, 'authentication_error');
       if (!guestKeyAllows(key, 'chat')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
-      if (isGuestApiKey(key) && !takeGuestRate(this.rates, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS)) {
-        return v1err('guest key rate limited; try again shortly', 429, 'invalid_request_error');
+      if (isGuestApiKey(key)) {
+        const guestRate = guestRateInfo(this.rates, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS);
+        if (!guestRate.ok) {
+          return v1err('guest key rate limited; try again shortly', 429, 'invalid_request_error', {
+            'Retry-After': String(guestRate.retryAfterSeconds),
+            'X-RateLimit-Limit': String(GUEST_KEY_CHAT_MAX),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(Math.floor(guestRate.resetAtMs / 1000)),
+          });
+        }
+      }
+      // Idempotent submission: a repeated Idempotency-Key returns the original job's recorded outcome - never a second charge.
+      const idempotencyKey = String(request.headers.get('Idempotency-Key') || '').trim().slice(0, 128);
+      const idemStorageKey = idempotencyKey ? `compute:idem:${key.id}:${idempotencyKey}` : null;
+      if (idemStorageKey) {
+        const prior = await this.state.storage.get(idemStorageKey);
+        const priorJob = prior && prior.job_id ? await this.state.storage.get(`compute:job:${prior.job_id}`) : null;
+        if (priorJob && Number(priorJob.expiresAt) > Date.now()) {
+          if (priorJob.status === 'complete') {
+            const priorHonesty = effortHonestyFromJob(priorJob);
+            const priorReceipt = publicPhase0Receipt(priorJob);
+            return v1cors(json({
+              id: `chatcmpl_${priorJob.id.slice(4)}`,
+              job_id: priorJob.id,
+              ...(priorJob.request_id ? { request_id: priorJob.request_id } : {}),
+              object: 'chat.completion',
+              created: Math.floor(priorJob.createdAt / 1000),
+              model: priorJob.model,
+              choices: [{ index: 0, message: { role: 'assistant', content: priorJob.answer }, finish_reason: 'stop' }],
+              usage: priorJob.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+              ...(priorReceipt ? { receipt: priorReceipt } : {}),
+              deduplicated: true,
+              ...dashaEffortExtension(priorHonesty),
+            }, 200, null, false, { ...effortResponseHeaders(priorHonesty), ...dashaChatSpendHeaders({ route: priorJob.route, model: priorJob.model }) }));
+          }
+          if (priorJob.status === 'failed') {
+            return v1err(priorJob.error || 'provider failed', 502, 'server_error');
+          }
+          return v1cors(json({ job_id: priorJob.id, status: priorJob.status, deduplicated: true, expires_at: priorJob.expiresAt, hint: `GET /compute/api/jobs/${priorJob.id} for the recorded outcome.` }, 202, null, false, {}));
+        }
       }
       // v1: prepaid HOSTED_ASK_PRICE_CENTS per non-self API chat (community/mixture). Self-route free. Key limit_cents is runaway-only.
       // Guest keys skip prepaid debit — tight mint + chat rate is the floor.
@@ -1644,6 +1703,9 @@ export class ComputeNetwork {
         queued.job.debitKeyId = key.id;
         queued.job.debitCents = HOSTED_ASK_PRICE_CENTS;
         await this.state.storage.put(`compute:job:${queued.job.id}`, queued.job);
+      }
+      if (idemStorageKey) {
+        await this.state.storage.put(idemStorageKey, { job_id: queued.job.id, created_at: now });
       }
       if (input.stream) {
         const honesty = effortHonestyFromJob(queued.job);
@@ -1991,11 +2053,15 @@ export class ComputeNetwork {
 
     const jobMatch = path.match(/^\/compute\/api\/jobs\/([A-Za-z0-9_-]{6,64})\/?$/);
     if (jobMatch && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'DELETE')) {
-      const owner = identity(await authSessionFromRequest(this.env, request)), key = `compute:job:${jobMatch[1]}`, job = await this.state.storage.get(key);
-      if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, credentials));
-      if (!job || job.owner !== owner) return maybeHead(request, json({ error: 'job not found' }, 404, allowedOrigin, credentials));
+      const sessionOwner = identity(await authSessionFromRequest(this.env, request)), key = `compute:job:${jobMatch[1]}`, job = await this.state.storage.get(key);
+      // API keys (guest or developer) read their own jobs: a guest whose charge path died still gets one recorded outcome.
+      const jobApiKey = sessionOwner ? null : await this.apiKey(request);
+      const jobReader = sessionOwner || (jobApiKey && jobApiKey.owner) || null;
+      if (!jobReader) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, credentials));
+      if (!job || job.owner !== jobReader) return maybeHead(request, json({ error: 'job not found' }, 404, allowedOrigin, credentials));
       if (request.method === 'DELETE') {
         if (!allowedOrigin) return originRequired();
+        if (!sessionOwner) return json({ error: 'login required' }, 401, allowedOrigin, true);
         await this.refundJobDebit(job, now, 'cancelled');
         await cancelJob(this.state.storage, key, job, now);
         return json({ ok: true, prompt_deleted: true }, 200, allowedOrigin, true);
@@ -3182,9 +3248,14 @@ export async function computeApi(request, env, allowedOrigin) {
     if (stub) return stub.fetch(request);
     return maybeHead(request, json({ error: 'login required', ...creditsCatalog(null) }, 401, allowedOrigin, Boolean(allowedOrigin)));
   }
-  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
-    return stub ? stub.fetch(request) : json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
+    if (!stub) return json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
+    try {
+      return await stub.fetch(request);
+    } catch {
+      return computeApiError('internal error; the request may already be accepted. If you received a job id (job_id field or X-Dasha-Job header), GET /compute/api/jobs/<id> for the recorded outcome; retry with the same Idempotency-Key to avoid a second charge.', 500, allowedOrigin, credentials, 'server_error');
+    }
   }
   if (path === '/compute/api/launch-notify' || path === '/compute/api/launch-notify/' || path === '/compute/api/launch-notify/count' || path === '/compute/api/launch-notify/count/') {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));

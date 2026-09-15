@@ -36,7 +36,7 @@ li{margin:3px 0}
 .fine a{color:#dfff00;text-decoration:none}
 </style></head><body><main>
 <h1>Dasha Compute API <span class="v">v0.1.0</span></h1>
-<p class="sub">OpenAI-compatible inference on community Macs; every settled job gets a signed receipt on a public chain. Observed from live traffic Sep 11-12, 2026; impl lane to confirm/adopt.</p>
+<p class="sub">OpenAI-compatible inference on community Macs; every completed job gets a signed receipt on a public chain. Observed from live traffic Sep 11-12, 2026; adopted and verified by the impl lane Sep 14, 2026.</p>
 <div class="nav">Spec: <a href="/compute/openapi.json">openapi.json</a> &middot; <a href="/compute/openapi.yaml">openapi.yaml</a> &middot; Agent quickstart: <a href="/compute/skill.md">skill.md</a> &middot; <a href="/compute/llms.txt">llms.txt</a> &middot; Verify receipts: <a href="/verify">/verify</a></div>
 <h2>Servers</h2>
 <ul><li><code>https://lobby.getdasha.com</code> - recommended for interactive (chat, keys); all endpoints answer on both hosts</li>
@@ -64,7 +64,7 @@ li{margin:3px 0}
 <li><code>temperature</code> <span class="t">number</span> - (min 0, max 2, default 0.6)</li>
 </ul></div>
 <div class="rs"><span class="lbl">responses</span><ul>
-<li><code class="c">200</code> OpenAI chat completion + job_id + inline receipt (model_id</li>
+<li><code class="c">200</code> OpenAI chat completion + job_id + inline receipt record (pending operator settlement)</li>
 <li><code class="c">401</code> invalid_api_key</li>
 <li><code class="c">400</code> invalid_messages | unsupported_model | tools/tool_choice present (tools unsupported - fail-loud)</li>
 <li><code class="c">402</code> spend limit</li>
@@ -155,7 +155,7 @@ export const DOCS_OPENAPI_JSON = `{
   "info": {
     "title": "Dasha Compute API",
     "version": "0.1.0",
-    "description": "OpenAI-compatible inference on community Macs; every settled job gets a signed receipt on a public chain. Observed from live traffic Sep 11-12, 2026; impl lane to confirm/adopt."
+    "description": "OpenAI-compatible inference on community Macs; every completed job gets a signed receipt on a public chain. Observed from live traffic Sep 11-12, 2026; adopted and verified by the impl lane Sep 14, 2026."
   },
   "servers": [
     {
@@ -224,10 +224,21 @@ export const DOCS_OPENAPI_JSON = `{
     },
     "/compute/api/v1/chat/completions": {
       "post": {
-        "summary": "Chat completion; settled jobs return an inline receipt",
+        "summary": "Chat completion; completed jobs return an inline receipt record (pending operator settlement)",
         "security": [
           {
             "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Optional. Repeating a request with the same key returns the original job's recorded outcome; never charges twice.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -270,8 +281,7 @@ export const DOCS_OPENAPI_JSON = `{
         },
         "responses": {
           "200": {
-            "description": "OpenAI chat completion + job_id + inline receipt (model_id",
-            "provider_class)": null
+            "description": "OpenAI chat completion + job_id + inline receipt record (pending operator settlement; attestation may be null while the operator signs)"
           },
           "401": {
             "description": "invalid_api_key"
@@ -286,7 +296,7 @@ export const DOCS_OPENAPI_JSON = `{
             "description": "one queued job per key"
           },
           "429": {
-            "description": "per-key rate limit"
+            "description": "per-key rate limit; Retry-After + X-RateLimit-Limit/Remaining/Reset headers present"
           },
           "499": {
             "description": "client abort"
@@ -428,6 +438,75 @@ export const DOCS_OPENAPI_JSON = `{
         }
       }
     },
+    "/compute/api/healthz": {
+      "get": {
+        "summary": "Liveness probe (fail-loud alias family of readyz; same 200 JSON, not a 308)",
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    },
+    "/compute/api/v1/network": {
+      "get": {
+        "summary": "Alias of /compute/api/network (same 200 JSON)",
+        "responses": {
+          "200": {
+            "description": "providers_online, models_available, capacity[] (measured tok/s), jobs_queued, kit_versions"
+          }
+        }
+      }
+    },
+    "/compute/api/models": {
+      "get": {
+        "summary": "Model catalog door",
+        "responses": {
+          "308": {
+            "description": "permanent redirect to /compute/api/v1/models on the same host"
+          }
+        }
+      }
+    },
+    "/compute/api/jobs": {
+      "get": {
+        "summary": "List your jobs (browser session login)",
+        "responses": {
+          "200": {
+            "description": "jobs[] with id, status, model, expires_at"
+          },
+          "401": {
+            "description": "login required"
+          }
+        }
+      }
+    },
+    "/compute/api/jobs/{id}": {
+      "get": {
+        "summary": "One job's recorded outcome; browser session, or the Bearer key that owns the job (guest keys included)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "id, status, model, answer, error, queue_position, expires_at; usage/route/settle/receipt when stored"
+          },
+          "401": {
+            "description": "login or owning API key required"
+          },
+          "404": {
+            "description": "job not found (or owned by someone else)"
+          }
+        }
+      }
+    },
     "/compute/api/pricing": {
       "get": {
         "summary": "Live pricing",
@@ -530,9 +609,9 @@ export const DOCS_OPENAPI_YAML = `openapi: 3.1.0
 info:
   title: Dasha Compute API
   version: 0.1.0
-  description: OpenAI-compatible inference on community Macs; every settled job gets
+  description: OpenAI-compatible inference on community Macs; every completed job gets
     a signed receipt on a public chain. Observed from live traffic Sep 11-12, 2026;
-    impl lane to confirm/adopt.
+    adopted and verified by the impl lane Sep 14, 2026.
 servers:
 - url: https://lobby.getdasha.com
   description: recommended for interactive (chat, keys); all endpoints answer on both
@@ -579,9 +658,18 @@ paths:
           description: OpenAI-style model list
   /compute/api/v1/chat/completions:
     post:
-      summary: Chat completion; settled jobs return an inline receipt
+      summary: Chat completion; completed jobs return an inline receipt record (pending
+        operator settlement)
       security:
       - bearer: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        description: Optional. Repeating a request with the same key returns the original
+          job's recorded outcome; never charges twice.
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -612,8 +700,8 @@ paths:
                   default: 0.6
       responses:
         '200':
-          description: OpenAI chat completion + job_id + inline receipt (model_id
-          provider_class): null
+          description: OpenAI chat completion + job_id + inline receipt record (pending
+            operator settlement; attestation may be null while the operator signs)
         '401':
           description: invalid_api_key
         '400':
@@ -624,7 +712,8 @@ paths:
         '409':
           description: one queued job per key
         '429':
-          description: per-key rate limit
+          description: per-key rate limit; Retry-After + X-RateLimit-Limit/Remaining/Reset
+            headers present
         '499':
           description: client abort
         '504':
@@ -716,6 +805,52 @@ paths:
       responses:
         '200':
           description: ready
+  /compute/api/healthz:
+    get:
+      summary: Liveness probe (fail-loud alias family of readyz; same 200 JSON, not a
+        308)
+      responses:
+        '200':
+          description: ok
+  /compute/api/v1/network:
+    get:
+      summary: Alias of /compute/api/network (same 200 JSON)
+      responses:
+        '200':
+          description: providers_online, models_available, capacity[] (measured tok/s),
+            jobs_queued, kit_versions
+  /compute/api/models:
+    get:
+      summary: Model catalog door
+      responses:
+        '308':
+          description: permanent redirect to /compute/api/v1/models on the same host
+  /compute/api/jobs:
+    get:
+      summary: List your jobs (browser session login)
+      responses:
+        '200':
+          description: jobs[] with id, status, model, expires_at
+        '401':
+          description: login required
+  /compute/api/jobs/{id}:
+    get:
+      summary: One job's recorded outcome; browser session, or the Bearer key that owns
+        the job (guest keys included)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: id, status, model, answer, error, queue_position, expires_at;
+            usage/route/settle/receipt when stored
+        '401':
+          description: login or owning API key required
+        '404':
+          description: job not found (or owned by someone else)
   /compute/api/pricing:
     get:
       summary: Live pricing

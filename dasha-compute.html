@@ -2962,7 +2962,8 @@ function paintGateProof(){
     if(n>=1){
       live.hidden=false;
       if(sep)sep.hidden=false;
-      live.textContent=n===1?'1 Mac':n+' Macs';
+      const mc=networkModels&&networkModels.size?networkModels.size:0;
+      live.textContent=(n===1?'1 Mac':n+' Macs')+(mc?' · '+mc+' models listed':'');
     }else{
       live.hidden=true;
       live.textContent='';

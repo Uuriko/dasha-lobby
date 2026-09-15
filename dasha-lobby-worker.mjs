@@ -11191,12 +11191,17 @@ async function productEdge(request, url, env) {
             ? origin || '*'
             : null;
       if (request.method === 'OPTIONS') {
-        if (!allowedOrigin && !env.ALLOW_ANY_ORIGIN) {
-          return new Response(null, { status: 403, headers: SECURITY });
-        }
+        // Public machine API: browser preflights must succeed from any origin, on both hosts.
         return new Response(null, {
           status: 204,
-          headers: { ...SECURITY, ...corsHeaders(allowedOrigin || '*', { credentials: true }) },
+          headers: {
+            ...SECURITY,
+            'Access-Control-Allow-Origin': origin || '*',
+            'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, HEAD',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Dasha-Route, Idempotency-Key',
+            'Access-Control-Max-Age': '86400',
+            Vary: 'Origin',
+          },
         });
       }
       const response = await computeApi(request, env, allowedOrigin);
@@ -12599,6 +12604,20 @@ export default {
       });
     }
 
+    if (request.method === 'OPTIONS' && isComputeApiPath(url.pathname)) {
+      // Public machine API: browser preflights must succeed from any origin, on both hosts.
+      return new Response(null, {
+        status: 204,
+        headers: {
+          ...SECURITY,
+          'Access-Control-Allow-Origin': origin || '*',
+          'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, HEAD',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Dasha-Route, Idempotency-Key',
+          'Access-Control-Max-Age': '86400',
+          Vary: 'Origin',
+        },
+      });
+    }
     if (request.method === 'OPTIONS') {
       if (!allowedOrigin && !env.ALLOW_ANY_ORIGIN) {
         return new Response(null, { status: 403, headers: SECURITY });
