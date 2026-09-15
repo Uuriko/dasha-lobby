@@ -116,6 +116,14 @@ button,input,select,textarea{font:inherit}
 .market-table th,.market-table td{padding:5px 12px 5px 0;text-align:left;border-bottom:1px solid var(--line)}
 .market-table th{color:var(--paper-muted);font-weight:600}
 .market-try{padding:2px 10px}
+.rcpt{margin:10px 0 0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;display:grid;gap:8px;max-width:560px}
+.rcpt[hidden]{display:none!important}
+.rcpt-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rcpt-badge{font-size:11px;letter-spacing:.08em;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--paper-muted)}
+.rcpt-badge[data-state=ok]{color:var(--acid);border-color:var(--acid)}
+.rcpt-line{font-size:13px;color:var(--paper)}
+.rcpt-raw summary{cursor:pointer;color:var(--paper-muted);font-size:12px}
+.rcpt-raw pre{margin:8px 0 0;max-height:220px;overflow:auto;font-size:11px}
 .ask-thread[hidden]{display:none!important}
 .ask-turn{display:grid;gap:8px}
 .ask-who{color:var(--paper);font:800 13px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em}
@@ -728,6 +736,17 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <p class="fine" id="answer-mac-line" hidden></p>
   <p class="fine" id="answer-receipt" hidden aria-live="polite"></p>
   <p class="fine" id="answer-receipt-note" hidden aria-live="polite"></p>
+  <div class="rcpt" id="rcpt" hidden>
+    <div class="rcpt-head">
+      <span class="rcpt-badge" id="rcpt-badge" data-state="pending">CHECKING</span>
+      <span class="rcpt-line" id="rcpt-line"></span>
+    </div>
+    <details class="rcpt-raw">
+      <summary>Raw receipt</summary>
+      <pre id="rcpt-raw"></pre>
+    </details>
+    <a class="tf-quiet" id="rcpt-verify" href="/verify" target="_blank" rel="noopener">Verify on /verify</a>
+  </div>
   <div class="tf-choices" id="after-answer">
     <button type="button" class="tf-choice primary" id="ask-again">Ask again</button>
     <button type="button" class="tf-choice secondary" id="pick-provide-after">Provide</button>
@@ -3383,12 +3402,44 @@ function paintGuide(){
     else v.textContent='3 · Verify the receipt';
   }
 }
+async function paintReceiptCard(){
+  const card=$('rcpt');
+  if(!card)return;
+  const r=lastPaidReceipt;
+  if(!r||!String(r.job_id||'').trim()){card.hidden=true;card.setAttribute('hidden','');return}
+  card.hidden=false;card.removeAttribute('hidden');
+  const badge=$('rcpt-badge'),line=$('rcpt-line'),raw=$('rcpt-raw'),link=$('rcpt-verify');
+  const tok=Math.max(0,Math.floor(Number(r.tokens)||0));
+  const cents=Math.max(0,Math.floor(Number(r.settle_cents||r.cents)||0));
+  const face=String(r.route||r.provider_class||r.engine||'').trim();
+  const who=face==='hosted'?'Hosted':face==='self'?'Your Mac':face==='mixture'?'A mixture of Macs':'A community Mac';
+  const did=tok>0?(formatSettledTok(tok)+' tokens'):'a completion';
+  const money=cents>0?(' for '+formatUsdCents(cents)):(face==='self'?' · charge:0':'');
+  line.textContent=who+' ran '+did+money+'. Chained to the public receipt log.';
+  link.href='/verify?hash='+encodeURIComponent(String(r.job_id));
+  raw.textContent=JSON.stringify(r,null,2);
+  badge.dataset.state='pending';badge.textContent='CHECKING';
+  const jid=String(r.job_id);
+  try{
+    const res=await fetch('/compute/api/verify?job_id='+encodeURIComponent(jid),{headers:{accept:'application/json'}});
+    const v=await res.json();
+    if(lastPaidReceipt!==r||String(r.job_id||'')!==jid)return;
+    const verdict=String(v&&v.verdict&&(v.verdict.tier||v.verdict)||'').toUpperCase();
+    if(verdict==='ANCHORED'){badge.dataset.state='ok';badge.textContent='ANCHORED'}
+    else if(verdict==='SELF-CONSISTENT'){badge.dataset.state='mid';badge.textContent='CHAINED · PENDING HEAD'}
+    else if(verdict==='INVALID'){badge.dataset.state='mid';badge.textContent='INVALID'}
+    else{badge.dataset.state='mid';badge.textContent='PENDING'}
+  }catch{
+    if(lastPaidReceipt!==r)return;
+    badge.dataset.state='mid';badge.textContent='PENDING';
+  }
+}
 function paintAnswerReceipt(){
   const el=$('answer-receipt');
   const askEl=$('ask-receipt');
   if(!el)return;
   const hideOne=(node)=>{if(!node)return;node.hidden=true;node.setAttribute('hidden','');node.textContent='';};
-  const hide=()=>{hideOne(el);hideOne(askEl);paintAnswerReceiptNote('');paintAnswerMacLine('');};
+  const hide=()=>{hideOne(el);hideOne(askEl);paintAnswerReceiptNote('');paintAnswerMacLine('');paintReceiptCard();};
   const show=(text,routeFace)=>{
     // Keep Answer step open so receipt is actually visible (not only textContent under a hidden step).
     if(tfStep!=='answer'&&!stayAskChat)showTf('answer');
@@ -3406,6 +3457,7 @@ function paintAnswerReceipt(){
       }else hideOne(askEl);
     }
     paintAnswerReceiptNote(routeFace);
+    paintReceiptCard();
     paintAnswerMacLine(routeFace);
   };
   const r=lastPaidReceipt;
