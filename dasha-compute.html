@@ -109,6 +109,13 @@ button,input,select,textarea{font:inherit}
 .guide-step a{color:inherit}
 .guide-sep{opacity:.45}
 #guide-hide{margin-left:auto}
+.market{margin:10px 0 0}
+.market[hidden]{display:none!important}
+.market input[type=search]{width:100%;max-width:280px;margin:0 0 8px;background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--paper);font:inherit;font-size:13px}
+.market-table{border-collapse:collapse;font-size:13px}
+.market-table th,.market-table td{padding:5px 12px 5px 0;text-align:left;border-bottom:1px solid var(--line)}
+.market-table th{color:var(--paper-muted);font-weight:600}
+.market-try{padding:2px 10px}
 .ask-thread[hidden]{display:none!important}
 .ask-turn{display:grid;gap:8px}
 .ask-who{color:var(--paper);font:800 13px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em}
@@ -464,6 +471,15 @@ footer.listed-on img{display:block;height:32px;width:auto}
       <option value="gemma3-27b">Gemma 3 27B · 17 GB · large multimodal</option>
     </select>
     <span class="chip" id="mixture-chip" hidden>sub-24GB specialists · live default qwen3-8b</span>
+  </div>
+  <button type="button" class="tf-quiet" id="market-toggle" aria-expanded="false">Compare models</button>
+  <div class="market" id="market" hidden>
+    <input type="search" id="market-filter" placeholder="Filter models" aria-label="Filter models">
+    <table class="market-table">
+      <thead><tr><th>Model</th><th>$/run</th><th>tok/s</th><th>Macs</th><th></th></tr></thead>
+      <tbody id="market-rows"></tbody>
+    </table>
+    <p class="fine">Live from /compute/api/network + /compute/api/v1/models. No rows means nothing online.</p>
   </div>
 </section>
 
@@ -1095,6 +1111,52 @@ $('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.sh
 $('clear-chat').addEventListener('click',clearConversation);
 $('guide-hide').addEventListener('click',hideGuide);
 $('guide').addEventListener('click',(e)=>{if(e.target.closest('#guide-step-verify a')){try{localStorage.setItem(GUIDE_KEY,'done')}catch{}}});
+let marketData=null;
+async function loadMarket(){
+  try{
+    const res=await fetch('/compute/api/v1/models',{headers:{accept:'application/json'}});
+    const data=await res.json();
+    marketData=Array.isArray(data&&data.data)?data.data:[];
+  }catch{marketData=[]}
+  paintMarket();
+}
+function paintMarket(){
+  const body=$('market-rows');
+  if(!body)return;
+  const q=String(($('market-filter')||{}).value||'').trim().toLowerCase();
+  const rows=(marketData||[]).filter(m=>!q||String(m.id||'').toLowerCase().includes(q));
+  const td=(t)=>{const d=document.createElement('td');d.textContent=t;return d};
+  body.replaceChildren(...rows.map(m=>{
+    const caps=Array.isArray(networkCapacity)?networkCapacity.find(c=>c&&c.model===m.id):null;
+    const tpsN=Number(m.measured_tok_per_sec);
+    const tps=Number.isFinite(tpsN)&&tpsN>0?tpsN:(caps&&Number.isFinite(Number(caps.tokens_per_second))?Number(caps.tokens_per_second):null);
+    const provN=Number(m.providers_online);
+    const provs=Number.isFinite(provN)&&provN>0?provN:(caps&&Number.isFinite(Number(caps.providers))?Number(caps.providers):null);
+    const price=m.pricing&&m.pricing.request!=null&&String(m.pricing.request)!==''?('$'+String(m.pricing.request)):'-';
+    const tr=document.createElement('tr');
+    tr.append(td(String(m.id||'')),td(price),td(tps==null?'-':String(tps)),td(provs==null?'-':String(provs)));
+    const act=document.createElement('td');
+    const b=document.createElement('button');
+    b.type='button';b.className='tf-quiet market-try';b.textContent='Try';
+    b.addEventListener('click',()=>{
+      const sel=$('model');
+      if(sel&&[...sel.options].some(o=>o.value===m.id)){sel.value=m.id;sel.dispatchEvent(new Event('change',{bubbles:true}))}
+      const mk=$('market');if(mk){mk.hidden=true;mk.setAttribute('hidden','')}
+      const t=$('prompt');if(t)t.focus();
+    });
+    act.append(b);tr.append(act);
+    return tr;
+  }));
+}
+$('market-toggle').addEventListener('click',()=>{
+  const m=$('market');
+  if(!m)return;
+  const open=m.hidden;
+  m.hidden=!open;
+  if(open){m.removeAttribute('hidden');$('market-toggle').setAttribute('aria-expanded','true');loadMarket()}
+  else{m.setAttribute('hidden','');$('market-toggle').setAttribute('aria-expanded','false')}
+});
+$('market-filter').addEventListener('input',paintMarket);
 
 async function api(path,options={}){
   const controller=new AbortController();
