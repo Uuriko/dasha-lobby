@@ -877,6 +877,36 @@ function tokenUsage(input) {
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
 }
 
+/** Gateway-side metering (observe-only): the DO measures tokens from data it
+ *  already proxies. Settlement still uses provider-reported usage; divergence
+ *  over 25% is flagged for operator review, never auto-settled. */
+function approxTokenCount(text) {
+  return Math.max(0, Math.ceil(String(text || '').length / 4));
+}
+function gatewayUsage(job, completionText) {
+  const promptText = (Array.isArray(job?.messages) ? job.messages : []).map(m => `${m?.role || ''}:${typeof m?.content === 'string' ? m.content : ''}`).join('\n');
+  const prompt_tokens = approxTokenCount(promptText);
+  const completion_tokens = approxTokenCount(completionText);
+  return { prompt_tokens, completion_tokens, total_tokens: prompt_tokens + completion_tokens };
+}
+function usageDiverged(reported, measured) {
+  const a = Math.max(0, Number(reported?.completion_tokens) || 0), b = Math.max(0, Number(measured?.completion_tokens) || 0);
+  const base = Math.max(a, b);
+  return base > 0 && Math.abs(a - b) / base > 0.25;
+}
+/** Failover evidence: bounded attempt log on the job. */
+function appendAttempt(attempts, providerId, now) {
+  return [...(Array.isArray(attempts) ? attempts : []), { provider_id: providerId, leased_at: now, outcome: null }].slice(-8);
+}
+function closeAttempt(attempts, outcome) {
+  const list = Array.isArray(attempts) ? attempts.slice() : [];
+  if (list.length && list[list.length - 1].outcome == null) list[list.length - 1] = { ...list[list.length - 1], outcome };
+  return list;
+}
+function attemptsCount(job) {
+  return Array.isArray(job?.attempts) ? job.attempts.length : 0;
+}
+
 export function normalizeStreamProviderError(raw) {
   const msg = String(raw || '').trim().slice(0, 300);
   if (!msg) return '';
@@ -1056,7 +1086,7 @@ export class ComputeNetwork {
         const hadStreamProgress = job.stream === true && (job.chunks || []).some(chunk => String(chunk || '').trim());
         if (hadStreamProgress) {
           await this.refundJobDebit(job, now, 'provider cut');
-          await this.state.storage.put(key, { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 });
+          await this.state.storage.put(key, { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, attempts: closeAttempt(job.attempts, 'cut'), messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 });
           await this.finishNight(job, 'failed', null, 'provider cut', now);
           await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: true });
         } else {
@@ -1372,7 +1402,7 @@ export class ComputeNetwork {
         if (current.status === 'complete') {
           const settle = publicJobSettle(current);
           const receipt = publicPhase0Receipt(current);
-          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(settle ? { settle } : {}), ...(receipt ? { receipt } : {}), ...dashaEffortExtension(effortHonestyFromJob(current)) });
+          emit({ id: `chatcmpl_${job.id.slice(4)}`, object: 'chat.completion.chunk', created: Math.floor(job.createdAt / 1000), model: job.model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: current.usage || tokenUsage({}), ...(current.usage_gateway ? { usage_gateway: current.usage_gateway } : {}), ...(attemptsCount(current) > 1 ? { failed_over: true, attempts_count: attemptsCount(current) } : {}), ...(settle ? { settle } : {}), ...(receipt ? { receipt } : {}), ...dashaEffortExtension(effortHonestyFromJob(current)) });
           emit('[DONE]');
           controller.close();
           return;
@@ -1982,6 +2012,7 @@ export class ComputeNetwork {
       const job = jobs.find(candidate => candidate.status === 'queued' && provider.models.includes(candidate.model) && (candidate.route !== 'self' || provider.owner === candidate.owner));
       if (!job) return new Response(null, { status: 204, headers: SECURITY });
       job.status = 'leased'; job.providerId = provider.id; job.leasedAt = now; job.leaseExpiresAt = now + LEASE_MS; job.expiresAt = now + LEASE_MS + 60_000;
+      job.attempts = appendAttempt(job.attempts, provider.id, now);
       await this.state.storage.put(`compute:job:${job.id}`, job);
       return json({ job: { id: job.id, model: job.model, messages: job.messages, max_tokens: job.maxTokens, temperature: job.temperature, stream: job.stream === true }, lease_seconds: LEASE_MS / 1000 });
     }
@@ -2010,6 +2041,7 @@ export class ComputeNetwork {
       if (!error && (!answer || answer.length > 20_000)) return json({ error: 'result must be 1–20000 characters' }, 400);
       provider.lastSeenAt = now; await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       const usage = tokenUsage(input);
+      const usageGateway = gatewayUsage(job, answer);
       let settlePatch = {};
       if (!error && job.route !== 'self') {
         const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
@@ -2033,7 +2065,7 @@ export class ComputeNetwork {
         }
       }
       if (error) await this.refundJobDebit(job, now, error);
-      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
+      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, usage_gateway: usageGateway, ...(usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), attempts: closeAttempt(job.attempts, error ? 'failed' : 'complete'), messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
       await this.finishNight(job, error ? 'failed' : 'complete', error ? null : answer, error || null, now);
       await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
       return json({ accepted: true }, 202);
@@ -2057,6 +2089,8 @@ export class ComputeNetwork {
       }
       if (!streamError && rawError) streamError = rawError.slice(0, 300);
       const usage = input.done ? tokenUsage(input) : job.usage;
+      const finishedEarly = Boolean(streamError) || Boolean(input.done);
+      const usageGateway = finishedEarly ? gatewayUsage(job, joinedStripped) : job.usage_gateway || null;
       let settlePatch = {};
       if (!streamError && input.done && job.route !== 'self') {
         const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
@@ -2082,7 +2116,7 @@ export class ComputeNetwork {
       const failed = Boolean(streamError);
       const finished = failed || Boolean(input.done);
       if (failed) await this.refundJobDebit(job, now, streamError);
-      await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, ...(usageGateway ? { usage_gateway: usageGateway } : {}), ...(finishedEarly && usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), ...(finishedEarly ? { attempts: closeAttempt(job.attempts, failed ? 'failed' : 'complete') } : {}), messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
       if (finished) {
         await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : joinedStripped, streamError || null, now);
         await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
@@ -2168,6 +2202,10 @@ export class ComputeNetwork {
         queue_position: queuePosition || null,
         expires_at: job.expiresAt,
         ...(usage && (usage.total_tokens > 0 || usage.prompt_tokens > 0 || usage.completion_tokens > 0) ? { usage } : {}),
+        ...(job.usage_gateway ? { usage_gateway: job.usage_gateway } : {}),
+        ...(job.usage_diverged ? { usage_diverged: true } : {}),
+        attempts_count: attemptsCount(job),
+        ...(attemptsCount(job) > 1 ? { failed_over: true } : {}),
         ...(route ? { route } : {}),
         ...(settle ? { settle } : {}),
         ...loop,
