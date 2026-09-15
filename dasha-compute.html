@@ -101,6 +101,14 @@ button,input,select,textarea{font:inherit}
 }
 #ask-starters{margin:0 0 18px;display:flex;flex-wrap:wrap;gap:2px 14px}#ask-starters .tf-quiet{padding:10px 0;font-size:15px;color:var(--paper-muted)}
 .ask-thread{margin:0 0 28px;display:grid;gap:22px}
+.guide{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px;font-size:12px;color:var(--paper-muted)}
+.guide[hidden]{display:none!important}
+.guide-step{padding:3px 9px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
+.guide-step.is-done{color:var(--acid);border-color:var(--acid)}
+.guide-step.is-now{color:var(--paper);border-color:var(--paper)}
+.guide-step a{color:inherit}
+.guide-sep{opacity:.45}
+#guide-hide{margin-left:auto}
 .ask-thread[hidden]{display:none!important}
 .ask-turn{display:grid;gap:8px}
 .ask-who{color:var(--paper);font:800 13px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em}
@@ -462,6 +470,14 @@ footer.listed-on img{display:block;height:32px;width:auto}
 <section class="tf-step" id="step-ask" data-tf="ask" hidden>
   <button type="button" class="tf-back" id="back-ask" data-back="" hidden>← Back</button>
   <h1 class="tf-q">Do.</h1>
+  <div class="guide" id="guide" hidden>
+    <span class="guide-step" id="guide-step-model">1 · Pick a model</span>
+    <span class="guide-sep">→</span>
+    <span class="guide-step" id="guide-step-run">2 · Run it</span>
+    <span class="guide-sep">→</span>
+    <span class="guide-step" id="guide-step-verify">3 · Verify the receipt</span>
+    <button type="button" class="tf-quiet" id="guide-hide" title="Hide guide" aria-label="Hide guide">×</button>
+  </div>
   <div class="ask-thread" id="ask-thread" hidden></div>
   <p class="fine" id="ask-mac-line" hidden></p>
   <!-- mac-receipt-tps:2026-09-09 -->
@@ -1077,6 +1093,8 @@ function clearConversation(){conversation=[];threadRoute='';stayAskChat=false;no
 $('prompt').addEventListener('input',()=>{paintRequest();updateRun();});
 $('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const run=$('run-demo');if(run&&!run.hidden){run.click();return}const login=$('login');if(login&&!login.hidden)login.click()}});
 $('clear-chat').addEventListener('click',clearConversation);
+$('guide-hide').addEventListener('click',hideGuide);
+$('guide').addEventListener('click',(e)=>{if(e.target.closest('#guide-step-verify a')){try{localStorage.setItem(GUIDE_KEY,'done')}catch{}}});
 
 async function api(path,options={}){
   const controller=new AbortController();
@@ -1724,7 +1742,7 @@ function showTf(step){
   document.querySelectorAll('[data-tf]').forEach(node=>{
     node.hidden=node.dataset.tf!==step;
   });
-  paintProgress(step);
+  paintProgress(step);paintGuide();
   paintHonestyPanel();startHonestyPoll()
   if(step==='pay'||step==='gate'||step==='ask'||step==='pay-buy'||step==='sponsor'||step==='sponsor-buy')clearPaySponsorFine();
   const login=$('login');
@@ -2635,7 +2653,7 @@ $('run-demo').addEventListener('click',async()=>{
       else {clearAnswerMoney();$('answer').textContent=msg||'Request failed';}
     }
   }
-  finally{clearRunWatch();clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;const _run=$('run-demo');if(_run)_run.classList.remove('is-run-busy');if(!stayAskChat){clearAskThink()}paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();updateRun();if(stayAskChat)showTf('ask');else $('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
+  finally{clearRunWatch();clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;const _run=$('run-demo');if(_run)_run.classList.remove('is-run-busy');if(!stayAskChat){clearAskThink()}paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();paintGuide();updateRun();if(stayAskChat)showTf('ask');else $('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
 });
 document.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.engine==='hosted'&&window.__dashaAuthReady&&hostedLive===false)return;if(b.dataset.engine==='hosted')hostedChosenThisSession=true;setEngine(b.dataset.engine,true)}));
 $('model').addEventListener('change',updateRun);
@@ -3273,6 +3291,35 @@ function paintAnswerMacLine(routeFace){
   };
   paint($('answer-mac-line'));
   paint($('ask-mac-line'));
+}
+const GUIDE_KEY='dasha_guide_v1';
+function guideTarget(){
+  if(!lastPaidReceipt)return '';
+  const h=String(lastPaidReceipt.hash||'').trim();
+  if(h)return h;
+  return String(lastPaidReceipt.job_id||'').trim();
+}
+function hideGuide(){
+  try{localStorage.setItem(GUIDE_KEY,'hidden')}catch{}
+  paintGuide();
+}
+function paintGuide(){
+  const g=$('guide');
+  if(!g)return;
+  let saved='';
+  try{saved=localStorage.getItem(GUIDE_KEY)||''}catch{}
+  if(saved){g.hidden=true;g.setAttribute('hidden','');return}
+  g.hidden=false;g.removeAttribute('hidden');
+  const ran=!!guideTarget();
+  const m=$('guide-step-model'),r=$('guide-step-run'),v=$('guide-step-verify');
+  if(m)m.classList.add('is-done');
+  if(r){r.classList.toggle('is-done',ran);r.classList.toggle('is-now',!ran)}
+  if(v){
+    v.classList.toggle('is-now',ran);
+    const t=guideTarget();
+    if(ran&&t)v.innerHTML='3 · <a href="/verify?hash='+encodeURIComponent(t)+'">Verify the receipt</a>';
+    else v.textContent='3 · Verify the receipt';
+  }
 }
 function paintAnswerReceipt(){
   const el=$('answer-receipt');
