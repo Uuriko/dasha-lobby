@@ -124,6 +124,11 @@ button,input,select,textarea{font:inherit}
 .rcpt-line{font-size:13px;color:var(--paper)}
 .rcpt-raw summary{cursor:pointer;color:var(--paper-muted);font-size:12px}
 .rcpt-raw pre{margin:8px 0 0;max-height:220px;overflow:auto;font-size:11px}
+.side{display:flex;gap:8px;margin:0 0 18px}
+.side-btn{background:transparent;border:1px solid var(--line);border-radius:999px;color:var(--paper-muted);padding:6px 14px;font:inherit;font-size:13px;cursor:pointer}
+.side-btn[aria-pressed=true]{color:var(--acid);border-color:var(--acid)}
+body[data-side=buyer] #gate-door-provide{display:none}
+body[data-side=provider] #gate-door-do,body[data-side=provider] #gate-money-row{display:none}
 .ask-thread[hidden]{display:none!important}
 .ask-turn{display:grid;gap:8px}
 .ask-who{color:var(--paper);font:800 13px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em}
@@ -299,17 +304,21 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <span class="honesty-sep" id="gate-inspect-sep" aria-hidden="true" hidden>·</span>
     <span class="tf-micro" id="gate-inspect-live" hidden></span>
   </p>
-  <div class="tf-choices" role="group" aria-label="Start.">
-    <div class="tf-door">
+    <div class="side" id="side" role="group" aria-label="Console side">
+    <button type="button" class="side-btn" id="side-buyer" aria-pressed="false">Use compute</button>
+    <button type="button" class="side-btn" id="side-provider" aria-pressed="false">Run a Mac</button>
+  </div>
+<div class="tf-choices" role="group" aria-label="Start.">
+    <div class="tf-door" id="gate-door-do">
       <button type="button" class="tf-choice primary tf-acid-rim tf-lift" id="pick-ask" title="Run a prompt">Do</button>
       <p class="tf-door-hint">code · text · whatever</p>
     </div>
-    <div class="tf-door">
+    <div class="tf-door" id="gate-door-provide">
       <button type="button" class="tf-choice secondary tf-lift" id="pick-provide" title="Join with a Mac">Provide</button>
       <p class="tf-door-hint">Join a Mac.</p>
     </div>
   </div>
-  <div class="ask-links" role="group" aria-label="Money.">
+  <div class="ask-links" id="gate-money-row" role="group" aria-label="Money.">
     <div class="tf-money">
       <button type="button" class="tf-quiet tf-lift" id="pick-pay" title="Top up or sponsor">Pay</button>
       <span class="tf-micro">Top up</span>
@@ -1176,6 +1185,28 @@ $('market-toggle').addEventListener('click',()=>{
   else{m.setAttribute('hidden','');$('market-toggle').setAttribute('aria-expanded','false')}
 });
 $('market-filter').addEventListener('input',paintMarket);
+const SIDE_KEY='dasha_side';
+function paintSide(){
+  const side=document.body.dataset.side||'';
+  const b=$('side-buyer'),p=$('side-provider');
+  if(b)b.setAttribute('aria-pressed',side==='buyer'?'true':'false');
+  if(p)p.setAttribute('aria-pressed',side==='provider'?'true':'false');
+}
+function setSide(side){
+  if(side!=='buyer'&&side!=='provider')side='';
+  document.body.dataset.side=side;
+  try{localStorage.setItem(SIDE_KEY,side)}catch{}
+  paintSide();
+}
+(function(){
+  let side='';
+  try{side=new URLSearchParams(location.search).get('side')||''}catch{}
+  if(side!=='buyer'&&side!=='provider'){try{side=localStorage.getItem(SIDE_KEY)||''}catch{}}
+  if(side==='buyer'||side==='provider')document.body.dataset.side=side;
+  paintSide();
+})();
+$('side-buyer').addEventListener('click',()=>setSide(document.body.dataset.side==='buyer'?'':'buyer'));
+$('side-provider').addEventListener('click',()=>setSide(document.body.dataset.side==='provider'?'':'provider'));
 
 async function api(path,options={}){
   const controller=new AbortController();
