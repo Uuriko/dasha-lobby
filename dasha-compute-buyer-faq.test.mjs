@@ -2,7 +2,7 @@
 /**
  * Quiet Compute buyer FAQ on /llms-full.txt (LLMS_FULL_TXT only).
  * Four Q/A. No lecture. No invented Mac count. No always-on model name.
- * $0.05/job is Provider Earn, not the buyer price.
+ * Buyer price and provider earn stated separately.
  * Stays off dasha-compute.html / dasha-compute-page.mjs while #114 owns those.
  * Test-only. No wrangler. No Designer. No plugin.jup.ag. No home first paint.
  */

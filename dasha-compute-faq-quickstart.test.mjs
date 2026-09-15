@@ -2,7 +2,7 @@
 /**
  * Instinct #1: Provider FAQ + buyer quickstart on live /compute.
  * Buyer Q/A + OpenAI snippet sit in #buyer-one-path (near Ask / API).
- * Provider FAQ sits on Setup. $0.05/job is Provider Earn, not a buyer price.
+ * Provider FAQ sits on Setup. Earn line separates provider earn from buyer price.
  * Test-only. No wrangler. No Designer. No plugin.jup.ag. No home first paint.
  */
 import assert from 'node:assert/strict';
@@ -27,7 +27,7 @@ const BUYER_LINES = [
 ];
 
 const PROVIDER_LINES = [
-  '$0.05/job is Provider Earn. Not the buyer price.',
+  'Earn $0.05/job + $0.01/1k completion tokens. Buyer price is separate: $0.05 per successful job, billed from prepaid credits.',
   'Busy network · more jobs. Stay warm. Same rate.',
   'Mac · Apple Silicon · Ollama ≥0.33.1 · python3 · 15–30 min.',
   'Sign in. Name it. Register. Run Setup.',
@@ -107,7 +107,7 @@ function assertFaqQuickstart(html, label) {
   assert.doesNotMatch(block, /id=["']code-python["']|id=["']code-javascript["']/, `${label} no leftover snippet ids`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 
-  assert.match(provide, /id=["']provide-faq-earn["'][^>]*>\$0\.05\/job is Provider Earn\. Not the buyer price\.</, `${label} Earn distinction`);
+  assert.match(provide, /id=["']provide-faq-earn["'][^>]*>Earn \$0\.05\/job \+ \$0\.01\/1k completion tokens\. Buyer price is separate: \$0\.05 per successful job, billed from prepaid credits\.</, `${label} Earn distinction`);
   assert.match(provide, /id=["']provide-faq-demand["'][^>]*>Busy network · more jobs\. Stay warm\. Same rate\.</, `${label} demand`);
   assert.match(provide, /id=["']provide-faq-need["'][^>]*>Mac · Apple Silicon · Ollama ≥0\.33\.1 · python3 · 15–30 min\.</, `${label} need`);
   assert.match(provide, /id=["']provide-faq-enroll["'][^>]*>Sign in\. Name it\. Register\. Run Setup\.</, `${label} enroll`);
@@ -164,7 +164,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.deepEqual(first.buyer, BUYER_LINES);
     assert.deepEqual(first.provide, PROVIDER_LINES);
     assert.equal(first.openai, `from openai import OpenAI\nOpenAI(base_url="${BASE}", api_key=os.environ["DASHA_API_KEY"])`);
-    assert.equal(first.earn, '$0.05/job is Provider Earn. Not the buyer price.');
+    assert.equal(first.earn, 'Earn $0.05/job + $0.01/1k completion tokens. Buyer price is separate: $0.05 per successful job, billed from prepaid credits.');
     assert.doesNotMatch(first.buyer.join('\n'), /\$0\.05\/job/);
     assert.doesNotMatch(first.buyer.join('\n'), /\d+\s*Mac/);
 
