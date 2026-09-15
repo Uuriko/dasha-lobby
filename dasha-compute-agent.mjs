@@ -224,6 +224,8 @@ v1 model gpt-oss-20b is dasha-hosted and NOT LISTED on /compute/api/v1/models wh
 Heads log: GET /heads serves the last 24h of signed anchor heads (each covers a chain tip; prev_head_hash links head to head). The first head in the window usually chains to an older head outside the window: X-Dasha-Heads-Truncated: true marks that and Link rel="prev-archive" points at the full UTC day bucket. Page backward with GET /heads/archive/YYYY-MM-DD.json. Verdict tiers: ANCHORED = tip covered by a head under 1h old; heads mint on demand when /heads or /compute/api/verify is hit, so quiet windows honestly read SELF-CONSISTENT until the next hit.
 Checkpoint: GET /heads/checkpoint returns a signed note (dasha-checkpoint-v1: signer / ts / head_hash / chain_tip, newline-separated) over the current tip and freshest covering head; sig = ed25519 over the note text with the /keys.json signer key. Store one and compare against later /heads responses to detect a rewritten tail.
 Launch: Dasha Compute launches on Product Hunt September 18, 2026 - GET /launch (pre-launch page; notify signup POST /compute/api/launch-notify {email}, count at /compute/api/launch-notify/count).
+Network board: GET /compute/leaderboard - live public board (jobs/tokens/cents settled on the signed chain + measured tok/s by model, no key needed); raw data GET /compute/api/chain + /compute/api/network.
+Org enroll: POST /compute/api/org-enroll (login; mints a quota+expiry code) -> share the code -> POST /compute/api/providers/enroll {code,name,models} (no login) registers each Mac under the owner account; list/revoke GET /compute/api/org-enroll + DELETE /compute/api/org-enroll/<code>.
 
 ${COMPUTE_PROVIDE_SPEED_TXT}
 compute https://www.getdasha.com/compute

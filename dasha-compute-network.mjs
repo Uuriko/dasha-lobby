@@ -823,6 +823,22 @@ export function withModelIdentityHint(messages, model) {
   return [{ role: 'system', content: tip }, ...messages];
 }
 
+/** Replayed from live bundle: qwen3 providers honor an in-band /no_think switch -
+ *  append it to the last user message unless the caller already set it. */
+export function withNoThinkHint(messages, model) {
+  if (!/^qwen3/i.test(String(model || '')) || !Array.isArray(messages) || !messages.length) return messages;
+  const out = messages.slice();
+  for (let i = out.length - 1; i >= 0; i--) {
+    const m = out[i];
+    if (m?.role === 'user' && typeof m.content === 'string') {
+      if (/\/no_think\b/i.test(m.content)) return messages;
+      out[i] = { ...m, content: `${m.content}\n/no_think` };
+      return out;
+    }
+  }
+  return messages;
+}
+
 function stripThinkTraces(text) {
   return String(text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think>/gi, '').trim();
 }
@@ -1308,6 +1324,7 @@ export class ComputeNetwork {
     if (input.tools != null || input.tool_choice != null || input.functions != null || input.function_call != null) return { error: 'tools and function calling are not supported on this gateway yet; strip tools/tool_choice and send plain messages', status: 400 };
     if (!MODELS.has(model)) return { error: 'unsupported model', status: 400 };
     messages = withModelIdentityHint(messages, model);
+    messages = withNoThinkHint(messages, model);
     if (!takeRate(this.rates, owner, 5)) return { error: 'community limit reached; try again shortly', status: 429 };
     await this.prune(now);
     const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
@@ -1846,8 +1863,62 @@ export class ComputeNetwork {
     if ((path === '/compute/api/providers' || path === '/compute/api/providers/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, credentials));
-      const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => provider.owner === owner).map(provider => ({ id: provider.id, name: provider.name, models: provider.models || [], allowed_models: provider.allowedModels || provider.models || [], hardware: provider.hardware || null, kit_version: provider.kitVersion || null, created_at: provider.createdAt, last_seen_at: provider.lastSeenAt || null, online: now - Number(provider.lastSeenAt || 0) < FRESH_MS }));
+      const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => provider.owner === owner).map(provider => ({ id: provider.id, name: provider.name, models: provider.models || [], allowed_models: provider.allowedModels || provider.models || [], hardware: provider.hardware || null, kit_version: provider.kitVersion || null, created_at: provider.createdAt, last_seen_at: provider.lastSeenAt || null, created_via: provider.createdVia || null, online: now - Number(provider.lastSeenAt || 0) < FRESH_MS }));
       return maybeHead(request, json({ providers }, 200, allowedOrigin, credentials));
+    }
+
+    // Org enroll (replayed from live bundle): owner mints a quota+expiry code,
+    // shares it, each redeem registers one Mac under the owner's account.
+    if (path === '/compute/api/org-enroll' || path === '/compute/api/org-enroll/') {
+      if (request.method === 'GET' || request.method === 'HEAD') {
+        const owner = identity(await authSessionFromRequest(this.env, request));
+        if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
+        const codes = [...(await this.state.storage.list({ prefix: 'compute:org-enroll:' })).values()].filter(c => c.owner === owner).map(c => ({ code: c.code, label: c.label || null, quota: c.quota, used: c.used, expires_at: c.expiresAt, revoked: Boolean(c.revoked), created_at: c.createdAt }));
+        return maybeHead(request, json({ codes }, 200, allowedOrigin, true));
+      }
+      if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
+      if (!takeRate(this.rates, `orgenroll:${owner}`, 10)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
+      const input = await body(request);
+      const quota = Math.max(1, Math.min(100, Number(input.quota) || 10));
+      const expiresAt = now + Math.max(1, Math.min(30 * 24, Number(input.expires_in_hours) || 24 * 7)) * 36e5;
+      const label = String(input.label || '').trim().slice(0, 64) || null;
+      const code = `doe_${randomUrlToken(18)}`;
+      await this.state.storage.put(`compute:org-enroll:${code}`, { code, owner, label, quota, used: 0, expiresAt, revoked: false, createdAt: now });
+      await this.bumpMetric('org-enroll:mint');
+      return json({ code, quota, expires_at: expiresAt, label, note: 'Share this code with your org. Each redeem registers one Mac under your account. Revoke anytime.' }, 201, allowedOrigin, true);
+    }
+    const orgEnrollMatch = path.match(/^\/compute\/api\/org-enroll\/([A-Za-z0-9_-]{6,64})$/);
+    if (orgEnrollMatch && request.method === 'DELETE') {
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
+      const okey = `compute:org-enroll:${orgEnrollMatch[1]}`, existing = await this.state.storage.get(okey);
+      if (!existing || existing.owner !== owner) return json({ error: 'enroll code not found' }, 404, allowedOrigin, true);
+      await this.state.storage.put(okey, { ...existing, revoked: true });
+      return json({ ok: true, revoked: true }, 200, allowedOrigin, true);
+    }
+    if (path === '/compute/api/providers/enroll' || path === '/compute/api/providers/enroll/') {
+      if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin || '*', credentials));
+      const input = await body(request);
+      const code = String(input.code || '').trim().slice(0, 64);
+      if (!code) return json({ error: 'code required' }, 400, allowedOrigin || '*', credentials);
+      const ip = (request.headers.get('CF-Connecting-IP') || 'unknown').slice(0, 64);
+      if (!takeRate(this.rates, `enroll-ip:${ip}`, 10)) return json({ error: 'rate limited' }, 429, allowedOrigin || '*', credentials);
+      if (!takeRate(this.rates, `enroll-code:${code}`, 30)) return json({ error: 'rate limited' }, 429, allowedOrigin || '*', credentials);
+      const okey = `compute:org-enroll:${code}`, link = await this.state.storage.get(okey);
+      if (!link || link.revoked || Number(link.expiresAt) <= now) return json({ error: 'invalid or expired enroll code' }, 404, allowedOrigin || '*', credentials);
+      if (Number(link.used) >= Number(link.quota)) return json({ error: 'enroll code quota exhausted' }, 409, allowedOrigin || '*', credentials);
+      const models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model)))];
+      if (!models.length) return json({ error: 'choose at least one supported model' }, 400, allowedOrigin || '*', credentials);
+      const name = String(input.name || '').trim().slice(0, 64) || 'My Mac';
+      const prior = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].find(p => p.createdVia === code && p.name === name);
+      if (prior) return json({ error: 'already_enrolled', provider_id: prior.id, note: 'This Mac name already redeemed this code. Re-register from the Provide page for a fresh token.' }, 409, allowedOrigin || '*', credentials);
+      const providerId = `mac_${randomUrlToken(9)}`, token = `dcp_${randomUrlToken(24)}`;
+      await this.state.storage.put(`compute:provider:${providerId}`, { id: providerId, owner: link.owner, name, allowedModels: models, models: [], tokenHash: await sha256(token), createdAt: now, lastSeenAt: 0, createdVia: code });
+      await this.state.storage.put(okey, { ...link, used: Number(link.used) + 1 });
+      await this.bumpMetric('provider:enroll');
+      return json({ provider_id: providerId, provider_token: token, coordinator_url: 'https://lobby.getdasha.com/compute/api', models, note: 'Copy this token now. Dasha stores only its hash.' }, 201, allowedOrigin || '*', credentials);
     }
 
     if (path === '/compute/api/providers/register' || path === '/compute/api/providers/register/') {
@@ -3295,7 +3366,7 @@ export async function computeApi(request, env, allowedOrigin) {
     kitSigUrl.searchParams.set('url', COMPUTE_KIT_MANIFEST.url);
     return kitStub.fetch(new Request(kitSigUrl.href, request));
   }
-  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path === '/compute/api/org-enroll' || path.startsWith('/compute/api/org-enroll/') || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
     try {
