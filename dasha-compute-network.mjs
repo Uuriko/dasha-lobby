@@ -1299,7 +1299,7 @@ export class ComputeNetwork {
       models: counters.models,
       providers_online_latest: providers.length,
       settled_24h: settled,
-      note: 'counters only; prompts not included; settled_24h = paid-inference only',
+      note: 'counters count every attempted job by route, incl. failures and free guest calls; the receipt chain records settled paid jobs only; prompts not included; settled_24h = paid-inference only',
     };
   }
 
@@ -3376,7 +3376,7 @@ export async function computeApi(request, env, allowedOrigin) {
       models: {},
       providers_online_latest: 0,
       settled_24h: { tokens: 0, jobs: 0, cents: 0 },
-      note: 'counters only; prompts not included; settled_24h = paid-inference only',
+      note: 'counters count every attempted job by route, incl. failures and free guest calls; the receipt chain records settled paid jobs only; prompts not included; settled_24h = paid-inference only',
     }, 200, allowedOrigin || '*', credentials));
   }
   if ((path === '/compute/api/v1' || path === '/compute/api/v1/') && (request.method === 'GET' || request.method === 'HEAD')) {

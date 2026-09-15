@@ -44,7 +44,8 @@ function assertFactoryShape(body, label) {
   assert.deepEqual(body.jobs, { hosted: 0, community: 0, mixture: 0, failed: 0 }, `${label} honest zero jobs`);
   assert.deepEqual(body.models, {}, `${label} models`);
   assert.equal(typeof body.providers_online_latest, 'number', `${label} providers_online_latest`);
-  assert.match(body.note || '', /counters only/i);
+  assert.match(body.note || '', /counters count every attempted job by route/i);
+  assert.match(body.note || '', /receipt chain records settled paid jobs only/i);
   assert.doesNotMatch(JSON.stringify(body), /"prompt"|"messages"/);
 }
 
