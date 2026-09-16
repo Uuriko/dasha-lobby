@@ -30,7 +30,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 const PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
-const TG = 'https://t.me/+xB7S8mIQaKFiZjRh';
+const TG = 'https://t.me/+ck9pUjL2ncNiZjRh';
 const JUP = `https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=${MINT}`;
 
 const leftoverChrome = `<!doctype html><html><head><title>old</title></head><body>
@@ -239,7 +239,7 @@ describe('one-room + honesty + product mix', () => {
 
   it('no Demigod hire, no plugin.jup, official TG only, no honesty lectures in worker', () => {
     assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
-    assert.doesNotMatch(workerSrc, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+    assert.doesNotMatch(workerSrc, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
     assert.doesNotMatch(workerSrc, /Hire an agent|pre-vetted|90-day|we hold (your )?funds/i);
     assert.match(workerSrc, /We don.t hold it/);
     assert.doesNotMatch(workerSrc, /Studio, quiz/);

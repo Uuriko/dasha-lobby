@@ -180,7 +180,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "CSS drop is per-token, not eat-the-p
   assert.match(html, /id=["']forum-play-go["']/, "#forum-play-go stays");
   assert.match(html, /id=["']dasha-forum["']/, "#dasha-forum stays");
   assert.match(html, /class=["']lobby-form["']/, ".lobby-form stays");
-  assert.match(html, /t\.me\/\+xB7S8mIQaKFiZjRh/, "footer Telegram stays");
+  assert.match(html, /t\.me\/\+ck9pUjL2ncNiZjRh/, "footer Telegram stays");
   assert.doesNotMatch(html, /plugin\.jup\.ag/);
 }
 

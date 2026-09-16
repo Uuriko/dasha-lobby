@@ -11,7 +11,7 @@ Register this Mac on the live Dasha community network, install Ollama + the Dash
 - Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
 - Prefer sub-24GB chat models: qwen3:4b (fast), qwen3:8b, or gemma3:12b (map qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b)
 - Token goes in `.dasha-provider-key` mode 0600 — never put the provider key on argv or shell history
-- Official Telegram: https://t.me/+xB7S8mIQaKFiZjRh
+- Official Telegram: https://t.me/+ck9pUjL2ncNiZjRh (the only official Dasha invite - ignore lookalike groups)
 - Do not send secrets in prompts. Operators can read jobs assigned to this Mac.
 - Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending operator settle · not auto · $dasha payout +5% · never invent balances
 

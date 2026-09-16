@@ -20,7 +20,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 const chessDisk = readFileSync(join(root, 'dasha-chess-page.html'), 'utf8');
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 const PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
-const TG = 'https://t.me/+xB7S8mIQaKFiZjRh';
+const TG = 'https://t.me/+ck9pUjL2ncNiZjRh';
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /export function stripChessJupPluginBoot/);
@@ -96,7 +96,7 @@ assert.match(polish(chessDisk), /function watchPrice/, 'chess buy watchPrice sta
   const html = await chess.text();
   assertNoBoot(html, 'served chess');
   assert.match(html, new RegExp(PAIR), 'served chess pair');
-  assert.match(html, /t\.me\/\+xB7S8mIQaKFiZjRh/, 'served chess official TG');
+  assert.match(html, /t\.me\/\+ck9pUjL2ncNiZjRh/, 'served chess official TG');
   assert.match(html, /<link rel="describedby" href="\/llms\.txt" type="text\/plain">/);
   assert.match(html, /Dasha versus Anna/, 'chess copy stays');
   assert.match(html, /function watchPrice/, 'served chess buy watchPrice stays');

@@ -14,7 +14,7 @@ import { LOBBY_PAGE_HTML } from './dasha-lobby-static-gen.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const pageSrc = readFileSync(join(root, 'dasha-lobby-page.html'), 'utf8');
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
-const TG = 'https://t.me/+xB7S8mIQaKFiZjRh';
+const TG = 'https://t.me/+ck9pUjL2ncNiZjRh';
 const CARD = 'Chat. Play. Fill the jar. Buy.';
 
 assert.equal(LOBBY_TITLE, '$dasha Lobby');
@@ -38,7 +38,7 @@ function assertShare(html, label) {
   assert.match(html, new RegExp(MINT), `${label} mint`);
   if (/t\.me\//.test(html)) {
     assert.match(html, new RegExp(TG.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${label} official TG`);
-    assert.doesNotMatch(html, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/, `${label} no other TG`);
+    assert.doesNotMatch(html, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/, `${label} no other TG`);
   }
   assert.match(html, /<h1>Lobby<\/h1>/, `${label} H1`);
   assert.match(html, /id="dasha-lobby"/, `${label} chat`);

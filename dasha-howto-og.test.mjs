@@ -14,7 +14,7 @@ const TITLE = 'How to buy $dasha';
 const DESC = 'Buy $dasha.';
 
 assert.doesNotMatch(worker, /plugin\.jup\.ag/);
-assert.doesNotMatch(worker, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+assert.doesNotMatch(worker, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
 
 function assertShare(html, label) {
   const head = (html.match(/<head[\s\S]*?<\/head>/i) || [html])[0];

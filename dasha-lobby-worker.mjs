@@ -124,6 +124,7 @@ import {
 import { ComputeNetwork, computeApi, rewriteComputeV1ChatCompletionsPath } from './dasha-compute-network.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
+import { COMPUTE_START_PAGE_HTML } from './dasha-compute-start-page.mjs';
 import { CAPS_PAGE_HTML } from './dasha-compute-caps-page.mjs';
 import { LAUNCH_PAGE_HTML, VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
@@ -214,6 +215,7 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/digest</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/proof</loc><lastmod>2026-09-15</lastmod></url>
+  <url><loc>https://www.getdasha.com/compute/start</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/caps</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/how-to-buy</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/chess</loc><lastmod>2026-09-01</lastmod></url>
@@ -350,6 +352,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Compute](https://www.getdasha.com/compute)
 - [Compute packet](https://www.getdasha.com/compute/llms.txt)
 - [Compute proof](https://www.getdasha.com/compute/proof)
+- [Compute start](https://www.getdasha.com/compute/start)
 - [Compute spend caps](https://www.getdasha.com/caps)
 - [Compute agent.json](https://www.getdasha.com/.well-known/agent.json)
 - [Compute skill](https://www.getdasha.com/compute/skill.md)
@@ -5206,7 +5209,7 @@ export function potterHome308Dest(path) {
   }
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return "https://www.getdasha.com/faucet";
   if (p === "/tg" || p === "/tg/" || p === "/telegram" || p === "/telegram/") {
-    return "https://t.me/+xB7S8mIQaKFiZjRh";
+    return "https://t.me/+ck9pUjL2ncNiZjRh";
   }
   if (p === "/quiz" || p === "/quiz/" || p === "/simp-quiz" || p === "/simp-quiz/") {
     return "https://www.getdasha.com/simp";
@@ -5790,7 +5793,7 @@ export function stripLobbyLeftoverForumBodyCss(html) {
  * Humans see leftover pin <a>TG</a> in view-source.
  * Distinct leftover vs leftover id="forum-play" / leftover .forum-back / leftover .forum-form.
  * Keep .forum-pin + .forum-ca + #forum-copy + pin Copy script.
- * Keep footer Telegram https://t.me/+xB7S8mIQaKFiZjRh only. Do not ban all t.me.
+ * Keep footer Telegram https://t.me/+ck9pUjL2ncNiZjRh only. Do not ban all t.me.
  * Lobby only. Do not eat footer Telegram. Do not eat header Buy.
  */
 export function stripLobbyLeftoverForumPinTg(html) {
@@ -5800,7 +5803,7 @@ export function stripLobbyLeftoverForumPinTg(html) {
     /(<p\b[^>]*\bclass=["'][^"']*\bforum-pin\b[^"']*["'][^>]*>)([\s\S]*?)(<\/p>)/gi,
     (full, open, inner, close) => {
       const next = String(inner).replace(
-        /\s*<a\b(?=[^>]*\bhref=["']https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh["'])[^>]*>\s*TG\s*<\/a>/gi,
+        /\s*<a\b(?=[^>]*\bhref=["']https:\/\/t\.me\/\+ck9pUjL2ncNiZjRh["'])[^>]*>\s*TG\s*<\/a>/gi,
         '',
       );
       return open + next + close;
@@ -5813,7 +5816,7 @@ export function stripLobbyLeftoverForumPinTg(html) {
  * (quiet-pin is mint chip + Copy; no <a> inside .forum-pin). Humans see leftover mixed
  * .forum-pin a in view-source (.forum-pin a,.forum-copy). Distinct leftover vs leftover pin TG dump.
  * Keep .forum-copy + .forum-pin + .forum-ca + #forum-copy. Keep footer Telegram
- * https://t.me/+xB7S8mIQaKFiZjRh. Keep .dasha-lobby + class=forum-play + #forum-play-go + #dasha-forum.
+ * https://t.me/+ck9pUjL2ncNiZjRh. Keep .dasha-lobby + class=forum-play + #forum-play-go + #dasha-forum.
  * Lobby only. Do not eat .forum-copy. Do not eat footer Telegram. Do not restore pin TG dump.
  */
 export function stripLobbyLeftoverForumPinACss(html) {
@@ -7321,6 +7324,17 @@ function computeProofPageResponse(request) {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-store',
       'X-Dasha-Edge': 'compute-proof',
+    }),
+  });
+}
+
+function computeStartPageResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(COMPUTE_START_PAGE_HTML), {
+    status: 200,
+    headers: htmlHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'compute-start',
     }),
   });
 }
@@ -11195,6 +11209,9 @@ async function productEdge(request, url, env) {
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof' || url.pathname === '/compute/proof/')) {
       return computeProofPageResponse(request);
     }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/start' || url.pathname === '/compute/start/')) {
+      return computeStartPageResponse(request);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/caps' || url.pathname === '/caps/')) {
       return capsPageResponse(request);
     }
@@ -12430,6 +12447,9 @@ export default {
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof' || url.pathname === '/compute/proof/')) {
       return computeProofPageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/start' || url.pathname === '/compute/start/')) {
+      return computeStartPageResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/caps' || url.pathname === '/caps/')) {
       return capsPageResponse(request);

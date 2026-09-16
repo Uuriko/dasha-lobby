@@ -5,7 +5,7 @@
  * footer already keeps official Telegram. Humans see leftover pin TG in view-source.
  * Distinct leftover vs leftover id="forum-play" / leftover .forum-back / leftover .forum-form.
  * Keep .forum-pin + .forum-ca + #forum-copy. Keep footer Telegram
- * https://t.me/+xB7S8mIQaKFiZjRh only. Do not ban all t.me.
+ * https://t.me/+ck9pUjL2ncNiZjRh only. Do not ban all t.me.
  * Disk still emits leftover (rewrite drops it). No Designer. Never plugin.jup.ag.
  */
 import assert from "node:assert/strict";
@@ -23,7 +23,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, "dasha-lobby-worker.mjs"), "utf8");
 const lobbyDisk = readFileSync(join(root, "dasha-lobby-page.html"), "utf8");
 const MINT = "53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump";
-const TG = "https://t.me/+xB7S8mIQaKFiZjRh";
+const TG = "https://t.me/+ck9pUjL2ncNiZjRh";
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, "worker must not mention plugin.jup.ag");
 assert.ok(
@@ -86,7 +86,7 @@ assert.match(afterStyleScript(LIVE), />Telegram</, "fixture footer Telegram stay
 
 const gone = stripLobbyLeftoverForumPinTg(LIVE);
 assert.doesNotMatch(pinInner(gone), />TG</, "drops leftover pin TG");
-assert.doesNotMatch(pinInner(gone), /t\.me\/\+xB7S8mIQaKFiZjRh/, "drops leftover pin t.me");
+assert.doesNotMatch(pinInner(gone), /t\.me\/\+ck9pUjL2ncNiZjRh/, "drops leftover pin t.me");
 assert.match(gone, /class=["']forum-pin["']/, ".forum-pin stays");
 assert.match(gone, /class=["']forum-ca["']/, ".forum-ca stays");
 assert.match(gone, /id=["']forum-copy["']/, "#forum-copy stays");
@@ -131,7 +131,7 @@ assert.match(afterStyleScript(lobbyDisk), />Telegram</, "disk footer Telegram st
 
 function assertQuietPin(html, label) {
   assert.doesNotMatch(pinInner(html), />TG</, `${label} no leftover pin TG after style/script strip`);
-  assert.doesNotMatch(pinInner(html), /t\.me\/\+xB7S8mIQaKFiZjRh/, `${label} no leftover pin t.me`);
+  assert.doesNotMatch(pinInner(html), /t\.me\/\+ck9pUjL2ncNiZjRh/, `${label} no leftover pin t.me`);
   assert.match(html, /class=["']forum-pin["']/, `${label} .forum-pin stays`);
   assert.match(html, /id=["']forum-copy["']/, `${label} #forum-copy stays`);
   assert.match(html, /class=["']forum-ca["']/, `${label} .forum-ca stays`);

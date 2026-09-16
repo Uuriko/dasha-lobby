@@ -72,7 +72,7 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.match(chessHtml, /<link rel="describedby" href="\/llms\.txt" type="text\/plain">/, `${origin}/chess HTML describedby`);
   assert.match(chessHtml, /<link rel="describedby" href="\/llms-full\.txt" type="text\/plain">/, `${origin}/chess HTML describedby full`);
   assert.doesNotMatch(chessHtml, /plugin\.jup\.ag/);
-  assert.doesNotMatch(chessHtml, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+  assert.doesNotMatch(chessHtml, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
 
   if (origin.includes('lobby.')) {
     const x = await edgeWorker.fetch(new Request(`${origin}/client/x-connect.js`), {});

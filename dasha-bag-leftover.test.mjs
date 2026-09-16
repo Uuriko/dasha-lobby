@@ -13,7 +13,7 @@ const PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
 const LP = '8GDvsE3NbiKuo5uUFR9zgRY76mdhXuJfeDsy8hn7h3Aj';
 
 assert.doesNotMatch(worker, /plugin\.jup\.ag/);
-assert.doesNotMatch(worker, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+assert.doesNotMatch(worker, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
 
 function extractConst(name) {
   const m = worker.match(new RegExp(`const ${name} = \`([\\s\\S]*?)\`;`));

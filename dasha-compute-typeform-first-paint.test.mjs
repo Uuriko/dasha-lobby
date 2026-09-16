@@ -119,7 +119,7 @@ function assertMarkup(html, label) {
   assert.doesNotMatch(html, /id=["']count["']/, `${label} no count chrome`);
   assert.doesNotMatch(html, /id=["']demo-auth["']/, `${label} no demo-auth chrome`);
   assert.doesNotMatch(html, /Hosted when idle/, `${label} no lede fluff`);
-  assert.match(html, /t\.me\/\+xB7S8mIQaKFiZjRh/, `${label} TG`);
+  assert.match(html, /t\.me\/\+ck9pUjL2ncNiZjRh/, `${label} TG`);
   assert.match(html, /status\?\.live===true|status\.live===true/, `${label} hostedLive`);
   assert.match(html, /chmod 0600 \.dasha-provider-key/, `${label} 0600 after register`);
   assert.doesNotMatch(html, /hamburger/i, `${label} no hamburger`);

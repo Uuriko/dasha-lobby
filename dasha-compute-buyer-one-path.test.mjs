@@ -70,7 +70,7 @@ function assertBuyerOnePath(html, label) {
   assert.match(block, /data-copy=["']code-n8n["'][^>]*>Copy n8n</, `${label} Copy n8n`);
   assert.match(
     block,
-    /id=["']buyer-gateways["'][^>]*>For gateways\. <a href=["']https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh["'] target=["']_blank["'] rel=["']noopener noreferrer["']>Telegram<\/a><\/p>/,
+    /id=["']buyer-gateways["'][^>]*>For gateways\. <a href=["']https:\/\/t\.me\/\+ck9pUjL2ncNiZjRh["'] target=["']_blank["'] rel=["']noopener noreferrer["']>Telegram<\/a><\/p>/,
     `${label} For gateways. Telegram`,
   );
   assert.doesNotMatch(block, /potter@trydemigod|mailto:potter/, `${label} no demigod mailto`);
@@ -166,7 +166,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(first.langchain, `ChatOpenAI(openai_api_base="${BASE}")`);
     assert.equal(first.n8n, `OpenAI node · base URL\n${BASE}`);
     assert.equal(first.gateways, 'For gateways. Telegram');
-    assert.equal(first.href, 'https://t.me/+xB7S8mIQaKFiZjRh');
+    assert.equal(first.href, 'https://t.me/+ck9pUjL2ncNiZjRh');
     assert.equal(first.target, '_blank');
     assert.equal(first.rel, 'noopener noreferrer');
     assert.doesNotMatch(first.job, /For gateways|potter@trydemigod/);

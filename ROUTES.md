@@ -4,7 +4,7 @@ Last locked 2026-08-26. Worker-first. Do not Designer-publish.
 
 Mint: `53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump`
 Buy: `https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=<mint>` — never plugin.jup.ag
-TG: `https://t.me/+xB7S8mIQaKFiZjRh`
+TG: `https://t.me/+ck9pUjL2ncNiZjRh`
 Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 
 ## Live
@@ -31,6 +31,7 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 | `/benchmarks` | 200 | Worker `BENCHMARKS_PAGE_HTML` | yes | Live per-model measured tok/s from `/compute/api/network` `capacity[]` (provider self-measured, no invented numbers). Standalone page like `/verify`. Singular `/benchmark` stays 308-locked to `/compute`. In sitemap. lastmod 2026-09-08. |
 | `/compute/api/*` | JSON | Worker `computeApi` on www + lobby | no | www productEdge + lobby entry. Status/healthz/health public JSON. `/compute/api/health` (+slash) GET+HEAD same 200 JSON as `/compute/api/healthz` (not 308 — probes expect 200). Apex `/compute/health` still 308 → `/compute/api/healthz`. Leftover `/compute/readyz` (+slash / Title-case) 308 → `/compute/api/readyz` (do not invent bare `/readyz`). Do not fold `/compute/ocm/healthz` or invent site-root `/health`. Chat/providers via LOBBY DO / Workers AI. OpenAI leftover POST `/v1/completions` + `/v1/responses` (and slash) unauth 401 invalid API key, authed 400 not supported → POST `/v1/chat/completions` (no fake completions, no fake Mac). GET `/v1/chat/completions` 401 unauth / 405 authed JSON, not `{error:not found}`. POST `/v1/chat/completions` and POST `/v1/embeddings` stay. Page JS may call lobby; www must not html-404. |
 | `/compute/proof` `/compute/proof.json` `/compute/proof.md` | 200 | Worker proof page + LOBBY DO fan-out | no | Six-section live proof. HTML `X-Dasha-Edge: compute-proof`. JSON + markdown twins (`proof.compute.v0`) pull network/readyz/verify/factory/pricing via LOBBY stub — never same-zone subfetch. Do not invent `/compute/doctor.md` as a fake doc. |
+| `/compute/start` | 200 | Worker `COMPUTE_START_PAGE_HTML` | yes | Canonical evaluator path: Run once · verify the receipt · check the anchor (guest key capture, first call on a live-advertised model, one exact receipt lookup by `job_id`, signed-head anchor check, four failure scripts). `X-Dasha-Edge: compute-start`. Quiet links from `/compute` gate and `/compute/proof`. In sitemap. lastmod 2026-09-16. |
 
 | `/dasha-compute-open-alpha.tar.gz` | 200 | Worker ASSETS | no | Open-alpha kit. Leftover `/compute/open-alpha` `/compute/open_alpha` `/dasha-compute-open-alpha` (+slash / Title-case) 308 here (lobby same-host). Apex `/open-alpha` stays 308 `/compute`. |
 | `/crew` | 200 | Worker `CREW_PAGE_HTML` | yes | Five jobs. You keep the keys. OG + Copy prompt. `?job=scout` title Scout · Dasha Crew. `X-Dasha-Edge: crew`. Vibe line `Lobby / @dash_eats.` — no `/ simp /` product list. Simp out of footer. Quiet `/simp` stays. Quiet Compute `Use a Mac` / `Join a Mac` hash doors (`/compute#ask` · `/compute#provide`) — not exact `/compute` (Instinct `stripHomeCompute` / howto `stripRetiredProductDoors` stay off this page). Leftover meta lecture `No fake P&L` dropped (crawlers still saw it in view-source). Not a home door. In sitemap. |
