@@ -19,13 +19,17 @@ assert.match(robots, /^Allow:\s*\/listings\.json\s*$/m);
 assert.ok(!/^Allow:\s*\/dasha\s*$/m.test(robots));
 assert.ok(!/^Allow:\s*\/studio\s*$/m.test(robots));
 
-for (const path of ['/forum', '/privacy', '/bag', '/which', '/listings', '/listings.json', '/crew', '/digest', '/compute', '/contribute', '/bounties']) {
+for (const path of ['/forum', '/privacy', '/bag', '/which', '/listings', '/listings.json', '/crew', '/digest', '/start', '/providers', '/developers', '/network', '/compute', '/contribute', '/bounties']) {
   assert.ok(sitemap.includes(`https://www.getdasha.com${path}</loc>`), `sitemap has ${path}`);
 }
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/which<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/crew<\/loc><lastmod>2026-09-01<\/lastmod>/);
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/digest<\/loc><lastmod>2026-09-01<\/lastmod>/);
+assert.match(sitemap, /https:\/\/www\.getdasha\.com\/start<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemap, /https:\/\/www\.getdasha\.com\/providers<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemap, /https:\/\/www\.getdasha\.com\/developers<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemap, /https:\/\/www\.getdasha\.com\/network<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/compute<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/compute\/proof<\/loc><lastmod>2026-09-15<\/lastmod>/);
 assert.match(sitemap, /https:\/\/www\.getdasha\.com\/contribute<\/loc><lastmod>2026-09-01<\/lastmod>/);
@@ -39,4 +43,4 @@ assert.doesNotMatch(injected, /\?t=/);
 assert.doesNotMatch(injected, /lobby\?/);
 assert.ok(injected.includes('https://www.getdasha.com/forum</loc>'));
 
-console.log('dasha-sitemap: PASS (no lobby?t=, has /forum /privacy /bag /which /listings /crew /digest /compute /contribute /bounties, no /studio /login)');
+console.log('dasha-sitemap: PASS (no lobby?t=, has /forum /privacy /bag /which /listings /crew /digest /start /providers /developers /network /compute /contribute /bounties, no /studio /login)');

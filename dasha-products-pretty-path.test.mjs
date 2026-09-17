@@ -2,7 +2,8 @@
 /**
  * Leftover pretty path (Worker 8008785a): live /products /compute/products
  * (+slash / Title-case) html-404 → 308 /compute.
- * Keep prior peers /product /providers if already folding to /compute.
+ * Keep prior peer /product if already folding to /compute.
+ * /providers is the Muse providers face (200).
  * Exact /compute stays 200 (null dest). Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -24,7 +25,6 @@ const PRODUCTS = [
 ];
 const PRIOR_PEERS = [
   '/product', '/product/', '/Product', '/PRODUCT', '/pRoDuCt/',
-  '/providers', '/providers/', '/Providers', '/PROVIDERS', '/pRoViDeRs/',
 ];
 const FOLDS = [...PRODUCTS, ...PRIOR_PEERS];
 
@@ -34,6 +34,9 @@ for (const path of FOLDS) {
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.equal(potterHome308Dest('/compute/'), 'https://www.getdasha.com/compute', '/compute/ still folds to /compute');
 assert.equal(potterHome308Dest('/compute/use'), COMPUTE, '/compute/use still compute tab');
+assert.equal(potterHome308Dest('/providers'), null, '/providers Muse face dest null');
+assert.equal(potterHome308Dest('/providers/'), null, '/providers/ Muse face dest null');
+assert.equal(potterHome308Dest('/Providers'), 'https://www.getdasha.com/providers', 'Title-case /Providers casefolds');
 
 const env = { LOBBY_SESSION_SECRET: 'products-pretty-path-secret', AI: { run: async () => ({ response: 'ok' }) } };
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
@@ -51,11 +54,17 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   if (host === 'www.getdasha.com') {
     assert.equal(compute.headers.get('x-dasha-edge'), 'compute');
   }
+  const providers = await edgeWorker.fetch(new Request(`https://${host}/providers`), env);
+  assert.equal(providers.status, 200, `${host} /providers Muse 200`);
+  if (host === 'www.getdasha.com') {
+    assert.equal(providers.headers.get('x-dasha-edge'), 'muse-providers');
+  }
 }
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
-for (const path of ['/products', '/compute/products', '/product', '/providers']) {
+for (const path of ['/products', '/compute/products', '/product']) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/providers<\/loc>/, 'sitemap lists Muse /providers');
 
-console.log('dasha-products-pretty-path: PASS (/products+/compute/products 308 /compute; prior /product /providers still fold; Title-case+slash; /compute 200; no plugin.jup.ag)');
+console.log('dasha-products-pretty-path: PASS (/products+/compute/products 308 /compute; prior /product still folds; /providers Muse 200; Title-case+slash; /compute 200; no plugin.jup.ag)');

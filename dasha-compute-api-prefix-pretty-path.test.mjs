@@ -93,7 +93,7 @@ const FOLDS = [
 
 const STAY_OUT = [
   '/status', '/status/', '/Status',
-  '/network', '/network/', '/Network',
+  '/network', '/network/',
   '/healthz', '/healthz/', '/Healthz',
   '/health', '/health/', '/Health',
   '/compute/api/jobs', '/compute/api/jobs/',
@@ -112,6 +112,7 @@ for (const [path, dest] of FOLDS) {
 for (const path of STAY_OUT) {
   assert.equal(potterHome308Dest(path), null, `stay out ${path}`);
 }
+assert.equal(potterHome308Dest('/Network'), 'https://www.getdasha.com/network', 'Title-case /Network casefolds to Muse /network');
 
 const env = { LOBBY_SESSION_SECRET: 'compute-api-prefix-pretty-path-secret', AI: { run: async () => ({ response: 'ok' }) } };
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {

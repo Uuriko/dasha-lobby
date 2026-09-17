@@ -409,7 +409,6 @@ const TAB_UNCHANGED = [
   ['/compute/key', COMPUTE],
   ['/compute/use', COMPUTE],
   ['/compute/night', COMPUTE],
-  ['/start', COMPUTE],
   ['/onboard', COMPUTE],
   ['/quickstart', COMPUTE],
 ];

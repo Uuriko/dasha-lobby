@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Leftover: live GET apex Typeform/product doors → html-404 while /compute/* peers 308.
- * /start /sponsor(s) /ask /pay /credits /host /use /you
+ * /sponsor(s) /ask /pay /credits /host /use /you
  * /night /build /ocm (+ Title-case / slash) → https://www.getdasha.com/compute
+ * /start is the Muse marketing home (200). Start CTA still → /compute.
  * /provide + /compute/provide fold via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
  * → /compute#provide.
  * /marketplace /market leftover → https://www.getdasha.com/compute/ocm
@@ -19,7 +20,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /Apex product doors/);
-assert.match(workerSrc, /Apex product doors: \/start \/sponsor\(s\) \/ask \/pay \/credits \/host \/use/);
+assert.match(workerSrc, /Apex product doors: \/sponsor\(s\) \/ask \/pay \/credits \/host \/use/);
 assert.match(workerSrc, /\/provide \(\+slash\) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS/);
 assert.match(workerSrc, /tip-me doors/);
 
@@ -31,7 +32,6 @@ const PROVIDE_CASES = [
   '/provide', '/provide/', '/Provide', '/PROVIDE', '/pRoViDe/',
 ];
 const COMPUTE_CASES = [
-  '/start', '/start/', '/Start', '/START', '/sTaRt/',
   '/sponsor', '/sponsor/', '/Sponsor', '/SPONSOR',
   '/sponsors', '/sponsors/', '/Sponsors', '/SPONSORS',
   '/ask', '/ask/', '/Ask', '/ASK', '/aSk/',
@@ -65,6 +65,9 @@ for (const path of OCM_CASES) {
 for (const path of FAUCET_CASES) {
   assert.equal(potterHome308Dest(path), FAUCET, path);
 }
+assert.equal(potterHome308Dest('/start'), null, 'lowercase /start is Muse home 200');
+assert.equal(potterHome308Dest('/start/'), null, 'lowercase /start/ is Muse home 200');
+assert.equal(potterHome308Dest('/Start'), 'https://www.getdasha.com/start', 'Title-case /Start casefolds to /start');
 assert.equal(potterHome308Dest('/compute'), null, 'lowercase /compute stays 200');
 assert.equal(potterHome308Dest('/faucet'), null, 'lowercase /faucet stays 200');
 assert.equal(potterHome308Dest('/compute/provide'), PROVIDE);
@@ -106,6 +109,11 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       if (method === 'HEAD') assert.equal(await res.text(), '');
     }
   }
+  const start = await edgeWorker.fetch(new Request(`https://${host}/start`), env);
+  assert.equal(start.status, 200, `${host} /start Muse home 200`);
+  if (host === 'www.getdasha.com') {
+    assert.equal(start.headers.get('x-dasha-edge'), 'muse-start');
+  }
 }
 
-console.log('dasha-apex-product-door-pretty-path: PASS (apex Ask/Pay/Credits/Host/Use/Night/You/Build/Ocm+start/sponsor→/compute; /provide→/compute#provide; marketplace/market→/compute/ocm; tip→/faucet www+lobby GET+HEAD)');
+console.log('dasha-apex-product-door-pretty-path: PASS (apex Ask/Pay/Credits/Host/Use/Night/You/Build/Ocm+sponsor→/compute; /start Muse 200; /provide→/compute#provide; marketplace/market→/compute/ocm; tip→/faucet www+lobby GET+HEAD)');
