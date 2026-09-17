@@ -156,7 +156,7 @@ function assertLess(html, label) {
   assert.match(html, /tf-progress-label/, `${label} tf-progress-label id`);
   assert.match(html, /textContent=\(idx\+1\)\+' \/ '\+path\.length/, `${label} N / M paint`);
   assert.match(html, /aria-valuetext/, `${label} aria-valuetext`);
-  assert.match(html, /if\(step===['"]gate['"]\|\|step===['"]credits['"]\|\|step===['"]you['"]\|\|step===['"]earn['"]\)\{bar\.hidden=true;bar\.replaceChildren\(\);return\}/, `${label} hide progress gate|credits|you|earn`);
+  assert.match(html, /if\(step===['"]gate['"]\|\|step===['"]credits['"]\|\|step===['"]you['"]\|\|step===['"]earn['"]\|\|step===['"]ask['"]\)\{bar\.hidden=true;bar\.replaceChildren\(\);return\}/, `${label} hide progress gate|credits|you|earn|ask`);
   assert.match(html, /className='tf-dot'/, `${label} keep dots`);
   assert.match(html, /font-variant-numeric:tabular-nums/, `${label} tabular nums`);
 

@@ -27,6 +27,10 @@ function assertAskChatUx(html, label) {
   assert.match(html, /id=["']login["']/, `${label} login`);
   assert.match(html, /id=["']clear-chat["']/, `${label} clear`);
   assert.match(html, /id=["']change-engine["']/, `${label} change-engine`);
+  assert.match(html, /id=["']ask-model["']/, `${label} ask-model pill`);
+  assert.match(html, /id=["']ask-greet["'][^>]*>What\.</, `${label} empty greeting`);
+  assert.match(html, /function paintAskModel\(/, `${label} paintAskModel`);
+  assert.match(html, /showTf\(['"]ask['"]\)/, `${label} Community stays on Ask`);
   assert.match(html, /id=["']ask-starters["']/, `${label} starters`);
   assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code`);
   assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug`);
@@ -45,11 +49,12 @@ function assertAskChatUx(html, label) {
   assert.match(html, /function paintAskThread\(/, `${label} paintAskThread`);
   assert.match(html, /body\.classList\.toggle\(['"]has-chat['"]/, `${label} has-chat`);
   assert.match(html, /#step-ask \.ask-composer\{[^}]*position:sticky/, `${label} sticky composer`);
-  assert.match(html, /#change-engine\{[^}]*border-radius:999px/, `${label} engine pill`);
+  assert.match(html, /#change-engine(?:,#ask-model)?\{[^}]*border-radius:999px/, `${label} engine pill`);
   assert.match(html, /#ask-starters\{[^}]*display:flex;flex-wrap:wrap/, `${label} starter chips wrap`);
   assert.match(html, /\.ask-said\{[^}]*Arial,Helvetica,sans-serif/, `${label} Claude sans turns`);
   assert.match(html, /body\.has-chat #step-ask \.tf-q\{/, `${label} hide Do. after first turn`);
   assert.match(html, /body\[data-step=ask\] \.shell\{[^}]*52rem/, `${label} 52rem chat column`);
+  assert.match(html, /body\[data-step=ask\] #tf-progress\{display:none!important\}/, `${label} no Typeform progress on Ask`);
   assert.match(html, /#step-ask #guide\{display:none!important\}/, `${label} no How-guide on Ask`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
   assert.doesNotMatch(html, /Ask Dasha/, `${label} no dual Ask Dasha`);
@@ -96,10 +101,14 @@ if (puppeteer && existsSync(chrome)) {
       return {
         step: document.body.dataset.step,
         askQ: greet?.textContent || "",
-        greetSize: greet ? parseFloat(getComputedStyle(greet).fontSize) : 0,
+        greetClip: greet ? getComputedStyle(greet).position : "",
+        emptyGreet: vis(document.getElementById("ask-greet")),
+        emptyGreetText: (document.getElementById("ask-greet")?.textContent || "").trim(),
+        progress: vis(document.getElementById("tf-progress")),
         prompt: vis(prompt),
         login: vis(document.getElementById("login")),
         change: vis(document.getElementById("change-engine")),
+        askModel: vis(document.getElementById("ask-model")),
         starters: vis(document.getElementById("ask-starters")),
         threadHidden: document.getElementById("ask-thread")?.hidden === true,
         composerBottom: composer ? composer.getBoundingClientRect().bottom : 0,
@@ -113,10 +122,14 @@ if (puppeteer && existsSync(chrome)) {
     });
     assert.equal(cold.step, "ask");
     assert.equal(cold.askQ, "Do.");
-    assert.ok(cold.greetSize > 20 && cold.greetSize < 52, "Do. is a greeting, not Typeform 64px");
+    assert.equal(cold.greetClip, "absolute", "Do. is not a Typeform H1 on first paint");
+    assert.equal(cold.emptyGreet, true, "quiet What. greeting");
+    assert.equal(cold.emptyGreetText, "What.");
+    assert.equal(cold.progress, false, "no progress dots on Ask");
     assert.equal(cold.prompt, true, "composer prompt visible");
     assert.equal(cold.login, true, "Sign in in composer");
     assert.equal(cold.change, true, "engine pill near composer");
+    assert.equal(cold.askModel, false, "Hosted hides model pill");
     assert.equal(cold.starters, true, "starter chips on empty");
     assert.equal(cold.threadHidden, true);
     assert.equal(cold.provide, true, "doors visible as quiet footer");
@@ -125,6 +138,55 @@ if (puppeteer && existsSync(chrome)) {
     assert.ok(cold.promptFont <= 22, "composer type is chat-sized");
     assert.ok(cold.composerBottom > cold.promptTop, "composer holds the prompt");
     assert.ok(cold.composerBottom > cold.viewport * 0.55, "composer sits in the lower half");
+
+    const community = await page.evaluate(() => {
+      const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
+      providersOnline = 2;
+      networkModels = new Set(["qwen3-4b", "gemma3-27b"]);
+      networkCapacity = [{ model: "qwen3-4b", measured_providers: 1, tokens_per_second: 46.5 }];
+      cameFromHow = true;
+      setEngine("community", true);
+      const pill = document.getElementById("ask-model");
+      return {
+        step: document.body.dataset.step,
+        modelStep: vis(document.getElementById("step-model")),
+        which: (document.querySelector("#step-model .tf-q")?.textContent || "").trim(),
+        prompt: vis(document.getElementById("prompt")),
+        askModel: vis(pill),
+        askModelValue: pill?.value || "",
+        engine: document.getElementById("engine")?.value || "",
+        change: (document.getElementById("change-engine")?.textContent || "").trim(),
+      };
+    });
+    assert.equal(community.step, "ask", "Community stays on Ask");
+    assert.equal(community.modelStep, false, "Which model? step stays off");
+    assert.equal(community.which, "Which model?");
+    assert.equal(community.prompt, true, "composer stays");
+    assert.equal(community.askModel, true, "model pill on composer");
+    assert.equal(community.engine, "community");
+    assert.ok(community.askModelValue === "qwen3-4b" || community.askModelValue === "gemma3-27b", "pill has a live model");
+    assert.match(community.change, /Community/, "engine pill names Community");
+
+    await page.evaluate(() => {
+      const pill = document.getElementById("ask-model");
+      if (!pill) return;
+      pill.value = "gemma3-27b";
+      pill.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const picked = await page.evaluate(() => ({
+      step: document.body.dataset.step,
+      model: document.getElementById("model")?.value || "",
+      pill: document.getElementById("ask-model")?.value || "",
+    }));
+    assert.equal(picked.step, "ask", "picking a model does not leave Ask");
+    assert.equal(picked.model, "gemma3-27b");
+    assert.equal(picked.pill, "gemma3-27b");
+
+    await page.evaluate(() => {
+      setEngine("hosted", false);
+      $('engine').value = "hosted";
+      paintAskEngine();
+    });
 
     const afterTurn = await page.evaluate(() => {
       const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
