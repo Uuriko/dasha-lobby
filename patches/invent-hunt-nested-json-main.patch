@@ -1,0 +1,39 @@
+diff --git a/dasha-lobby-worker.mjs b/dasha-lobby-worker.mjs
+index 9dfd603..e560806 100644
+--- a/dasha-lobby-worker.mjs
++++ b/dasha-lobby-worker.mjs
+@@ -5114,6 +5114,8 @@ const POTTER_COMPUTE_API_RECEIPTS_308_PATHS = new Set([
+   '/compute/receipts', '/compute/receipts/',
+   '/api/receipt', '/api/receipt/',
+   '/api/receipts', '/api/receipts/',
++  // nested invent-hunt — face /compute/api/receipts 401 OK
++  '/compute/api/receipts.json', '/compute/api/receipts.json/',
+ ]);
+ /** /api/keys → /compute/api/keys. Bare /keys|/compute/keys stay compute-tab → /compute. */
+ const POTTER_COMPUTE_API_KEYS_308_PATHS = new Set([
+@@ -5128,6 +5130,8 @@ const POTTER_COMPUTE_API_STATUS_308_PATHS = new Set([
+ const POTTER_COMPUTE_API_NETWORK_308_PATHS = new Set([
+   '/compute/network', '/compute/network/',
+   '/api/network', '/api/network/',
++  // nested invent-hunt — live tip also holds apex /api/network.json
++  '/compute/api/network.json', '/compute/api/network.json/',
+ ]);
+ /** /compute/factory /api/factory → /compute/api/factory. Bare /factory folds via POTTER_COMPUTE_TAB → /compute. Exact /compute/api/factory stays handler. */
+ const POTTER_COMPUTE_API_FACTORY_308_PATHS = new Set([
+@@ -5306,6 +5310,16 @@ const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
+   ['/humans.txt/', 'https://www.getdasha.com/contribute'],
+   ['/muse', 'https://www.getdasha.com/'],
+   ['/muse/', 'https://www.getdasha.com/'],
++  // Invent-hunt leftovers 2026-09-17 — nested compute/api/*.json → live faces
++  // (receipts 401 face OK). Stay out of /api/v1 /api/models /api/providers.
++  ['/compute/api/network.json', 'https://www.getdasha.com/compute/api/network'],
++  ['/compute/api/network.json/', 'https://www.getdasha.com/compute/api/network'],
++  ['/compute/api/pricing.json', 'https://www.getdasha.com/compute/api/pricing'],
++  ['/compute/api/pricing.json/', 'https://www.getdasha.com/compute/api/pricing'],
++  ['/compute/api/receipts.json', 'https://www.getdasha.com/compute/api/receipts'],
++  ['/compute/api/receipts.json/', 'https://www.getdasha.com/compute/api/receipts'],
++  ['/compute/api/chain.json', 'https://www.getdasha.com/compute/api/chain'],
++  ['/compute/api/chain.json/', 'https://www.getdasha.com/compute/api/chain'],
+ ]);
+ /** Nested Motley leftover /compute/api/robots (+slash / Title-case via
+  *  toLowerCase) while /robots.txt is already 200. .txt peers + apex
