@@ -5455,6 +5455,20 @@ const POTTER_COMPUTE_API_RECEIPTS_JSON_308_PATHS = new Set([
 const POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS = new Set([
   '/compute/api/chain.json', '/compute/api/chain.json/',
 ]);
+/** Bare leftover /proof (+slash / Title-case via toLowerCase) html-404
+ *  while /compute/proof is already 200. /proof.json already 308 →
+ *  /compute/proof.json. Same-host dest. Do not rewrite the #216 proof
+ *  page body. Do not invent /api/proof. */
+const POTTER_PROOF_308_PATHS = new Set([
+  '/proof', '/proof/',
+]);
+/** Nested leftover /compute/digest (+slash / Title-case via toLowerCase)
+ *  html-404 while Motley /digest is already 200 and /compute/api/digest
+ *  already 308 → /digest.json. Quiet synonym to the Motley HTML face.
+ *  Do not retarget /api/digest or /compute/api/digest. */
+const POTTER_COMPUTE_DIGEST_308_PATHS = new Set([
+  '/compute/digest', '/compute/digest/',
+]);
 
 export function potterHome308Dest(path) {
   const raw = String(path || "");
@@ -5768,6 +5782,12 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/api/chain";
   }
+  if (POTTER_PROOF_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/proof";
+  }
+  if (POTTER_COMPUTE_DIGEST_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/digest";
+  }
   if (POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(p)) {
     return POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.get(p);
   }
@@ -5873,6 +5893,8 @@ export function potterHome308Response(request, url) {
             src === '/compute/api/benchmarks.json/'
           )) ||
           (u.pathname === '/compute/proof.json' && POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src)) ||
+          (u.pathname === '/compute/proof' && POTTER_PROOF_308_PATHS.has(src)) ||
+          (u.pathname === '/digest' && POTTER_COMPUTE_DIGEST_308_PATHS.has(src)) ||
           (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )
       ) {
