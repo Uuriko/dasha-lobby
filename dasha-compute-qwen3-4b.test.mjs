@@ -28,9 +28,12 @@ function assertCatalog(html, label) {
   assert.match(html, /value=["']qwen3-4b["']/, `${label} qwen3-4b selectable`);
   assert.match(html, /value=["']gemma3-12b["']/, `${label} gemma3-12b stays`);
   assert.match(html, /value=["']gemma3-27b["']/, `${label} gemma3-27b stays`);
+  assert.match(html, /value=["']ternary-bonsai-2-27b["']/, `${label} ternary-bonsai-2-27b selectable`);
+  assert.match(html, /\['ternary-bonsai-2-27b','Ternary-Bonsai-2-27B-PQ2_0','Ternary Bonsai 2 27B','PQ2',24,'community'\]/, `${label} bonsai MODELS row`);
   assert.match(html, /\['qwen3-4b','qwen3:4b','Qwen 3 4B','2\.5 GB',8,'fast chat'\]/, `${label} MODELS row`);
   assert.match(html, /\['qwen3-8b','qwen3:8b'/, `${label} 8b MODELS row stays`);
   assert.match(html, /SUB24=new Set\(\['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b'\]\)/, `${label} SUB24 includes 4b`);
+  assert.doesNotMatch(html, /SUB24=new Set\([^)]*ternary-bonsai-2-27b/, `${label} bonsai stays out of Mixture SUB24`);
   assert.match(html, /sub-24GB specialists · live default qwen3-8b/, `${label} mixture chip still 8b`);
   assert.match(html, /networkModels\.has\(['"]gemma3-27b['"]\)/, `${label} Community still prefers 27b when advertised`);
   assert.match(html, /winningMeasuredCapacity\(\)/, `${label} proof chip uses winning measured`);
@@ -98,6 +101,7 @@ assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-8b']).includes('qwen3-4b'), '
 assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-8b', 'not-a-model']).includes('not-a-model'), 'unknown stays out');
 assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-4b']).includes('gpt-oss-120b'), 'unpolled catalog ids stay locked');
 assert.ok([...COMPUTE_CATALOG_MODELS].includes('qwen3-4b'));
+assert.ok([...COMPUTE_CATALOG_MODELS].includes('ternary-bonsai-2-27b'), 'catalog allowlists Potter Mac Community id');
 
 const stale = rows.get(`compute:provider:${credentials.provider_id}`);
 stale.allowedModels = ['qwen3-8b'];

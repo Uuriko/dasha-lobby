@@ -69,8 +69,22 @@ const liveHead = await network.fetch(new Request('https://lobby.getdasha.com/com
 assert.equal(liveHead.status, 200);
 assert.equal(await liveHead.text(), '');
 
+await storage.put('compute:provider:mac_bonsai', {
+  id: 'mac_bonsai',
+  owner: 'x:net',
+  name: 'Potter Mac',
+  models: ['ternary-bonsai-2-27b'],
+  lastSeenAt: Date.now(),
+});
+const bonsai = await pair('lobby.getdasha.com', '/compute/api/network');
+assert.equal(bonsai.status, 200);
+assert.equal(bonsai.body.providers_online, 2);
+assert.ok(bonsai.body.models_available.includes('ternary-bonsai-2-27b'), 'advertised Community bonsai is listed');
+assert.ok(bonsai.body.models_available.includes('gemma3-12b'), 'prior live model stays');
+
 rows.delete('compute:provider:mac_live');
 rows.delete('compute:provider:mac_stale');
+rows.delete('compute:provider:mac_bonsai');
 
 const lobby = {
   idFromName: () => 'public',
