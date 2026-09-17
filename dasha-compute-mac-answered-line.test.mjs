@@ -34,7 +34,7 @@ function assertMacLine(html, label) {
   assert.match(html, /a\.textContent=['"]Join a Mac['"]/, `${label} Join a Mac`);
   assert.match(html, /createTextNode\(['"]A Mac answered\. ['"]\)/, `${label} A Mac answered.`);
   assert.match(html, /paintAnswerReceiptNote\(['"]['"]\);paintAnswerMacLine\(['"]['"]\)/, `${label} hide clears line`);
-  assert.match(html, /paintAnswerReceiptNote\(routeFace\);\s*paintAnswerMacLine\(routeFace\)/, `${label} show paints line`);
+  assert.match(html, /paintAnswerReceiptNote\(routeFace\);\s*(?:paintReceiptCard\(\);\s*)?paintAnswerMacLine\(routeFace\)/, `${label} show paints line`);
   assert.match(
     html,
     /const routeFace=\(apiRoute==='self'\|\|apiRoute==='community'\|\|apiRoute==='mixture'\)\?apiRoute/,
