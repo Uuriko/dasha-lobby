@@ -53,8 +53,8 @@ assert.doesNotMatch(which, /before using a token link/);
 
 const sitemap = extractConst('SITEMAP_XML');
 assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/forum<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/llms\.txt<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/how-to-buy<\/loc><lastmod>2026-09-01<\/lastmod>/);
+assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/llms\.txt<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/how-to-buy<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/privacy<\/loc>/);
 assert.doesNotMatch(sitemap, /<loc>https:\/\/www\.getdasha\.com\/dasha<\/loc>/);
 assert.doesNotMatch(sitemap, /<loc>https:\/\/www\.getdasha\.com\/studio<\/loc>/);
