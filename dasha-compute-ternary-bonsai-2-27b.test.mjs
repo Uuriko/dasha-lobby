@@ -6,7 +6,7 @@
  * Test-only. No wrangler. No Designer. No plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import worker, { DashaLobby } from './dasha-lobby-worker.mjs';
@@ -110,5 +110,49 @@ const job = await lobby.fetch(new Request('https://lobby.getdasha.com/compute/ap
   method: 'POST', headers: userHeaders, body: JSON.stringify({ model: BONSAI, prompt: 'bonsai-ok' }),
 }));
 assert.equal(job.status, 202, 'buyers can submit ternary-bonsai-2-27b');
+
+const chrome = process.env.CHROME_BIN || '/usr/bin/google-chrome';
+let puppeteer;
+try { puppeteer = (await import('puppeteer-core')).default; } catch {}
+if (puppeteer && existsSync(chrome)) {
+  const browser = await puppeteer.launch({ executablePath: chrome, headless: true, args: ['--no-sandbox'] });
+  try {
+    const page = await browser.newPage();
+    await page.goto(new URL('./dasha-compute.html', import.meta.url).href, { waitUntil: 'domcontentloaded' });
+    const painted = await page.evaluate((id) => {
+      const select = document.getElementById('model');
+      providersOnline = 1;
+      networkModels = new Set([id]);
+      networkCapacity = [{ model: id, measured_providers: 1, tokens_per_second: 1 }];
+      preferOnlineModel(select, false);
+      document.getElementById('engine').value = 'community';
+      paintModelChoices();
+      const chips = [...document.querySelectorAll('#model-choices [data-model]')].map((b) => ({ id: b.dataset.model, text: b.textContent }));
+      hostedChosenThisSession = true;
+      setEngine('hosted', true);
+      const hosted = { engine: document.getElementById('engine').value, model: document.getElementById('model').value };
+      networkModels = new Set([id, 'qwen3-8b']);
+      document.getElementById('engine').value = 'mixture';
+      paintModelChoices();
+      const mixture = [...document.querySelectorAll('#model-choices [data-model]')].map((b) => b.dataset.model);
+      return {
+        ids: [...select.options].map((o) => o.value),
+        selected: chips.length ? chips[0].id : '',
+        chip: chips[0]?.text || '',
+        hosted,
+        mixture,
+      };
+    }, BONSAI);
+    assert.ok(painted.ids.includes(BONSAI), 'select lists bonsai');
+    assert.equal(painted.selected, BONSAI);
+    assert.match(painted.chip, /Ternary Bonsai 2 27B · PQ2 · community/);
+    assert.equal(painted.hosted.engine, 'hosted');
+    assert.equal(painted.hosted.model, 'gpt-oss-20b', 'Hosted still pins gpt-oss-20b');
+    assert.ok(!painted.mixture.includes(BONSAI), 'Mixture does not list 27B bonsai');
+    assert.ok(painted.mixture.includes('qwen3-8b'));
+  } finally {
+    await browser.close();
+  }
+}
 
 console.log('dasha-compute-ternary-bonsai-2-27b: PASS (catalog + picker + network advertise; Hosted gpt-oss-* unchanged)');
