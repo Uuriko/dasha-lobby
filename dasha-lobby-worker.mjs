@@ -65,6 +65,20 @@ import {
   publicGithubLink,
 } from './dasha-lobby-github.mjs';
 import {
+  GOOGLE_START_PATH,
+  GOOGLE_CALLBACK_PATH,
+  GOOGLE_OAUTH_COOKIE,
+  googleAuthorizeUrl,
+  googleConfigured,
+  googleOauthStateCookie,
+  googleRedirectUri,
+  exchangeGoogleCode,
+  verifyGoogleIdToken,
+  normalizeGoogleUser,
+  createGoogleSessionToken,
+  publicGoogleLink,
+} from './dasha-lobby-google.mjs';
+import {
   buildPublicBoard,
   publicPerryRow,
   joinBoard,
@@ -5447,7 +5461,7 @@ export function potterHome308Dest(path) {
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  if (p === "/oauth/x" || p.startsWith("/oauth/x/") || p === "/oauth/github" || p.startsWith("/oauth/github/")) {
+  if (p === "/oauth/x" || p.startsWith("/oauth/x/") || p === "/oauth/github" || p.startsWith("/oauth/github/") || p === "/oauth/google" || p.startsWith("/oauth/google/")) {
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
@@ -7922,6 +7936,12 @@ function oauthHtmlResponse(body, status, { head = false } = {}) {
 function githubOauthHtmlResponse(body, status, { head = false, nonce = '' } = {}) {
   const headers = new Headers(privateHtmlHeaders({ 'Content-Type': 'text/html; charset=utf-8' }, nonce));
   headers.append('Set-Cookie', githubOauthStateCookie());
+  return new Response(head ? null : body, { status, headers });
+}
+
+function googleOauthHtmlResponse(body, status, { head = false, nonce = '' } = {}) {
+  const headers = new Headers(privateHtmlHeaders({ 'Content-Type': 'text/html; charset=utf-8' }, nonce));
+  headers.append('Set-Cookie', googleOauthStateCookie());
   return new Response(head ? null : body, { status, headers });
 }
 
@@ -10738,6 +10758,101 @@ async function handleOAuth(request, env, allowedOrigin) {
   return null;
 }
 
+async function handleGoogleOAuth(request, env, allowedOrigin) {
+  const url = new URL(request.url);
+  const configured = googleConfigured(env);
+
+  if (url.pathname === GOOGLE_START_PATH && (request.method === 'GET' || request.method === 'HEAD')) {
+    if (!configured) {
+      return googleOauthHtmlResponse(
+        htmlPage(
+          'Google sign-in unavailable',
+          '<h1>Google sign-in not configured</h1><p>Dasha still works where identity is optional. An operator needs to set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, and <code>LOBBY_SESSION_SECRET</code> on the worker.</p><p><a href="https://www.getdasha.com/">Back to Dasha</a></p>',
+        ),
+        503,
+      );
+    }
+    if (request.method === 'HEAD') return googleOauthHtmlResponse('', 200, { head: true });
+    if (url.searchParams.get('continue') !== '1') {
+      return googleOauthHtmlResponse(
+        htmlPage('Sign in with Google', '<h1>Sign in with Google</h1><p>Dasha reads your public Google profile across the site. It does not post for you.</p><p><a href="https://www.getdasha.com/privacy">Privacy</a></p><p><a href="/oauth/google/start?continue=1">Continue with Google</a></p>'),
+        200,
+      );
+    }
+    const verifier = randomUrlToken(32);
+    const challenge = await pkceChallengeS256(verifier);
+    const state = randomUrlToken(16);
+    const stateToken = await signPayload(env.LOBBY_SESSION_SECRET, {
+      v: 1,
+      kind: 'google_oauth_state',
+      state,
+      verifier,
+      exp: Date.now() + 15 * 60_000,
+    });
+    const dest = googleAuthorizeUrl({
+      clientId: env.GOOGLE_CLIENT_ID,
+      redirectUri: googleRedirectUri(env),
+      state,
+      challenge,
+    });
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...SECURITY,
+        Location: dest,
+        'Set-Cookie': googleOauthStateCookie(stateToken),
+      },
+    });
+  }
+
+  if (url.pathname === GOOGLE_CALLBACK_PATH && request.method === 'GET') {
+    if (!configured) {
+      return googleOauthHtmlResponse(htmlPage('Error', '<p>OAuth not configured.</p>'), 503);
+    }
+    const err = url.searchParams.get('error');
+    if (err) {
+      return googleOauthHtmlResponse(
+        htmlPage('Cancelled', `<h1>Sign-in cancelled</h1><p>${escapeHtml(err)}</p><p><a href="https://www.getdasha.com/">Back to Dasha</a></p>`),
+        400,
+      );
+    }
+    const code = url.searchParams.get('code');
+    const state = url.searchParams.get('state');
+    const oauthCookie = readCookie(request.headers.get('Cookie') || '', GOOGLE_OAUTH_COOKIE);
+    const st = oauthCookie ? await verifyPayload(env.LOBBY_SESSION_SECRET, oauthCookie) : null;
+    if (!code || !state || st?.v !== 1 || st?.kind !== 'google_oauth_state' || st.state !== state || !st.verifier) {
+      return googleOauthHtmlResponse(htmlPage('Error', '<h1>Invalid OAuth state</h1><p><a href="/oauth/google/start">Try again</a></p>'), 400);
+    }
+    try {
+      const tokens = await exchangeGoogleCode(env, { code, verifier: st.verifier });
+      const claims = await verifyGoogleIdToken(tokens.id_token, env.GOOGLE_CLIENT_ID);
+      const user = normalizeGoogleUser(claims);
+      const session = await createGoogleSessionToken(env, user);
+      // Worker isolate — no room Durable Object storage on this path.
+      await bumpLobbyMetric(env?.__lobbyMetricStorage, 'signin:success:google');
+      const profile = publicGoogleLink(user);
+      const scriptProfile = JSON.stringify(profile).replace(/</g, '\\u003c');
+      const scriptNonce = randomUrlToken(18);
+      const body = htmlPage('Signed in', `<h1>Signed in${user.name ? ` as ${escapeHtml(user.name)}` : ''}</h1>
+        <p>You can close this tab and return to Dasha.</p>
+        <p><a href="https://www.getdasha.com/">Open Dasha</a></p>
+        <script nonce="${scriptNonce}">try{if(window.opener){var p=${scriptProfile};['https://www.getdasha.com','https://getdasha.com','https://lobby.getdasha.com'].forEach(function(o){try{window.opener.postMessage({type:'dasha-google-linked',google:p},o);}catch(e){}});}}catch(e){} setTimeout(function(){window.close()},800);</script>`);
+      const headers = new Headers(privateHtmlHeaders({ 'Content-Type': 'text/html; charset=utf-8' }, scriptNonce));
+      headers.append('Set-Cookie', cookieHeader(session));
+      headers.append('Set-Cookie', clearLegacyCookieHeader());
+      headers.append('Set-Cookie', googleOauthStateCookie());
+      return new Response(body, { status: 200, headers });
+    } catch (error) {
+      return googleOauthHtmlResponse(
+        htmlPage('Error', `<h1>Could not sign in with Google</h1><p>${escapeHtml(String(error?.message || error).slice(0, 200))}</p><p><a href="/oauth/google/start">Try again</a></p>`),
+        502,
+      );
+    }
+  }
+
+  return json({ configured, error: configured ? 'not_found' : 'not_configured' }, configured ? 404 : 501, allowedOrigin, { credentials: true });
+}
+
 async function handleGithubOAuth(request, env, allowedOrigin) {
   const url = new URL(request.url);
   const configured = githubConfigured(env);
@@ -11352,7 +11467,7 @@ async function productEdge(request, url, env) {
     if (isChessApiPath(url.pathname)) {
       return proxyChessApi(request, env);
     }
-    if (url.pathname.startsWith('/oauth/x') || url.pathname.startsWith('/oauth/github')) {
+    if (url.pathname.startsWith('/oauth/x') || url.pathname.startsWith('/oauth/github') || url.pathname.startsWith('/oauth/google')) {
       const dest = new URL(request.url);
       dest.protocol = 'https:';
       dest.hostname = 'lobby.getdasha.com';
@@ -12815,6 +12930,10 @@ export default {
 
     if (url.pathname.startsWith('/oauth/github')) {
       return handleGithubOAuth(request, env, allowedOrigin);
+    }
+
+    if (url.pathname.startsWith('/oauth/google')) {
+      return handleGoogleOAuth(request, env, allowedOrigin);
     }
 
     if (url.pathname.startsWith('/oauth/x')) {
