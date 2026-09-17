@@ -279,6 +279,32 @@ export function tickFromDex(json) {
   });
 }
 
+/** Home remount tape from live GET /price. Never invent mint/pair. */
+export function tickFromPrice(json) {
+  const row = json && typeof json === 'object' ? json : null;
+  if (!row || row.ok === false) return null;
+  const price = Number(row.priceUsd);
+  if (!Number.isFinite(price) || price <= 0) return null;
+  const usd = formatUsd(price);
+  if (!usd) return null;
+  const bits = [`$dasha $${usd}`];
+  const ch = Number(row.change?.h24);
+  if (Number.isFinite(ch)) bits.push(`${ch.toFixed(1)}% 24h`);
+  const liq = Number(row.liquidityUsd);
+  if (Number.isFinite(liq) && liq > 0) bits.push(`liq $${liq.toFixed(2)}`);
+  const pair = String(row.pair || '').trim();
+  if (!pair) return null;
+  const href = cleanHref(`https://dexscreener.com/solana/${pair.toLowerCase()}`);
+  if (!href) return null;
+  return normalizeItem({
+    source: 'Dexscreener',
+    kind: 'tape',
+    title: bits.join(' · '),
+    href,
+    at: String(row.asOf || '').trim() || new Date().toISOString(),
+  });
+}
+
 let tickCache = { at: 0, tick: null };
 const TICK_TTL_MS = 60_000;
 
@@ -459,8 +485,10 @@ export function injectDigestSection(html, items, opts) {
 const REMOUNT_CSS = SECTION_CSS.replace(/#dasha-digest/g, '#__TAPE__');
 
 /** Client remount after server Tape. HEAD only.
- * Fetches /digest.json, puts live `tick` as row 1, then a quiet Crew line.
- * Crew stays hidden if the remount fetch fails.
+ * Fetches /digest.json for news rows, then overlays Dexscreener price/change/liq
+ * from same-origin GET /price (not the evening digest snapshot).
+ * /price fail keeps last good this session, else hides stale Dex numbers.
+ * Crew stays hidden if both remount fetches fail.
  * Leftover window.Webflow.push dropped after webflow.js was already DOM-stripped.
  * Leftover remount querySelector('footer') dropped after home footer was already DOM-stripped.
  * Leftover remount on /lobby dropped after boot is home-only.
@@ -540,8 +568,43 @@ export function digestRemountScript() {
       p.appendChild(a);
       tape.parentNode.insertBefore(p,tape.nextSibling);
     }
+    function hideStaleDex(list){
+      for(var i=0;i<list.length;i++){
+        var r=list[i];
+        if(r&&/dexscreener\\.com\\/solana\\//i.test(r.href)&&/\\$dasha\\s+\\$/.test(r.title)){
+          list[i]={source:r.source,title:'$dasha',href:r.href};
+        }
+      }
+      return list;
+    }
+    function tickFromPrice(p){
+      if(!p||p.ok===false)return null;
+      var price=Number(p.priceUsd);
+      if(!(price>0)||!isFinite(price))return null;
+      function fmtUsd(n){
+        var x=Number(n);
+        if(!isFinite(x)||x<=0)return '';
+        if(x>=1)return x.toFixed(2);
+        if(x>=0.01)return x.toFixed(4);
+        return x.toFixed(7).replace(/0+$/,'').replace(/\\.$/,'');
+      }
+      var usd=fmtUsd(price);
+      if(!usd)return null;
+      var dol=String.fromCharCode(36);
+      var bits=['$dasha '+dol+usd];
+      var ch=p.change&&Number(p.change.h24);
+      if(isFinite(ch))bits.push(ch.toFixed(1)+'% 24h');
+      var liq=Number(p.liquidityUsd);
+      if(isFinite(liq)&&liq>0)bits.push('liq '+dol+liq.toFixed(2));
+      var pair=String(p.pair||'').trim();
+      if(!pair)return null;
+      var href=cleanHref('https://dexscreener.com/solana/'+pair.toLowerCase());
+      if(!href)return null;
+      return {source:'Dexscreener',title:bits.join(' \u00b7 '),href:href};
+    }
     function paint(items,tick){
       var list=firstRows(items,tick);
+      if(!tick)list=hideStaleDex(list);
       if(!list.length)return false;
       var id=tapeId();
       var sec=document.getElementById(id);
@@ -577,12 +640,19 @@ export function digestRemountScript() {
       crewAfter(sec);
       return true;
     }
+    var lastPriceTick=null;
+    var priceTimer=0;
     function go(){
-      fetch('/digest.json',{credentials:'same-origin'}).then(function(r){
-        return r.ok?r.json():null;
-      }).then(function(pack){
-        if(!pack)return;
-        paint(pack.items,pack.tick);
+      var priceHref='/price';
+      Promise.all([
+        fetch('/digest.json',{credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+        fetch(priceHref,{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+      ]).then(function(both){
+        var pack=both[0];
+        var live=tickFromPrice(both[1]);
+        if(live)lastPriceTick=live;
+        if(!pack&&!lastPriceTick)return;
+        paint(pack&&pack.items||[],lastPriceTick);
       }).catch(function(){});
     }
     function boot(){
@@ -591,6 +661,7 @@ export function digestRemountScript() {
       function run(){
         requestAnimationFrame(function(){
           go();
+          if(!priceTimer)priceTimer=setInterval(go,60000);
         });
       }
       if(document.readyState==='complete')run();
@@ -623,15 +694,15 @@ export function injectDigestRemount(html) {
   if (isLobbyLeftoverDigestRemountPage(src)) return src;
   const tag = `<script id="dasha-digest-remount">${digestRemountScript()}</script>`;
   if (/id=["']dasha-digest-remount["']/.test(src)) {
-    return src.replace(/<script\b[^>]*id=["']dasha-digest-remount["'][^>]*>[\s\S]*?<\/script>/i, tag);
+    return src.replace(/<script\b[^>]*id=["']dasha-digest-remount["'][^>]*>[\s\S]*?<\/script>/i, () => tag);
   }
   if (/id=["']dasha-home-chrome-hide["']/.test(src)) {
-    return src.replace(/(<style\b[^>]*id=["']dasha-home-chrome-hide["'][^>]*>[\s\S]*?<\/style>)/i, `$1${tag}`);
+    return src.replace(/(<style\b[^>]*id=["']dasha-home-chrome-hide["'][^>]*>[\s\S]*?<\/style>)/i, (_, style) => style + tag);
   }
   if (/id=["']dasha-mobile-scroll["']/.test(src)) {
-    return src.replace(/(<style\b[^>]*id=["']dasha-mobile-scroll["'][^>]*>[\s\S]*?<\/style>)/i, `$1${tag}`);
+    return src.replace(/(<style\b[^>]*id=["']dasha-mobile-scroll["'][^>]*>[\s\S]*?<\/style>)/i, (_, style) => style + tag);
   }
-  return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${tag}</head>`) : tag + src;
+  return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, () => `${tag}</head>`) : tag + src;
 }
 
 export async function collectDigest(fetcher = fetch) {
