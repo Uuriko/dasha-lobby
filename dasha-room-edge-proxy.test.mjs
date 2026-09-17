@@ -70,6 +70,7 @@ assert.equal(roomUpstreamPath('/room/claude.md'), null, 'do not invent Room clau
 assert.equal(roomUpstreamPath('/room/skill'), null, 'do not invent Room skill leftover proxy');
 assert.equal(roomUpstreamPath('/room/agent.json'), null, 'do not invent Room agent.json leftover proxy');
 assert.equal(roomUpstreamPath('/room/health'), null, 'do not invent Room health leftover proxy');
+assert.equal(roomUpstreamPath('/room/healthz'), null, 'do not invent Room healthz leftover proxy');
 assert.equal(isRoomDiscoveryPath('/room'), true);
 assert.equal(isRoomDiscoveryPath('/.well-known/agent.json'), false);
 assert.equal(roomUpstreamUrl('/room'), `${ROOM_ORIGIN}/room`);
