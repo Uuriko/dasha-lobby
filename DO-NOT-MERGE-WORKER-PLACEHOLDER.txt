@@ -1,0 +1,5 @@
+DO NOT MERGE this branch.
+
+dasha-lobby-worker.mjs on cursor/motley-agent-synonym-leftovers-ee2b was accidentally replaced with a 35-byte PLACEHOLDER while trying to rebase Motley #237.
+
+Restore dasha-lobby-worker.mjs from main (513edf82cb5bb7c7ce68fc68e740ad727356e4d3) or from commit 0cb48e6ca5ff81b6227b2d570e36997635240287 before using this branch.
