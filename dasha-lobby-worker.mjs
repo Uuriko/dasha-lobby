@@ -5205,7 +5205,13 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  source. Apex /api/benchmarks.json (+/) Title-case 308 → /benchmarks
  *  (face already 200; lobby same-host). Nested /compute/api/benchmarks.json
  *  is already a live leftover 308 — keep it. Do not invent /benchmarks.json
- *  or /api/models /api/providers /api/v1. */
+ *  or /api/models /api/providers /api/v1.
+ *  Apex agent-ish file synonyms (2026-09-17): live GET/HEAD /contribute.md
+ *  /crew.json /bag.json (+slash / Title-case) html-404 while faces 200.
+ *  Fold to /contribute /crew /bag. Muse brand door /muse (+slash /
+ *  Title-case) 308 → / (home is Muse Webflow). Do not fold /muse → /start
+ *  — /start is reserved for Muse #225 face. Stay out of /providers
+ *  /developers /network /start (Muse #225 HTML). No Muse product HTML. */
 const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/api/lobby', 'https://www.getdasha.com/lobby'],
   ['/api/lobby/', 'https://www.getdasha.com/lobby'],
@@ -5241,6 +5247,18 @@ const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/compute/api/security.txt/', 'https://www.getdasha.com/.well-known/security.txt'],
   ['/compute/api/digest.json', 'https://www.getdasha.com/digest.json'],
   ['/compute/api/digest.json/', 'https://www.getdasha.com/digest.json'],
+  // Apex agent-ish file synonyms + Muse brand door (2026-09-17).
+  // Live www html-404 while /contribute /crew /bag / already 200.
+  // /muse → / (home). Do not fold /muse → /start. Stay out of
+  // /providers /developers /network /start (Muse #225).
+  ['/contribute.md', 'https://www.getdasha.com/contribute'],
+  ['/contribute.md/', 'https://www.getdasha.com/contribute'],
+  ['/crew.json', 'https://www.getdasha.com/crew'],
+  ['/crew.json/', 'https://www.getdasha.com/crew'],
+  ['/bag.json', 'https://www.getdasha.com/bag'],
+  ['/bag.json/', 'https://www.getdasha.com/bag'],
+  ['/muse', 'https://www.getdasha.com/'],
+  ['/muse/', 'https://www.getdasha.com/'],
 ]);
 
 export function potterHome308Dest(path) {
