@@ -33,6 +33,13 @@ assert.doesNotMatch(body, /finalized commitment/);
 assert.doesNotMatch(body, /Read from the Solana mint account/);
 assert.doesNotMatch(body, /before confirming/);
 assert.match(body, /Opens Jupiter with SOL selling into the exact mint above\./);
+assert.match(body, /<code class="ca" id="buy-mint">53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump<\/code>/);
+{
+  const jup = body.indexOf('Opens Jupiter with SOL selling into the exact mint above.');
+  const mintAt = body.indexOf(MINT, jup);
+  const buyAt = body.indexOf('Buy on Jupiter', jup);
+  assert.ok(jup >= 0 && mintAt > jup && mintAt < buyAt, 'mint adjacent to Buy/Jupiter');
+}
 assert.match(body, />Buy on Jupiter/);
 
 const res = await edgeWorker.fetch(new Request('https://www.getdasha.com/how-to-buy'), {});
@@ -48,6 +55,13 @@ assert.match(served, /jup\.ag\/swap/);
 assert.doesNotMatch(served, /Review the route there before confirming/);
 assert.doesNotMatch(served, /finalized commitment/);
 assert.match(served, /Opens Jupiter with SOL selling into the exact mint above\./);
+assert.match(served, /<code class="ca" id="buy-mint">53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump<\/code>/);
+{
+  const jup = served.indexOf('Opens Jupiter with SOL selling into the exact mint above.');
+  const mintAt = served.indexOf(MINT, jup);
+  const buyAt = served.indexOf('Buy on Jupiter', jup);
+  assert.ok(jup >= 0 && mintAt > jup && mintAt < buyAt, 'served mint adjacent to Buy/Jupiter');
+}
 
 const llms = await edgeWorker.fetch(new Request('https://www.getdasha.com/llms-full.txt'), {});
 assert.equal(llms.status, 200);
