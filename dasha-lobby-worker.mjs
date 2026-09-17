@@ -5242,6 +5242,47 @@ const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/compute/api/digest.json', 'https://www.getdasha.com/digest.json'],
   ['/compute/api/digest.json/', 'https://www.getdasha.com/digest.json'],
 ]);
+/** Nested Motley leftover /compute/api/ai (+slash / Title-case via
+ *  toLowerCase) while /ai.txt is already 200. Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent /api/ai. */
+const POTTER_COMPUTE_API_AI_308_PATHS = new Set([
+  '/compute/api/ai', '/compute/api/ai/',
+]);
+/** Nested Motley leftover /compute/api/skill (+slash / Title-case via
+ *  toLowerCase) while /compute/skill.md is already 200. Not the
+ *  /compute/api/docs skill leftover. Must win over the /compute/api/
+ *  casefold catch-all. Do not invent /api/skill. */
+const POTTER_COMPUTE_API_SKILL_308_PATHS = new Set([
+  '/compute/api/skill', '/compute/api/skill/',
+]);
+/** Nested Motley leftover /compute/api/mcp (+slash / Title-case via
+ *  toLowerCase) while /compute/mcp.json is already 200. Not the
+ *  /compute/mcp catalog leftover. Must win over the /compute/api/
+ *  casefold catch-all. Do not invent /api/mcp. */
+const POTTER_COMPUTE_API_MCP_308_PATHS = new Set([
+  '/compute/api/mcp', '/compute/api/mcp/',
+]);
+/** Nested Motley leftover /compute/api/openapi (+slash / Title-case via
+ *  toLowerCase) while /compute/openapi.json is already 200. Do not invent
+ *  /compute/api/openapi.json leftover. Must win over the /compute/api/
+ *  casefold catch-all. Do not invent /api/openapi. */
+const POTTER_COMPUTE_API_OPENAPI_308_PATHS = new Set([
+  '/compute/api/openapi', '/compute/api/openapi/',
+]);
+/** Nested Motley leftover /compute/api/contribute (+slash / Title-case via
+ *  toLowerCase) while /contribute is already 200. Apex /api/contribute
+ *  stays Motley map (#235). Must win over the /compute/api/ casefold
+ *  catch-all. Do not restack /contribute.md. */
+const POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS = new Set([
+  '/compute/api/contribute', '/compute/api/contribute/',
+]);
+/** Nested Motley leftover /compute/api/proof (+slash / Title-case via
+ *  toLowerCase) while /compute/proof.md is already 200. Not the
+ *  /compute/api/proof.json leftover (#235). Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent /api/proof. */
+const POTTER_COMPUTE_API_PROOF_308_PATHS = new Set([
+  '/compute/api/proof', '/compute/api/proof/',
+]);
 
 export function potterHome308Dest(path) {
   const raw = String(path || "");
@@ -5495,6 +5536,24 @@ export function potterHome308Dest(path) {
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
+  if (POTTER_COMPUTE_API_AI_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/ai.txt";
+  }
+  if (POTTER_COMPUTE_API_SKILL_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/skill.md";
+  }
+  if (POTTER_COMPUTE_API_MCP_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/mcp.json";
+  }
+  if (POTTER_COMPUTE_API_OPENAPI_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/openapi.json";
+  }
+  if (POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/contribute";
+  }
+  if (POTTER_COMPUTE_API_PROOF_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/proof.md";
+  }
   if (POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(p)) {
     return POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.get(p);
   }
@@ -5590,7 +5649,8 @@ export function potterHome308Response(request, url) {
             POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src) ||
             POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src) ||
             POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src) ||
-            POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src)
+            POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src) ||
+            POTTER_COMPUTE_API_SKILL_308_PATHS.has(src)
           )) ||
           (u.pathname === '/benchmarks' && (
             src === '/api/benchmarks.json' ||
