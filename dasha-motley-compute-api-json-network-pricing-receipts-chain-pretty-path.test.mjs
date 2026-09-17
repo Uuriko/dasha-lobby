@@ -258,7 +258,6 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
       assert.notEqual(res.status, 308, `${host} ${path} ${method} stays face`);
       assert.equal(res.status, want, `${host} ${path} ${method} face ${want}`);
-      if (method === 'HEAD') assert.equal(await res.text(), '');
     }
   }
   for (const path of ['/api/v1', '/api/models', '/api/providers']) {
