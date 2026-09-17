@@ -5192,6 +5192,54 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
   '/dasha-compute-open-alpha', '/dasha-compute-open-alpha/',
 ]);
 
+/** Motley leftover agent-discovery doors: live GET/HEAD /api/lobby + nested
+ *  /compute/api/{agents.md,agent.md,AGENTS.md,swagger.json,faucet,lobby,bag,
+ *  crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest.json}
+ *  (+slash / Title-case via toLowerCase) html-404 while faces already 200.
+ *  Fold to documented faces. /forum dest is /lobby (forum 308, not a 200).
+ *  AGENTS.md stores as /compute/api/agents.md. Nested swagger.json dest is
+ *  /compute/api (same as apex /swagger.json leftover). Exact /compute/api
+ *  + product faces stay 200. Must win over the /compute/api/ casefold
+ *  catch-all. Do not invent /compute/api/openapi.json leftover (real
+ *  OpenAPI face is /compute/openapi.json). No Muse product HTML. No Room
+ *  source. Optional cheap peer: apex /api/benchmarks.json (+/) → /benchmarks
+ *  (face already 200; live leftover sibling of /api/digest.json). Do not
+ *  invent /benchmarks.json or /compute/api/benchmarks.json. */
+const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
+  ['/api/lobby', 'https://www.getdasha.com/lobby'],
+  ['/api/lobby/', 'https://www.getdasha.com/lobby'],
+  ['/api/benchmarks.json', 'https://www.getdasha.com/benchmarks'],
+  ['/api/benchmarks.json/', 'https://www.getdasha.com/benchmarks'],
+  ['/compute/api/agents.md', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/api/agents.md/', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/api/agent.md', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/api/agent.md/', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/api/swagger.json', 'https://www.getdasha.com/compute/api'],
+  ['/compute/api/swagger.json/', 'https://www.getdasha.com/compute/api'],
+  ['/compute/api/faucet', 'https://www.getdasha.com/faucet'],
+  ['/compute/api/faucet/', 'https://www.getdasha.com/faucet'],
+  ['/compute/api/lobby', 'https://www.getdasha.com/lobby'],
+  ['/compute/api/lobby/', 'https://www.getdasha.com/lobby'],
+  ['/compute/api/bag', 'https://www.getdasha.com/bag'],
+  ['/compute/api/bag/', 'https://www.getdasha.com/bag'],
+  ['/compute/api/crew', 'https://www.getdasha.com/crew'],
+  ['/compute/api/crew/', 'https://www.getdasha.com/crew'],
+  ['/compute/api/which', 'https://www.getdasha.com/which'],
+  ['/compute/api/which/', 'https://www.getdasha.com/which'],
+  ['/compute/api/simp', 'https://www.getdasha.com/simp'],
+  ['/compute/api/simp/', 'https://www.getdasha.com/simp'],
+  ['/compute/api/forum', 'https://www.getdasha.com/lobby'],
+  ['/compute/api/forum/', 'https://www.getdasha.com/lobby'],
+  ['/compute/api/robots.txt', 'https://www.getdasha.com/robots.txt'],
+  ['/compute/api/robots.txt/', 'https://www.getdasha.com/robots.txt'],
+  ['/compute/api/sitemap.xml', 'https://www.getdasha.com/sitemap.xml'],
+  ['/compute/api/sitemap.xml/', 'https://www.getdasha.com/sitemap.xml'],
+  ['/compute/api/security.txt', 'https://www.getdasha.com/.well-known/security.txt'],
+  ['/compute/api/security.txt/', 'https://www.getdasha.com/.well-known/security.txt'],
+  ['/compute/api/digest.json', 'https://www.getdasha.com/digest.json'],
+  ['/compute/api/digest.json/', 'https://www.getdasha.com/digest.json'],
+]);
+
 export function potterHome308Dest(path) {
   const raw = String(path || "");
   const p = raw.toLowerCase();
@@ -5444,6 +5492,9 @@ export function potterHome308Dest(path) {
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
+  if (POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(p)) {
+    return POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.get(p);
+  }
   if (p === "/compute/api" || p === "/compute/api/") {
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
@@ -5535,7 +5586,8 @@ export function potterHome308Response(request, url) {
           (u.pathname === '/compute/skill.md' && (
             POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src) ||
             POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src) ||
-            POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src)
+            POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src) ||
+            POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src)
           )) ||
           (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )
