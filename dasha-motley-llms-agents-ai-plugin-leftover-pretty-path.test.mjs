@@ -25,7 +25,7 @@ assert.match(workerSrc, /POTTER_COMPUTE_API_AGENTS_308_PATHS/, 'nested agents le
 assert.match(workerSrc, /POTTER_AI_PLUGIN_JSON_308_PATHS/, 'ai-plugin leftover set');
 assert.match(workerSrc, /(?:String\(path \|\| ""\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
 assert.match(workerSrc, /Must win over the \/compute\/api\/ casefold/, 'map/set beat casefold catch-all');
-assert.doesNotMatch(workerSrc, /dasha-muse-product/, 'do not import Muse #225 HTML');
+assert.match(workerSrc, /dasha-muse-product/, 'Muse #225 faces imported; leftover maps stay out');
 
 const llmsSet = workerSrc.match(/const POTTER_COMPUTE_API_LLMS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const agentsSet = workerSrc.match(/const POTTER_COMPUTE_API_AGENTS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];

@@ -26,7 +26,7 @@ assert.match(workerSrc, /POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS/, 'nested contr
 assert.match(workerSrc, /POTTER_COMPUTE_API_PROOF_308_PATHS/, 'nested proof leftover set');
 assert.match(workerSrc, /(?:String\(path \|\| ""\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
 assert.match(workerSrc, /Must win over the \/compute\/api\/ casefold/, 'map/set beat casefold catch-all');
-assert.doesNotMatch(workerSrc, /dasha-muse-product/, 'do not import Muse #225 HTML');
+assert.match(workerSrc, /dasha-muse-product/, 'Muse #225 faces imported; leftover maps stay out');
 
 const aiSet = workerSrc.match(/const POTTER_COMPUTE_API_AI_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const skillSet = workerSrc.match(/const POTTER_COMPUTE_API_SKILL_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];

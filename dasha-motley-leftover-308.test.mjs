@@ -3,7 +3,7 @@
  * Motley leftover 308s at live tip 2c9aa2bf (2026-09-17).
  * /skill.json → skill face; /openapi.yaml → OpenAPI JSON;
  * /compute/api/humans → /humans.txt (which already → /contribute).
- * No Muse #225 retargets.
+ * Muse #225 faces stay dest-null (/providers 200). Leftover cases unchanged.
  */
 import assert from 'node:assert/strict';
 import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
@@ -23,7 +23,7 @@ const CASES = [
 
 for (const [path, dest] of CASES) assert.equal(potterHome308Dest(path), dest, `dest ${path}`);
 assert.equal(potterHome308Dest('/muse'), `${WWW}/`);
-assert.equal(potterHome308Dest('/providers'), `${WWW}/compute`);
+assert.equal(potterHome308Dest('/providers'), null, '/providers is Muse face 200');
 
 const env = { LOBBY_SESSION_SECRET: 'motley-leftover-308-secret', AI: { run: async () => ({ response: 'ok' }) } };
 for (const host of ['www.getdasha.com']) {
