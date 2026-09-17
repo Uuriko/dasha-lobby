@@ -1,0 +1,31 @@
+name: lobby-ci
+
+# PR CI for dasha-lobby: install dependencies and syntax-check every .mjs file.
+# NOTE on the repo's own test suite: many of the 400+ *.test.mjs files fail on
+# main today for pre-existing environmental reasons (e.g. tests reading
+# absolute author-machine paths like /workspace/dasha-digest-latest.json),
+# unrelated to any PR. Until those are repaired in source, the suite cannot be
+# a green gate, so this workflow gates on install + syntax only.
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Syntax-check all .mjs files
+        run: |
+          fail=0
+          for f in *.mjs; do
+            node --check "$f" || { echo "SYNTAX FAIL: $f"; fail=1; }
+          done
+          [ "$fail" -eq 0 ] && echo "syntax OK: $(ls *.mjs | wc -l) files"
+          exit $fail
