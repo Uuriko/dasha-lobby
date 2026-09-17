@@ -5382,6 +5382,36 @@ const POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS = new Set([
 const POTTER_COMPUTE_API_PROOF_308_PATHS = new Set([
   '/compute/api/proof', '/compute/api/proof/',
 ]);
+/** Nested Motley leftover /compute/api/network.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/api/network is already the 200/401
+ *  face (same dest as /compute/network leftover). Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent apex /network.json.
+ *  Exact /compute/api/network stays handler. */
+const POTTER_COMPUTE_API_NETWORK_JSON_308_PATHS = new Set([
+  '/compute/api/network.json', '/compute/api/network.json/',
+]);
+/** Nested Motley leftover /compute/api/pricing.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/api/pricing is already 200. Must
+ *  win over the /compute/api/ casefold catch-all. Do not invent apex
+ *  /pricing.json. Exact /compute/api/pricing stays handler. */
+const POTTER_COMPUTE_API_PRICING_JSON_308_PATHS = new Set([
+  '/compute/api/pricing.json', '/compute/api/pricing.json/',
+]);
+/** Nested Motley leftover /compute/api/receipts.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/api/receipts is already the 401
+ *  face (same dest as /receipt leftover). Must win over the /compute/api/
+ *  casefold catch-all. Do not invent apex /receipts.json. Exact
+ *  /compute/api/receipts stays handler. */
+const POTTER_COMPUTE_API_RECEIPTS_JSON_308_PATHS = new Set([
+  '/compute/api/receipts.json', '/compute/api/receipts.json/',
+]);
+/** Nested Motley leftover /compute/api/chain.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/api/chain is already 200. Must
+ *  win over the /compute/api/ casefold catch-all. Do not invent apex
+ *  /chain.json. Exact /compute/api/chain stays handler. */
+const POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS = new Set([
+  '/compute/api/chain.json', '/compute/api/chain.json/',
+]);
 
 export function potterHome308Dest(path) {
   const raw = String(path || "");
@@ -5667,6 +5697,18 @@ export function potterHome308Dest(path) {
   }
   if (POTTER_COMPUTE_API_PROOF_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/proof.md";
+  }
+  if (POTTER_COMPUTE_API_NETWORK_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/api/network";
+  }
+  if (POTTER_COMPUTE_API_PRICING_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/api/pricing";
+  }
+  if (POTTER_COMPUTE_API_RECEIPTS_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/api/receipts";
+  }
+  if (POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/api/chain";
   }
   if (POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(p)) {
     return POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.get(p);
