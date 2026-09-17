@@ -54,6 +54,16 @@ assert.match(full, /^# \$dasha is dash_eats on Solana/m, 'llms-full starts with 
 assert.match(full, /^> /m, 'llms-full has the 2026 blockquote summary');
 assert.match(full, /^## Identity/m, 'llms-full is markdown sections, not a URL list');
 assert.match(full, /^## Which \$dasha\?/m, 'llms-full inlines Which $dasha');
+{
+  const which = full.split('## Which $dasha?')[1]?.split('## The bag')[0] || '';
+  const mintAt = which.indexOf(MINT);
+  const pairAt = which.indexOf(PAIR);
+  const otherAt = which.indexOf(OTHER);
+  assert.ok(mintAt >= 0 && pairAt > mintAt && pairAt < otherAt, 'llms-full Which mint + pair before VVAIFU');
+  assert.match(which, /Raydium pair/, 'llms-full Which names Raydium pair');
+}
+assert.match(llms, /Dasha Compute is Mac inference on getdasha\.com — not Dasha\.AI voice\./, 'llms.txt not Dasha.AI');
+assert.match(full, /Dasha Compute is Mac inference on getdasha\.com — not Dasha\.AI voice\./, 'llms-full not Dasha.AI');
 assert.match(full, /^## The bag/m, 'llms-full inlines The bag');
 assert.ok(llms.includes('/bag'), 'llms.txt lists /bag');
 assert.ok(llms.includes('/listings'), 'llms.txt lists /listings');

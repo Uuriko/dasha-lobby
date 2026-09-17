@@ -28,6 +28,7 @@ import {
   COMPUTE_NETWORK,
   COMPUTE_SKILL_MD,
   COMPUTE_SKILL_URL,
+  COMPUTE_NOT_DASHA_AI_TXT,
   COMPUTE_WHICH_KEY_TXT,
   OCM_API_BASE,
   attachComputeLlmsHtmlLinks,
@@ -70,6 +71,12 @@ assert.match(workerSrc, /\[\'\/compute\/llms-full\.txt\'/, 'compute llms-full in
 assert.match(workerSrc, /POTTER_COMPUTE_SKILL_FACE_308_PATHS/, 'leftover pretty skill → face');
 
 assert.match(COMPUTE_LLMS_TXT, /^# Dasha Compute/m, 'packet H1');
+assert.equal(COMPUTE_NOT_DASHA_AI_TXT, 'Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.');
+assert.match(COMPUTE_LLMS_TXT, /^Dasha Compute is Mac inference on getdasha\.com — not Dasha\.AI voice\.$/m, 'packet not Dasha.AI');
+assert.match(COMPUTE_SKILL_MD, /^Dasha Compute is Mac inference on getdasha\.com — not Dasha\.AI voice\.$/m, 'skill not Dasha.AI');
+assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_NOT_DASHA_AI_TXT), true, 'packet embeds not Dasha.AI');
+assert.equal(COMPUTE_SKILL_MD.includes(COMPUTE_NOT_DASHA_AI_TXT), true, 'skill embeds not Dasha.AI');
+assert.doesNotMatch(COMPUTE_LLMS_TXT, /docs\.dasha\.ai/, 'packet does not cite Dasha.AI docs');
 assert.match(COMPUTE_LLMS_TXT, /run factory with a public signed receipt chain, not an account ledger/, 'packet names run factory + receipt chain');
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^base ${COMPUTE_API_BASE.replace(/\./g, '\\.')}$`, 'm'));
 assert.match(COMPUTE_LLMS_TXT, new RegExp(`^www ${COMPUTE_API_BASE_WWW.replace(/\./g, '\\.')}$`, 'm'));
@@ -270,6 +277,7 @@ for (const origin of ORIGINS) {
   assert.ok(indexBody.includes(COMPUTE_AGENT_JSON_URL), `${origin}/llms.txt links agent.json`);
   assert.ok(indexBody.includes(MINT), `${origin}/llms.txt keeps mint`);
   assert.match(indexBody, /First path: POST \/compute\/api\/guest-keys\. Or sign in at \/compute#build for dsk_\./);
+  assert.match(indexBody, /Dasha Compute is Mac inference on getdasha\.com — not Dasha\.AI voice\./);
   assert.doesNotMatch(indexBody, /plugin\.jup\.ag/);
 
   const fullRes = await edgeWorker.fetch(new Request(`${origin}/llms-full.txt`), {});

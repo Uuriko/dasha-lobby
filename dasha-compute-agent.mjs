@@ -133,6 +133,9 @@ export const DASHA_ASSOCIATED_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpu
 export const DASHA_BUY_URL = 'https://www.getdasha.com/how-to-buy';
 export const DASHA_JUP_TOKEN_URL = `https://jup.ag/tokens/${DASHA_ASSOCIATED_MINT}`;
 
+/** Citation-gap: Dasha Compute ≠ Dasha.AI voice. Shared by skill.md + /compute/llms.txt. */
+export const COMPUTE_NOT_DASHA_AI_TXT = 'Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.';
+
 /** Build on Dasha — mint + run factory. Shared by skill.md + /compute/llms.txt. UI is yours. */
 export const COMPUTE_BUILD_ON_DASHA_TXT = `## Build on Dasha
 
@@ -152,6 +155,8 @@ description: First call on Dasha Compute. OpenAI-compatible v1 chat/completions 
 ---
 
 # Dasha Compute
+
+${COMPUTE_NOT_DASHA_AI_TXT}
 
 OpenAI-compatible inference. A run factory with a public signed receipt chain, not an account ledger.
 
@@ -193,6 +198,8 @@ MCP: ${COMPUTE_MCP_JSON_URL}
 `;
 
 export const COMPUTE_LLMS_TXT = `# Dasha Compute
+
+${COMPUTE_NOT_DASHA_AI_TXT}
 
 Mac Ask / Provide / OpenAI-compatible chat completions. A run factory with a public signed receipt chain, not an account ledger.
 

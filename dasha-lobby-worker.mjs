@@ -327,6 +327,7 @@ compute https://www.getdasha.com/compute
 compute packet https://www.getdasha.com/compute/llms.txt
 agent.json https://www.getdasha.com/.well-known/agent.json
 compute skill https://www.getdasha.com/compute/skill.md
+Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.
 mcp https://www.getdasha.com/compute/mcp.json
 Use a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
@@ -405,17 +406,21 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 
 ## Which $dasha?
 
+This mint.
+
 This is dash_eats on Solana. Its associated Solana mint is:
 
 \`53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump\`
+
+Raydium pair:
+
+\`9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7\`
 
 The other Dasha is VVAIFU:
 
 \`FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8\`
 
 That is a different token, not this one.
-
-Pair: \`9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7\`
 
 CoinGecko lists this one as dash_eats. Jupiter is jup.ag. Token path and swap path both carry the associated mint in full.
 
@@ -469,6 +474,7 @@ Compute: Start. (Do / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Spo
 Agent packet: https://www.getdasha.com/compute/llms.txt
 Agent JSON: https://www.getdasha.com/.well-known/agent.json
 Agent skill: https://www.getdasha.com/compute/skill.md
+Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.
 MCP catalog: https://www.getdasha.com/compute/mcp.json
 Use a Mac: https://www.getdasha.com/compute#ask
 Join a Mac: https://www.getdasha.com/compute#provide
@@ -511,7 +517,7 @@ const WHICH_HTML = `<!doctype html>
   <link rel="describedby" href="/llms-full.txt" type="text/plain">
   <meta property="og:type" content="website"><meta property="og:url" content="https://www.getdasha.com/which"><meta property="og:title" content="Which $dasha? dash_eats"><meta property="og:description" content="dash_eats. Buy $dasha."><meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Which $dasha? dash_eats"><meta name="twitter:description" content="dash_eats. Buy $dasha."><meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Which $dasha? dash_eats, not VVAIFU","url":"https://www.getdasha.com/which","description":"dash_eats on Solana. Associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. CoinGecko dash_eats. The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8."}</script>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Which dasha coin?","acceptedAnswer":{"@type":"Answer","text":"This one. dash_eats. 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8. Not this."}},{"@type":"Question","name":"What is dash_eats?","acceptedAnswer":{"@type":"Answer","text":"dash_eats is $dasha on Solana. Associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Site https://www.getdasha.com/."}}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Which dasha coin?","acceptedAnswer":{"@type":"Answer","text":"This one. dash_eats. 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Raydium pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8. Not this."}},{"@type":"Question","name":"What is dash_eats?","acceptedAnswer":{"@type":"Answer","text":"dash_eats is $dasha on Solana. Associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Raydium pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. Site https://www.getdasha.com/."}}]}</script>
   <style>
     :root { color-scheme: dark; font: 18px/1.5 Arial, Helvetica, sans-serif; background: #070608; color: #f4eddb; }
     body { max-width: 44rem; margin: auto; padding: 2rem 1rem; }
@@ -524,12 +530,14 @@ const WHICH_HTML = `<!doctype html>
 <body>
   <main>
     <h1>Which $dasha?</h1>
+    <h2>This mint</h2>
     <p>This is dash_eats on Solana. Its associated Solana mint is:</p>
     <code>53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code>
+    <p>Raydium pair:</p>
+    <code>9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code>
     <p>The other Dasha is VVAIFU:</p>
     <code>FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8</code>
     <p>That is a different token, not this one.</p>
-    <p>Pair: <code>9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code></p>
     <p>CoinGecko: <a href="https://www.coingecko.com/en/coins/dash_eats">dash_eats</a></p>
     <p><a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Open the associated mint on Jupiter</a></p>
     <p>Compute. <a href="https://www.getdasha.com/compute#ask">Use a Mac</a> — Hosted when no Mac. <a href="https://www.getdasha.com/compute#provide">Provide</a></p>
@@ -1470,6 +1478,13 @@ export function polishHowtoHtml(html) {
   page = page.replace(/<h2>What you can check yourself<\/h2>/g, '<h2>On-chain</h2>');
   /* Leftover /how-to-buy disclaimer crawlers still see after style/script strip. Buy on Jupiter stays. */
   page = page.replace(/\s*Review the route there before confirming\./g, '');
+  /* Citation-gap: mint in plain text next to Buy / Jupiter, not only in step 02 / href. */
+  if (!/<code class="ca" id="buy-mint">/.test(page)) {
+    page = page.replace(
+      /(<p>Opens Jupiter with SOL selling into the exact mint above\.<\/p>)(\s*)(<div class="actions">)/i,
+      '$1$2<code class="ca" id="buy-mint">53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code>$2$3',
+    );
+  }
   /* Leftover /how-to-buy when-lecture crawlers still see after style/script strip. On-chain facts stay. */
   page = page.replace(/\s*Read from the Solana mint account on 18 August 2026 at finalized commitment\./g, '');
   page = page.replace(/<p class="when">\s*<\/p>/gi, '');
