@@ -5122,7 +5122,7 @@ const POTTER_COMPUTE_API_RECEIPTS_308_PATHS = new Set([
 const POTTER_COMPUTE_API_KEYS_308_PATHS = new Set([
   '/api/keys', '/api/keys/',
 ]);
-/** /compute/status /api/status → /compute/api/status. Bare /status|/healthz|/health stay out. */
+/** /compute/status /api/status → /compute/api/status. Bare /status|/network|/healthz|/health stay out. */
 const POTTER_COMPUTE_API_STATUS_308_PATHS = new Set([
   '/compute/status', '/compute/status/',
   '/api/status', '/api/status/',
