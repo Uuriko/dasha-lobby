@@ -43,6 +43,7 @@ assert.match(
 const remount = digestRemountScript();
 assert.match(remount, /if\(path!=='\/'&&path!==''\)return/, "remount boot is still home-only");
 assert.match(remount, /\/digest\.json/, "remount still fetches /digest.json");
+assert.match(remount, /\/price/, "remount overlays live /price");
 assert.match(remount, /#grok-door/, "remount still anchors on #grok-door");
 assert.match(remount, /getElementById\('grwm'\)/, "remount still anchors on #grwm");
 assert.match(remount, /querySelector\('main'\)/, "remount still falls back to main");
