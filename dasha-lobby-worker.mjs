@@ -5242,6 +5242,27 @@ const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/compute/api/digest.json', 'https://www.getdasha.com/digest.json'],
   ['/compute/api/digest.json/', 'https://www.getdasha.com/digest.json'],
 ]);
+/** Nested Motley leftover /compute/api/llms (+slash / Title-case via
+ *  toLowerCase) while /compute/llms.txt is already 200. Must win over
+ *  the /compute/api/ casefold catch-all. Do not invent /api/llms. */
+const POTTER_COMPUTE_API_LLMS_308_PATHS = new Set([
+  '/compute/api/llms', '/compute/api/llms/',
+]);
+/** Nested Motley leftover /compute/api/agents (+slash / Title-case via
+ *  toLowerCase) while /compute/agents.txt is already 200. Not the
+ *  /compute/api/agents.md skill leftover. Bare /compute/agents stays
+ *  tab → /compute. Must win over the /compute/api/ casefold catch-all.
+ *  Do not invent /api/agents. */
+const POTTER_COMPUTE_API_AGENTS_308_PATHS = new Set([
+  '/compute/api/agents', '/compute/api/agents/',
+]);
+/** Leftover /.well-known/ai-plugin.json (+slash / Title-case via
+ *  toLowerCase) html-404 while /.well-known/mcp.json is already 200.
+ *  Fold to the existing well-known mcp.json face. Do not invent apex
+ *  /ai-plugin.json. */
+const POTTER_AI_PLUGIN_JSON_308_PATHS = new Set([
+  '/.well-known/ai-plugin.json', '/.well-known/ai-plugin.json/',
+]);
 
 export function potterHome308Dest(path) {
   const raw = String(path || "");
@@ -5494,6 +5515,15 @@ export function potterHome308Dest(path) {
     if (skillMdSlash) return "https://www.getdasha.com/compute/skill/" + skillMdSlash[1] + ".md";
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
+  }
+  if (POTTER_COMPUTE_API_LLMS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/llms.txt";
+  }
+  if (POTTER_COMPUTE_API_AGENTS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/agents.txt";
+  }
+  if (POTTER_AI_PLUGIN_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/.well-known/mcp.json";
   }
   if (POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(p)) {
     return POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.get(p);
