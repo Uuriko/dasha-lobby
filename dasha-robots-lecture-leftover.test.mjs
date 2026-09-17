@@ -107,6 +107,11 @@ assert.doesNotMatch(robotsConst, /2026-08-08 outage/, 'worker ROBOTS_TXT no outa
 assert.doesNotMatch(robotsConst, /e-commerce template/, 'worker ROBOTS_TXT no e-commerce lecture');
 assert.match(robotsConst, /^User-agent: \*$/m);
 assert.match(robotsConst, /^Allow: \/forum$/m);
+assert.match(robotsConst, /^Allow: \/llms\.txt$/m);
+assert.match(robotsConst, /^Allow: \/agents\.json$/m);
+assert.match(robotsConst, /^Allow: \/\.well-known\/mcp\.json$/m);
+assert.match(robotsConst, /^Allow: \/\.well-known\/agent\.json$/m);
+assert.match(robotsConst, /^Allow: \/compute\/skill\.md$/m);
 assert.match(robotsConst, /Machine-readable identity/);
 assert.doesNotMatch(stripRobotsLecture(robotsConst), /paste this into Webflow SEO settings/);
 
@@ -127,8 +132,12 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.match(body, /^Allow: \/$/m, `${origin} Allow /`);
   assert.match(body, /^Allow: \/forum$/m, `${origin} Allow /forum`);
   assert.match(body, /^Allow: \/bag$/m, `${origin} Allow /bag`);
-  assert.match(body, /^Allow: \/llms\.txt$/m, `${origin} Allow /llms.txt`);
-  assert.match(body, /^Sitemap: https:\/\/www\.getdasha\.com\/sitemap\.xml$/m, `${origin} www sitemap`);
+assert.match(body, /^Allow: \/llms\.txt$/m, `${origin} Allow /llms.txt`);
+assert.match(body, /^Allow: \/agents\.json$/m, `${origin} Allow /agents.json`);
+assert.match(body, /^Allow: \/\.well-known\/mcp\.json$/m, `${origin} Allow /.well-known/mcp.json`);
+assert.match(body, /^Allow: \/\.well-known\/agent\.json$/m, `${origin} Allow /.well-known/agent.json`);
+assert.match(body, /^Allow: \/compute\/skill\.md$/m, `${origin} Allow /compute/skill.md`);
+assert.match(body, /^Sitemap: https:\/\/www\.getdasha\.com\/sitemap\.xml$/m, `${origin} www sitemap`);
   assert.match(body, /^Sitemap: https:\/\/lobby\.getdasha\.com\/sitemap\.xml$/m, `${origin} lobby sitemap`);
   assert.match(body, /Machine-readable identity/, `${origin} identity one-liner`);
   assert.doesNotMatch(body, /plugin\.jup\.ag/, `${origin} no plugin.jup.ag`);

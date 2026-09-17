@@ -385,8 +385,6 @@ const PROVIDE_JOIN = [
 ];
 
 const GATEWAY_UNCHANGED = [
-  ['/openapi.json', API],
-  ['/openapi.json/', API],
   ['/openapi', API],
   ['/documentation', API],
   ['/sdk-docs', API],
@@ -431,6 +429,10 @@ assert.equal(potterHome308Dest('/compute/docs'), null, '/compute/docs is a real 
 assert.equal(potterHome308Dest('/compute/docs/'), null, '/compute/docs/ is a real page now');
 assert.equal(potterHome308Dest('/compute/openapi.json'), null, '/compute/openapi.json is a real spec now');
 assert.equal(potterHome308Dest('/compute/openapi.yaml'), null, '/compute/openapi.yaml is a real spec now');
+assert.equal(potterHome308Dest('/openapi.json'), `${WWW}/compute/openapi.json`, '/openapi.json leftover → real spec');
+assert.equal(potterHome308Dest('/openapi.json/'), `${WWW}/compute/openapi.json`, '/openapi.json/ leftover → real spec');
+assert.equal(potterHome308Dest('/api/openapi.json'), `${WWW}/compute/openapi.json`, '/api/openapi.json leftover → real spec');
+assert.equal(potterHome308Dest('/openapi'), API, '/openapi stays gateway leftover');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.notEqual(potterHome308Dest('/compute/openapi.yaml'), SKILL, 'do not invent /compute/openapi.yaml');
 assert.notEqual(potterHome308Dest('/compute/swagger.yaml'), SKILL, 'do not invent swagger.yaml');

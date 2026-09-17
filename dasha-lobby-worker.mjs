@@ -164,7 +164,7 @@ export { stripDigestLeftoverDupSectionCss };
 
 /* assets-build overwrites static-gen robots/sitemap; live-verify and disk SoR are this set. */
 const ROBOTS_TXT = `# getdasha.com — public crawl rules (also served at lobby.getdasha.com/robots.txt)
-# Machine-readable identity: /ai.txt, /llms.txt (index), and /llms-full.txt (full markdown).
+# Machine-readable identity: /ai.txt, /llms.txt (index), /llms-full.txt (full markdown), /agents.json, /.well-known/mcp.json, /.well-known/agent.json, /compute/skill.md.
 
 User-agent: *
 Allow: /
@@ -178,6 +178,10 @@ Allow: /listings.json
 Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /ai.txt
+Allow: /agents.json
+Allow: /.well-known/mcp.json
+Allow: /.well-known/agent.json
+Allow: /compute/skill.md
 
 Sitemap: https://www.getdasha.com/sitemap.xml
 Sitemap: https://lobby.getdasha.com/sitemap.xml
@@ -5350,6 +5354,15 @@ const POTTER_COMPUTE_API_HUMANS_308_PATHS = new Set([
 const POTTER_OPENAPI_YAML_308_PATHS = new Set([
   '/openapi.yaml', '/openapi.yaml/',
 ]);
+/** Leftover apex /openapi.json + live Motley /api/openapi.json (+slash /
+ *  Title-case) → /compute/openapi.json (real OpenAPI 3.1). /openapi and
+ *  /api/openapi (no .json) stay gateway leftovers → /compute/api. Exact
+ *  /compute/openapi.json stays the 200 spec. Do not invent
+ *  /compute/api/openapi.json leftover. */
+const POTTER_OPENAPI_JSON_308_PATHS = new Set([
+  '/openapi.json', '/openapi.json/',
+  '/api/openapi.json', '/api/openapi.json/',
+]);
 /** Nested Motley leftover /compute/api/robots (+slash / Title-case via
  *  toLowerCase) while /robots.txt is already 200. .txt peers + apex
  *  /api/robots already 308. Must win over the /compute/api/ casefold
@@ -5650,7 +5663,7 @@ export function potterHome308Dest(path) {
   if (p === "/gateway" || p === "/gateway/" || p === "/compute/gateway" || p === "/compute/gateway/") {
     return "https://www.getdasha.com/compute/api";
   }
-  if (p === "/openapi" || p === "/openapi/" || p === "/openapi.json" || p === "/openapi.json/" || p === "/swagger" || p === "/swagger/" || p === "/swagger.json" || p === "/swagger.json/" || p === "/swagger-ui" || p === "/swagger-ui/" || p === "/swagger-ui.html" || p === "/swagger-ui.html/" || p === "/swagger_ui" || p === "/swagger_ui/" || p === "/swagger_ui.html" || p === "/swagger_ui.html/" || p === "/compute/swagger" || p === "/compute/swagger/" || p === "/compute/swagger.json" || p === "/compute/swagger.json/" || p === "/compute/swagger-ui" || p === "/compute/swagger-ui/" || p === "/compute/swagger_ui" || p === "/compute/swagger_ui/" || p === "/compute/api-docs" || p === "/compute/api-docs/" || p === "/compute/api_docs" || p === "/compute/api_docs/" || p === "/docs/api" || p === "/docs/api/" || p === "/api/docs" || p === "/api/docs/" || p === "/api-docs" || p === "/api-docs/" || p === "/api_docs" || p === "/api_docs/" || p === "/api/openapi" || p === "/api/openapi/" || p === "/api/openapi.json" || p === "/api/openapi.json/" || p === "/api/swagger" || p === "/api/swagger/" || p === "/api/swagger.json" || p === "/api/swagger.json/") {
+  if (p === "/openapi" || p === "/openapi/" || p === "/swagger" || p === "/swagger/" || p === "/swagger.json" || p === "/swagger.json/" || p === "/swagger-ui" || p === "/swagger-ui/" || p === "/swagger-ui.html" || p === "/swagger-ui.html/" || p === "/swagger_ui" || p === "/swagger_ui/" || p === "/swagger_ui.html" || p === "/swagger_ui.html/" || p === "/compute/swagger" || p === "/compute/swagger/" || p === "/compute/swagger.json" || p === "/compute/swagger.json/" || p === "/compute/swagger-ui" || p === "/compute/swagger-ui/" || p === "/compute/swagger_ui" || p === "/compute/swagger_ui/" || p === "/compute/api-docs" || p === "/compute/api-docs/" || p === "/compute/api_docs" || p === "/compute/api_docs/" || p === "/docs/api" || p === "/docs/api/" || p === "/api/docs" || p === "/api/docs/" || p === "/api-docs" || p === "/api-docs/" || p === "/api_docs" || p === "/api_docs/" || p === "/api/openapi" || p === "/api/openapi/" || p === "/api/swagger" || p === "/api/swagger/" || p === "/api/swagger.json" || p === "/api/swagger.json/") {
     return "https://www.getdasha.com/compute/api";
   }
   if (p === "/jobs" || p === "/jobs/" || p === "/job" || p === "/job/" || p === "/compute/jobs" || p === "/compute/jobs/" || p === "/compute/job" || p === "/compute/job/" || p === "/api/jobs" || p === "/api/jobs/" || p === "/api/job" || p === "/api/job/") {
@@ -5734,7 +5747,7 @@ export function potterHome308Dest(path) {
   if (POTTER_HUMANS_TXT_308_PATHS.has(p) || POTTER_COMPUTE_API_HUMANS_308_PATHS.has(p)) {
     return "https://www.getdasha.com/humans.txt";
   }
-  if (POTTER_OPENAPI_YAML_308_PATHS.has(p)) {
+  if (POTTER_OPENAPI_YAML_308_PATHS.has(p) || POTTER_OPENAPI_JSON_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/openapi.json";
   }
   if (POTTER_COMPUTE_API_ROBOTS_308_PATHS.has(p)) {
