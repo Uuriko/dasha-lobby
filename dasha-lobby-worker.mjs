@@ -4241,11 +4241,11 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/mac-setup/",
   "/compute/mac_setup",
   "/compute/mac_setup/",
-  // Exact /compute/agent|/compute/agents stay tab → /compute.
+  // Exact /compute/agent stays tab → /compute.
+  // Bare leftover /compute/agents|/compute/agents/ fold via
+  // POTTER_AGENTS_TXT_308_PATHS → /compute/agents.txt.
   // Leftover /compute/agent.md|/compute/agents.md fold via
   // POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS → skill.md.
-  "/compute/agents",
-  "/compute/agents/",
   "/compute/agent",
   "/compute/agent/",
   "/compute/tools",
@@ -5079,12 +5079,15 @@ const POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS = new Set([
   '/guest-key', '/guest-key/',
   '/guest-keys', '/guest-keys/',
 ]);
-/** Leftover /agents /agents/ /agents.txt/ /compute/agents.txt/ → face.
- *  Exact /agents.txt stays 200. Bare leftover /compute/agents stays tab → /compute. */
+/** Leftover /agents /agents/ /agents.txt/ /compute/agents /compute/agents/
+ *  /compute/agents.txt/ → face. Exact /agents.txt + /compute/agents.txt stay 200.
+ *  Bare leftover /compute/agents folds here → /compute/agents.txt (not tab). */
 const POTTER_AGENTS_TXT_308_PATHS = new Set([
   '/agents',
   '/agents/',
   '/agents.txt/',
+  '/compute/agents',
+  '/compute/agents/',
   '/compute/agents.txt/',
 ]);
 /** Leftover /agents.json/ /compute/agents.json/ → face. Exact stays 200. */
@@ -5165,8 +5168,8 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Agents.txt
   // /Agents.json html-404 while lowercase siblings already 200. Exact lowercase
   // stays null so 200 handlers run. Bare leftover /agents|/agents/ fold via
-  // POTTER_AGENTS_TXT_308_PATHS. /compute/agents stays tab exact-path only —
-  // do not catch *.txt/*.json.
+  // POTTER_AGENTS_TXT_308_PATHS. Bare leftover /compute/agents folds there
+  // → /compute/agents.txt. Do not catch *.txt/*.json (exact faces stay 200).
   // Do NOT put /forum /chat here — that would drop ?t=; use isForumChatAliasPath + forumToLobbyRedirect.
   ['/llms.txt', 'https://www.getdasha.com/llms.txt'],
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
@@ -5223,7 +5226,14 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  Live Motley restore also 308s apex /api/{contribute,bounties,listings,
  *  chess,verify.json,proof.json} + nested /compute/api/{listings,verify.json,
  *  proof.json} → faces. Fold those here so tip deploys do not wipe Motley.
- *  Do not invent nested /compute/api/{contribute,bounties,chess}. */
+ *  Nested /compute/api/contribute folds via POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.
+ *  Do not invent nested /compute/api/{bounties,chess}.
+ *  Apex agent-ish file synonyms (2026-09-17): live GET/HEAD /contribute.md
+ *  /crew.json /bag.json /humans.txt (+slash / Title-case) html-404 while faces 200.
+ *  Fold to /contribute /crew /bag /contribute. Muse brand door /muse (+slash /
+ *  Title-case) 308 → / (home is Muse Webflow). Do not fold /muse → /start
+ *  — /start is reserved for Muse #225 face. Stay out of /providers
+ *  /developers /network /start (Muse #225 HTML). No Muse product HTML. */
 const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/api/lobby', 'https://www.getdasha.com/lobby'],
   ['/api/lobby/', 'https://www.getdasha.com/lobby'],
@@ -5282,6 +5292,20 @@ const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   // Do not retarget apex /api/digest (Motley HTML → /digest stays).
   ['/compute/api/digest', 'https://www.getdasha.com/digest.json'],
   ['/compute/api/digest/', 'https://www.getdasha.com/digest.json'],
+  // Apex agent-ish file synonyms + Muse brand door (2026-09-17).
+  // Live www html-404 while /contribute /crew /bag / already 200.
+  // /muse → / (home). Do not fold /muse → /start. Stay out of
+  // /providers /developers /network /start (Muse #225).
+  ['/contribute.md', 'https://www.getdasha.com/contribute'],
+  ['/contribute.md/', 'https://www.getdasha.com/contribute'],
+  ['/crew.json', 'https://www.getdasha.com/crew'],
+  ['/crew.json/', 'https://www.getdasha.com/crew'],
+  ['/bag.json', 'https://www.getdasha.com/bag'],
+  ['/bag.json/', 'https://www.getdasha.com/bag'],
+  ['/humans.txt', 'https://www.getdasha.com/contribute'],
+  ['/humans.txt/', 'https://www.getdasha.com/contribute'],
+  ['/muse', 'https://www.getdasha.com/'],
+  ['/muse/', 'https://www.getdasha.com/'],
 ]);
 /** Nested Motley leftover /compute/api/robots (+slash / Title-case via
  *  toLowerCase) while /robots.txt is already 200. .txt peers + apex
@@ -5295,6 +5319,68 @@ const POTTER_COMPUTE_API_ROBOTS_308_PATHS = new Set([
  *  308. Must win over the /compute/api/ casefold catch-all. */
 const POTTER_COMPUTE_API_SITEMAP_308_PATHS = new Set([
   '/compute/api/sitemap', '/compute/api/sitemap/',
+]);
+/** Nested Motley leftover /compute/api/llms (+slash / Title-case via
+ *  toLowerCase) while /compute/llms.txt is already 200. Must win over
+ *  the /compute/api/ casefold catch-all. Do not invent /api/llms. */
+const POTTER_COMPUTE_API_LLMS_308_PATHS = new Set([
+  '/compute/api/llms', '/compute/api/llms/',
+]);
+/** Nested Motley leftover /compute/api/agents (+slash / Title-case via
+ *  toLowerCase) while /compute/agents.txt is already 200. Not the
+ *  /compute/api/agents.md skill leftover. Bare /compute/agents folds
+ *  via POTTER_AGENTS_TXT_308_PATHS → /compute/agents.txt. Must win over
+ *  the /compute/api/ casefold catch-all. Do not invent /api/agents. */
+const POTTER_COMPUTE_API_AGENTS_308_PATHS = new Set([
+  '/compute/api/agents', '/compute/api/agents/',
+]);
+/** Leftover /.well-known/ai-plugin.json (+slash / Title-case via
+ *  toLowerCase) html-404 while /.well-known/mcp.json is already 200.
+ *  Fold to the existing well-known mcp.json face. Do not invent apex
+ *  /ai-plugin.json. */
+const POTTER_AI_PLUGIN_JSON_308_PATHS = new Set([
+  '/.well-known/ai-plugin.json', '/.well-known/ai-plugin.json/',
+]);
+/** Nested Motley leftover /compute/api/ai (+slash / Title-case via
+ *  toLowerCase) while /ai.txt is already 200. Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent /api/ai. */
+const POTTER_COMPUTE_API_AI_308_PATHS = new Set([
+  '/compute/api/ai', '/compute/api/ai/',
+]);
+/** Nested Motley leftover /compute/api/skill (+slash / Title-case via
+ *  toLowerCase) while /compute/skill.md is already 200. Not the
+ *  /compute/api/docs skill leftover. Must win over the /compute/api/
+ *  casefold catch-all. Do not invent /api/skill. */
+const POTTER_COMPUTE_API_SKILL_308_PATHS = new Set([
+  '/compute/api/skill', '/compute/api/skill/',
+]);
+/** Nested Motley leftover /compute/api/mcp (+slash / Title-case via
+ *  toLowerCase) while /compute/mcp.json is already 200. Not the
+ *  /compute/mcp catalog leftover. Must win over the /compute/api/
+ *  casefold catch-all. Do not invent /api/mcp. */
+const POTTER_COMPUTE_API_MCP_308_PATHS = new Set([
+  '/compute/api/mcp', '/compute/api/mcp/',
+]);
+/** Nested Motley leftover /compute/api/openapi (+slash / Title-case via
+ *  toLowerCase) while /compute/openapi.json is already 200. Do not invent
+ *  /compute/api/openapi.json leftover. Must win over the /compute/api/
+ *  casefold catch-all. Do not invent /api/openapi. */
+const POTTER_COMPUTE_API_OPENAPI_308_PATHS = new Set([
+  '/compute/api/openapi', '/compute/api/openapi/',
+]);
+/** Nested Motley leftover /compute/api/contribute (+slash / Title-case via
+ *  toLowerCase) while /contribute is already 200. Apex /api/contribute
+ *  stays Motley map (#235). Must win over the /compute/api/ casefold
+ *  catch-all. /contribute.md lives on the Motley map. */
+const POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS = new Set([
+  '/compute/api/contribute', '/compute/api/contribute/',
+]);
+/** Nested Motley leftover /compute/api/proof (+slash / Title-case via
+ *  toLowerCase) while /compute/proof.md is already 200. Not the
+ *  /compute/api/proof.json leftover (#235). Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent /api/proof. */
+const POTTER_COMPUTE_API_PROOF_308_PATHS = new Set([
+  '/compute/api/proof', '/compute/api/proof/',
 ]);
 
 export function potterHome308Dest(path) {
@@ -5555,6 +5641,33 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_SITEMAP_308_PATHS.has(p)) {
     return "https://www.getdasha.com/sitemap.xml";
   }
+  if (POTTER_COMPUTE_API_LLMS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/llms.txt";
+  }
+  if (POTTER_COMPUTE_API_AGENTS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/agents.txt";
+  }
+  if (POTTER_AI_PLUGIN_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/.well-known/mcp.json";
+  }
+  if (POTTER_COMPUTE_API_AI_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/ai.txt";
+  }
+  if (POTTER_COMPUTE_API_SKILL_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/skill.md";
+  }
+  if (POTTER_COMPUTE_API_MCP_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/mcp.json";
+  }
+  if (POTTER_COMPUTE_API_OPENAPI_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/openapi.json";
+  }
+  if (POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/contribute";
+  }
+  if (POTTER_COMPUTE_API_PROOF_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/proof.md";
+  }
   if (POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(p)) {
     return POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.get(p);
   }
@@ -5650,7 +5763,8 @@ export function potterHome308Response(request, url) {
             POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src) ||
             POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src) ||
             POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src) ||
-            POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src)
+            POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src) ||
+            POTTER_COMPUTE_API_SKILL_308_PATHS.has(src)
           )) ||
           (u.pathname === '/benchmarks' && (
             src === '/api/benchmarks.json' ||

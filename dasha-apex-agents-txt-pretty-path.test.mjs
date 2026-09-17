@@ -7,7 +7,7 @@
  * Exact /agents.json stays 200. Do not invent /agent (singular stays
  * existing compute-tab leftover). /agents.md is not in this leftover
  * set — agent-discovery leftover folds it to skill.md. /compute/agents
- * stays tab → /compute.
+ * 308 → /compute/agents.txt.
  * Disk only. No Designer. Never plugin.jup.ag. PR-mirror only — no wrangler.
  */
 import assert from 'node:assert/strict';
@@ -31,11 +31,14 @@ const tab = workerSrc.match(/const POTTER_COMPUTE_TAB_308_PATHS = new Set\(\[[\s
 assert.doesNotMatch(tab, /["']\/agents["']/, 'tab no longer lists /agents');
 assert.doesNotMatch(tab, /["']\/agents\/["']/, 'tab no longer lists /agents/');
 assert.match(tab, /["']\/agent["']/, 'singular /agent stays compute-tab leftover');
-assert.match(tab, /["']\/compute\/agents["']/, '/compute/agents stays compute-tab leftover');
+assert.doesNotMatch(tab, /["']\/compute\/agents["']/, '/compute/agents left the compute-tab set');
+assert.match(tab, /["']\/compute\/agent["']/, 'singular /compute/agent stays compute-tab leftover');
 
 const agentsTxtSet = workerSrc.match(/const POTTER_AGENTS_TXT_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 assert.match(agentsTxtSet, /['"]\/agents['"]/, 'agents.txt set lists /agents');
 assert.match(agentsTxtSet, /['"]\/agents\/['"]/, 'agents.txt set lists /agents/');
+assert.match(agentsTxtSet, /['"]\/compute\/agents['"]/, 'agents.txt set lists /compute/agents');
+assert.match(agentsTxtSet, /['"]\/compute\/agents\/['"]/, 'agents.txt set lists /compute/agents/');
 assert.doesNotMatch(agentsTxtSet, /['"]\/agents\.md['"]/, 'this PR does not claim /agents.md');
 assert.doesNotMatch(agentsTxtSet, /['"]\/agent['"]/, 'do not invent singular /agent in agents.txt set');
 
@@ -63,8 +66,8 @@ assert.equal(potterHome308Dest('/agents.txt'), null, '/agents.txt stays 200');
 assert.equal(potterHome308Dest('/agents.txt/'), AGENTS_TXT, '/agents.txt/ peer still → face');
 assert.equal(potterHome308Dest('/agent'), COMPUTE, 'singular /agent stays compute leftover');
 assert.equal(potterHome308Dest('/agent/'), COMPUTE, 'singular /agent/ stays compute leftover');
-assert.equal(potterHome308Dest('/compute/agents'), COMPUTE, '/compute/agents stays tab leftover');
-assert.equal(potterHome308Dest('/compute/agents/'), COMPUTE, '/compute/agents/ stays tab leftover');
+assert.equal(potterHome308Dest('/compute/agents'), `${WWW}/compute/agents.txt`, '/compute/agents folds to agents.txt');
+assert.equal(potterHome308Dest('/compute/agents/'), `${WWW}/compute/agents.txt`, '/compute/agents/ folds to agents.txt');
 assert.notEqual(potterHome308Dest('/agents.md'), AGENTS_TXT, '/agents.md not claimed by agents.txt leftover');
 assert.equal(potterHome308Dest('/agents.md'), SKILL, '/agents.md folds via agent-discovery leftover');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');

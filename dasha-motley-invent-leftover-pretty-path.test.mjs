@@ -8,7 +8,8 @@
  * Invent soft-doctor: live /doctor.txt /self-test /plugin /plug-in already
  * 308 → /compute#provide. Leftover /invent (+slash / Title-case) joins that
  * Provide-308 set. Do not invent /compute/invent or nested
- * /compute/api/{contribute,bounties,chess}. Hold stay-outs /api/v1
+ * /compute/api/{bounties,chess}. Nested /compute/api/contribute folds
+ * via dedicated Set → /contribute. Hold stay-outs /api/v1
  * /api/models /api/providers /api/v1/status. Disk only. No Designer.
  * Never plugin.jup.ag. No Muse HTML. No Room. No capacity invent.
  */
@@ -26,12 +27,7 @@ assert.match(workerSrc, /leftover \/invent/, 'invent leftover comment');
 assert.match(workerSrc, /POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST/, 'motley leftover map');
 assert.match(workerSrc, /POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS/, 'invent leftover set');
 assert.match(workerSrc, /Must win over the \/compute\/api\/ casefold/, 'map beats casefold catch-all');
-assert.doesNotMatch(workerSrc, /'\/compute\/invent'/, 'do not invent /compute/invent leftover');
-assert.doesNotMatch(
-  workerSrc,
-  /POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map\(\[[\s\S]*?['"]\/compute\/api\/contribute['"]/,
-  'do not invent nested /compute/api/contribute leftover',
-);
+assert.match(workerSrc, /'\/compute\/invent'/, '#238 already folds /compute/invent with invent family');
 
 const discoveryMap = workerSrc.match(/const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map\(\[[\s\S]*?\]\);/)[0];
 for (const path of [
@@ -47,7 +43,7 @@ for (const path of [
 ]) {
   assert.match(discoveryMap, new RegExp(`['"]${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`), `map lists ${path}`);
 }
-assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/contribute['"]/, 'do not invent nested /compute/api/contribute');
+assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/contribute['"]/, 'nested /compute/api/contribute lives in its Set');
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/bounties['"]/, 'do not invent nested /compute/api/bounties');
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/chess['"]/, 'do not invent nested /compute/api/chess');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/models['"]/, 'do not invent /api/models leftover');
@@ -65,7 +61,7 @@ for (const path of [
 ]) {
   assert.match(provideSet, new RegExp(`['"]${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`), `provide set lists ${path}`);
 }
-assert.doesNotMatch(provideSet, /['"]\/compute\/invent['"]/, 'do not invent /compute/invent in provide set');
+assert.match(provideSet, /['"]\/compute\/invent['"]/, '#238 already lists /compute/invent in provide set');
 assert.doesNotMatch(provideSet, /['"]\/waitlist['"]/, 'apex /waitlist stays out of provide set');
 
 const WWW = 'https://www.getdasha.com';
@@ -168,10 +164,8 @@ const STAY_OUT = [
   '/api/v1/status',
   '/api/models',
   '/api/providers',
-  '/compute/api/contribute',
   '/compute/api/bounties',
   '/compute/api/chess',
-  '/compute/invent',
   '/waitlist',
 ];
 
@@ -189,6 +183,10 @@ for (const path of STAY_OUT) {
 }
 assert.equal(potterHome308Dest('/compute/doctor.txt'), PROVIDE, '/compute/doctor.txt still #provide');
 assert.equal(potterHome308Dest('/api/lobby'), `${WWW}/lobby`, '/api/lobby still Motley discovery leftover');
+assert.equal(potterHome308Dest('/compute/api/contribute'), CONTRIBUTE, '/compute/api/contribute folds to /contribute');
+assert.equal(potterHome308Dest('/compute/api/contribute/'), CONTRIBUTE, '/compute/api/contribute/ folds to /contribute');
+assert.equal(potterHome308Dest('/compute/invent'), PROVIDE, '#238 /compute/invent still #provide');
+assert.equal(potterHome308Dest('/compute/invent/'), PROVIDE, '#238 /compute/invent/ still #provide');
 
 function expectLoc(host, dest) {
   if (host !== 'lobby.getdasha.com') return dest;
@@ -277,9 +275,11 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     if (method === 'HEAD') assert.equal(await proof.text(), '');
   }
   const nestedContribute = await edgeWorker.fetch(new Request(`https://${host}/compute/api/contribute`), env);
-  assert.notEqual(nestedContribute.status, 308, `${host} /compute/api/contribute is not leftover 308`);
+  assert.equal(nestedContribute.status, 308, `${host} /compute/api/contribute leftover 308`);
+  assert.equal(nestedContribute.headers.get('location'), CONTRIBUTE, `${host} /compute/api/contribute loc`);
   const inventNested = await edgeWorker.fetch(new Request(`https://${host}/compute/invent`), env);
-  assert.notEqual(inventNested.status, 308, `${host} /compute/invent is not leftover 308`);
+  assert.equal(inventNested.status, 308, `${host} /compute/invent leftover 308`);
+  assert.equal(inventNested.headers.get('location'), PROVIDE, `${host} /compute/invent loc`);
 }
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
@@ -302,4 +302,4 @@ for (const path of [
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-motley-invent-leftover-pretty-path: PASS (Motley /api/{contribute,bounties,listings,chess,verify.json,proof.json} + nested /compute/api/{listings,verify.json,proof.json} 308 faces; /invent + apex /doctor.txt /self-test /plugin /plug-in 308 #provide; Title-case+slash; www+lobby GET+HEAD; dests 200 except live /verify.json face; stay-out /api/v1|/api/models|/api/providers|/api/v1/status + nested contribute/bounties/chess + /compute/invent; no plugin.jup.ag)');
+console.log('dasha-motley-invent-leftover-pretty-path: PASS (Motley /api/{contribute,bounties,listings,chess,verify.json,proof.json} + nested /compute/api/{listings,verify.json,proof.json,contribute} 308 faces; /invent + /compute/invent + apex /doctor.txt /self-test /plugin /plug-in 308 #provide; Title-case+slash; www+lobby GET+HEAD; dests 200 except live /verify.json face; stay-out /api/v1|/api/models|/api/providers|/api/v1/status + nested bounties/chess; no plugin.jup.ag)');

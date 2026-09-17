@@ -3,7 +3,7 @@
  * Leftover pretty path (Worker 6bcd8adf): live /security /security.txt
  * (+slash / Title-case) html-404 → 308 /.well-known/security.txt.
  * Exact /.well-known/security.txt stays 200 (null dest).
- * Do not invent /humans.txt /ads.txt /terms /tos.
+ * Do not invent /ads.txt /terms /tos. /humans.txt is Motley leftover → /contribute.
  * Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -29,7 +29,6 @@ const FOLDS = [
 ];
 const STAY_OUT = [
   '/.well-known/security.txt',
-  '/humans.txt',
   '/ads.txt',
   '/terms',
   '/tos',
@@ -70,4 +69,4 @@ for (const path of ['/security', '/security.txt']) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-security-txt-pretty-path: PASS (/security+/security.txt 308 /.well-known/security.txt www+lobby GET+HEAD; Title-case+slash; exact well-known 200; no /humans.txt /ads.txt /terms /tos; no plugin.jup.ag)');
+console.log('dasha-security-txt-pretty-path: PASS (/security+/security.txt 308 /.well-known/security.txt www+lobby GET+HEAD; Title-case+slash; exact well-known 200; no /ads.txt /terms /tos; no plugin.jup.ag)');
