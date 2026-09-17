@@ -3,7 +3,7 @@
  * Leftover pretty path (Worker 6bcd8adf): live /security /security.txt
  * (+slash / Title-case) html-404 → 308 /.well-known/security.txt.
  * Exact /.well-known/security.txt stays 200 (null dest).
- * Do not invent /ads.txt /terms /tos. /humans.txt is Motley leftover → /contribute.
+ * Do not invent /ads.txt /terms /tos. Exact /humans.txt is a 200 text/plain face.
  * Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';

@@ -2,7 +2,7 @@
 /**
  * Motley leftover 308s at live tip 2c9aa2bf (2026-09-17).
  * /skill.json → skill face; /openapi.yaml → OpenAPI JSON;
- * /compute/api/humans → /humans.txt (which already → /contribute).
+ * /compute/api/humans → /humans.txt (200 text/plain face).
  * Muse #225 faces stay dest-null (/providers 200). Leftover cases unchanged.
  */
 import assert from 'node:assert/strict';

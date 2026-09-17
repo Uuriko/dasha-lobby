@@ -387,6 +387,21 @@ index https://www.getdasha.com/llms.txt
 full https://www.getdasha.com/llms-full.txt
 `;
 
+/** Honest /humans.txt face. Team/contact/contribute pointers only — no people-data. */
+const HUMANS_TXT = `/* TEAM */
+Site: https://www.getdasha.com/
+Crew: https://www.getdasha.com/crew
+X: https://x.com/dash_eats
+GitHub: https://github.com/Uuriko/dasha-lobby
+
+/* CONTACT */
+Contribute: https://www.getdasha.com/contribute
+Security: https://www.getdasha.com/.well-known/security.txt
+
+/* SITE */
+Language: English
+`;
+
 const LLMS_FULL_TXT = `# $dasha is dash_eats on Solana
 
 > dash_eats on Solana. Site https://www.getdasha.com/. Associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. CoinGecko dash_eats. Jupiter is jup.ag with that mint.
@@ -4922,9 +4937,11 @@ const POTTER_COMPUTE_MCP_JSON_308_PATHS = new Set([
   '/mcp', '/mcp/',
   '/compute/mcp', '/compute/mcp/',
 ]);
-/** Leftover pretty skill doors → /compute/skill.md. Exact /compute/skill.md stays 200. */
+/** Leftover pretty skill doors → /compute/skill.md. Exact /compute/skill.md stays 200.
+ *  Apex /skill.json (+slash / Title-case) is a live Motley leftover. */
 const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
   '/skill.md', '/skill.md/',
+  '/skill.json', '/skill.json/',
   '/compute/skill.md/',
   '/compute/agents/skill.md', '/compute/agents/skill.md/',
   '/compute/agent/skill.md', '/compute/agent/skill.md/',
@@ -5173,15 +5190,16 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/how-to-buy', 'https://www.getdasha.com/how-to-buy'],
   ['/bounties', 'https://www.getdasha.com/bounties'],
   ['/login', 'https://www.getdasha.com/login'],
-  // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Agents.txt
-  // /Agents.json html-404 while lowercase siblings already 200. Exact lowercase
-  // stays null so 200 handlers run. Bare leftover /agents|/agents/ fold via
+  // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Humans.txt
+  // /Agents.txt /Agents.json html-404 while lowercase siblings already 200. Exact
+  // lowercase stays null so 200 handlers run. Bare leftover /agents|/agents/ fold via
   // POTTER_AGENTS_TXT_308_PATHS. Bare leftover /compute/agents folds there
   // → /compute/agents.txt. Do not catch *.txt/*.json (exact faces stay 200).
   // Do NOT put /forum /chat here — that would drop ?t=; use isForumChatAliasPath + forumToLobbyRedirect.
   ['/llms.txt', 'https://www.getdasha.com/llms.txt'],
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
   ['/ai.txt', 'https://www.getdasha.com/ai.txt'],
+  ['/humans.txt', 'https://www.getdasha.com/humans.txt'],
   ['/agents.txt', 'https://www.getdasha.com/agents.txt'],
   ['/agents.json', 'https://www.getdasha.com/agents.json'],
   ['/compute/llms.txt', 'https://www.getdasha.com/compute/llms.txt'],
@@ -5237,10 +5255,12 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  Nested /compute/api/contribute folds via POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.
  *  Do not invent nested /compute/api/{bounties,chess}.
  *  Apex agent-ish file synonyms (2026-09-17): live GET/HEAD /contribute.md
- *  /crew.json /bag.json /humans.txt (+slash / Title-case) html-404 while faces 200.
- *  Fold to /contribute /crew /bag /contribute. Muse brand door /muse (+slash /
- *  Title-case) 308 → / (home is Muse Webflow). Do not fold /muse → /start
- *  — /start is reserved for Muse #225 face. Stay out of /providers
+ *  /crew.json /bag.json (+slash / Title-case) html-404 while faces 200.
+ *  Fold to /contribute /crew /bag. Exact /humans.txt is a 200 text/plain
+ *  face (not a Motley leftover into /contribute HTML). Slash /humans.txt/
+ *  + nested /compute/api/humans fold to that face. Muse brand door /muse
+ *  (+slash / Title-case) 308 → / (home is Muse Webflow). Do not fold /muse
+ *  → /start — /start is reserved for Muse #225 face. Stay out of /providers
  *  /developers /network /start (Muse #225 HTML). No Muse product HTML. */
 const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/api/lobby', 'https://www.getdasha.com/lobby'],
@@ -5302,6 +5322,7 @@ const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/compute/api/digest/', 'https://www.getdasha.com/digest.json'],
   // Apex agent-ish file synonyms + Muse brand door (2026-09-17).
   // Live www html-404 while /contribute /crew /bag / already 200.
+  // Exact /humans.txt is the 200 text/plain face (not this map).
   // /muse → / (home). Do not fold /muse → /start. Stay out of
   // /providers /developers /network /start (Muse #225).
   ['/contribute.md', 'https://www.getdasha.com/contribute'],
@@ -5310,10 +5331,24 @@ const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/crew.json/', 'https://www.getdasha.com/crew'],
   ['/bag.json', 'https://www.getdasha.com/bag'],
   ['/bag.json/', 'https://www.getdasha.com/bag'],
-  ['/humans.txt', 'https://www.getdasha.com/contribute'],
-  ['/humans.txt/', 'https://www.getdasha.com/contribute'],
   ['/muse', 'https://www.getdasha.com/'],
   ['/muse/', 'https://www.getdasha.com/'],
+]);
+/** Leftover /humans.txt/ (+ Title-case via toLowerCase) → /humans.txt face.
+ *  Exact /humans.txt stays 200 text/plain. Do not invent apex /humans. */
+const POTTER_HUMANS_TXT_308_PATHS = new Set([
+  '/humans.txt/',
+]);
+/** Nested Motley leftover /compute/api/humans (+slash / Title-case via
+ *  toLowerCase) while /humans.txt is the 200 text/plain face. Must win
+ *  over the /compute/api/ casefold catch-all. Do not invent /api/humans. */
+const POTTER_COMPUTE_API_HUMANS_308_PATHS = new Set([
+  '/compute/api/humans', '/compute/api/humans/',
+]);
+/** Leftover apex /openapi.yaml (+slash / Title-case) → /compute/openapi.json.
+ *  Exact /compute/openapi.yaml stays the 200 YAML spec. */
+const POTTER_OPENAPI_YAML_308_PATHS = new Set([
+  '/openapi.yaml', '/openapi.yaml/',
 ]);
 /** Nested Motley leftover /compute/api/robots (+slash / Title-case via
  *  toLowerCase) while /robots.txt is already 200. .txt peers + apex
@@ -5681,6 +5716,12 @@ export function potterHome308Dest(path) {
     if (skillMdSlash) return "https://www.getdasha.com/compute/skill/" + skillMdSlash[1] + ".md";
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
+  }
+  if (POTTER_HUMANS_TXT_308_PATHS.has(p) || POTTER_COMPUTE_API_HUMANS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/humans.txt";
+  }
+  if (POTTER_OPENAPI_YAML_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/openapi.json";
   }
   if (POTTER_COMPUTE_API_ROBOTS_308_PATHS.has(p)) {
     return "https://www.getdasha.com/robots.txt";
@@ -6403,6 +6444,19 @@ function securityTxtResponse(request, host) {
       ...SECURITY,
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+    },
+  });
+}
+
+function humansTxtResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : HUMANS_TXT, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      'Strict-Transport-Security': 'max-age=31536000',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Dasha-Edge': 'humans',
     },
   });
 }
@@ -12844,6 +12898,9 @@ export default {
           'X-Dasha-Edge': 'ai',
         },
       });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/humans.txt') {
+      return humansTxtResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD' || request.method === 'OPTIONS') && url.pathname === '/.well-known/grok-bot.json') {
       if (request.method === 'OPTIONS') {
