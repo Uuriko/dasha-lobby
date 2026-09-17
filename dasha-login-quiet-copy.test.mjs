@@ -65,3 +65,26 @@ assertQuietLogin(LOGIN_PAGE_HTML, 'LOGIN_PAGE_HTML');
 }
 
 console.log('dasha-login-quiet-copy: PASS (quiet doors line once; Grok/X/Google/wallet stay; home first paint intact)');
+
+// Resend + provider-hint + OTP hardening (2026 auth UX): structure present in source, bundle, and served page.
+async function assertLoginUx(html, label) {
+  const body = visible(html);
+  assert.match(body, /data-email-resend/, `${label} resend button`);
+  assert.match(body, /data-provider-hint/, `${label} provider hint slot`);
+  assert.match(body, /pattern="\[0-9\]\*"/, `${label} OTP numeric pattern`);
+  assert.match(body, /aria-describedby="dasha-email-status"/, `${label} OTP status link`);
+  // JS-only strings (visible() strips <script>).
+  assert.match(html, /Resend in 0:/, `${label} resend cooldown copy`);
+  assert.match(html, /dasha_last_provider/, `${label} device-local provider memory`);
+  assert.match(html, /dasha-x-linked/, `${label} x link listener`);
+  assert.match(html, /dasha-google-linked/, `${label} google link listener`);
+  assert.match(html, /That code expired\. Get a new one\./, `${label} expiry copy`);
+}
+
+assertLoginUx(loginSrc, 'login source');
+assertLoginUx(LOGIN_PAGE_HTML, 'LOGIN_PAGE_HTML');
+{
+  const login = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), {});
+  assertLoginUx(await login.text(), 'served /login');
+}
+console.log('dasha-login-ux: PASS (resend cooldown, provider hint, OTP hardening, expiry copy)');

@@ -8628,6 +8628,19 @@ export class DashaLobby {
       const emailAllowed = simpRate(this.simpRates, `email-login-start:${email}`, 4);
       if (!emailAllowed.ok) return json({ error: 'email login rate limited', waitMs: emailAllowed.waitMs }, 429, allowedOrigin, cred);
       const now = Date.now();
+      // Persistent per-email send cap: max 3 codes per 10 minutes (initial + resends).
+      const SEND_CAP_MAX = 3, SEND_CAP_WINDOW = 10 * 60_000;
+      const sendLogRaw = await this.state.storage.get('emailLoginSends');
+      const sendLog = sendLogRaw && typeof sendLogRaw === 'object' ? sendLogRaw : {};
+      for (const [k, v] of Object.entries(sendLog)) {
+        const live = (Array.isArray(v) ? v : []).filter((t) => Number(t) > now - SEND_CAP_WINDOW);
+        if (live.length) sendLog[k] = live; else delete sendLog[k];
+      }
+      const sentTimes = sendLog[email] || [];
+      if (sentTimes.length >= SEND_CAP_MAX) {
+        const waitMs = Math.max(0, Math.min(...sentTimes) + SEND_CAP_WINDOW - now);
+        return json({ error: 'email login rate limited', waitMs }, 429, allowedOrigin, cred);
+      }
       const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
       const nonce = randomUrlToken(16);
       const expiresAt = now + 10 * 60_000;
@@ -8646,6 +8659,8 @@ export class DashaLobby {
       });
       if (!sent.ok) return json({ error: 'Could not send the sign-in code. Please try again.' }, 502, allowedOrigin, cred);
       await this.state.storage.put('emailLogins', bounded);
+      sendLog[email] = [...(sendLog[email] || []), now];
+      await this.state.storage.put('emailLoginSends', sendLog);
       return json({ ok: true, expiresIn: 600 }, 200, allowedOrigin, cred);
     }
 
