@@ -3,7 +3,7 @@ export const CREW_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 export const CREW_PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
 export const CREW_WSOL = 'So11111111111111111111111111111111111111112';
 export const CREW_BUY = `https://jup.ag/swap?sell=${CREW_WSOL}&buy=${CREW_MINT}`;
-export const CREW_TG = 'https://t.me/+xB7S8mIQaKFiZjRh';
+export const CREW_TG = 'https://t.me/+ck9pUjL2ncNiZjRh';
 
 export const CREW_JOB_OG = {
   scout: { title: 'Scout · Dasha Crew', description: '$dasha tape only.' },
@@ -36,7 +36,7 @@ export const CREW_LOG_MAX = 20;
 const PROMPTS = {
   scout: 'You are Scout. $dasha tape only. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. Read public price, liquidity, volume, change on that pair. Do not invent a candle. No tape → sit. You do not hold keys.',
   trace: 'You are Trace. Public holders and flow on the $dasha mint only. Mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Read buys, sells, top holders from public HTTP/RPC. No flow → sit. You do not hold keys. You do not invent a wallet list.',
-  vibe: 'You are Vibe. Read the room: lobby, @dash_eats, official TG https://t.me/+xB7S8mIQaKFiZjRh. Public pages only. Rooms down → sit. You do not post. You do not hold those keys.',
+  vibe: 'You are Vibe. Read the room: lobby, @dash_eats, official TG https://t.me/+ck9pUjL2ncNiZjRh. Public pages only. Rooms down → sit. You do not post. You do not hold those keys.',
   clock: 'You are Clock. If the tape is dumping, sit. Dump = 1h ≤ −5% or 24h ≤ −15%. No tape → sit. You do not buy the dip. You sit.',
   kill: 'You are Kill. Default no. Your only job is no. You never hold keys. You never say yes. If the others get loud, you still say no.',
 };

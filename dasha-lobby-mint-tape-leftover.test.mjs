@@ -90,7 +90,7 @@ assert.equal(isQuietTapePath('/lobby/tape'), true, '/lobby/tape stays');
   assertNoMount(html, 'served lobby');
   assert.match(html, new RegExp(MINT), 'served lobby mint');
   assert.match(html, /jup\.ag\/swap/, 'served lobby jup.ag');
-  assert.match(html, /t\.me\/\+xB7S8mIQaKFiZjRh/, 'served lobby official TG');
+  assert.match(html, /t\.me\/\+ck9pUjL2ncNiZjRh/, 'served lobby official TG');
   assert.match(html, /<link rel="describedby" href="\/llms\.txt" type="text\/plain">/);
   assert.doesNotMatch(afterStyleScript(html), />Forum</, 'no Forum product word after style/script strip');
 }

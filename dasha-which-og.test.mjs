@@ -14,7 +14,7 @@ const TITLE = 'Which $dasha? dash_eats';
 const DESC = 'dash_eats. Buy $dasha.';
 
 assert.doesNotMatch(worker, /plugin\.jup\.ag/);
-assert.doesNotMatch(worker, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+assert.doesNotMatch(worker, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
 
 function extractConst(name) {
   const m = worker.match(new RegExp(`const ${name} = \`([\\s\\S]*?)\`;`));

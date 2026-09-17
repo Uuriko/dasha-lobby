@@ -22,7 +22,7 @@ const diskRobots = readFileSync(join(root, 'dasha-robots.txt'), 'utf8');
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.doesNotMatch(workerSrc, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/, 'worker must not invent Telegram');
+assert.doesNotMatch(workerSrc, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/, 'worker must not invent Telegram');
 assert.match(workerSrc, /export function stripRobotsLecture/);
 assert.match(workerSrc, /null : stripRobotsLecture\(ROBOTS_TXT\)/);
 assert.equal(

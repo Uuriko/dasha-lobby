@@ -50,7 +50,7 @@ th{color:#8a8a96;font-weight:600}
 </head>
 <body>
 <main>
-<p class="fine"><a href="/compute">&larr; Dasha Compute</a></p>
+<p class="fine"><a href="/compute">&larr; Dasha Compute</a> &middot; <a href="/compute/start">Run it yourself in 10 minutes</a></p>
 <h1>Proof, not promises.</h1>
 <p class="lede">This page has no marketing numbers. Every figure below is fetched live from a public endpoint when you load it, and each section links the exact endpoint it reads. Machine-readable twin: <a href="/compute/proof.json">/compute/proof.json</a>.</p>
 

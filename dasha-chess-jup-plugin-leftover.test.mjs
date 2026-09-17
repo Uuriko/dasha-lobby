@@ -16,7 +16,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 const chessDisk = readFileSync(join(root, 'dasha-chess-page.html'), 'utf8');
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 const PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
-const TG = 'https://t.me/+xB7S8mIQaKFiZjRh';
+const TG = 'https://t.me/+ck9pUjL2ncNiZjRh';
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /export function stripChessJupPluginMount/);
@@ -75,7 +75,7 @@ assertNoMount(stripChessJupPluginMount(CHESS_PAGE_HTML), 'bundled');
   assertNoMount(html, 'served chess');
   assert.doesNotMatch(afterStyleScript(html), /#dasha-jup/, 'served chess CSS has no leftover #dasha-jup after style/script strip');
   assert.match(html, new RegExp(PAIR), 'served chess pair');
-  assert.match(html, /t\.me\/\+xB7S8mIQaKFiZjRh/, 'served chess official TG');
+  assert.match(html, /t\.me\/\+ck9pUjL2ncNiZjRh/, 'served chess official TG');
   assert.match(html, /<link rel="describedby" href="\/llms\.txt" type="text\/plain">/);
   assert.match(html, /Dasha versus Anna/, 'chess copy stays');
 }

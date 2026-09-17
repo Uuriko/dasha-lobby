@@ -3,7 +3,7 @@
  */
 export const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 export const PAIR = '9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7';
-export const TG = 'https://t.me/+xB7S8mIQaKFiZjRh';
+export const TG = 'https://t.me/+ck9pUjL2ncNiZjRh';
 export const JUP_BUY = `https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=${MINT}`;
 export const DEX_HREF = `https://dexscreener.com/solana/${PAIR.toLowerCase()}`;
 export const DEX_TOKEN_API = `https://api.dexscreener.com/latest/dex/tokens/${MINT}`;

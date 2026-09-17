@@ -131,7 +131,7 @@ assert.match(taped, /Dexscreener/);
 assert.match(taped, /<h2>Tape\.<a href="\/digest">\/digest<\/a><\/h2>/, 'home tape keeps /digest permalink');
 assert.equal(countRows(taped), 5, 'home tape caps at 5');
 assert.doesNotMatch(taped, /plugin\.jup\.ag/);
-assert.doesNotMatch(taped, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+assert.doesNotMatch(taped, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
 assert.doesNotMatch(taped, /<nav class="dasha-nav">/, 'drops leftover dasha-nav');
 
 const ordered = applyDigestTape(

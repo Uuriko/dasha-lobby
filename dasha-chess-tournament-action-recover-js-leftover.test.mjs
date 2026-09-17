@@ -300,7 +300,7 @@ assert.equal(stripChessLeftoverTournamentActionRecoverJs(HOME), HOME, "home is n
   assert.match(html, /x-connect\.js/, "lobby x-connect.js stays");
   assert.match(html, /class=["']forum-pin["']/, ".forum-pin stays");
   assert.match(html, /id=["']forum-copy["']/, "Copy/mint chip stays");
-  assert.match(html, /https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh/, "official t.me stays");
+  assert.match(html, /https:\/\/t\.me\/\+ck9pUjL2ncNiZjRh/, "official t.me stays");
   assert.match(html, />Telegram</, "footer Telegram stays");
 }
 

@@ -13,7 +13,7 @@ const recordSrc = readFileSync(join(root, 'dasha-bag-record.mjs'), 'utf8');
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 assert.doesNotMatch(recordSrc, /plugin\.jup\.ag/);
-assert.doesNotMatch(workerSrc, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+assert.doesNotMatch(workerSrc, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
 assert.doesNotMatch(recordSrc, /t\.me\//);
 
 const boom = async () => {

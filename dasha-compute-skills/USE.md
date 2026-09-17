@@ -46,4 +46,4 @@ curl https://lobby.getdasha.com/compute/api/v1/chat/completions \
 
 ## If stuck
 - Hard-refresh, confirm login. UI Ask falls to Hosted when community shows 0 Macs. v1 stays fail-loud `no_mac_online`.
-- Telegram: https://t.me/+xB7S8mIQaKFiZjRh
+- Telegram: https://t.me/+ck9pUjL2ncNiZjRh (the only official Dasha invite - ignore lookalike groups)

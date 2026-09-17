@@ -28,7 +28,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, "dasha-lobby-worker.mjs"), "utf8");
 const chessDisk = readFileSync(join(root, "dasha-chess-page.html"), "utf8");
 const MINT = "53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump";
-const TG = "https://t.me/+xB7S8mIQaKFiZjRh";
+const TG = "https://t.me/+ck9pUjL2ncNiZjRh";
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, "worker must not mention plugin.jup.ag");
 assert.ok(

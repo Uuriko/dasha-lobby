@@ -46,7 +46,7 @@ function hasEmptyDots(chunk) {
   return /·\s*·/.test(chunk) || /<(?:p|div)[^>]*>\s*·/.test(chunk);
 }
 
-const LIVE_CHESS_FOOT = '<footer class="dasha-foot wrap"><p><a href="https://www.getdasha.com/">$dasha</a> · <a class="buy-dasha" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" target="_blank" rel="noopener noreferrer">Buy</a> · <a href="https://www.getdasha.com/chess">Chess</a> · <a href="https://www.getdasha.com/forum">Forum</a> · <a href="https://www.getdasha.com/bag">Bag</a> · <a href="https://t.me/+xB7S8mIQaKFiZjRh" target="_blank" rel="noopener noreferrer">Telegram</a></p></footer>';
+const LIVE_CHESS_FOOT = '<footer class="dasha-foot wrap"><p><a href="https://www.getdasha.com/">$dasha</a> · <a class="buy-dasha" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" target="_blank" rel="noopener noreferrer">Buy</a> · <a href="https://www.getdasha.com/chess">Chess</a> · <a href="https://www.getdasha.com/forum">Forum</a> · <a href="https://www.getdasha.com/bag">Bag</a> · <a href="https://t.me/+ck9pUjL2ncNiZjRh" target="_blank" rel="noopener noreferrer">Telegram</a></p></footer>';
 const LIVE_HOWTO_HOLES = '<footer><p><a href="/">Home</a> · <a href="/lobby">Lobby</a> · <a href="/faucet">Faucet</a> ·  ·  · <a href="/privacy">Privacy</a> · <a href="https://x.com/dash_eats" target="_blank" rel="noopener noreferrer">@dash_eats ↗</a></p></footer>';
 const LIVE_PRODUCTS = '<footer><p><a href="/studio">Studio</a> · <a href="/desk">Desk</a> · <a href="/verse">Verse</a> · <a href="/learn">Learn</a> · <a href="/forum">Forum</a> · <a href="/privacy">Privacy</a></p></footer>';
 

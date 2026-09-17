@@ -10,7 +10,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const worker = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 
 assert.doesNotMatch(worker, /plugin\.jup\.ag/);
-assert.doesNotMatch(worker, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+assert.doesNotMatch(worker, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
 
 const m = worker.match(/const CONTRIBUTE_HTML = htmlPage\([\s\S]*?\);\n/);
 assert.ok(m, 'CONTRIBUTE_HTML');

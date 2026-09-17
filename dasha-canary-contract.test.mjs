@@ -35,7 +35,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 const loginSrc = readFileSync(join(root, 'dasha-login-page.html'), 'utf8');
 const latest = JSON.parse(readFileSync(process.env.DASHA_DIGEST_LATEST || '/workspace/dasha-digest-latest.json', 'utf8'));
 const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
-const TG = 'https://t.me/+xB7S8mIQaKFiZjRh';
+const TG = 'https://t.me/+ck9pUjL2ncNiZjRh';
 
 const BROKEN_LIVE_HOME = `<!doctype html><html lang="en"><head>
 <title>old home</title>
@@ -572,7 +572,7 @@ assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 assert.match(workerSrc, /export function stripHomeLeftoverDashaRootClass/);
 assert.match(workerSrc, /out = stripHomeLeftoverDashaRootClass\(out\);/);
 assert.equal(DIGEST_TG, TG);
-assert.doesNotMatch(workerSrc, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+assert.doesNotMatch(workerSrc, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
 
 // Provide enroll templates must advertise measured qwen3-4b (not 8b-only after #178).
 {

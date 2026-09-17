@@ -17,7 +17,7 @@ const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.doesNotMatch(workerSrc, /HOME_WHICH_DOOR/, 'HOME_WHICH_DOOR retired');
 assert.doesNotMatch(workerSrc, /HOME_TG_DOOR/, 'HOME_TG_DOOR retired');
-assert.match(workerSrc, /https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh/, 'official TG only (via /tg 308)');
+assert.match(workerSrc, /https:\/\/t\.me\/\+ck9pUjL2ncNiZjRh/, 'official TG only (via /tg 308)');
 
 const fixture = `<!doctype html><html lang="en"><head><title>$dasha</title></head>
 <body>

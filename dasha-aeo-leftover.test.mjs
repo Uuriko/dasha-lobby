@@ -24,7 +24,7 @@ const MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 const OTHER = 'FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8';
 
 assert.doesNotMatch(worker, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
-assert.doesNotMatch(worker, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/, 'worker must not invent Telegram');
+assert.doesNotMatch(worker, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/, 'worker must not invent Telegram');
 
 function extractConst(name) {
   const m = worker.match(new RegExp(`const ${name} = \`([\\s\\S]*?)\`;`));
@@ -254,7 +254,7 @@ for (const path of ['/lobby', '/faucet', '/how-to-buy', '/login', '/chess']) {
   assert.match(chessHtml, /<link rel="describedby" href="\/llms\.txt"/);
   assert.match(chessHtml, /<link rel="describedby" href="\/llms-full\.txt"/);
   assert.doesNotMatch(chessHtml, /plugin\.jup\.ag/);
-  assert.doesNotMatch(chessHtml, /t\.me\/(?!\+xB7S8mIQaKFiZjRh)/);
+  assert.doesNotMatch(chessHtml, /t\.me\/(?!\+ck9pUjL2ncNiZjRh)/);
   const embed = await edgeWorker.fetch(new Request('https://www.getdasha.com/chess?embed=1'), {});
   assertDescribedBy(embed, '/chess?embed=1');
   assert.equal(embed.headers.get('x-frame-options'), 'SAMEORIGIN');

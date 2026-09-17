@@ -291,3 +291,11 @@ Shipped first **USDC provider settle path** (fail-closed):
 - Docs: `scripts/compute-provider-settle.md` · PARK-compute-provider-payout-settle.md
 
 Steal still open from Salad Chef cash-out clarity: one status verb (Pending → Paid) + explorer link — done quietly without dashboard chrome.
+
+---
+
+## Common Compute claims - date-stamped
+
+Claims about Common Compute move; its receipt and security pages were re-checked in the evaluator review and the earlier "only signed receipts" claim is no longer safe to quote.
+
+- **2026-09-16 (evaluator re-check):** Common Compute's receipt and security pages no longer carry the "only signed receipts" claim. Any comparison against Common Compute must be re-fetched and date-stamped before reuse; do not repeat claims from before this date.
