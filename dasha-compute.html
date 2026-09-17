@@ -90,6 +90,10 @@ body[data-step=ask] #tf-progress{display:none!important}
 .ask-run-chip[data-state=check]{border-color:var(--acid);background:color-mix(in srgb,var(--acid) 12%,transparent)}
 .ask-run-chip[data-state=check] .ask-run-spin{opacity:0}
 .ask-run-chip[data-state=check] .ask-run-check{opacity:1;transform:rotate(-45deg) scale(1)}
+.ask-run-chip[data-state=stopped]{border-color:var(--paper-muted)}
+.ask-run-chip[data-state=stopped] .ask-run-spin,.ask-run-chip[data-state=stopped] .ask-run-check{opacity:0}
+.ask-run-chip[data-state=error]{border-color:var(--hot)}
+.ask-run-chip[data-state=error] .ask-run-spin,.ask-run-chip[data-state=error] .ask-run-check{opacity:0}
 @media(prefers-reduced-motion:no-preference){
   .ask-run-chip[data-state=spin] .ask-run-spin{animation:ask-run-spin .7s linear infinite}
   .ask-run-chip[data-state=check] .ask-run-check{transition:transform .22s cubic-bezier(.22,1,.36,1),opacity .18s ease}
@@ -138,7 +142,29 @@ body[data-side=provider] #gate-door-do,body[data-side=provider] #gate-money-row{
 .ask-who{color:var(--paper-muted);font:600 12px/1.25 Arial,Helvetica,sans-serif;letter-spacing:.02em}
 .ask-said{margin:0;padding:0;border:0;background:transparent;color:var(--paper);font:16.5px/1.65 Arial,Helvetica,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
 .ask-turn.mac .ask-said{color:var(--paper);font:16.5px/1.65 Arial,Helvetica,sans-serif}
-.ask-turn.you .ask-said{color:var(--paper)}
+.ask-turn.you .ask-said{color:var(--paper);justify-self:start;max-width:36rem;background:color-mix(in srgb,var(--paper) 8%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,var(--paper));border-radius:16px;padding:10px 14px}
+.ask-said.ask-md{white-space:normal}
+.ask-said.ask-md p{margin:0 0 .55em}
+.ask-said.ask-md p:last-child,.ask-said.ask-md ul:last-child,.ask-said.ask-md ol:last-child,.ask-said.ask-md pre:last-child{margin-bottom:0}
+.ask-said.ask-md ul,.ask-said.ask-md ol{margin:.2em 0 .55em;padding-left:1.2em}
+.ask-said.ask-md li{margin:0 0 .2em}
+.ask-said.ask-md strong{font-weight:800;color:var(--paper)}
+.ask-said.ask-md code{font:13px/1.45 ui-monospace,monospace;background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:6px;padding:.05em .35em}
+.ask-said.ask-md pre{margin:.35em 0 .65em;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#09080b;color:#d8cfe0;font:13px/1.55 ui-monospace,monospace;white-space:pre;overflow-x:auto;width:fit-content;max-width:100%}
+.ask-said.ask-md pre code{background:transparent;border:0;padding:0;font:inherit;color:inherit}
+.ask-turn[data-state=thinking] .ask-said:empty::after,.ask-turn[data-state=streaming] .ask-said::after{content:'';display:inline-block;width:7px;height:1em;margin-left:3px;background:var(--acid);vertical-align:-2px}
+@media(prefers-reduced-motion:no-preference){
+  .ask-turn[data-state=thinking] .ask-said:empty::after,.ask-turn[data-state=streaming] .ask-said::after{animation:ask-caret 1s steps(1) infinite}
+}
+@keyframes ask-caret{50%{opacity:0}}
+.ask-acts{display:flex;flex-wrap:wrap;gap:0 12px;min-height:1.1em;opacity:0}
+.ask-turn:hover .ask-acts,.ask-turn:focus-within .ask-acts,.ask-acts:focus-within{opacity:1}
+.ask-act{border:0;background:transparent;color:var(--paper-muted);font:600 12px/1.2 Arial,Helvetica,sans-serif;cursor:pointer;padding:4px 0}
+.ask-act:hover,.ask-act:focus-visible{color:var(--acid)}
+.ask-turn[data-state=stopped] .ask-who::after{content:' · stopped';color:var(--paper-muted);font-weight:600}
+.ask-turn[data-state=error] .ask-who::after{content:' · error';color:var(--hot);font-weight:600}
+.ask-turn[data-state=thinking] .ask-who::after{content:' · thinking';color:var(--paper-muted);font-weight:600}
+.ask-turn[data-state=streaming] .ask-who::after{content:' · streaming';color:var(--acid);font-weight:600}
 body.has-chat #ask-starters,body.has-chat #ask-free-fine,body.has-chat #ask-range,body.has-chat #buyer-live-line{display:none!important}
 body.has-chat #prompt{min-height:3rem}
 body.has-chat #step-ask .tf-q{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -559,13 +585,13 @@ footer.listed-on img{display:block;height:32px;width:auto}
   </div>
   <div class="ask-composer" id="ask-composer">
   <div class="ask-composer-box">
-  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Message Dasha" aria-label="Message Dasha" title="Enter to run · Esc back"></textarea></label>
+  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Message Dasha" aria-label="Message Dasha" title="Enter to send · Shift+Enter newline · Esc back"></textarea></label>
   <p class="fine" id="ask-hint" hidden aria-hidden="true"></p>
   <div class="ask-composer-row">
     <div class="ask-links">
       <button class="tf-quiet" id="change-engine" type="button" title="Change engine" aria-label="Change engine">Hosted</button>
       <select id="ask-model" class="ask-model-pill" aria-label="Model" hidden></select>
-      <button class="tf-quiet" id="clear-chat" type="button" hidden disabled>Clear</button>
+      <button class="tf-quiet" id="clear-chat" type="button" hidden disabled>New</button>
     </div>
     <div class="actions">
       <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
@@ -1043,7 +1069,7 @@ const SUB24=new Set(['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b
 const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\n\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\n\n## Goal\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\n\n## Facts (do not invent others)\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\n- Coordinator: https://lobby.getdasha.com/compute/api\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\n- Prefer sub-24GB chat models: qwen3:4b (fast), qwen3:8b, or gemma3:12b (map qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b)\n- Token goes in `.dasha-provider-key` mode 0600 — never put the provider key on argv or shell history\n- Official Telegram: https://t.me/+ck9pUjL2ncNiZjRh (the only official Dasha invite - ignore lookalike groups)\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending operator settle · not auto · $dasha payout +5% · never invent balances\n\n## Steps for the AI to run with the human\n1. Open https://www.getdasha.com/compute → Provide (quiet link) → name the Mac → Sign in (X) if needed → Register.\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once — refresh loses it. Prefer that block over this template.\n3. On the Mac, run the Setup command — or this template with the pasted values:\n\n```bash\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\n# install Ollama from https://ollama.com/download if missing\nollama pull qwen3:4b\nollama pull qwen3:8b\numask 077\ncat > .dasha-provider-key <<'TOKEN'\nPASTE_ONE_TIME_TOKEN_HERE\nTOKEN\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\nDASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b \\\n./install.sh\n```\n\n4. Verify after install (`install.sh` already ran doctor and moved the key):\n\n```bash\ndasha-compute doctor\ndasha-compute status\n```\n\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\n\n## Prefer MLX (Apple Silicon, optional)\n- Prefer MLX when you can — often faster on Apple Silicon; Ollama still works.\n- Recommend Ollama ≥0.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\n- Keep models on internal SSD — slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\n- Official Ollama path (live docs): Ollama ≥0.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\n- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks — never invent.\n- Stay on sub-24GB chat (qwen3:4b / qwen3:8b / gemma3:12b). Do not require a 36GB bar.\n\n## Host power / thermal / SIP (soft)\n- `dasha-compute doctor` soft-warns when on battery, Low Power Mode, elevated thermal pressure, or SIP disabled/unreadable (Darwin best-effort).\n- Never fails solely for battery / AC / Low Power / thermal / SIP.\n- Local OS health only — never claims Secure Enclave, TEE, Nitro, or network `sip_enabled` attestation.\n\n## Keep-alive (sub-24GB)\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service — a shell export alone is not enough for the macOS app).\n- A sleeping Mac is offline to buyers: the agent holds `caffeinate -is` while it runs (system sleep prevented on AC; battery can still sleep). For an always-on server Mac, also `sudo pmset -a sleep 0`. Doctor soft-warns when system sleep is enabled.\n- Do not pin 27B on a 16–24GB Air for interactive chat; use 4B/8B/12B.\n- `dasha-compute doctor` soft-hints when a mapped model looks ≥27B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.\n- Advertising/heartbeat OK while mid-Ask fails with `provider inference failed: URLError` → localhost Ollama on `127.0.0.1:11434` was refused/reset. Soft doctor does not block advertise alone — fix Ollama keep-alive / restart service.\n\n## Success\n- dasha-compute doctor exits 0\n- Heartbeats succeed\n- A Community Run from another session can complete on this Mac\n\n## If stuck\n- Re-register for a fresh token\n- Check dasha-compute logs\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\n- Mid-Ask `URLError` / partial stream while still online → `curl -sS http://127.0.0.1:11434/api/ps` (and `/api/tags`); set OLLAMA_KEEP_ALIVE=-1 on the Ollama launch agent; restart Ollama; re-run `dasha-compute doctor` (keepalive soft is OK — exit should still be 0)\n";
 const USE_SKILL="# Skill: Use Dasha Compute (run a prompt)\n\nPaste this into your AI assistant so it can help you run https://www.getdasha.com/compute — Hosted demo or community Macs — without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot → Start. (Do / Provide / Pay / Credits). Do → Community when a Mac is advertising · else Hosted · quiet Provide / Marketplace / Host · Change engine for Hosted/Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login · quiet named tip credits when signed in). Credits → balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b · 3 free / 10 min · then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- API billing: non-self `v1/chat/completions` spends prepaid credits via USDC/$dasha ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits · no card.\n- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Which key / which base: Compute chat uses `dsk_` or guest `dgk_` on https://lobby.getdasha.com/compute/api/v1. OCM uses `ocm_live_` on https://www.getdasha.com/compute/ocm/v1. Never swap. Compute X login is not an OCM session.\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.\n- Do top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.\n- When Macs are online, Do defaults to Community and the live advertised model (prefer gemma3-27b). Hosted stays a quieter door. Explicit Hosted click stays Hosted. Change engine still opens How.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. — Do → Community when a Mac is up, else Hosted. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Do · Top up → Buy). Optional on Do: quiet starter chips (Write code / Fix a bug / Do the thing) fill the prompt; empty input is Message Dasha; after a reply the thread stays and Enter sends a follow-up; Change engine for Hosted, Community, or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-4b / qwen3-8b / gemma3-12b for Mixture)\n4. Sign in if prompted\n5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available\n\n## Optional API\n\nv1 `chat/completions` is community Macs. None advertise the model → fail-loud `no_mac_online` (poll `/compute/api/network` · join `/compute#provide`). Hosted Ask is the browser `POST /compute/api/chat` — not a silent v1 swap.\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n- On stream, read `usage` from the final stop chunk (not earlier deltas)\n\n## If stuck\n- Hard-refresh, confirm login. UI Ask falls to Hosted when community shows 0 Macs. v1 stays fail-loud `no_mac_online`.\n- Telegram: https://t.me/+ck9pUjL2ncNiZjRh (the only official Dasha invite - ignore lookalike groups)\n";
 const API='https://lobby.getdasha.com';
-let conversation=[],threadRoute='',stayAskChat=false,noMacHostedFallback=false,loggedIn=false,sessionLabel='',hostedLive=false,hostedChosenThisSession=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,cardAvailable=false,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,lastSseFinishReason=null,askRunDoneTimer=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacKnown=0,ownMacIds=new Set(),ownMacModels=new Set(),ownMacTps=0,preferSelf=false,lastPreferAttempted=false,networkCapacity=[],jobsQueued=0,ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask',buildBack='answer',provideExpectingNew=false,provideExpectingIds=new Set(),provideExpectingNewId='',provideExpectingOnline=0;
+let conversation=[],threadRoute='',stayAskChat=false,noMacHostedFallback=false,askBusy=false,askLive=null,askEditAt=-1,loggedIn=false,sessionLabel='',hostedLive=false,hostedChosenThisSession=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,cardAvailable=false,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,lastSseFinishReason=null,askRunDoneTimer=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacKnown=0,ownMacIds=new Set(),ownMacModels=new Set(),ownMacTps=0,preferSelf=false,lastPreferAttempted=false,networkCapacity=[],jobsQueued=0,ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask',buildBack='answer',provideExpectingNew=false,provideExpectingIds=new Set(),provideExpectingNewId='',provideExpectingOnline=0;
 
 // Funnel telemetry (task 22): aggregate counters only. anon id is a local UUID, never an identity.
 function anonId(){let id='';try{id=localStorage.getItem('dasha-anon-id')||''}catch(e){}if(!id){try{id=crypto.randomUUID()}catch(e){id='00000000-0000-4000-8000-'+String(Math.random()).slice(2,14).padEnd(12,'0')}try{localStorage.setItem('dasha-anon-id',id)}catch(e){}}return id}
@@ -1092,17 +1118,104 @@ function threadSpeaker(role){
   }
   return 'Mac';
 }
-function askHasReply(){return conversation.some(m=>m.role==='assistant')}
-function paintAskTurn(message){
+function askHasReply(){return conversation.some(m=>m.role==='assistant')||!!(askLive&&askLive.assistant)}
+function escapeAskHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function askInlineBits(s){
+  return escapeAskHtml(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+}
+function askBlockMd(s){
+  const lines=String(s||'').split('\n');
+  let html='',buf=[],mode='';
+  const flush=()=>{
+    if(!buf.length)return;
+    if(mode==='ul')html+='<ul>'+buf.map(x=>'<li>'+askInlineBits(x)+'</li>').join('')+'</ul>';
+    else if(mode==='ol')html+='<ol>'+buf.map(x=>'<li>'+askInlineBits(x)+'</li>').join('')+'</ol>';
+    else html+='<p>'+buf.map(askInlineBits).join('<br>')+'</p>';
+    buf=[];mode='';
+  };
+  for(const line of lines){
+    const ul=line.match(/^\s*[-*]\s+(.+)/);
+    const ol=line.match(/^\s*\d+\.\s+(.+)/);
+    if(ul){if(mode!=='ul')flush();mode='ul';buf.push(ul[1]);continue}
+    if(ol){if(mode!=='ol')flush();mode='ol';buf.push(ol[1]);continue}
+    if(!line.trim()){flush();continue}
+    if(mode!=='p')flush();mode='p';buf.push(line);
+  }
+  flush();
+  return html;
+}
+function renderAskMarkdown(src,streaming){
+  const text=String(src||'');
+  const parts=[];
+  const re=/```([^\n`]*)\n?([\s\S]*?)```/g;
+  let m,last=0;
+  while((m=re.exec(text))){
+    if(m.index>last)parts.push({t:'md',s:text.slice(last,m.index)});
+    parts.push({t:'code',lang:m[1].trim(),s:m[2]});
+    last=m.index+m[0].length;
+  }
+  let tail=text.slice(last);
+  if(streaming){
+    const open=tail.match(/```([^\n`]*)\n?([\s\S]*)$/);
+    if(open){
+      if(open.index>0)parts.push({t:'md',s:tail.slice(0,open.index)});
+      parts.push({t:'code',lang:open[1].trim(),s:open[2],open:true});
+      tail='';
+    }
+  }
+  if(tail)parts.push({t:'md',s:tail});
+  if(!parts.length)return askBlockMd('');
+  return parts.map(p=>{
+    if(p.t!=='code')return askBlockMd(p.s);
+    const lang=escapeAskHtml(p.lang||'');
+    return '<pre'+(p.open?' data-open="1"':'')+'><code'+(lang?(' class="language-'+lang+'"'):'')+'>'+escapeAskHtml(p.s)+'</code></pre>';
+  }).join('');
+}
+function fillAskSaid(said,content,streaming){
+  if(!said)return;
+  said.classList.add('ask-md');
+  said.innerHTML=renderAskMarkdown(content,!!streaming);
+}
+function visibleAskTurns(){
+  const turns=conversation.map(m=>({...m,state:m.state||'complete'}));
+  if(askLive){
+    turns.push({role:'user',content:askLive.user,state:'complete'});
+    turns.push({role:'assistant',content:askLive.assistant||'',state:askLive.state||'thinking',live:true});
+  }
+  return turns;
+}
+function askAct(label,act){
+  const b=document.createElement('button');
+  b.type='button';b.className='ask-act';b.dataset.act=act;b.textContent=label;
+  return b;
+}
+function lastAskIndex(turns,role){
+  for(let i=turns.length-1;i>=0;i--)if(turns[i].role===role)return i;
+  return -1;
+}
+function paintAskTurn(message,index,turns){
   const turn=document.createElement('div');
+  const state=message.state||'complete';
   turn.className='ask-turn '+(message.role==='user'?'you':'mac');
+  turn.dataset.state=state;
+  if(message.live)turn.dataset.live='1';
   const who=document.createElement('div');
   who.className='ask-who';
   who.textContent=threadSpeaker(message.role)+'\n';
-  const said=document.createElement('pre');
+  const said=document.createElement(message.role==='assistant'?'div':'pre');
   said.className='ask-said';
-  said.textContent=message.content;
-  turn.append(who,said);
+  if(message.role==='assistant')fillAskSaid(said,message.content,state==='streaming'||state==='thinking');
+  else said.textContent=message.content;
+  const acts=document.createElement('div');
+  acts.className='ask-acts';
+  const lastUser=lastAskIndex(turns,'user');
+  const lastAsst=lastAskIndex(turns,'assistant');
+  if(message.role==='assistant'&&(state==='complete'||state==='stopped'||state==='error')){
+    acts.append(askAct('Copy','copy'));
+    if(index===lastAsst&&!askBusy)acts.append(askAct('Regenerate','regen'));
+  }
+  if(message.role==='user'&&index===lastUser&&!askBusy)acts.append(askAct('Edit','edit'));
+  turn.append(who,said,acts);
   return turn;
 }
 function sizeAskPrompt(){
@@ -1113,14 +1226,15 @@ function sizeAskPrompt(){
 }
 function paintAskThread(){
   const thread=$('ask-thread'),starters=$('ask-starters'),welcome=$('ask-starter'),clear=$('clear-chat'),more=$('ask-more');
-  const open=conversation.length>0;
+  const turns=visibleAskTurns();
+  const open=turns.length>0;
   document.body.classList.toggle('has-chat',open);
   if(more){if(open)more.removeAttribute('open');else more.setAttribute('open','')}
   if(thread){
     thread.hidden=!open;
     if(open){
       thread.removeAttribute('hidden');
-      thread.replaceChildren(...conversation.map(paintAskTurn));
+      thread.replaceChildren(...turns.map((message,index)=>paintAskTurn(message,index,turns)));
     }else{
       thread.setAttribute('hidden','');
       thread.replaceChildren();
@@ -1184,10 +1298,101 @@ function paintAnswerMoney(){
   paintAnswerReceipt();
 }
 function clearAnswerMoney(){lastAskFailKind=null;lastPreferAttempted=false;lastPaidReceipt=null;paintAnswerMoney();paintAnswerReceipt()}
-function clearConversation(){conversation=[];threadRoute='';stayAskChat=false;noMacHostedFallback=false;renderConversation();paintRequest();hideNightOffer();clearAnswerMoney();paintAnswerApi()}
+function beginAskLive(userContent){
+  askLive={user:String(userContent||''),assistant:'',state:'thinking'};
+  askBusy=true;
+  paintAskThread();
+}
+function noteAskPartial(text,state){
+  if(!askLive)return;
+  askLive.assistant=String(text||'');
+  if(state)askLive.state=state;
+  paintAskLiveTurn();
+}
+function paintAskLiveTurn(){
+  const thread=$('ask-thread');
+  if(!thread||!askLive)return;
+  const turn=thread.querySelector('.ask-turn.mac[data-live="1"]');
+  if(!turn){paintAskThread();return}
+  turn.dataset.state=askLive.state||'streaming';
+  fillAskSaid(turn.querySelector('.ask-said'),askLive.assistant,askLive.state==='streaming'||askLive.state==='thinking');
+}
+function commitAskLive(state,text){
+  if(!askLive)return;
+  const user=askLive.user;
+  const content=String(text??askLive.assistant??'');
+  const kept=conversation.slice();
+  if(!kept.length||kept[kept.length-1].role!=='user'||kept[kept.length-1].content!==user){
+    kept.push({role:'user',content:user,state:'complete'});
+  }
+  const fallback=state==='error'?'No reply.':state==='stopped'?'Stopped.':'';
+  kept.push({role:'assistant',content:content||fallback,state:state||'complete'});
+  conversation=kept.slice(-12);
+  askLive=null;
+}
+function stopAskRun(){
+  if(!askBusy&&!runAbort)return;
+  jobCancelled=true;
+  try{runAbort?.abort()}catch{}
+  if(activeJob)api('/compute/api/jobs/'+activeJob,{method:'DELETE'}).catch(()=>{});
+}
+function regenerateLastAsk(){
+  if(askBusy)return;
+  const turns=visibleAskTurns();
+  let i=lastAskIndex(turns,'assistant');
+  if(i<0)return;
+  let u=i-1;
+  while(u>=0&&turns[u].role!=='user')u--;
+  if(u<0)return;
+  const userText=turns[u].content;
+  conversation=conversation.slice(0, Math.min(u, conversation.length));
+  askEditAt=-1;
+  $('prompt').value=userText;
+  sizeAskPrompt();
+  const run=$('run-demo');
+  if(run){run.hidden=false;run.removeAttribute('hidden');run.style.display='';run.disabled=false;run.click()}
+}
+function editLastUserAsk(){
+  if(askBusy)return;
+  let u=lastAskIndex(conversation,'user');
+  if(u<0)return;
+  askEditAt=u;
+  $('prompt').value=conversation[u].content;
+  sizeAskPrompt();
+  $('prompt').focus();
+}
+async function copyAskText(text,btn){
+  const value=String(text||'');
+  try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);else throw 0}
+  catch{
+    const ta=document.createElement('textarea');
+    ta.value=value;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy')}catch{}
+    ta.remove();
+  }
+  if(btn){const prev=btn.textContent;btn.textContent='Copied';setTimeout(()=>{if(btn.textContent==='Copied')btn.textContent=prev},900)}
+}
+function clearConversation(){
+  const busy=askBusy;
+  askBusy=false;askLive=null;askEditAt=-1;
+  conversation=[];threadRoute='';stayAskChat=false;noMacHostedFallback=false;
+  if(busy){jobCancelled=true;try{runAbort?.abort()}catch{}}
+  renderConversation();paintRequest();hideNightOffer();clearAnswerMoney();paintAnswerApi();updateRun();
+}
 $('prompt').addEventListener('input',()=>{paintRequest();updateRun();sizeAskPrompt();});
 $('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const run=$('run-demo');if(run&&!run.hidden){run.click();return}const login=$('login');if(login&&!login.hidden)login.click()}});
 $('clear-chat').addEventListener('click',clearConversation);
+$('ask-thread')?.addEventListener('click',event=>{
+  const btn=event.target?.closest?.('.ask-act');
+  if(!btn)return;
+  const turn=btn.closest('.ask-turn');
+  const said=turn?.querySelector('.ask-said');
+  const text=said?said.textContent:'';
+  if(btn.dataset.act==='copy')copyAskText(text,btn);
+  else if(btn.dataset.act==='regen')regenerateLastAsk();
+  else if(btn.dataset.act==='edit')editLastUserAsk();
+});
 $('guide-hide').addEventListener('click',hideGuide);
 $('guide').addEventListener('click',(e)=>{if(e.target.closest('#guide-step-verify a')){try{localStorage.setItem(GUIDE_KEY,'done')}catch{}}});
 let marketData=null,marketError='';
@@ -1345,6 +1550,7 @@ function enterAskEngine(advance=true){
 function maybeAdoptCommunityDefault(){
   if(hostedChosenThisSession)return;
   if(noMacHostedFallback)return;
+  if(askBusy)return;
   if(!(providersOnline>=1))return;
   if(runAbort||activeJob)return;
   const eng=$('engine')?.value||'hosted';
@@ -1391,7 +1597,7 @@ function setAskRunChip(state){
   const chip=$('ask-run-chip'); if(!chip)return;
   if(state==='idle'||!state){chip.hidden=true;chip.setAttribute('aria-hidden','true');chip.dataset.state='idle';chip.removeAttribute('title');return}
   chip.hidden=false;chip.removeAttribute('aria-hidden');chip.dataset.state=state;
-  chip.title=state==='check'?'Done':state==='spin'?'Running':'';
+  chip.title=state==='check'?'Done':state==='spin'?'Running':state==='stopped'?'Stopped':state==='error'?'Error':'';
 }
 function paintAskRunSpin(){setAskRunChip('spin')}
 function paintAskRunCheck(){setAskRunChip('check')}
@@ -1410,15 +1616,16 @@ function flashAskRunCheck(){
 function paintAskStreamDelta(node,settled,chunk){
   if(!node)return;
   const full=String(settled||'')+String(chunk||'');
-  if(prefersAskReducedMotion()||!chunk){node.textContent=full;return}
+  if(prefersAskReducedMotion()||!chunk){node.textContent=full;noteAskPartial(full,'streaming');return}
   node.textContent='';
   if(settled)node.appendChild(document.createTextNode(settled));
   const span=document.createElement('span');
   span.className='ask-stream-chunk';
   span.textContent=chunk;
   node.appendChild(span);
+  noteAskPartial(full,'streaming');
 }
-function settleAskStream(node,full){if(node)node.textContent=String(full||'')}
+function settleAskStream(node,full){if(node)node.textContent=String(full||'');noteAskPartial(String(full||''),askLive?'streaming':undefined)}
 function markAskStreamSuccess(){
   // Successful finish_reason=stop (or non-SSE complete). Never on midstream fail.
   paintAskRunCheck();
@@ -1459,7 +1666,7 @@ function paintCommunityStillOnline(){
   paintHonestyPanel();
 }
 function paintCommunityJobProgress(data){
-  if(data?.answer){if($('answer').textContent!==data.answer)noteRunProgress();$('answer').textContent=data.answer;onFirstToken();return}
+  if(data?.answer){if($('answer').textContent!==data.answer)noteRunProgress();$('answer').textContent=data.answer;noteAskPartial(data.answer,'streaming');onFirstToken();return}
   const cur=String($('answer')?.textContent||'').trim();
   if(cur==='Still online.')return;
   $('answer').textContent='A Mac is working.';
@@ -1579,7 +1786,7 @@ async function runHostedAsk(messages){
   if(ct.includes('event-stream')){answer=await readSse(res);hostedUsage=lastSseUsage}
   else{
     if(!res.ok){const err=await res.json().catch(()=>({}));const e=Error(err?.error?.message||err?.error||'Request failed');e.code=err?.error?.code||err?.code||null;throw e}
-    const data=await res.json();answer=String(data.answer||'');onFirstToken();$('answer').textContent=answer;if(String(answer||'').trim())lastSseFinishReason='stop';
+    const data=await res.json();answer=String(data.answer||'');onFirstToken();$('answer').textContent=answer;noteAskPartial(answer,answer?'streaming':'thinking');if(String(answer||'').trim())lastSseFinishReason='stop';
     if(Number.isFinite(Number(data?.balance_cents))){creditBalanceCents=Math.max(0,Math.floor(Number(data.balance_cents)));paintAskCredits()}
     if(data?.usage&&typeof data.usage==='object')hostedUsage=data.usage;
   }
@@ -1938,9 +2145,9 @@ function showTf(step){
     const prompt=$('prompt');
     const backHidden=!!$('back-ask')?.hidden;
     if(prompt){
-      if(nightQueueIntent)prompt.title=backHidden?'Enter to queue':'Enter to queue · Esc back';
-      else if(askHasReply())prompt.title=backHidden?'Enter to send':'Enter to send · Esc back';
-      else prompt.title=backHidden?'Enter to run':'Enter to run · Esc back';
+      if(nightQueueIntent)prompt.title=backHidden?'Enter to queue · Shift+Enter newline':'Enter to queue · Shift+Enter newline · Esc back';
+      else if(askHasReply())prompt.title=backHidden?'Enter to send · Shift+Enter newline':'Enter to send · Shift+Enter newline · Esc back';
+      else prompt.title=backHidden?'Enter to send · Shift+Enter newline':'Enter to send · Shift+Enter newline · Esc back';
     }
     paintAskModel();
     sizeAskPrompt();
@@ -2320,6 +2527,7 @@ function updateRun(){
   const communityOption=[...$('engine').options].find(option=>option.value==='community');
   if(communityOption){communityOption.hidden=false;communityOption.text=providersOnline>=1?`Community · ${providersOnline}`:'Community'}
   $('run-demo').textContent=askHasReply()?'Send':'Run';
+  if(askBusy)$('run-demo').textContent='Stop';
   // Guest + Mac/hosted available: hide Run so Sign in is the only primary (no dual CTA muddle).
   // Guest + noMac: one primary Run (Hosted Ask miss); hide Ask #login.
   // Logged-in Community/Mixture with a Mac: Run. Miss (no Mac / model gone): Run still on if Hosted can take it.
@@ -2391,6 +2599,12 @@ function updateRun(){
     }
   }
   if(nightQueueIntent)$('run-demo').textContent='Queue';
+  if(askBusy){
+    $('run-demo').textContent='Stop';
+    run.hidden=false;run.removeAttribute('hidden');run.style.display='';run.disabled=false;
+    run.classList.add('is-run-busy');
+    if(loginBtn)loginBtn.hidden=true;
+  }
   if(!noMac&&tfStep!=='night')hideNightOffer();
   paintHowEngineDoors();
   paintAskEngine();paintAskMyMac();paintAskCommunity();paintHowFloorFine();paintAskFreeFine();
@@ -2459,6 +2673,7 @@ function startRunTick(waiting){
 function onFirstToken(){
   clearRunTick();
   clearAskThink();
+  if(askLive&&askLive.state==='thinking'){askLive.state='streaming';paintAskLiveTurn()}
   // Lean TTFT on Answer title only — decode split stays parked. Prefer miss waits still surface as TTFT.
   if(noMacHostedFallback){paintNoMacHostedFace();paintSplit();return}
   let title='Answer.';
@@ -2606,12 +2821,17 @@ $('queue-night').addEventListener('click',()=>queueForMac());
 $('night-use-hosted')?.addEventListener('click',()=>{if(window.__dashaAuthReady&&hostedLive===false)return;nightQueueIntent=false;hostedChosenThisSession=true;setEngine('hosted',true)});
 $('night-use-community')?.addEventListener('click',()=>{if(providersOnline<1)return;nightQueueIntent=false;cameFromHow=true;cameFromGate=false;preferOnlineModel($('model'),false);setEngine('community',false);showTf('ask');});
 $('run-demo').addEventListener('click',async()=>{
+  if(askBusy){stopAskRun();return}
   if(nightQueueIntent){queueForMac();return}
   stayAskChat=false;
   noMacHostedFallback=false;
   if(threadKeepsCommunity()&&!hostedChosenThisSession&&($('engine')?.value||'')==='hosted'){
     const keep=threadRoute||'community';
     $('engine').value=keep;
+  }
+  if(askEditAt>=0){
+    conversation=conversation.slice(0,askEditAt);
+    askEditAt=-1;
   }
   const prompt=$('prompt').value.trim();
   if(!prompt){$('answer').textContent='Write a prompt first.';return}
@@ -2647,21 +2867,27 @@ $('run-demo').addEventListener('click',async()=>{
   if(community)messages=modelIdentityFraming(messages,$('model').value);
   hideNightOffer();
   if(!loggedIn){$('answer').textContent='Sign in.';$('answer-title').textContent=noMacHostedFallback?'No Mac online. Hosted.':'Do.';showTf('answer');return}
-  button.disabled=true;$('clear-chat').disabled=true;
+  stayAskChat=true;
+  askBusy=true;
+  threadRoute=eng;
+  beginAskLive(prompt);
+  $('prompt').value='';
+  sizeAskPrompt();
+  button.disabled=false;$('clear-chat').disabled=false;
   clearAskRunDone();clearAskRunChip();lastSseFinishReason=null;
   button.classList.add('is-run-busy');
-  button.textContent=community?'A Mac is working.':'Running…';
+  button.textContent='Stop';
   if(community)paintCommunityWorkingFace();
   else {$('answer').textContent='Thinking…';setAskThink('hosted');paintAskRunSpin()}
   if(noMacHostedFallback)paintNoMacHostedFace();
-  showTf('answer');
-  beacon('ask','start');
-  $('after-answer').hidden=true;
-  {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
   jobCancelled=false;
   window.__dashaStreamResumeOnce=false;
   if(runAbort){try{runAbort.abort()}catch{}}
   runAbort=new AbortController();
+  showTf('ask');
+  beacon('ask','start');
+  $('after-answer').hidden=true;
+  {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
   startRunWatch();
   $('cancel-job').hidden=false;$('cancel-job').disabled=false;
   startRunTick(!!community);
@@ -2771,14 +2997,23 @@ $('run-demo').addEventListener('click',async()=>{
       // Keep prompt for quiet Retry. Do not push empty assistant / do not count sent.
       // Never paint settle success on empty/fail — USDC/$dasha cents only on real complete.
       // Never auto-retry an empty Community completion onto Hosted.
+      $('prompt').value=prompt;sizeAskPrompt();
       clearAnswerMoney();
       lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
-      scheduleSameEngineRetry(eng);
+      if(window.__dashaEmptyRetryOnce){
+        setAskRunChip('error');
+        commitAskLive('error',$('answer').textContent||'No reply.');
+        window.__dashaEmptyRetryOnce=false;
+      }else{
+        askLive=null;
+        scheduleSameEngineRetry(eng);
+      }
     }else{
       window.__dashaEmptyRetryOnce=false;
       const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}
       beacon('ask','complete');
-      conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
+      askLive=null;
+      conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer,state:'complete'}].slice(-12);
       threadRoute=eng;stayAskChat=true;
       renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
       // Spinner→check only on honest finish_reason=stop (poll/JSON complete sets stop).
@@ -2786,7 +3021,7 @@ $('run-demo').addEventListener('click',async()=>{
       else {clearAskRunChip();clearAskRunDone()}
     }
   }catch(error){
-    clearAskThink();clearAskRunChip();clearAskRunDone();
+    clearAskThink();
     const msg=String(error?.message||error||'');
     const emptyFail=/empty completion/i.test(msg);
     // Mid-stream provider die (URLError / provider_cut) — fail loud + Retry; never settle/success face.
@@ -2798,12 +3033,21 @@ $('run-demo').addEventListener('click',async()=>{
       if(runHasProgress)$('answer').textContent+='\n\n'+runTimeoutMessage;
       else $('answer').textContent=runTimeoutMessage;
       const retry=$('answer-retry');if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent||runTimeoutMessage);
     }else if(jobCancelled||error?.name==='AbortError'){
       // Keep partial tokens already painted; only replace waiting placeholders.
-      const cur=String($('answer')?.textContent||'');
-      const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|A Mac is working\.|Still online\.|Queued)/.test(cur);
-      if(waiting||!cur.trim()){$('answer').textContent='Request cancelled. Prompt deleted.';}
+      const cur=String(askLive?.assistant||$('answer')?.textContent||'');
+      const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|A Mac is working\.|Still online\.|Queued|Stopped\.|Request cancelled\. Prompt deleted\.)$/.test(cur.trim());
+      const keep=cur.trim()&&!waiting?cur:'';
+      if(keep)$('answer').textContent=keep;
+      else if(waiting||!cur.trim()){$('answer').textContent=askLive?'Stopped.':'Request cancelled. Prompt deleted.';}
       $('answer-title').textContent='Answer.';
+      setAskRunChip('stopped');
+      if(askLive)commitAskLive('stopped',keep||'Stopped.');
+      stayAskChat=!!(conversation.length||keep);
+      clearAskRunDone();
       clearAnswerMoney();
       {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
     }else if(emptyFail){
@@ -2820,9 +3064,17 @@ $('run-demo').addEventListener('click',async()=>{
         $('answer').textContent=shortJob?('No reply.\n'+shortJob):'No reply.';
       }
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      $('prompt').value=prompt;sizeAskPrompt();
       clearAnswerMoney();
       lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
-      scheduleSameEngineRetry(eng);
+      if(window.__dashaEmptyRetryOnce){
+        setAskRunChip('error');
+        commitAskLive('error',$('answer').textContent||'No reply.');
+        window.__dashaEmptyRetryOnce=false;
+      }else{
+        askLive=null;
+        scheduleSameEngineRetry(eng);
+      }
     }else if(providerCut){
       clearAnswerMoney();
       lastAskFailKind='provider_cut';
@@ -2831,6 +3083,9 @@ $('run-demo').addEventListener('click',async()=>{
       const note=providersOnline>0?'\nStill listed online.':'';
       $('answer').textContent='Mac cut out.'+note;
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent);
       paintAnswerMoney();paintAnswerReceipt();
     }else if(hostedCut){
       // Hosted denial (Workers AI / unavailable) — fail loud + Retry; never settle/success face.
@@ -2840,11 +3095,17 @@ $('run-demo').addEventListener('click',async()=>{
       const note=providersOnline>=1?'\nTry Community or Queue.':'';
       $('answer').textContent='Hosted cut out.'+note;
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent);
       paintAnswerMoney();paintAnswerReceipt();
     }else if(community&&(error?.code==='community_stream_miss'||isAskNetworkDrop(error))){
       // Dropped Community SSE is not "the network is down" while a Mac still advertises.
       paintCommunityNoReply(activeJob);
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent||'No reply.');
       clearAnswerMoney();
       lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
     }else{
@@ -2863,9 +3124,12 @@ $('run-demo').addEventListener('click',async()=>{
         $('answer-title').textContent='Answer.';
       }
       else {clearAnswerMoney();$('answer').textContent=msg||'Request failed';}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent||'Request failed');
     }
   }
-  finally{clearRunWatch();clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;const _run=$('run-demo');if(_run)_run.classList.remove('is-run-busy');if(!stayAskChat){clearAskThink()}paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();paintGuide();updateRun();if(stayAskChat)showTf('ask');else $('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
+  finally{askBusy=false;if(askLive){commitAskLive(askLive.assistant?'stopped':'error',askLive.assistant||'No reply.');stayAskChat=true}clearRunWatch();clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;const _run=$('run-demo');if(_run)_run.classList.remove('is-run-busy');if(!stayAskChat){clearAskThink()}paintAnswerApi();paintGuide();paintAnswerMoney();paintAnswerReceipt();updateRun();if(stayAskChat)showTf('ask');else $('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
 });
 document.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.engine==='hosted'&&window.__dashaAuthReady&&hostedLive===false)return;if(b.dataset.engine==='hosted')hostedChosenThisSession=true;setEngine(b.dataset.engine,true)}));
 $('model').addEventListener('change',updateRun);
@@ -4362,6 +4626,7 @@ document.addEventListener('keydown',event=>{
   const tag=(document.activeElement&&document.activeElement.tagName||'').toLowerCase();
   const typing=tag==='input'||tag==='textarea'||tag==='select'||!!(document.activeElement&&document.activeElement.isContentEditable);
   if(event.key==='Escape'){
+    // Esc back only — never clear the Ask thread.
     const step=document.querySelector('[data-tf]:not([hidden])');
     const back=step&&(step.querySelector('.tf-back')||step.querySelector('#back-ask'));
     if(back&&!back.hidden){event.preventDefault();back.click()}
