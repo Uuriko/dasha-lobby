@@ -64,6 +64,10 @@ assert.doesNotMatch(sitemap, /<loc>https:\/\/www\.getdasha\.com\/learn<\/loc>/);
 const robots = extractConst('ROBOTS_TXT');
 assert.match(robots, /Allow: \/llms\.txt/);
 assert.match(robots, /Allow: \/llms-full\.txt/);
+assert.match(robots, /^Allow: \/agents\.json$/m);
+assert.match(robots, /^Allow: \/\.well-known\/mcp\.json$/m);
+assert.match(robots, /^Allow: \/\.well-known\/agent\.json$/m);
+assert.match(robots, /^Allow: \/compute\/skill\.md$/m);
 assert.ok(!/^Allow:\s*\/verse\s*$/m.test(robots));
 assert.ok(!/^Allow:\s*\/learn\s*$/m.test(robots));
 
