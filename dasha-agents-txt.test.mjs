@@ -114,6 +114,8 @@ assert.match(AGENTS_JSON.site.description, new RegExp(COMPUTE_AGENTS_BASE.replac
 assert.match(AGENTS_JSON.site.description, /POST \/compute\/api\/guest-keys/, 'json names guest mint');
 assert.match(AGENTS_JSON.site.description, /ocm_live_/, 'json names OCM key');
 assert.match(AGENTS_JSON.site.description, /compute\/ocm\/v1/, 'json names OCM base');
+assert.match(AGENTS_JSON.site.description, /Key · cap · receipt: \/caps · \/compute\/proof\.md · \/keys\.json/, 'json names key·cap·receipt faces');
+assert.doesNotMatch(AGENTS_JSON.site.description, /errors never billed/i, 'json does not invent errors-never-billed');
 assert.doesNotMatch(JSON.stringify(AGENTS_JSON), /plugin\.jup\.ag/);
 assert.doesNotMatch(JSON.stringify(AGENTS_JSON), /people.?data|email|phone|seed phrase/i);
 assert.equal('payments' in AGENTS_JSON, false, 'thin: no payments block');

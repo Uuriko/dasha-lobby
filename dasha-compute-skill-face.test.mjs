@@ -113,6 +113,8 @@ assert.doesNotMatch(COMPUTE_SKILL_MD, /people.?data|email|phone|seed phrase/i, '
 assert.match(COMPUTE_SKILL_MD, /Guest key: POST \/compute\/api\/guest-keys — 24h chat\+models/, 'skill names live guest key');
 assert.match(COMPUTE_SKILL_MD, /curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/, 'skill guest mint curl');
 assert.doesNotMatch(COMPUTE_SKILL_MD, /guest-agent/i, 'skill stays Compute, not Room');
+assert.match(COMPUTE_SKILL_MD, /^key · cap · receipt: \/caps · \/compute\/proof\.md · \/keys\.json$/m, 'skill names key·cap·receipt faces');
+assert.doesNotMatch(COMPUTE_SKILL_MD, /errors never billed/i, 'skill does not invent errors-never-billed');
 
 assert.ok(COMPUTE_LLMS_TXT.includes(COMPUTE_SKILL_URL), 'packet links skill');
 assert.equal(COMPUTE_AGENT_JSON.docs.skill, COMPUTE_SKILL_URL, 'agent.json docs.skill');

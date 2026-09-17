@@ -102,7 +102,7 @@ export const AGENTS_JSON = {
   site: {
     name: 'Dasha',
     url: 'https://www.getdasha.com/',
-    description: `OpenAI-compat base_url ${COMPUTE_AGENTS_BASE} (dsk_/dgk_). OCM base_url ${OCM_API_BASE} (ocm_live_). Never swap keys. Guest mint POST /compute/api/guest-keys.`,
+    description: `OpenAI-compat base_url ${COMPUTE_AGENTS_BASE} (dsk_/dgk_). OCM base_url ${OCM_API_BASE} (ocm_live_). Never swap keys. Guest mint POST /compute/api/guest-keys. Key · cap · receipt: /caps · /compute/proof.md · /keys.json.`,
   },
   skills: [
     { url: COMPUTE_SKILL_URL, description: 'First call on Dasha Compute.' },
@@ -195,6 +195,7 @@ ${COMPUTE_PROVIDE_SPEED_TXT}
 packet ${COMPUTE_LLMS_URL}
 agent.json ${COMPUTE_AGENT_JSON_URL}
 MCP: ${COMPUTE_MCP_JSON_URL}
+key · cap · receipt: /caps · /compute/proof.md · /keys.json
 `;
 
 export const COMPUTE_LLMS_TXT = `# Dasha Compute
