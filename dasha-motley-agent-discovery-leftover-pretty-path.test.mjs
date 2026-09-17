@@ -2,7 +2,7 @@
 /**
  * Motley leftover agent-discovery doors: live GET/HEAD /api/lobby + nested
  * /compute/api/{agents.md,agent.md,AGENTS.md,swagger.json,faucet,lobby,bag,
- * crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest.json}
+ * crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest,digest.json}
  * (+slash / Title-case) html-404 while faces already 200.
  * Fold to documented faces. /forum dest is /lobby (forum 308). Nested
  * swagger.json dest is /compute/api (same as apex /swagger.json leftover).
@@ -10,7 +10,9 @@
  * dests stay same-host via potterHome308Response. Exact faces stay 200.
  * Apex /api/benchmarks.json (+/) Title-case 308 → /benchmarks (lobby same-host).
  * Nested /compute/api/benchmarks.json already live leftover — keep it.
- * Do not invent /api/models /api/providers /api/v1.
+ * Bare /compute/api/digest (+/) Title-case 308 → /digest.json (sibling
+ * digest.json keep). Do not retarget apex /api/digest.
+ * Do not invent /api/models /api/providers /api/v1 /api/v1/status.
  * Disk only. No Designer. Never plugin.jup.ag. No Muse HTML. No Room.
  */
 import assert from 'node:assert/strict';
@@ -55,15 +57,18 @@ for (const path of [
   '/compute/api/sitemap.xml', '/compute/api/sitemap.xml/',
   '/compute/api/security.txt', '/compute/api/security.txt/',
   '/compute/api/digest.json', '/compute/api/digest.json/',
+  '/compute/api/digest', '/compute/api/digest/',
 ]) {
   assert.match(discoveryMap, new RegExp(`['"]${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`), `map lists ${path}`);
 }
 assert.doesNotMatch(discoveryMap, /['"]\/api\/forum['"]/, 'do not invent apex /api/forum');
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/openapi\.json['"]/, 'do not invent nested openapi leftover');
 assert.doesNotMatch(discoveryMap, /['"]\/benchmarks\.json['"]/, 'do not invent apex /benchmarks.json leftover');
+assert.doesNotMatch(discoveryMap, /['"]\/api\/digest['"]/, 'do not retarget apex /api/digest');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/models['"]/, 'do not invent /api/models leftover');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/providers['"]/, 'do not invent /api/providers leftover');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/v1['"]/, 'do not invent /api/v1 leftover');
+assert.doesNotMatch(discoveryMap, /['"]\/api\/v1\/status['"]/, 'do not invent /api/v1/status leftover');
 assert.match(
   workerSrc,
   /u\.pathname === '\/benchmarks' && \(/,
@@ -175,6 +180,11 @@ const FOLDS = [
   ['/Compute/api/digest.json', DIGEST],
   ['/COMPUTE/API/DIGEST.JSON', DIGEST],
   ['/Compute/Api/Digest.json/', DIGEST],
+  ['/compute/api/digest', DIGEST],
+  ['/compute/api/digest/', DIGEST],
+  ['/Compute/api/digest', DIGEST],
+  ['/COMPUTE/API/DIGEST', DIGEST],
+  ['/Compute/Api/Digest/', DIGEST],
 ];
 
 const STAY_200 = [
@@ -202,6 +212,8 @@ const STAY_OUT = [
   '/api/models',
   '/api/providers',
   '/api/v1',
+  '/api/v1/status',
+  '/api/digest',
 ];
 
 for (const [path, dest] of FOLDS) {
@@ -277,8 +289,9 @@ for (const path of [
   '/compute/api/sitemap.xml',
   '/compute/api/security.txt',
   '/compute/api/digest.json',
+  '/compute/api/digest',
 ]) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-motley-agent-discovery-leftover-pretty-path: PASS (/api/lobby 308 /lobby; /api/benchmarks.json 308 same-host /benchmarks; nested /compute/api/benchmarks.json keep-live; nested /compute/api/{agents.md,agent.md,AGENTS.md,swagger.json,faucet,lobby,bag,crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest.json} 308 faces; Title-case+slash; www+lobby GET+HEAD; dests 200; no /api/models|/api/providers|/api/v1; no plugin.jup.ag)');
+console.log('dasha-motley-agent-discovery-leftover-pretty-path: PASS (/api/lobby 308 /lobby; /api/benchmarks.json 308 same-host /benchmarks; nested /compute/api/benchmarks.json keep-live; nested /compute/api/{agents.md,agent.md,AGENTS.md,swagger.json,faucet,lobby,bag,crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest,digest.json} 308 faces; Title-case+slash; www+lobby GET+HEAD; dests 200; no /api/models|/api/providers|/api/v1|/api/v1/status; no apex /api/digest retarget; no plugin.jup.ag)');
