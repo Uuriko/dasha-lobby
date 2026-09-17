@@ -22,7 +22,7 @@ const remount = digestRemountScript();
 assert.match(remount, /dasha-crew-line|crew-line/);
 assert.match(remount, /\/crew/);
 assert.match(remount, /You keep the keys/);
-assert.match(remount, /if\(!pack\)return/, 'no crew if remount fetch fails');
+assert.match(remount, /if\(!pack&&!lastPriceTick\)return/, 'no crew if both remount fetches fail');
 assert.doesNotMatch(remount, /api\.dexscreener\.com/);
 
 const taped = applyDigestTape(stripHomeOtherCoinWarning(stripDeadNav(HOME)), DEFAULT.items);
