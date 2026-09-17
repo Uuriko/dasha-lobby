@@ -8,7 +8,9 @@
  * swagger.json dest is /compute/api (same as apex /swagger.json leftover).
  * Agent.md family dest is /compute/skill.md. Lobby skill + /compute/api
  * dests stay same-host via potterHome308Response. Exact faces stay 200.
- * Optional cheap peer: /api/benchmarks.json (+/) → /benchmarks.
+ * Apex /api/benchmarks.json (+/) Title-case 308 → /benchmarks (lobby same-host).
+ * Nested /compute/api/benchmarks.json already live leftover — keep it.
+ * Do not invent /api/models /api/providers /api/v1.
  * Disk only. No Designer. Never plugin.jup.ag. No Muse HTML. No Room.
  */
 import assert from 'node:assert/strict';
@@ -38,6 +40,7 @@ const discoveryMap = workerSrc.match(/const POTTER_MOTLEY_AGENT_DISCOVERY_308_DE
 for (const path of [
   '/api/lobby', '/api/lobby/',
   '/api/benchmarks.json', '/api/benchmarks.json/',
+  '/compute/api/benchmarks.json', '/compute/api/benchmarks.json/',
   '/compute/api/agents.md', '/compute/api/agents.md/',
   '/compute/api/agent.md', '/compute/api/agent.md/',
   '/compute/api/swagger.json', '/compute/api/swagger.json/',
@@ -58,7 +61,14 @@ for (const path of [
 assert.doesNotMatch(discoveryMap, /['"]\/api\/forum['"]/, 'do not invent apex /api/forum');
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/openapi\.json['"]/, 'do not invent nested openapi leftover');
 assert.doesNotMatch(discoveryMap, /['"]\/benchmarks\.json['"]/, 'do not invent apex /benchmarks.json leftover');
-assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/benchmarks\.json['"]/, 'do not invent nested benchmarks leftover');
+assert.doesNotMatch(discoveryMap, /['"]\/api\/models['"]/, 'do not invent /api/models leftover');
+assert.doesNotMatch(discoveryMap, /['"]\/api\/providers['"]/, 'do not invent /api/providers leftover');
+assert.doesNotMatch(discoveryMap, /['"]\/api\/v1['"]/, 'do not invent /api/v1 leftover');
+assert.match(
+  workerSrc,
+  /u\.pathname === '\/benchmarks' && \(/,
+  'lobby same-host rewrite lists /benchmarks leftover dest',
+);
 
 const WWW = 'https://www.getdasha.com';
 const LOBBY = 'https://lobby.getdasha.com';
@@ -88,6 +98,11 @@ const FOLDS = [
   ['/Api/Benchmarks.json', BENCHMARKS],
   ['/API/BENCHMARKS.JSON', BENCHMARKS],
   ['/Api/Benchmarks.json/', BENCHMARKS],
+  ['/compute/api/benchmarks.json', BENCHMARKS],
+  ['/compute/api/benchmarks.json/', BENCHMARKS],
+  ['/Compute/api/benchmarks.json', BENCHMARKS],
+  ['/COMPUTE/API/BENCHMARKS.JSON', BENCHMARKS],
+  ['/Compute/Api/Benchmarks.json/', BENCHMARKS],
   ['/compute/api/agents.md', SKILL],
   ['/compute/api/agents.md/', SKILL],
   ['/Compute/api/agents.md', SKILL],
@@ -184,7 +199,9 @@ const STAY_OUT = [
   '/compute/api/foo',
   '/compute/api/openapi.json',
   '/benchmarks.json',
-  '/compute/api/benchmarks.json',
+  '/api/models',
+  '/api/providers',
+  '/api/v1',
 ];
 
 for (const [path, dest] of FOLDS) {
@@ -205,7 +222,7 @@ assert.equal(potterHome308Dest('/forum'), null, '/forum stays forumToLobby, not 
 function expectLoc(host, dest) {
   if (host !== 'lobby.getdasha.com') return dest;
   const u = new URL(dest);
-  if (u.pathname === '/compute/api' || u.pathname.startsWith('/compute/api/') || u.pathname === '/compute/skill.md') {
+  if (u.pathname === '/compute/api' || u.pathname.startsWith('/compute/api/') || u.pathname === '/compute/skill.md' || u.pathname === '/benchmarks') {
     return LOBBY + u.pathname + u.search + u.hash;
   }
   return dest;
@@ -245,6 +262,7 @@ const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 for (const path of [
   '/api/lobby',
   '/api/benchmarks.json',
+  '/compute/api/benchmarks.json',
   '/compute/api/agents.md',
   '/compute/api/agent.md',
   '/compute/api/swagger.json',
@@ -263,4 +281,4 @@ for (const path of [
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-motley-agent-discovery-leftover-pretty-path: PASS (/api/lobby 308 /lobby; /api/benchmarks.json 308 /benchmarks; nested /compute/api/{agents.md,agent.md,AGENTS.md,swagger.json,faucet,lobby,bag,crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest.json} 308 faces; Title-case+slash; www+lobby GET+HEAD; dests 200; no plugin.jup.ag)');
+console.log('dasha-motley-agent-discovery-leftover-pretty-path: PASS (/api/lobby 308 /lobby; /api/benchmarks.json 308 same-host /benchmarks; nested /compute/api/benchmarks.json keep-live; nested /compute/api/{agents.md,agent.md,AGENTS.md,swagger.json,faucet,lobby,bag,crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest.json} 308 faces; Title-case+slash; www+lobby GET+HEAD; dests 200; no /api/models|/api/providers|/api/v1; no plugin.jup.ag)');
