@@ -36,6 +36,14 @@ const INVENT = [
   '/Compute/Plugin',
   '/Compute/Plug-In',
   '/Compute/Waitlist',
+  '/invent',
+  '/invent/',
+  '/Invent',
+  '/INVENT',
+  '/doctor.txt',
+  '/self-test',
+  '/plugin',
+  '/plug-in',
 ];
 for (const path of INVENT) {
   assert.equal(potterHome308Dest(path), PROVIDE, `${path} → #provide`);
@@ -136,7 +144,7 @@ const env = {
 };
 
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
-  for (const path of ['/compute/doctor.txt', '/compute/self-test', '/compute/plugin', '/compute/plug-in', '/compute/waitlist']) {
+  for (const path of ['/compute/doctor.txt', '/compute/self-test', '/compute/plugin', '/compute/plug-in', '/compute/waitlist', '/invent', '/doctor.txt', '/self-test', '/plugin', '/plug-in']) {
     for (const method of ['GET', 'HEAD']) {
       const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
       assert.equal(res.status, 308, `${host} ${path} ${method}`);
