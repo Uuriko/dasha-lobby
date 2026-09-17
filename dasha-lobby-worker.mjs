@@ -4984,6 +4984,10 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  /compute/plug-in (+slash / Title-case) still HTML 404 on www while
  *  /compute/doctor already 308 → /compute#provide. Same soft-doctor
  *  invent family. Do not invent doctor.md.
+ *  Live Motley restore already 308s apex /doctor.txt /self-test /plugin
+ *  /plug-in → /compute#provide. Fold those plus leftover /invent
+ *  (+slash / Title-case) here so tip deploys do not wipe them.
+ *  Do not invent /compute/invent or doctor.md.
  *  Live GET /compute/waitlist (+slash / Title-case) still HTML 404 on
  *  www (Morgan growth door) while invent four already fold here.
  *  Apex /waitlist stays skipped. Do not invent doctor.md.
@@ -4996,6 +5000,11 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/plug-in', '/compute/plug-in/',
   '/compute/waitlist', '/compute/waitlist/',
   '/doctor', '/doctor/',
+  '/doctor.txt', '/doctor.txt/',
+  '/self-test', '/self-test/',
+  '/plugin', '/plugin/',
+  '/plug-in', '/plug-in/',
+  '/invent', '/invent/',
   '/provide', '/provide/',
   '/compute/provide', '/compute/provide/',
   '/compute/provide/enroll', '/compute/provide/enroll/',
@@ -5205,14 +5214,36 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  source. Apex /api/benchmarks.json (+/) Title-case 308 → /benchmarks
  *  (face already 200; lobby same-host). Nested /compute/api/benchmarks.json
  *  is already a live leftover 308 — keep it. Do not invent /benchmarks.json
- *  or /api/models /api/providers /api/v1. */
+ *  or /api/models /api/providers /api/v1 /api/v1/status.
+ *  Live Motley restore also 308s apex /api/{contribute,bounties,listings,
+ *  chess,verify.json,proof.json} + nested /compute/api/{listings,verify.json,
+ *  proof.json} → faces. Fold those here so tip deploys do not wipe Motley.
+ *  Do not invent nested /compute/api/{contribute,bounties,chess}. */
 const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/api/lobby', 'https://www.getdasha.com/lobby'],
   ['/api/lobby/', 'https://www.getdasha.com/lobby'],
+  ['/api/contribute', 'https://www.getdasha.com/contribute'],
+  ['/api/contribute/', 'https://www.getdasha.com/contribute'],
+  ['/api/bounties', 'https://www.getdasha.com/bounties'],
+  ['/api/bounties/', 'https://www.getdasha.com/bounties'],
+  ['/api/listings', 'https://www.getdasha.com/listings'],
+  ['/api/listings/', 'https://www.getdasha.com/listings'],
+  ['/api/chess', 'https://www.getdasha.com/chess'],
+  ['/api/chess/', 'https://www.getdasha.com/chess'],
+  ['/api/verify.json', 'https://www.getdasha.com/verify.json'],
+  ['/api/verify.json/', 'https://www.getdasha.com/verify.json'],
+  ['/api/proof.json', 'https://www.getdasha.com/compute/proof.json'],
+  ['/api/proof.json/', 'https://www.getdasha.com/compute/proof.json'],
   ['/api/benchmarks.json', 'https://www.getdasha.com/benchmarks'],
   ['/api/benchmarks.json/', 'https://www.getdasha.com/benchmarks'],
   ['/compute/api/benchmarks.json', 'https://www.getdasha.com/benchmarks'],
   ['/compute/api/benchmarks.json/', 'https://www.getdasha.com/benchmarks'],
+  ['/compute/api/listings', 'https://www.getdasha.com/listings'],
+  ['/compute/api/listings/', 'https://www.getdasha.com/listings'],
+  ['/compute/api/verify.json', 'https://www.getdasha.com/verify.json'],
+  ['/compute/api/verify.json/', 'https://www.getdasha.com/verify.json'],
+  ['/compute/api/proof.json', 'https://www.getdasha.com/compute/proof.json'],
+  ['/compute/api/proof.json/', 'https://www.getdasha.com/compute/proof.json'],
   ['/compute/api/agents.md', 'https://www.getdasha.com/compute/skill.md'],
   ['/compute/api/agents.md/', 'https://www.getdasha.com/compute/skill.md'],
   ['/compute/api/agent.md', 'https://www.getdasha.com/compute/skill.md'],
@@ -5598,6 +5629,7 @@ export function potterHome308Response(request, url) {
             src === '/compute/api/benchmarks.json' ||
             src === '/compute/api/benchmarks.json/'
           )) ||
+          (u.pathname === '/compute/proof.json' && POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src)) ||
           (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )
       ) {
