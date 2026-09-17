@@ -5202,14 +5202,17 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  + product faces stay 200. Must win over the /compute/api/ casefold
  *  catch-all. Do not invent /compute/api/openapi.json leftover (real
  *  OpenAPI face is /compute/openapi.json). No Muse product HTML. No Room
- *  source. Optional cheap peer: apex /api/benchmarks.json (+/) → /benchmarks
- *  (face already 200; live leftover sibling of /api/digest.json). Do not
- *  invent /benchmarks.json or /compute/api/benchmarks.json. */
+ *  source. Apex /api/benchmarks.json (+/) Title-case 308 → /benchmarks
+ *  (face already 200; lobby same-host). Nested /compute/api/benchmarks.json
+ *  is already a live leftover 308 — keep it. Do not invent /benchmarks.json
+ *  or /api/models /api/providers /api/v1. */
 const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/api/lobby', 'https://www.getdasha.com/lobby'],
   ['/api/lobby/', 'https://www.getdasha.com/lobby'],
   ['/api/benchmarks.json', 'https://www.getdasha.com/benchmarks'],
   ['/api/benchmarks.json/', 'https://www.getdasha.com/benchmarks'],
+  ['/compute/api/benchmarks.json', 'https://www.getdasha.com/benchmarks'],
+  ['/compute/api/benchmarks.json/', 'https://www.getdasha.com/benchmarks'],
   ['/compute/api/agents.md', 'https://www.getdasha.com/compute/skill.md'],
   ['/compute/api/agents.md/', 'https://www.getdasha.com/compute/skill.md'],
   ['/compute/api/agent.md', 'https://www.getdasha.com/compute/skill.md'],
@@ -5588,6 +5591,12 @@ export function potterHome308Response(request, url) {
             POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src) ||
             POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src) ||
             POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src)
+          )) ||
+          (u.pathname === '/benchmarks' && (
+            src === '/api/benchmarks.json' ||
+            src === '/api/benchmarks.json/' ||
+            src === '/compute/api/benchmarks.json' ||
+            src === '/compute/api/benchmarks.json/'
           )) ||
           (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )
