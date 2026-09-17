@@ -4987,6 +4987,9 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  Live GET /compute/waitlist (+slash / Title-case) still HTML 404 on
  *  www (Morgan growth door) while invent four already fold here.
  *  Apex /waitlist stays skipped. Do not invent doctor.md.
+ *  Live leftover /invent /compute/invent (+slash / Title-case via
+ *  toLowerCase) fold here with that invent family.
+ *  Do not invent doctor.md / PROVIDE.md.
  *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
@@ -4995,6 +4998,8 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/plugin', '/compute/plugin/',
   '/compute/plug-in', '/compute/plug-in/',
   '/compute/waitlist', '/compute/waitlist/',
+  '/invent', '/invent/',
+  '/compute/invent', '/compute/invent/',
   '/doctor', '/doctor/',
   '/provide', '/provide/',
   '/compute/provide', '/compute/provide/',
@@ -5241,6 +5246,19 @@ const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/compute/api/security.txt/', 'https://www.getdasha.com/.well-known/security.txt'],
   ['/compute/api/digest.json', 'https://www.getdasha.com/digest.json'],
   ['/compute/api/digest.json/', 'https://www.getdasha.com/digest.json'],
+]);
+/** Nested Motley leftover /compute/api/robots (+slash / Title-case via
+ *  toLowerCase) while /robots.txt is already 200. .txt peers + apex
+ *  /api/robots already 308. Must win over the /compute/api/ casefold
+ *  catch-all. Do not invent /api/v1. */
+const POTTER_COMPUTE_API_ROBOTS_308_PATHS = new Set([
+  '/compute/api/robots', '/compute/api/robots/',
+]);
+/** Nested Motley leftover /compute/api/sitemap (+slash / Title-case via
+ *  toLowerCase) while /sitemap.xml is already 200. .xml peers already
+ *  308. Must win over the /compute/api/ casefold catch-all. */
+const POTTER_COMPUTE_API_SITEMAP_308_PATHS = new Set([
+  '/compute/api/sitemap', '/compute/api/sitemap/',
 ]);
 
 export function potterHome308Dest(path) {
@@ -5494,6 +5512,12 @@ export function potterHome308Dest(path) {
     if (skillMdSlash) return "https://www.getdasha.com/compute/skill/" + skillMdSlash[1] + ".md";
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
+  }
+  if (POTTER_COMPUTE_API_ROBOTS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/robots.txt";
+  }
+  if (POTTER_COMPUTE_API_SITEMAP_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/sitemap.xml";
   }
   if (POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(p)) {
     return POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.get(p);
