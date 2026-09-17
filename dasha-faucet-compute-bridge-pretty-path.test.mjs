@@ -45,7 +45,7 @@ const FAUCET_PEERS = [
 const COMPUTE_PEERS = [
   '/products', '/products/', '/Products',
   '/compute/products', '/Compute/products',
-  '/product', '/providers',
+  '/product', '/provider',
   '/compute/use', '/Compute/use',
 ];
 const STAY_OUT = [

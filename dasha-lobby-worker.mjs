@@ -143,6 +143,7 @@ import {
 import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
 import { applyCrewShareOg, crewApi, isCrewPagePath } from './dasha-crew.mjs';
+import { isMuseProductPath, museProductKind, museProductPageHtml, MUSE_FACES } from './dasha-muse-product.mjs';
 import { bagRecordApi, isBagRecordPath, lookupRecord, normalizeMint, renderBagShareHtml } from './dasha-bag-record.mjs';
 import { bagExitApi, isBagExitPath } from './dasha-bag-exit.mjs';
 import { appendFill, collectInboundFills, FAUCET_TAPE_SCAN_CAP, fillShareApi, isBareFaucetFillPath, isFaucetFillPath, isFaucetTapePath, shouldScanTape, tapeApi } from './dasha-faucet-tape.mjs';
@@ -213,6 +214,10 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/listings.json</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/crew</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/digest</loc><lastmod>2026-09-01</lastmod></url>
+  <url><loc>https://www.getdasha.com/start</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/providers</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/developers</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/network</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/proof</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/start</loc><lastmod>2026-09-16</lastmod></url>
@@ -3606,15 +3611,14 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/profile/",
   "/compute/settings",
   "/compute/settings/",
-  // Apex product doors: /start /sponsor(s) /ask /pay /credits /host /use
+  // Apex product doors: /sponsor(s) /ask /pay /credits /host /use
   // /you /night /build /ocm already 308→/compute.
+  // /start is the Muse marketing home (200). Start CTA still → /compute.
   // /provide (+slash) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
   // → /compute#provide (join a Mac). Not Ask first-paint.
   // Apex /marketplace /market leftover pretty-paths are POTTER_COMPUTE_MARKET_OCM_308_PATHS → /compute/ocm.
   // Leftover apex Product/Provider/Mac + Prefer-MLX (/mlx /prefer-mlx /kit) still
   // html-404 while peers 308. /api is dedicated → /compute/api (not this set).
-  "/start",
-  "/start/",
   "/sponsor",
   "/sponsor/",
   "/sponsors",
@@ -3670,8 +3674,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/products/",
   "/provider",
   "/provider/",
-  "/providers",
-  "/providers/",
+  // /providers is the Muse providers face (200). Singular leftover still folds.
   "/mac",
   "/mac/",
   "/macs",
@@ -3896,7 +3899,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/mac-kit",
   "/compute/mac-kit/",
   // Apex Hosts/Keys/Install/Doctor/Me/Usage leftovers: live html-404 while /host
-  // /providers /kit /account /you /models peers already 308→/compute. Plural /hosts
+  // /provider /kit /account /you /models peers already 308→/compute. /providers is Muse 200. Plural /hosts
   // peer of /host. Plural /inferences peer of /inference. API-key doors fold to
   // Compute UI (browser); /api/keys has a dedicated API fold below. Skip /openai
   // /v1 /resend /email /health /status.
@@ -5124,7 +5127,8 @@ const POTTER_COMPUTE_API_STATUS_308_PATHS = new Set([
   '/compute/status', '/compute/status/',
   '/api/status', '/api/status/',
 ]);
-/** /compute/network /api/network → /compute/api/network. */
+/** /compute/network /api/network → /compute/api/network.
+ *  Bare /network is the Muse network face (200). Never fold it to /compute. */
 const POTTER_COMPUTE_API_NETWORK_308_PATHS = new Set([
   '/compute/network', '/compute/network/',
   '/api/network', '/api/network/',
@@ -5157,6 +5161,10 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/bag', 'https://www.getdasha.com/bag'],
   ['/simp', 'https://www.getdasha.com/simp'],
   ['/crew', 'https://www.getdasha.com/crew'],
+  ['/start', 'https://www.getdasha.com/start'],
+  ['/providers', 'https://www.getdasha.com/providers'],
+  ['/developers', 'https://www.getdasha.com/developers'],
+  ['/network', 'https://www.getdasha.com/network'],
   ['/contribute', 'https://www.getdasha.com/contribute'],
   ['/privacy', 'https://www.getdasha.com/privacy'],
   ['/which', 'https://www.getdasha.com/which'],
@@ -5416,6 +5424,15 @@ const POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS = new Set([
 export function potterHome308Dest(path) {
   const raw = String(path || "");
   const p = raw.toLowerCase();
+  // Muse product IA: leftover maps must not steal these 200 faces.
+  // Exact lowercase (+slash) stays null so the Muse handler runs.
+  // Title-case still casefolds via POTTER_PRODUCT_CASEFOLD_DEST.
+  if (
+    raw === "/start" || raw === "/start/" ||
+    raw === "/providers" || raw === "/providers/" ||
+    raw === "/developers" || raw === "/developers/" ||
+    raw === "/network" || raw === "/network/"
+  ) return null;
   if (POTTER_HOWTO_308_PATHS.has(p)) return "https://www.getdasha.com/how-to-buy";
   if (POTTER_HOME_308_PATHS.has(p)) return "https://www.getdasha.com/";
   if (POTTER_LOGIN_308_PATHS.has(p)) return "https://www.getdasha.com/login#grok";
@@ -5579,7 +5596,7 @@ export function potterHome308Dest(path) {
   }
   if (p === "/documentation" || p === "/documentation/") return "https://www.getdasha.com/compute/api";
   if (p === "/readme" || p === "/readme/") return "https://www.getdasha.com/compute/api";
-  if (p === "/endpoint" || p === "/endpoint/" || p === "/endpoints" || p === "/endpoints/" || p === "/sdk" || p === "/sdk/" || p === "/sdks" || p === "/sdks/" || p === "/dev" || p === "/dev/" || p === "/developer" || p === "/developer/" || p === "/developers" || p === "/developers/" || p === "/devtools" || p === "/devtools/" || p === "/devtool" || p === "/devtool/" || p === "/developer-docs" || p === "/developer-docs/" || p === "/sdk-docs" || p === "/sdk-docs/" || p === "/cli-docs" || p === "/cli-docs/" || p === "/sdks-docs" || p === "/sdks-docs/" || p === "/api-reference" || p === "/api-reference/" || p === "/sdk-reference" || p === "/sdk-reference/" || p === "/cli-reference" || p === "/cli-reference/" || p === "/developer-api" || p === "/developer-api/" || p === "/dev-api" || p === "/dev-api/" || p === "/cli" || p === "/cli/" || p === "/curl" || p === "/curl/" || p === "/openai-compat" || p === "/openai-compat/" || p === "/completions" || p === "/completions/" || p === "/compat" || p === "/compat/" || p === "/base-url" || p === "/base-url/" || p === "/baseurl" || p === "/baseurl/" || p === "/base_url" || p === "/base_url/" || p === "/chat-completions" || p === "/chat-completions/" || p === "/chatcompletions" || p === "/chatcompletions/" || p === "/chat_completions" || p === "/chat_completions/" || p === "/embeddings" || p === "/embeddings/" || p === "/embedding" || p === "/embedding/" || p === "/responses" || p === "/responses/" || p === "/response" || p === "/response/" || p === "/completion" || p === "/completion/" || p === "/compute/endpoint" || p === "/compute/endpoint/" || p === "/compute/endpoints" || p === "/compute/endpoints/" || p === "/compute/sdks" || p === "/compute/sdks/" || p === "/compute/dev" || p === "/compute/dev/" || p === "/compute/developer" || p === "/compute/developer/" || p === "/compute/developers" || p === "/compute/developers/" || p === "/compute/devtools" || p === "/compute/devtools/" || p === "/compute/devtool" || p === "/compute/devtool/" || p === "/compute/developer-docs" || p === "/compute/developer-docs/" || p === "/compute/cli-docs" || p === "/compute/cli-docs/" || p === "/compute/sdks-docs" || p === "/compute/sdks-docs/" || p === "/compute/sdk-reference" || p === "/compute/sdk-reference/" || p === "/compute/cli-reference" || p === "/compute/cli-reference/" || p === "/compute/developer-api" || p === "/compute/developer-api/" || p === "/compute/dev-api" || p === "/compute/dev-api/" || p === "/compute/curl" || p === "/compute/curl/" || p === "/compute/openai-compat" || p === "/compute/openai-compat/" || p === "/compute/completions" || p === "/compute/completions/" || p === "/compute/compat" || p === "/compute/compat/" || p === "/compute/base-url" || p === "/compute/base-url/" || p === "/compute/baseurl" || p === "/compute/baseurl/" || p === "/compute/base_url" || p === "/compute/base_url/" || p === "/compute/chat-completions" || p === "/compute/chat-completions/" || p === "/compute/chatcompletions" || p === "/compute/chatcompletions/" || p === "/compute/chat_completions" || p === "/compute/chat_completions/" || p === "/compute/embeddings" || p === "/compute/embeddings/" || p === "/compute/embedding" || p === "/compute/embedding/" || p === "/compute/responses" || p === "/compute/responses/" || p === "/compute/response" || p === "/compute/response/" || p === "/compute/completion" || p === "/compute/completion/" || // Vision/TTS modality peers of /embeddings (live html-404).
+  if (p === "/endpoint" || p === "/endpoint/" || p === "/endpoints" || p === "/endpoints/" || p === "/sdk" || p === "/sdk/" || p === "/sdks" || p === "/sdks/" || p === "/dev" || p === "/dev/" || p === "/developer" || p === "/developer/" || p === "/devtools" || p === "/devtools/" || p === "/devtool" || p === "/devtool/" || p === "/developer-docs" || p === "/developer-docs/" || p === "/sdk-docs" || p === "/sdk-docs/" || p === "/cli-docs" || p === "/cli-docs/" || p === "/sdks-docs" || p === "/sdks-docs/" || p === "/api-reference" || p === "/api-reference/" || p === "/sdk-reference" || p === "/sdk-reference/" || p === "/cli-reference" || p === "/cli-reference/" || p === "/developer-api" || p === "/developer-api/" || p === "/dev-api" || p === "/dev-api/" || p === "/cli" || p === "/cli/" || p === "/curl" || p === "/curl/" || p === "/openai-compat" || p === "/openai-compat/" || p === "/completions" || p === "/completions/" || p === "/compat" || p === "/compat/" || p === "/base-url" || p === "/base-url/" || p === "/baseurl" || p === "/baseurl/" || p === "/base_url" || p === "/base_url/" || p === "/chat-completions" || p === "/chat-completions/" || p === "/chatcompletions" || p === "/chatcompletions/" || p === "/chat_completions" || p === "/chat_completions/" || p === "/embeddings" || p === "/embeddings/" || p === "/embedding" || p === "/embedding/" || p === "/responses" || p === "/responses/" || p === "/response" || p === "/response/" || p === "/completion" || p === "/completion/" || p === "/compute/endpoint" || p === "/compute/endpoint/" || p === "/compute/endpoints" || p === "/compute/endpoints/" || p === "/compute/sdks" || p === "/compute/sdks/" || p === "/compute/dev" || p === "/compute/dev/" || p === "/compute/developer" || p === "/compute/developer/" || p === "/compute/developers" || p === "/compute/developers/" || p === "/compute/devtools" || p === "/compute/devtools/" || p === "/compute/devtool" || p === "/compute/devtool/" || p === "/compute/developer-docs" || p === "/compute/developer-docs/" || p === "/compute/cli-docs" || p === "/compute/cli-docs/" || p === "/compute/sdks-docs" || p === "/compute/sdks-docs/" || p === "/compute/sdk-reference" || p === "/compute/sdk-reference/" || p === "/compute/cli-reference" || p === "/compute/cli-reference/" || p === "/compute/developer-api" || p === "/compute/developer-api/" || p === "/compute/dev-api" || p === "/compute/dev-api/" || p === "/compute/curl" || p === "/compute/curl/" || p === "/compute/openai-compat" || p === "/compute/openai-compat/" || p === "/compute/completions" || p === "/compute/completions/" || p === "/compute/compat" || p === "/compute/compat/" || p === "/compute/base-url" || p === "/compute/base-url/" || p === "/compute/baseurl" || p === "/compute/baseurl/" || p === "/compute/base_url" || p === "/compute/base_url/" || p === "/compute/chat-completions" || p === "/compute/chat-completions/" || p === "/compute/chatcompletions" || p === "/compute/chatcompletions/" || p === "/compute/chat_completions" || p === "/compute/chat_completions/" || p === "/compute/embeddings" || p === "/compute/embeddings/" || p === "/compute/embedding" || p === "/compute/embedding/" || p === "/compute/responses" || p === "/compute/responses/" || p === "/compute/response" || p === "/compute/response/" || p === "/compute/completion" || p === "/compute/completion/" || // Vision/TTS modality peers of /embeddings (live html-404). // Apex /developers is the Muse developers face (200).
   p === "/vision" || p === "/vision/" || p === "/tts" || p === "/tts/" || p === "/text-to-speech" || p === "/text-to-speech/" || p === "/text_to_speech" || p === "/text_to_speech/" || p === "/compute/vision" || p === "/compute/vision/" || p === "/compute/tts" || p === "/compute/tts/" || p === "/compute/text-to-speech" || p === "/compute/text-to-speech/" || p === "/compute/text_to_speech" || p === "/compute/text_to_speech/") return "https://www.getdasha.com/compute/api";
   if (p === "/gateway" || p === "/gateway/" || p === "/compute/gateway" || p === "/compute/gateway/") {
     return "https://www.getdasha.com/compute/api";
@@ -7815,6 +7832,20 @@ async function computeProofMdResponse(request, env) {
 function computeKitResponse(request, env) {
   if (!env?.ASSETS?.fetch) return new Response(null, { status: 404, headers: { 'X-Dasha-Edge': 'compute-kit' } });
   return env.ASSETS.fetch(request);
+}
+
+function museProductPageResponse(request, pathname) {
+  const kind = museProductKind(pathname);
+  const html = museProductPageHtml(pathname);
+  if (!kind || !html) return null;
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(html), {
+    status: 200,
+    headers: htmlLlmsHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=120',
+      'X-Dasha-Edge': MUSE_FACES[kind].edge,
+    }),
+  });
 }
 
 function crewPageResponse(request) {
@@ -11498,6 +11529,9 @@ async function digestEdge(request, env) {
 async function productEdge(request, url, env) {
   const agentsFace = agentsDiscoveryResponse(request);
   if (agentsFace) return agentsFace;
+  if ((request.method === 'GET' || request.method === 'HEAD') && isMuseProductPath(url.pathname)) {
+    return museProductPageResponse(request, url.pathname);
+  }
   const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
     const simpOg = await simpOgResponse(request, url, env);
@@ -12735,6 +12769,9 @@ export default {
     }
     const agentsFace = agentsDiscoveryResponse(request);
     if (agentsFace) return agentsFace;
+    if ((request.method === 'GET' || request.method === 'HEAD') && isMuseProductPath(url.pathname)) {
+      return museProductPageResponse(request, url.pathname);
+    }
     const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
     if (isMailSmokePath(url.pathname)) {

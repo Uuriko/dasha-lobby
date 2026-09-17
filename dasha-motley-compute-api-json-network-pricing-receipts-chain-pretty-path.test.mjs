@@ -24,7 +24,7 @@ assert.match(workerSrc, /POTTER_COMPUTE_API_RECEIPTS_JSON_308_PATHS/, 'nested re
 assert.match(workerSrc, /POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS/, 'nested chain.json leftover set');
 assert.match(workerSrc, /(?:String\(path \|\| ""\)|raw)\.toLowerCase\(\)/, '308 dest must case-fold');
 assert.match(workerSrc, /Must win over the \/compute\/api\/ casefold/, 'map/set beat casefold catch-all');
-assert.doesNotMatch(workerSrc, /dasha-muse-product/, 'do not import Muse #225 HTML');
+assert.match(workerSrc, /dasha-muse-product/, 'Muse #225 faces imported; leftover maps stay out');
 
 const networkSet = workerSrc.match(/const POTTER_COMPUTE_API_NETWORK_JSON_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const pricingSet = workerSrc.match(/const POTTER_COMPUTE_API_PRICING_JSON_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];

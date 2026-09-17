@@ -32,6 +32,10 @@ const PRODUCTS = [
   ['login', 'login'],
   ['faucet', 'faucet'],
   ['compute', 'compute'],
+  ['start', 'muse-start'],
+  ['providers', 'muse-providers'],
+  ['developers', 'muse-developers'],
+  ['network', 'muse-network'],
 ];
 
 for (const [slug, edge] of PRODUCTS) {
