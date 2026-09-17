@@ -37,6 +37,8 @@ function assertCatalog(html, label) {
   assert.match(html, /SUB24=new Set\(\['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b'\]\)/, `${label} SUB24 unchanged`);
   assert.doesNotMatch(html, /SUB24=new Set\([^)]*ternary-bonsai-2-27b/, `${label} bonsai not Mixture`);
   assert.match(html, /value=["']gpt-oss-20b["']/, `${label} Hosted gpt-oss-20b option stays`);
+  assert.match(html, /id=["']ask-composer["']/, `${label} Ask composer shell stays`);
+  assert.match(html, /id=["']ask-model["']/, `${label} Ask model pill stays`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
 }
 
@@ -127,7 +129,9 @@ if (puppeteer && existsSync(chrome)) {
       preferOnlineModel(select, false);
       document.getElementById('engine').value = 'community';
       paintModelChoices();
+      paintAskModel();
       const chips = [...document.querySelectorAll('#model-choices [data-model]')].map((b) => ({ id: b.dataset.model, text: b.textContent }));
+      const pill = [...(document.getElementById('ask-model')?.options || [])].map((o) => ({ id: o.value, text: o.textContent }));
       hostedChosenThisSession = true;
       setEngine('hosted', true);
       const hosted = { engine: document.getElementById('engine').value, model: document.getElementById('model').value };
@@ -139,6 +143,7 @@ if (puppeteer && existsSync(chrome)) {
         ids: [...select.options].map((o) => o.value),
         selected: chips.length ? chips[0].id : '',
         chip: chips[0]?.text || '',
+        pill,
         hosted,
         mixture,
       };
@@ -146,6 +151,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.ok(painted.ids.includes(BONSAI), 'select lists bonsai');
     assert.equal(painted.selected, BONSAI);
     assert.match(painted.chip, /Ternary Bonsai 2 27B · PQ2 · community/);
+    assert.ok(painted.pill.some((o) => o.id === BONSAI), 'Ask model pill lists bonsai');
+    assert.ok(painted.pill.some((o) => o.id === BONSAI && /Ternary Bonsai 2 27B/.test(o.text)), 'Ask model pill label');
     assert.equal(painted.hosted.engine, 'hosted');
     assert.equal(painted.hosted.model, 'gpt-oss-20b', 'Hosted still pins gpt-oss-20b');
     assert.ok(!painted.mixture.includes(BONSAI), 'Mixture does not list 27B bonsai');
