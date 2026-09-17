@@ -8644,7 +8644,7 @@ export class DashaLobby {
         tags: [{ name: 'kind', value: 'email-login' }],
         idempotencyKey: `email-login/${nonce}`,
       });
-      if (!sent.ok) return json({ error: 'email send failed - no code was stored', provider: sent.provider || 'resend' }, 502, allowedOrigin, cred);
+      if (!sent.ok) return json({ error: 'Could not send the sign-in code. Please try again.' }, 502, allowedOrigin, cred);
       await this.state.storage.put('emailLogins', bounded);
       return json({ ok: true, expiresIn: 600 }, 200, allowedOrigin, cred);
     }
@@ -10672,7 +10672,7 @@ async function handleOAuth(request, env, allowedOrigin) {
     if (request.method === 'HEAD') return oauthHtmlResponse('', 200, { head: true });
     if (url.searchParams.get('continue') !== '1') {
       return oauthHtmlResponse(
-        htmlPage('Connect X', '<h1>Connect X</h1><p>Dasha reads your public X identity across the site. It does not post for you.</p><p><a href="/privacy">Privacy</a></p><p><a href="/oauth/x/start?continue=1">Continue with X</a></p>'),
+        htmlPage('Connect X', '<h1>Connect X</h1><p>Dasha reads your public X identity across the site. It does not post for you.</p><p><a href="/privacy">Privacy</a></p><p><a href="/oauth/x/start?continue=1">Continue with X</a></p><p><a href="/login">← Back to login</a></p>'),
         200,
       );
     }
