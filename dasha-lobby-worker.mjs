@@ -5208,7 +5208,7 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
 
 /** Motley leftover agent-discovery doors: live GET/HEAD /api/lobby + nested
  *  /compute/api/{agents.md,agent.md,AGENTS.md,swagger.json,faucet,lobby,bag,
- *  crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest.json}
+ *  crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest,digest.json}
  *  (+slash / Title-case via toLowerCase) html-404 while faces already 200.
  *  Fold to documented faces. /forum dest is /lobby (forum 308, not a 200).
  *  AGENTS.md stores as /compute/api/agents.md. Nested swagger.json dest is
@@ -5277,6 +5277,11 @@ const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
   ['/compute/api/security.txt/', 'https://www.getdasha.com/.well-known/security.txt'],
   ['/compute/api/digest.json', 'https://www.getdasha.com/digest.json'],
   ['/compute/api/digest.json/', 'https://www.getdasha.com/digest.json'],
+  // Bare /compute/api/digest (+/) Title-case 308 → /digest.json.
+  // Sibling /compute/api/digest.json already maps there — keep it.
+  // Do not retarget apex /api/digest (Motley HTML → /digest stays).
+  ['/compute/api/digest', 'https://www.getdasha.com/digest.json'],
+  ['/compute/api/digest/', 'https://www.getdasha.com/digest.json'],
 ]);
 /** Nested Motley leftover /compute/api/robots (+slash / Title-case via
  *  toLowerCase) while /robots.txt is already 200. .txt peers + apex
