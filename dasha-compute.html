@@ -163,6 +163,7 @@ body.has-chat #step-ask .tf-q{position:absolute;width:1px;height:1px;padding:0;m
 #ask-prefer-mymac[data-mac=offline]{color:var(--paper-muted);opacity:.72;font-weight:400}
 #step-ask .ask-door-sep{display:none}
 .ask-doors .ask-door-sep{color:var(--line);font-size:12px;user-select:none;line-height:1;padding:0 2px}
+#step-ask #guide{display:none!important}
 #step-ask:not([hidden]){display:flex;flex-direction:column;min-height:calc(100dvh - 7.25rem);padding:16px 0 8px}
 #step-ask .tf-q{font:600 clamp(28px,5vw,40px)/1.15 Arial,Helvetica,sans-serif;letter-spacing:-.03em;margin:0 0 12px;max-width:none}
 #step-ask .ask-pane{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
@@ -177,6 +178,7 @@ body:not(.has-chat) #step-ask .ask-scroll{display:flex;flex-direction:column;jus
 #step-ask .ask-more-sum{color:var(--paper-muted);font:400 12px/1.3 Arial,Helvetica,sans-serif;cursor:pointer;list-style:none;width:max-content;padding:4px 0}
 #step-ask .ask-more-sum::-webkit-details-marker{display:none}
 body:not(.has-chat) #step-ask .ask-more-sum{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#ask-more:not([open]) #ask-doors{display:none!important}
 #prompt{display:block;width:100%;min-height:3rem;max-height:32vh;font-size:16px;line-height:1.55;font-weight:400;background:transparent;border:0;padding:6px 4px 8px;caret-color:var(--acid);color:var(--paper);resize:none;margin:0;field-sizing:content}
 #prompt:focus{outline:none}
 #prompt::placeholder{color:var(--paper-muted);opacity:1;font-weight:400}

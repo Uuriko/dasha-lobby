@@ -50,6 +50,7 @@ function assertAskChatUx(html, label) {
   assert.match(html, /\.ask-said\{[^}]*Arial,Helvetica,sans-serif/, `${label} Claude sans turns`);
   assert.match(html, /body\.has-chat #step-ask \.tf-q\{/, `${label} hide Do. after first turn`);
   assert.match(html, /body\[data-step=ask\] \.shell\{[^}]*52rem/, `${label} 52rem chat column`);
+  assert.match(html, /#step-ask #guide\{display:none!important\}/, `${label} no How-guide on Ask`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
   assert.doesNotMatch(html, /Ask Dasha/, `${label} no dual Ask Dasha`);
 }
