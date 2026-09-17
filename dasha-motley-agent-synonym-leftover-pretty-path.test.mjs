@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
  * Motley leftover agent-ish file synonyms + Muse brand door.
- * Live GET/HEAD /contribute.md /crew.json /bag.json /humans.txt /muse
+ * Live GET/HEAD /contribute.md /crew.json /bag.json /muse
  * (+slash / Title-case) html-404 on www while faces already 200.
- * Fold to /contribute /crew /bag /contribute / (home is Muse Webflow).
+ * Fold to /contribute /crew /bag / (home is Muse Webflow).
+ * Exact /humans.txt is a 200 text/plain face (not a leftover into /contribute).
+ * Slash /humans.txt/ + Title-case fold to that face.
  * Do not fold /muse → /start — /start is reserved for Muse #225.
  * Stay out of /providers /developers /network /start (Muse #225 200 faces).
- * Do not invent /contribute.json /crew.md /bag.md /muse.md.
+ * Do not invent /contribute.json /crew.md /bag.md /muse.md /humans.
  * Disk only. No Designer. Never plugin.jup.ag. No Room.
  */
 import assert from 'node:assert/strict';
@@ -29,11 +31,12 @@ for (const path of [
   '/contribute.md', '/contribute.md/',
   '/crew.json', '/crew.json/',
   '/bag.json', '/bag.json/',
-  '/humans.txt', '/humans.txt/',
   '/muse', '/muse/',
 ]) {
   assert.match(discoveryMap, new RegExp(`['"]${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`), `map lists ${path}`);
 }
+assert.doesNotMatch(discoveryMap, /['"]\/humans\.txt['"]/, '/humans.txt is the 200 face, not Motley leftover');
+assert.doesNotMatch(discoveryMap, /['"]\/humans\.txt\/['"]/, '/humans.txt/ leftover lives in its Set');
 assert.match(discoveryMap, /https:\/\/www\.getdasha\.com\/contribute/, 'contribute.md dest is /contribute');
 assert.match(discoveryMap, /https:\/\/www\.getdasha\.com\/crew/, 'crew.json dest is /crew');
 assert.match(discoveryMap, /https:\/\/www\.getdasha\.com\/bag/, 'bag.json dest is /bag');
@@ -43,7 +46,7 @@ for (const path of [
   '/providers', '/providers/',
   '/developers', '/developers/',
   '/network', '/network/',
-  '/contribute.json', '/crew.md', '/bag.md', '/muse.md',
+  '/contribute.json', '/crew.md', '/bag.md', '/muse.md', '/humans',
 ]) {
   assert.doesNotMatch(
     discoveryMap,
@@ -76,11 +79,6 @@ const FOLDS = [
   ['/Bag.json', BAG],
   ['/BAG.JSON', BAG],
   ['/Bag.json/', BAG],
-  ['/humans.txt', CONTRIBUTE],
-  ['/humans.txt/', CONTRIBUTE],
-  ['/Humans.txt', CONTRIBUTE],
-  ['/HUMANS.TXT', CONTRIBUTE],
-  ['/Humans.txt/', CONTRIBUTE],
   ['/muse', HOME],
   ['/muse/', HOME],
   ['/Muse', HOME],
@@ -88,10 +86,19 @@ const FOLDS = [
   ['/Muse/', HOME],
 ];
 
+const HUMANS = `${WWW}/humans.txt`;
+const HUMANS_FOLDS = [
+  ['/humans.txt/', HUMANS],
+  ['/Humans.txt', HUMANS],
+  ['/HUMANS.TXT', HUMANS],
+  ['/Humans.txt/', HUMANS],
+];
+
 const STAY_200 = [
   ['/contribute', null],
   ['/crew', null],
   ['/bag', null],
+  ['/humans.txt', null],
 ];
 
 const STAY_OUT = [
@@ -99,6 +106,7 @@ const STAY_OUT = [
   '/crew.md',
   '/bag.md',
   '/muse.md',
+  '/humans',
   '/network',
   '/network/',
 ];
@@ -106,6 +114,10 @@ const STAY_OUT = [
 for (const [path, dest] of FOLDS) {
   assert.equal(potterHome308Dest(path), dest, path);
   assert.notEqual(potterHome308Dest(path), START, `${path} is not /start`);
+}
+for (const [path, dest] of HUMANS_FOLDS) {
+  assert.equal(potterHome308Dest(path), dest, path);
+  assert.notEqual(potterHome308Dest(path), CONTRIBUTE, `${path} is not /contribute`);
 }
 for (const [path, dest] of STAY_200) {
   assert.equal(potterHome308Dest(path), dest, `${path} stays 200`);
@@ -138,6 +150,15 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
       if (method === 'HEAD') assert.equal(await res.text(), '');
     }
   }
+  for (const [path, dest] of HUMANS_FOLDS) {
+    for (const method of ['GET', 'HEAD']) {
+      const res = await edgeWorker.fetch(new Request(`https://${host}${path}`, { method }), env);
+      assert.equal(res.status, 308, `${host} ${path} ${method}`);
+      assert.equal(res.headers.get('location'), dest, `${host} ${path} ${method} loc`);
+      assert.notEqual(res.headers.get('location'), CONTRIBUTE, `${host} ${path} ${method} not /contribute`);
+      if (method === 'HEAD') assert.equal(await res.text(), '');
+    }
+  }
   for (const method of ['GET', 'HEAD']) {
     const contribute = await edgeWorker.fetch(new Request(`https://${host}/contribute`, { method }), env);
     assert.equal(contribute.status, 200, `${host} /contribute ${method} stays 200`);
@@ -148,6 +169,18 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     const bag = await edgeWorker.fetch(new Request(`https://${host}/bag`, { method }), env);
     assert.equal(bag.status, 200, `${host} /bag ${method} stays 200`);
     if (method === 'HEAD') assert.equal(await bag.text(), '');
+    const humans = await edgeWorker.fetch(new Request(`https://${host}/humans.txt`, { method }), env);
+    assert.equal(humans.status, 200, `${host} /humans.txt ${method} stays 200`);
+    assert.match(humans.headers.get('content-type') || '', /^text\/plain; charset=utf-8$/i, `${host} /humans.txt ${method} content-type`);
+    assert.doesNotMatch(humans.headers.get('content-type') || '', /text\/html/i, `${host} /humans.txt ${method} not HTML`);
+    if (method === 'HEAD') {
+      assert.equal(await humans.text(), '');
+    } else {
+      const body = await humans.text();
+      assert.match(body, /^\/\* TEAM \*\//, `${host} /humans.txt body prefix`);
+      assert.doesNotMatch(body, /Contribute to Dasha/, `${host} /humans.txt is not contribute HTML`);
+      assert.doesNotMatch(body, /<html/i, `${host} /humans.txt is not HTML`);
+    }
   }
   const start = await edgeWorker.fetch(new Request(`https://${host}/start`), env);
   assert.equal(start.status, 200, `${host} /start Muse 200`);
@@ -172,11 +205,12 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 }
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
-for (const path of ['/contribute.md', '/crew.json', '/bag.json', '/humans.txt', '/muse']) {
+for (const path of ['/contribute.md', '/crew.json', '/bag.json', '/muse']) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
+assert.ok(!sitemapXml.includes('https://www.getdasha.com/humans.txt</loc>'), 'sitemap omits /humans.txt (machine face, not product page)');
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/contribute<\/loc>/, 'sitemap keeps /contribute face');
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/crew<\/loc>/, 'sitemap keeps /crew face');
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/bag<\/loc>/, 'sitemap keeps /bag face');
 
-console.log('dasha-motley-agent-synonym-leftover-pretty-path: PASS (/contribute.md+/humans.txt 308 /contribute; /crew.json 308 /crew; /bag.json 308 /bag; /muse 308 /; Title-case+slash; www+lobby GET+HEAD; dests 200; Muse /start|/providers|/developers|/network 200; no /muse→/start; no plugin.jup.ag)');
+console.log('dasha-motley-agent-synonym-leftover-pretty-path: PASS (/contribute.md 308 /contribute; /crew.json 308 /crew; /bag.json 308 /bag; /muse 308 /; /humans.txt 200 text/plain; slash+Title-case 308 /humans.txt; www+lobby GET+HEAD; dests 200; Muse /start|/providers|/developers|/network 200; no /muse→/start; no plugin.jup.ag)');
