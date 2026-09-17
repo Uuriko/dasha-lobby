@@ -154,7 +154,6 @@ const STAY_OUT = [
   '/api/ai',
   '/api/skill',
   '/api/mcp',
-  '/api/openapi',
   '/api/proof',
   '/compute/api/openapi.json',
   '/contribute.md',
@@ -197,6 +196,8 @@ assert.equal(potterHome308Dest('/compute/agents/'), COMPUTE, '/compute/agents/ s
 assert.equal(potterHome308Dest('/compute/mcp'), MCP, '/compute/mcp still catalog leftover');
 assert.equal(potterHome308Dest('/ai'), AI, '/ai still /ai.txt leftover');
 assert.equal(potterHome308Dest('/compute/openapi'), SKILL, '/compute/openapi still skill leftover');
+assert.equal(potterHome308Dest('/api/openapi'), `${WWW}/compute/api`, '/api/openapi stays gateway leftover');
+assert.notEqual(potterHome308Dest('/api/openapi'), OPENAPI, '/api/openapi is not nested openapi leftover');
 
 function expectLoc(host, dest) {
   if (host !== 'lobby.getdasha.com') return dest;
