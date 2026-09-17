@@ -451,17 +451,17 @@ const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 assert.equal(sitemapXml.trim(), GEN_SITEMAP.trim(), 'worker and static-gen sitemaps agree');
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/privacy<\/loc>/);
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/which<\/loc>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/which<\/loc><lastmod>2026-09-01<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/which<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/bag<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/llms\.txt<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/llms-full\.txt<\/loc><lastmod>2026-09-01<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/llms\.txt<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/llms-full\.txt<\/loc><lastmod>2026-09-16<\/lastmod>/);
 for (const path of ['/crew', '/digest', '/compute', '/which', '/contribute', '/bounties']) {
   assert.ok(sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap has ${path}`);
 }
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/crew<\/loc><lastmod>2026-09-01<\/lastmod>/);
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/digest<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/compute<\/loc><lastmod>2026-09-01<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/compute<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.doesNotMatch(sitemapXml, /lobby\?/);
 for (const path of ['/dasha', '/desk', '/studio', '/graph', '/verse', '/learn', '/login', '/dancer', '/compute/dancer']) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits ${path}`);
