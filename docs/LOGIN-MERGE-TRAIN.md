@@ -32,7 +32,7 @@ stack segment (#278 → #283 → #284).
 | 5 | **#277** Resend retry queue (failure classification + bounded retry + observability) | code | `quill/resend-retry-queue` | ✅ pass | base 2e7778e; standalone |
 | 6 | **#278** Config-gated login method buttons | code | `quill-s2/login-config-gating` | ✅ pass | BEHIND (1 benign commit), MERGEABLE |
 | 7 | **#283** Email-first progressive disclosure login UX | code | `quill-s2/login-email-first` | ✅ pass | CLEAN; **stacks on #278** (verified: contains #278 tip) |
-| 8 | **#284** Login observability + perf budget | code | `worker-g/login-observability-perf-budget` | ✅ pass | CLEAN now; **expect conflicts after #283 lands** |
+| 8 | **#284** Login observability + perf budget | code | `worker-g/login-observability-perf-budget` | ✅ pass | CLEAN vs origin/main; **1 conflicting hunk after #283 lands** (see §8) |
 
 All 8 show no CI failures (syntax pass; `apply`/Cursor-approval steps skip). Titles verbatim from
 GitHub; files touched per PR:
@@ -94,17 +94,73 @@ GitHub; files touched per PR:
   methods. **X OAuth must still work** — run the `dasha-oauth-x-callback-state` tests.
 
 ### 8. #284 → merge (observability + perf budget) — LAST
-- Precondition: rebase onto post-#283 main. Expect **mechanical conflicts in 3 files**
-  (verified by simulation): `dasha-lobby-worker.mjs` (import block ~line 155 and
-  `export default` tail ~line 13427 — #283's stack edits the same region), 
-...[truncated 2703 chars]
+- Precondition: rebase onto post-#283 main. Fresh `git merge-tree` simulation
+  (2026-09-18, #284 head `a4dccb31` vs #283 head `dbca97f`, merge-base `12758ca`)
+  shows exactly **ONE conflicting hunk in ONE file** — not three files as the
+  pre-truncation draft of this section guessed. Everything else auto-merges.
 
-## ⚠️ Runbook gap: §8 conflict notes committed truncated (flagged 2026-09-18)
+**Changed on both sides — clean auto-merge, keep both, no manual action:**
+- `dasha-lobby-static-gen.mjs`: #283's email-first copy/template markers
+  (`<!--login-method:…-->`, `.more-methods` CSS, new meta description) sit far from
+  #284's one-line change (x-connect SRI `__X_CONNECT_SRI__` → `${X_CONNECT_SRI}`);
+  no overlap. Merged tree verified to contain both.
+- `dasha-login-page.html`: #283's full email-first markup rewrite vs #284's one-line
+  `__X_CONNECT_SRI__` → real `sha384-…` hash swap. The hash line re-applies cleanly
+  at its new position in the rewritten page (verified in the merged blob).
+- `dasha-oauth-x-callback-state.test.mjs`: both sides touched it; auto-merged clean.
+- Import block, `dasha-lobby-worker.mjs` (~lines 132–161): #283 replaced the
+  `LOGIN_PAGE_HTML` import with
+  `import { renderLoginPage } from './dasha-login-gating.mjs';` (lines ~132–140);
+  #284 *adds*
+  `import { recordLoginEvent, recordWorkerLoginMetric, loginObservedRoute, loginCompletionOutcome } from './dasha-login-metrics.mjs';`
+  ~20 lines lower (~155–161). Adjacent but non-overlapping — git keeps both.
+- `export default` tail (~line 13427): no conflict; both sides' edits land in
+  distinct statements.
 
-The section for #284 (now §8, was §7) ends mid-sentence with a literal
-`...[truncated 2703 chars]` artifact in the original commit (`0f0a01a`) — the tooling
-that authored this doc cut off the merge preconditions there. Grok Bot needs the full
-3-file conflict-resolution notes re-authored (dasha-lobby-worker.mjs import block
-~line 155, `export default` tail, plus the third file's name and resolution) from a
-fresh `git merge-tree` simulation before the #284 merge step. Do not merge #284 on the
-truncated notes.
+**New files from #284 (zero conflict surface):** `dasha-login-metrics.mjs`,
+`dasha-login-metrics.test.mjs`, `docs/login-perf-budget.md`.
+
+**The one conflict — `dasha-lobby-worker.mjs`, `/login` route handler in
+`productEdge` (~line 12068):**
+
+```js
+<<<<<<< post-#283 main
+      return loginPageResponse(request, env);
+=======
+      const t0 = Date.now();
+      const res = loginPageResponse(request);
+      // Best-effort page-view latency (theme e, perf budget). Not awaited so
+      // the static page stays fast; terminal login events above are awaited.
+      recordWorkerLoginMetric(env, {
+        method: 'login', route: 'page', outcome: 'view', latencyMs: Date.now() - t0,
+      }).catch(() => {});
+      return res;
+>>>>>>> #284
+```
+
+- **Resolution (keep both sides):** keep #284's timing wrapper *and* #283's `env`
+  argument (the gated renderer needs `env`; dropping it re-introduces the dead-button
+  bug class from task #1). Resolved hunk:
+```js
+      const t0 = Date.now();
+      const res = loginPageResponse(request, env);
+      // Best-effort page-view latency (theme e, perf budget). Not awaited so
+      // the static page stays fast; terminal login events above are awaited.
+      recordWorkerLoginMetric(env, {
+        method: 'login', route: 'page', outcome: 'view', latencyMs: Date.now() - t0,
+      }).catch(() => {});
+      return res;
+```
+- After resolving, re-run checks (`dasha-login-metrics`, `dasha-oauth-x-callback-state`,
+  `dasha-login-gating` suites), then squash-merge.
+
+## ✅ Runbook gap resolved (2026-09-18)
+
+The `...[truncated 2703 chars]` artifact that cut §8 mid-sentence in the original
+commit (`0f0a01a`) has been re-authored from a fresh `git merge-tree` simulation
+(#284 head `a4dccb31` vs #283 head `dbca97f`, merge-base `12758ca` on origin/main).
+Correction vs the pre-truncation draft: it predicted "mechanical conflicts in 3 files"
+(import block ~line 155, `export default` tail ~line 13427) — the fresh simulation
+shows those merge cleanly; the single real conflict is the `/login` route-handler
+hunk documented above. Other runbook sections were checked for similar truncation
+damage: none found.
