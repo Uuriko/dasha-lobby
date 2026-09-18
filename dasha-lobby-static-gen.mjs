@@ -1119,7 +1119,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     });
   })();
   </script>
-  <script src="https://lobby.getdasha.com/client/x-connect.js" integrity="__X_CONNECT_SRI__" crossorigin="anonymous" defer></script>
+  <script src="https://lobby.getdasha.com/client/x-connect.js" integrity="${X_CONNECT_SRI}" crossorigin="anonymous" defer></script>
 </body>
 </html>
 `;
