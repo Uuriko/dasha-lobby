@@ -27,8 +27,99 @@
     return out || '1';
   }
 
+  function walletCandidates() {
+    var out = [];
+    function add(p) { if (p && out.indexOf(p) < 0) out.push(p); }
+    if (global.phantom && global.phantom.solana) add(global.phantom.solana);
+    add(global.solflare);
+    add(global.backpack);
+    add(global.solana);
+    return out;
+  }
+
   function walletProvider() {
-    return global.phantom && global.phantom.solana || global.solflare || global.solana || null;
+    var list = walletCandidates();
+    var i;
+    // Prefer wallet-standard one-click `signIn` (Phantom 23.11+, Solflare, Backpack).
+    for (i = 0; i < list.length; i++) if (typeof list[i].signIn === 'function') return list[i];
+    for (i = 0; i < list.length; i++) if (list[i].connect && list[i].signMessage) return list[i];
+    return list[0] || null;
+  }
+
+  function walletSigBase58(sig) {
+    if (typeof sig === 'string') return sig;
+    return base58(sig);
+  }
+
+  function isMobileWalletUa() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+  function rememberWallet() {
+    try { localStorage.setItem('dasha_last_provider', 'wallet'); } catch (e) {}
+  }
+
+  function walletErrorKind(error) {
+    var msg = String((error && error.message) || error || '');
+    if (/user rejected|rejected the request|denied|cancelled|canceled|declined/i.test(msg)) return 'cancelled';
+    if (/wallet login unavailable/i.test(msg)) return 'unavailable';
+    if (/rate limited|too many/i.test(msg)) return 'limited';
+    if (/already used|expired/i.test(msg)) return 'expired';
+    if (/network|failed to fetch|load failed/i.test(msg)) return 'network';
+    return 'other';
+  }
+
+  // One-click Sign in with Solana: a single wallet approval covers connect +
+  // sign. The server issued an origin-bound, single-use nonce (challenge);
+  // the wallet echoes it inside the standardized SIWS message it builds.
+  function walletSigninOneClick(provider) {
+    return fetchJson('/auth/wallet/challenge', { method: 'POST', body: JSON.stringify({ mode: 'signin' }) })
+      .then(function (c) {
+        if (!c || !c.nonce || !c.challenge) throw new Error('Wallet login unavailable');
+        return Promise.resolve().then(function () {
+          return provider.signIn({
+            domain: c.domain,
+            uri: c.uri,
+            statement: c.statement,
+            nonce: c.nonce,
+            chainId: c.chainId || 'solana:mainnet',
+            version: c.version || '1',
+          });
+        }).then(function (out) { return { out: out, challenge: c.challenge }; });
+      })
+      .then(function (r) {
+        var out = r.out || {};
+        var account = out.account || {};
+        var address = account.address || (account.publicKey ? String(account.publicKey) : '');
+        var msgBytes = out.signedMessage;
+        var sigBytes = out.signature;
+        if (!address || !msgBytes || !sigBytes) throw new Error('Wallet returned no signature');
+        var message = typeof msgBytes === 'string' ? msgBytes : new TextDecoder().decode(msgBytes);
+        return fetchJson('/auth/wallet/verify', {
+          method: 'POST',
+          body: JSON.stringify({ mode: 'signin', challenge: r.challenge, message: message, signature: walletSigBase58(sigBytes) }),
+        });
+      });
+  }
+
+  // Legacy two-step fallback for wallets without wallet-standard `signIn`.
+  function walletLegacyConnectSign(provider) {
+    var publicKey;
+    return provider.connect().then(function (connected) {
+      var key = provider.publicKey || connected && connected.publicKey;
+      if (!key) throw new Error('Wallet returned no public key');
+      publicKey = key.toString();
+      return fetchJson('/auth/wallet/challenge', { method: 'POST', body: JSON.stringify({ publicKey: publicKey }) });
+    }).then(function (challenge) {
+      return provider.signMessage(new TextEncoder().encode(challenge.message), 'utf8').then(function (signed) {
+        var bytes = signed && signed.signature || signed;
+        if (!bytes || typeof bytes.length !== 'number') throw new Error('Wallet returned no signature');
+        return fetchJson('/auth/wallet/verify', {
+          method: 'POST',
+          body: JSON.stringify({ publicKey: publicKey, challenge: challenge.challenge, signature: walletSigBase58(bytes) }),
+        });
+      });
+    });
   }
 
   function loginLabel(data) {
@@ -63,7 +154,7 @@
     var pairCode = root.querySelector('[data-grok-code]');
     var pairSay = root.querySelector('[data-grok-say]');
     var returnTo = new URLSearchParams(location.search).get('return');
-    if (!['/compute', '/compute#use', '/compute#provide', '/compute#night', '/compute#build', '/compute#source', '/compute#sponsor'].includes(returnTo)) returnTo = '';
+    if (!['/compute', '/compute#use', '/compute#ask', '/compute#provide', '/compute#night', '/compute#build', '/compute#source', '/compute#sponsor', '/compute#earn', '/compute#credits', '/compute#pay'].includes(returnTo)) returnTo = '';
     if (returnTo) nextLink.href = returnTo;
     var grokTimer = 0;
 
@@ -138,34 +229,50 @@
       say('Finish in the X window…', '');
     });
 
+    function sayWalletLink(text, href, linkText) {
+      message.textContent = '';
+      message.dataset.kind = '';
+      message.appendChild(document.createTextNode(text + ' '));
+      var a = document.createElement('a');
+      a.href = href;
+      a.textContent = linkText;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.color = 'inherit';
+      message.appendChild(a);
+    }
+
+    function walletFail(error) {
+      switch (walletErrorKind(error)) {
+        case 'cancelled': say('Sign-in cancelled.', ''); break;
+        case 'unavailable': say('Sign-in with Solana isn\u2019t available right now.', 'bad'); break;
+        case 'limited': say('Too many tries. Wait a bit, then try again.', 'bad'); break;
+        case 'expired': say('That sign-in expired. Try again.', 'bad'); break;
+        case 'network': say('Network error \u2014 try again.', 'bad'); break;
+        default: say('Couldn\u2019t sign in. Try again.', 'bad');
+      }
+    }
+
     wallet.addEventListener('click', function () {
       var provider = walletProvider();
-      if (!provider || !provider.connect || !provider.signMessage) {
-        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      if (!provider) {
+        if (isMobileWalletUa()) {
+          say('Opening your wallet\u2026', '');
           location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
-        } else say('Open this page in a Solana wallet.', 'bad');
+        } else {
+          sayWalletLink('No Solana wallet found on this browser.', 'https://phantom.com', 'Get Phantom');
+        }
         return;
       }
       wallet.disabled = true;
-      say('Connect, then sign the login message…', '');
-      var publicKey;
-      provider.connect().then(function (connected) {
-        var key = provider.publicKey || connected && connected.publicKey;
-        if (!key) throw new Error('Wallet returned no public key');
-        publicKey = key.toString();
-        return fetchJson('/auth/wallet/challenge', { method: 'POST', body: JSON.stringify({ publicKey: publicKey }) });
-      }).then(function (challenge) {
-        return provider.signMessage(new TextEncoder().encode(challenge.message), 'utf8').then(function (signed) {
-          var bytes = signed && signed.signature || signed;
-          if (!bytes || typeof bytes.length !== 'number') throw new Error('Wallet returned no signature');
-          return fetchJson('/auth/wallet/verify', {
-            method: 'POST',
-            body: JSON.stringify({ publicKey: publicKey, challenge: challenge.challenge, signature: base58(bytes) }),
-          });
-        });
-      }).then(function () { return status(); }).then(paint).catch(function (error) {
-        say(String(error.message || error).slice(0, 120), 'bad');
-      }).finally(function () { wallet.disabled = false; });
+      say('Check your wallet\u2026', '');
+      var flow = typeof provider.signIn === 'function'
+        ? walletSigninOneClick(provider)
+        : walletLegacyConnectSign(provider);
+      flow.then(function () { return status(); }).then(function (data) {
+        rememberWallet();
+        paint(data);
+      }).catch(walletFail).finally(function () { wallet.disabled = false; });
     });
 
     logout.addEventListener('click', function () {
