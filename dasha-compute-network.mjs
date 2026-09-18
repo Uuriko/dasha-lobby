@@ -111,7 +111,9 @@ import {
   countConversationTurns,
   honestLoopFields,
 } from './dasha-compute-receipt-honesty.mjs';
+import { canAdvertiseModel, filterAdvertisableModels } from './dasha-compute-model-license.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
+export { canAdvertiseModel, filterAdvertisableModels };
 
 export { HOSTED_ASK_PRICE_CENTS };
 
@@ -159,11 +161,12 @@ export function growAllowedModels(prior, polled = [], catalog = MODELS) {
   const next = new Set();
   for (const model of prior || []) {
     const id = String(model);
-    if (catalog.has(id)) next.add(id);
+    // License gate: catalog membership is not enough — held/unknown stay out.
+    if (catalog.has(id) && canAdvertiseModel(id)) next.add(id);
   }
   for (const model of polled || []) {
     const id = String(model);
-    if (catalog.has(id)) next.add(id);
+    if (catalog.has(id) && canAdvertiseModel(id)) next.add(id);
   }
   return [...next];
 }
@@ -979,7 +982,7 @@ export function v1HostedFloorListing() {
 
 /** Soft-guest /v1/models data: Hosted floor first, then advertised Community ids. Never Astra/Flash SKUs. */
 export function v1ModelsListData(providers = [], now = Date.now()) {
-  const advertised = [...new Set((Array.isArray(providers) ? providers : []).flatMap((provider) => provider.models || []))];
+  const advertised = filterAdvertisableModels((Array.isArray(providers) ? providers : []).flatMap((provider) => provider.models || []));
   const community = advertised
     .filter((id) => id !== HOSTED_FLOOR_MODEL_ID)
     .map((id) => v1ModelListing(id, providers, now));
@@ -1352,7 +1355,7 @@ export class ComputeNetwork {
     let messages = chatMessages(input);
     if (!messages) return { error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total', status: 400 };
     if (input.tools != null || input.tool_choice != null || input.functions != null || input.function_call != null) return { error: 'tools and function calling are not supported on this gateway yet; strip tools/tool_choice and send plain messages', status: 400 };
-    if (!MODELS.has(model)) return { error: 'unsupported model', status: 400 };
+    if (!MODELS.has(model) || !canAdvertiseModel(model)) return { error: 'unsupported model', status: 400 };
     messages = withModelIdentityHint(messages, model);
     messages = withNoThinkHint(messages, model);
     if (!takeRate(this.rates, owner, 5)) return { error: 'community limit reached; try again shortly', status: 429 };
@@ -1483,7 +1486,7 @@ export class ComputeNetwork {
       if (existing.length >= 20) return json({ error: 'Night Shift task limit reached' }, 409, allowedOrigin, true);
       const input = await body(request, 12 * 1024), title = String(input.title || '').trim().slice(0, 80), prompt = String(input.prompt || '').trim(), model = String(input.model || ''), template = String(input.template || 'custom'), repeat = String(input.repeat || 'none'), requestedAt = Number(input.run_at), nextRunAt = Number.isFinite(requestedAt) ? Math.max(now, requestedAt) : now;
       if (!title || !prompt || prompt.length > 6000) return json({ error: 'title and prompt are required; prompt maximum is 6000 characters' }, 400, allowedOrigin, true);
-      if (!MODELS.has(model) || !NIGHT_TEMPLATES[template] || !['none', ...Object.keys(NIGHT_INTERVALS)].includes(repeat)) return json({ error: 'unsupported model, template, or repeat schedule' }, 400, allowedOrigin, true);
+      if (!MODELS.has(model) || !canAdvertiseModel(model) || !NIGHT_TEMPLATES[template] || !['none', ...Object.keys(NIGHT_INTERVALS)].includes(repeat)) return json({ error: 'unsupported model, template, or repeat schedule' }, 400, allowedOrigin, true);
       await this.prune(now);
       // Schedule even with 0 Macs — runNightTasks fires when a matching provider comes online.
       const task = { id: `night_${randomUrlToken(9)}`, owner, title, prompt, model, template, repeat, approvalRequired: input.approval_required === true, stepIndex: 0, steps: NIGHT_STEP_COUNTS[template], status: 'scheduled', nextRunAt, lastRunAt: null, lastCompletedAt: null, lastJobId: null, artifacts: [], createdAt: now };
@@ -1877,7 +1880,7 @@ export class ComputeNetwork {
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()];
-      const models = [...new Set(providers.flatMap(provider => provider.models || []))];
+      const models = filterAdvertisableModels(providers.flatMap(provider => provider.models || []));
       const capacity = models.map(model => {
         const serving = providers.filter(provider => provider.models?.includes(model)), measured = serving.map(provider => provider.hardware?.benchmarks?.find(row => row.model === model)?.tokens_per_second).filter(Number.isFinite);
         const tps = measured.length ? measured.reduce((sum, value) => sum + value, 0) / measured.length : 0;
@@ -1939,7 +1942,7 @@ export class ComputeNetwork {
       const okey = `compute:org-enroll:${code}`, link = await this.state.storage.get(okey);
       if (!link || link.revoked || Number(link.expiresAt) <= now) return json({ error: 'invalid or expired enroll code' }, 404, allowedOrigin || '*', credentials);
       if (Number(link.used) >= Number(link.quota)) return json({ error: 'enroll code quota exhausted' }, 409, allowedOrigin || '*', credentials);
-      const models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model)))];
+      const models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model) && canAdvertiseModel(model)))];
       if (!models.length) return json({ error: 'choose at least one supported model' }, 400, allowedOrigin || '*', credentials);
       const name = String(input.name || '').trim().slice(0, 64) || 'My Mac';
       const prior = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].find(p => p.createdVia === code && p.name === name);
@@ -1957,7 +1960,7 @@ export class ComputeNetwork {
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!takeRate(this.rates, `register:${owner}`, 3)) return json({ error: 'provider registration rate limited' }, 429, allowedOrigin, true);
-      const input = await body(request), models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model)))];
+      const input = await body(request), models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model) && canAdvertiseModel(model)))];
       if (!models.length) return json({ error: 'choose at least one supported model' }, 400, allowedOrigin, true);
       const providerId = `mac_${randomUrlToken(9)}`, token = `dcp_${randomUrlToken(24)}`, name = String(input.name || '').trim().slice(0, 64) || 'My Mac';
       await this.state.storage.put(`compute:provider:${providerId}`, { id: providerId, owner, name, allowedModels: models, models: [], tokenHash: await sha256(token), createdAt: now, lastSeenAt: 0 });
