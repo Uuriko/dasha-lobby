@@ -4791,7 +4791,9 @@ const POTTER_ROOM_308_PATHS = new Set([
  * Compute into Room. Exact /room /room/llms.txt stay 200. Card leftover
  * /room/agent.json and probe leftover /room/health are dest special-cases
  * (not this llms.txt set). Probe leftover /room/healthz folds to the live
- * /room/health face (same-host 308, not this set). */
+ * /room/health face (same-host 308, not this set). Kits leftover
+ * /room/kits.json + /api/kits + /api/kits.json fold via POTTER_KITS_308_PATHS
+ * → /room/kits (not this set; not a Room proxy invent). */
 const POTTER_ROOM_AGENT_DISCOVERY_308_PATHS = new Set([
   '/room/skill.md', '/room/skill.md/',
   '/room/agents.md', '/room/agents.md/',
@@ -5283,7 +5285,9 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  Fold to /contribute /crew /bag. Exact /humans.txt is a 200 text/plain
  *  face (not a Motley leftover into /contribute HTML). Slash /humans.txt/
  *  + nested /compute/api/humans + /compute/humans + /compute/humans.txt
- *  fold to that face. Muse brand door /muse
+ *  + /compute/humans.json fold to that face. Kits leftovers
+ *  /room/kits.json /api/kits /api/kits.json live in POTTER_KITS_308_PATHS.
+ *  Muse brand door /muse
  *  (+slash / Title-case) 308 → / (home is Muse Webflow). Do not fold /muse
  *  → /start — /start is reserved for Muse #225 face. Stay out of /providers
  *  /developers /network /start (Muse #225 HTML). No Muse product HTML. */
@@ -5374,14 +5378,29 @@ const POTTER_COMPUTE_API_HUMANS_308_PATHS = new Set([
   '/compute/api/humans', '/compute/api/humans/',
   '/compute/api/humans.json', '/compute/api/humans.json/',
 ]);
-/** Nested Motley leftover /compute/humans + /compute/humans.txt (+slash /
- *  Title-case via toLowerCase) html-404 while /humans.txt is the 200
- *  text/plain face (#251). Fold to that face, NOT /contribute HTML.
- *  Nested /compute/api/humans stays its Set. Do not invent apex /humans.
- *  Lobby same-host, not www cross-host. */
+/** Nested Motley leftover /compute/humans + /compute/humans.txt +
+ *  /compute/humans.json (+slash / Title-case via toLowerCase) html-404
+ *  while /humans.txt is the 200 text/plain face (#251). Fold to that
+ *  face, NOT /contribute HTML (live Demigod /humans.txt oddly 308s
+ *  there — keep dest on the tip TEAM face). Nested /compute/api/humans
+ *  stays its Set. Live /compute/api/humans.json already 308 → /humans.txt.
+ *  Do not invent apex /humans. Lobby same-host, not www cross-host. */
 const POTTER_COMPUTE_HUMANS_308_PATHS = new Set([
   '/compute/humans', '/compute/humans/',
   '/compute/humans.txt', '/compute/humans.txt/',
+  '/compute/humans.json', '/compute/humans.json/',
+]);
+/** Motley leftover kits.json / api kits (2026-09-18): live GET/HEAD
+ *  /room/kits.json /api/kits /api/kits.json (+slash / Title-case via
+ *  toLowerCase) html-404 while /room/kits is the 200 text/plain catalog.
+ *  Fold to that face. Exact /room/kits + kits.txt family stay 200 Room
+ *  proxy (not this leftover). Do not invent a Room proxy for kits.json.
+ *  Apex /kits stays compute-tab leftover → /compute. Do not invent
+ *  /compute/digest HTML, doctor.md, or PROVIDE.md. Lobby same-host. */
+const POTTER_KITS_308_PATHS = new Set([
+  '/room/kits.json', '/room/kits.json/',
+  '/api/kits', '/api/kits/',
+  '/api/kits.json', '/api/kits.json/',
 ]);
 /** Leftover apex /openapi.yaml (+slash / Title-case) → /compute/openapi.json.
  *  Exact /compute/openapi.yaml stays the 200 YAML spec. */
@@ -5590,6 +5609,13 @@ export function potterHome308Dest(path) {
   // /room/readyz. Do not fold Compute /compute/healthz here.
   if (p === "/room/healthz" || p === "/room/healthz/") {
     return "https://www.getdasha.com/room/health";
+  }
+  // Leftover /room/kits.json + /api/kits + /api/kits.json (2026-09-18):
+  // live GET/HEAD html-404 while /room/kits is the 200 catalog. Same-host
+  // 308 like other /room doors. Title-case + trailing slash via toLowerCase.
+  // Not the llms.txt set. Not a Room proxy invent. Apex /kits stays tab.
+  if (POTTER_KITS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/room/kits";
   }
   if (p === "/socials" || p === "/socials/" || p === "/social" || p === "/social/") {
     return "https://www.getdasha.com/lobby";
@@ -5942,6 +5968,7 @@ export function potterHome308Response(request, url) {
         (
           POTTER_ROOM_308_PATHS.has(src) ||
           POTTER_ROOM_AGENT_DISCOVERY_308_PATHS.has(src) ||
+          POTTER_KITS_308_PATHS.has(src) ||
           src === '/room/agent.json' ||
           src === '/room/agent.json/' ||
           src === '/room/health' ||

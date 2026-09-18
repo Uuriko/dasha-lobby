@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Motley tip-source canaries — /humans.txt TEAM face, /proof +
- * /compute/digest 308 synonyms, /compute/humans 308.
+ * /compute/digest 308 synonyms, /compute/humans + /compute/humans.json 308.
  *
  * Prefer worker/module on tip, not live. Live Motley leftover 308s
  * (#251 /humans.txt, #252 /proof+/compute/digest, #261 /compute/humans)
@@ -73,7 +73,7 @@ const proofSet = workerSrc.match(/const POTTER_PROOF_308_PATHS = new Set\(\[[\s\
 const digestSet = workerSrc.match(/const POTTER_COMPUTE_DIGEST_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const slashHumansSet = workerSrc.match(/const POTTER_HUMANS_TXT_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 
-for (const path of ['/compute/humans', '/compute/humans/', '/compute/humans.txt', '/compute/humans.txt/']) {
+for (const path of ['/compute/humans', '/compute/humans/', '/compute/humans.txt', '/compute/humans.txt/', '/compute/humans.json', '/compute/humans.json/']) {
   assert.ok(listed(humansSet, path), `compute humans set lists ${path}`);
 }
 for (const path of ['/proof', '/proof/']) {
@@ -100,6 +100,8 @@ const COMPUTE_HUMANS_FOLDS = [
   '/Compute/Humans',
   '/compute/humans.txt',
   '/COMPUTE/HUMANS.TXT',
+  '/compute/humans.json',
+  '/COMPUTE/HUMANS.JSON',
 ];
 const HUMANS_FOLDS = [...HUMANS_SLASH_FOLDS, ...COMPUTE_HUMANS_FOLDS];
 const PROOF_FOLDS = ['/proof', '/proof/', '/Proof', '/PROOF', '/Proof/'];
@@ -131,7 +133,7 @@ assert.equal(potterHome308Dest('/network'), null, 'Muse /network stays face');
 function expectLoc(host, dest, src) {
   if (host !== 'lobby.getdasha.com') return dest;
   const p = String(src || '').toLowerCase();
-  if (dest === HUMANS && ['/compute/humans', '/compute/humans/', '/compute/humans.txt', '/compute/humans.txt/'].includes(p)) {
+  if (dest === HUMANS && ['/compute/humans', '/compute/humans/', '/compute/humans.txt', '/compute/humans.txt/', '/compute/humans.json', '/compute/humans.json/'].includes(p)) {
     return LOBBY_HUMANS;
   }
   if (dest === PROOF) return LOBBY_PROOF;

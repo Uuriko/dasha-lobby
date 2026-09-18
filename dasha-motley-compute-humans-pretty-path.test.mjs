@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * Motley leftover nested machine doors (2026-09-18, post-#256/#257):
- * live GET/HEAD /compute/humans /compute/humans.txt (+slash / Title-case
- * via toLowerCase) html-404 while /humans.txt is the 200 text/plain face
- * (#251). Fold to that face, NOT /contribute HTML. Lobby same-host, not
- * www cross-host. Nested /compute/api/humans stays its Set. Live
- * /compute/api/humans.json already 308 → /humans.txt (keep-live).
- * Exact /humans.txt dest is null. Do not invent apex /humans.
+ * live GET/HEAD /compute/humans /compute/humans.txt /compute/humans.json
+ * (+slash / Title-case via toLowerCase) html-404 while /humans.txt is
+ * the 200 text/plain face (#251). Fold to that face, NOT /contribute
+ * HTML. Lobby same-host, not www cross-host. Nested /compute/api/humans
+ * stays its Set. Live /compute/api/humans.json already 308 → /humans.txt
+ * (keep-live). Exact /humans.txt dest is null. Do not invent apex /humans.
  * Disk only. No Designer. Never plugin.jup.ag. No Muse HTML. No Ask
  * UX. No Quill. No #216 proof body. No Room. No people-data. No Phase 0.
  */
@@ -38,7 +38,7 @@ const slashHumansSet = workerSrc.match(/const POTTER_HUMANS_TXT_308_PATHS = new 
 function listed(src, path) {
   return new RegExp(`['"]${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`).test(src);
 }
-for (const path of ['/compute/humans', '/compute/humans/', '/compute/humans.txt', '/compute/humans.txt/']) {
+for (const path of ['/compute/humans', '/compute/humans/', '/compute/humans.txt', '/compute/humans.txt/', '/compute/humans.json', '/compute/humans.json/']) {
   assert.ok(listed(humansSet, path), `compute humans set lists ${path}`);
 }
 for (const path of ['/compute/api/humans', '/compute/api/humans/', '/compute/api/humans.json', '/compute/api/humans.json/']) {
@@ -52,12 +52,14 @@ assert.doesNotMatch(humansSet, /['"]\/compute\/api\/humans\.json['"]/, '/compute
 assert.doesNotMatch(humansSet, /['"]\/contribute['"]/, 'do not restack /contribute on leftover set');
 assert.doesNotMatch(apiHumansSet, /['"]\/compute\/humans['"]/, '/compute/humans leftover lives in its Set');
 assert.doesNotMatch(apiHumansSet, /['"]\/compute\/humans\.txt['"]/, '/compute/humans.txt leftover lives in its Set');
+assert.doesNotMatch(apiHumansSet, /['"]\/compute\/humans\.json['"]/, '/compute/humans.json leftover lives in its Set');
 assert.doesNotMatch(slashHumansSet, /['"]\/compute\/humans['"]/, 'slash set stays /humans.txt/ only');
 assert.doesNotMatch(humansSet, /dasha-muse-product/, 'compute humans leftover set does not import Muse HTML');
 
 const discoveryMap = workerSrc.match(/const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map\(\[[\s\S]*?\]\);/)[0];
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/humans['"]/, '/compute/humans leftover lives in its Set, not Motley map');
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/humans\.txt['"]/, '/compute/humans.txt leftover lives in its Set, not Motley map');
+assert.doesNotMatch(discoveryMap, /['"]\/compute\/humans\.json['"]/, '/compute/humans.json leftover lives in its Set, not Motley map');
 assert.doesNotMatch(discoveryMap, /['"]\/humans\.txt['"]/, 'exact /humans.txt is not a Motley leftover into /contribute');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/v1['"]/, 'do not invent /api/v1 leftover');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/models['"]/, 'do not invent /api/models leftover');
@@ -80,6 +82,11 @@ const HUMANS_FOLDS = [
   '/Compute/humans.txt',
   '/COMPUTE/HUMANS.TXT',
   '/Compute/Humans.txt/',
+  '/compute/humans.json',
+  '/compute/humans.json/',
+  '/Compute/humans.json',
+  '/COMPUTE/HUMANS.JSON',
+  '/Compute/Humans.json/',
 ];
 
 const STAY_200 = [
@@ -181,8 +188,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 }
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
-for (const path of ['/compute/humans', '/compute/humans.txt', '/compute/api/humans.json']) {
+for (const path of ['/compute/humans', '/compute/humans.txt', '/compute/humans.json', '/compute/api/humans.json']) {
   assert.ok(!sitemapXml.includes(`${WWW}${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-motley-compute-humans-pretty-path: PASS (/compute/humans + /compute/humans.txt 308 /humans.txt same-host; Title-case+slash; www+lobby GET+HEAD; dest 200 text/plain TEAM; not /contribute; keep-live /compute/api/humans.json; stay-out /humans|/api/v1|/api/models|/api/providers; no Muse restack; no people-data; no plugin.jup.ag)');
+console.log('dasha-motley-compute-humans-pretty-path: PASS (/compute/humans + /compute/humans.txt + /compute/humans.json 308 /humans.txt same-host; Title-case+slash; www+lobby GET+HEAD; dest 200 text/plain TEAM; not /contribute; keep-live /compute/api/humans.json; stay-out /humans|/api/v1|/api/models|/api/providers; no Muse restack; no people-data; no plugin.jup.ag)');
