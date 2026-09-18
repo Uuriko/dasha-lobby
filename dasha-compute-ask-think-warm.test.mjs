@@ -17,7 +17,7 @@ const agentSrc = readFileSync(join(root, 'dasha-compute-open-alpha/provider/agen
 assert.match(agentSrc, /def score_warm_ok\(/, 'kit scores WARM_OK');
 assert.match(agentSrc, /def final_assistant_content\(/, 'kit reads final assistant content');
 assert.match(agentSrc, /def think_opted_in\(/, 'kit keeps explicit think opt-in');
-assert.match(agentSrc, /payload\["think"\] = not think_disabled\(local, job\)/, 'payload always sets think');
+assert.match(agentSrc, /"think": not think_disabled\(local, job\)/, 'payload always sets think');
 assert.match(agentSrc, /DASHA_OLLAMA_THINK/, 'env opt-in for intentional think');
 assert.match(agentSrc, /Community Ask \/ Ollama stream defaults think off/, 'default off for Ask');
 assert.doesNotMatch(agentSrc, /'WARM_OK' in reply/, 'never substring-match WARM_OK');
