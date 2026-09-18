@@ -5378,9 +5378,18 @@ const POTTER_COMPUTE_API_SITEMAP_308_PATHS = new Set([
 ]);
 /** Nested Motley leftover /compute/api/llms (+slash / Title-case via
  *  toLowerCase) while /compute/llms.txt is already 200. Must win over
- *  the /compute/api/ casefold catch-all. Do not invent /api/llms. */
+ *  the /compute/api/ casefold catch-all. Do not invent /api/llms.
+ *  /compute/api/llms.json sibling lives in POTTER_COMPUTE_API_LLMS_JSON_308_PATHS. */
 const POTTER_COMPUTE_API_LLMS_308_PATHS = new Set([
   '/compute/api/llms', '/compute/api/llms/',
+]);
+/** Nested Motley leftover /compute/api/llms.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/llms.txt is already 200 (compute
+ *  packet; /llms.txt is the site index). Must win over the /compute/api/
+ *  casefold catch-all. Bare /compute/api/llms stays its Set. Do not invent
+ *  apex /llms.json or /api/llms.json. Lobby same-host. */
+const POTTER_COMPUTE_API_LLMS_JSON_308_PATHS = new Set([
+  '/compute/api/llms.json', '/compute/api/llms.json/',
 ]);
 /** Nested Motley leftover /compute/api/agents (+slash / Title-case via
  *  toLowerCase) while /compute/agents.txt is already 200. Not the
@@ -5427,9 +5436,19 @@ const POTTER_COMPUTE_API_OPENAPI_308_PATHS = new Set([
 /** Nested Motley leftover /compute/api/contribute (+slash / Title-case via
  *  toLowerCase) while /contribute is already 200. Apex /api/contribute
  *  stays Motley map (#235). Must win over the /compute/api/ casefold
- *  catch-all. /contribute.md lives on the Motley map. */
+ *  catch-all. /contribute.md lives on the Motley map.
+ *  /compute/api/contribute.json sibling lives in
+ *  POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS. */
 const POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS = new Set([
   '/compute/api/contribute', '/compute/api/contribute/',
+]);
+/** Nested Motley leftover /compute/api/contribute.json (+slash / Title-case
+ *  via toLowerCase) JSON-404 while /contribute is already 200 HTML. Not
+ *  /humans.txt (200 text/plain face). Apex /api/contribute stays Motley
+ *  map (#235). Do not invent apex /contribute.json. Must win over the
+ *  /compute/api/ casefold catch-all. Lobby same-host, not www cross-host. */
+const POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS = new Set([
+  '/compute/api/contribute.json', '/compute/api/contribute.json/',
 ]);
 /** Nested Motley leftover /compute/api/proof (+slash / Title-case via
  *  toLowerCase) while /compute/proof.md is already 200. Not the
@@ -5756,7 +5775,7 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_SITEMAP_308_PATHS.has(p)) {
     return "https://www.getdasha.com/sitemap.xml";
   }
-  if (POTTER_COMPUTE_API_LLMS_308_PATHS.has(p)) {
+  if (POTTER_COMPUTE_API_LLMS_308_PATHS.has(p) || POTTER_COMPUTE_API_LLMS_JSON_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/llms.txt";
   }
   if (POTTER_COMPUTE_API_AGENTS_308_PATHS.has(p)) {
@@ -5777,7 +5796,7 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_OPENAPI_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/openapi.json";
   }
-  if (POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.has(p)) {
+  if (POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.has(p) || POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(p)) {
     return "https://www.getdasha.com/contribute";
   }
   if (POTTER_COMPUTE_API_PROOF_308_PATHS.has(p)) {
@@ -5908,6 +5927,8 @@ export function potterHome308Response(request, url) {
           (u.pathname === '/compute/proof.json' && POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src)) ||
           (u.pathname === '/compute/proof' && POTTER_PROOF_308_PATHS.has(src)) ||
           (u.pathname === '/digest' && POTTER_COMPUTE_DIGEST_308_PATHS.has(src)) ||
+          (u.pathname === '/compute/llms.txt' && POTTER_COMPUTE_API_LLMS_JSON_308_PATHS.has(src)) ||
+          (u.pathname === '/contribute' && POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(src)) ||
           (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )
       ) {
