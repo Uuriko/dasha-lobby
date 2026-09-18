@@ -48,6 +48,12 @@ dasha-compute uninstall
 ```
 
 
+## Bonsai residual control (optional)
+
+Same Community pack; optional runtime residual control. Map a local OpenAI-compatible server with `openai:<base>:<model>`. `DASHA_RESIDUAL_ALPHA` default **0** = stock behavior (bit-identical pack, no intervention). Receipts may log `residual_alpha` when the backend is Bonsai. 129 residual writers; Apple Silicon local. Do not enable a non-zero α on public Ask.
+
+`ternary-bonsai-2-27b=openai:http://127.0.0.1:8080/v1:Ternary-Bonsai-2-27B-PQ2_0`
+
 ## Prefer MLX (Apple Silicon)
 
 Prefer MLX when you can. On Mac providers, recommend **Ollama ≥0.33.1** (soft warn if older — doctor never fails solely for an older build). That release adds MLX structured output and a Metal timeout fix when models load from slow/external storage — **keep models on internal SSD**. Latest Ollama can run `*-mlx` models on Apple Silicon; LM Studio MLX server or `mlx_lm` are fine alternatives for speed. The Dasha provider still talks to Ollama over `:11434` — do not invent kit env flags for MLX. `dasha-compute doctor` prints a soft mlx hint plus an engine/MLX badge when a ≥0.33.1 or `*-mlx` build is detected, and never fails solely for missing MLX. Keep sub-24GB chat models (4B/8B/12B). Fast option: `qwen3:4b` (map `qwen3-4b=qwen3:4b`) alongside 8b/12b. Doctor soft-hints mapped ≥27B tags and cold `/api/ps` keep-alive — never fails solely for those. Set **OLLAMA_KEEP_ALIVE=-1** on the **Ollama launch agent / service** (a shell `export` alone is not enough for the macOS app) so chat stays hot on `:11434`. Heartbeat advertising can succeed while a mid-Ask **`URLError`** means localhost Ollama was refused/reset — keep Ollama up and warm; soft doctor lines do not block advertise alone. Doctor soft-warns battery / thermal / SIP friction when detectable — never fails solely for those; never claims enclave or hardware attestation.

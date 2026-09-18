@@ -110,6 +110,7 @@ import {
   attachReceiptHonesty,
   countConversationTurns,
   honestLoopFields,
+  residualControlFields,
 } from './dasha-compute-receipt-honesty.mjs';
 import { canAdvertiseModel, filterAdvertisableModels } from './dasha-compute-model-license.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
@@ -2068,7 +2069,8 @@ export class ComputeNetwork {
         }
       }
       if (error) await this.refundJobDebit(job, now, error);
-      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, usage_gateway: usageGateway, ...(usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), attempts: closeAttempt(job.attempts, error ? 'failed' : 'complete'), messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
+      const residual = residualControlFields(input, job.model);
+      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, usage_gateway: usageGateway, ...(usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), attempts: closeAttempt(job.attempts, error ? 'failed' : 'complete'), messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch, ...residual });
       await this.finishNight(job, error ? 'failed' : 'complete', error ? null : answer, error || null, now);
       await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
       return json({ accepted: true }, 202);
@@ -2119,7 +2121,8 @@ export class ComputeNetwork {
       const failed = Boolean(streamError);
       const finished = failed || Boolean(input.done);
       if (failed) await this.refundJobDebit(job, now, streamError);
-      await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, ...(usageGateway ? { usage_gateway: usageGateway } : {}), ...(finishedEarly && usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), ...(finishedEarly ? { attempts: closeAttempt(job.attempts, failed ? 'failed' : 'complete') } : {}), messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
+      const residual = finished ? residualControlFields(input, job.model) : {};
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, ...(usageGateway ? { usage_gateway: usageGateway } : {}), ...(finishedEarly && usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), ...(finishedEarly ? { attempts: closeAttempt(job.attempts, failed ? 'failed' : 'complete') } : {}), messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch, ...residual });
       if (finished) {
         await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : joinedStripped, streamError || null, now);
         await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
@@ -3310,12 +3313,13 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 
 /** Signed kit installer manifest (mirrors COMPUTE_KIT_JSON in dasha-lobby-worker.mjs;
  *  parity asserted in dasha-openapi-contract.test.mjs). The worker injects these values
- *  into the kit-sig DO call so callers can never get an attacker-chosen statement signed. */
+ *  into the kit-sig DO call so callers can never get an attacker-chosen statement signed.
+ *  Pins the published ASSETS tar bytes (4f48b022…, package.json 0.3.0) — not tip 0.3.2. */
 const COMPUTE_KIT_MANIFEST = {
-  version: '0.3.2',
-  min_version: '0.3.1',
+  version: '0.3.0',
+  min_version: '0.3.0',
   url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
-  sha256: '725e78e6bae3a4d785a78396284f27e994fff1b82fbdb50c5d546b79a1ab159c',
+  sha256: '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf',
 };
 
 export async function computeApi(request, env, allowedOrigin) {
