@@ -477,8 +477,7 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(afterAsk.change, true);
   assert.equal(afterAsk.engine, "hosted");
   assert.equal(afterAsk.intent, "ask");
-  assert.equal(afterAsk.progressHidden, false, "progress on ask");
-  assert.ok(afterAsk.progressDots >= 2, "ask/answer progress dots");
+  assert.equal(afterAsk.progressHidden, true, "progress hidden on ask chat");
   // Usertest: ocmHosts must NOT leak into quiet Ask nav as "Marketplace · 2"
   const quietNav = await page.evaluate(() => {
     ocmHosts = 2;

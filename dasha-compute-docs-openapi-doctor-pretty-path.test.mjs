@@ -69,6 +69,7 @@ assert.match(workerSrc, /Live GET \/compute\/provide\/enroll-code \/compute\/pro
 assert.match(workerSrc, /Live GET \/compute\/register \/compute\/bootstrap \/compute\/token/, 'bare provide-verb leftover comment');
 assert.match(workerSrc, /Live GET \/compute\/install\.sh \/compute\/agent\.py \/compute\/readme/, 'kit leftover comment');
 assert.match(workerSrc, /Live GET \/compute\/doctor\.txt \/compute\/self-test \/compute\/plugin/, 'soft-doctor invent leftover comment');
+assert.match(workerSrc, /leftover \/invent/, 'apex invent leftover comment');
 assert.match(workerSrc, /Live GET \/compute\/waitlist \(\+slash \/ Title-case\)/, 'waitlist leftover comment');
 assert.match(
   workerSrc,
@@ -146,6 +147,27 @@ const PROVIDE_JOIN = [
   '/compute/plug-in/',
   '/compute/waitlist',
   '/compute/waitlist/',
+  '/invent',
+  '/invent/',
+  '/doctor.txt',
+  '/doctor.txt/',
+  '/self-test',
+  '/self-test/',
+  '/plugin',
+  '/plugin/',
+  '/plug-in',
+  '/plug-in/',
+  '/Invent',
+  '/INVENT',
+  '/Invent/',
+  '/Doctor.txt',
+  '/DOCTOR.TXT',
+  '/Self-Test',
+  '/SELF-TEST',
+  '/Plugin',
+  '/PLUGIN',
+  '/Plug-In',
+  '/PLUG-IN',
   '/Compute/doctor.txt',
   '/COMPUTE/DOCTOR.TXT',
   '/Compute/Doctor.txt',
@@ -363,8 +385,6 @@ const PROVIDE_JOIN = [
 ];
 
 const GATEWAY_UNCHANGED = [
-  ['/openapi.json', API],
-  ['/openapi.json/', API],
   ['/openapi', API],
   ['/documentation', API],
   ['/sdk-docs', API],
@@ -387,7 +407,6 @@ const TAB_UNCHANGED = [
   ['/compute/key', COMPUTE],
   ['/compute/use', COMPUTE],
   ['/compute/night', COMPUTE],
-  ['/start', COMPUTE],
   ['/onboard', COMPUTE],
   ['/quickstart', COMPUTE],
 ];
@@ -410,6 +429,10 @@ assert.equal(potterHome308Dest('/compute/docs'), null, '/compute/docs is a real 
 assert.equal(potterHome308Dest('/compute/docs/'), null, '/compute/docs/ is a real page now');
 assert.equal(potterHome308Dest('/compute/openapi.json'), null, '/compute/openapi.json is a real spec now');
 assert.equal(potterHome308Dest('/compute/openapi.yaml'), null, '/compute/openapi.yaml is a real spec now');
+assert.equal(potterHome308Dest('/openapi.json'), `${WWW}/compute/openapi.json`, '/openapi.json leftover → real spec');
+assert.equal(potterHome308Dest('/openapi.json/'), `${WWW}/compute/openapi.json`, '/openapi.json/ leftover → real spec');
+assert.equal(potterHome308Dest('/api/openapi.json'), `${WWW}/compute/openapi.json`, '/api/openapi.json leftover → real spec');
+assert.equal(potterHome308Dest('/openapi'), API, '/openapi stays gateway leftover');
 assert.equal(potterHome308Dest('/compute'), null, '/compute stays 200');
 assert.notEqual(potterHome308Dest('/compute/openapi.yaml'), SKILL, 'do not invent /compute/openapi.yaml');
 assert.notEqual(potterHome308Dest('/compute/swagger.yaml'), SKILL, 'do not invent swagger.yaml');
@@ -505,6 +528,11 @@ assert.ok(!sitemapXml.includes(`${WWW}/compute/self-test</loc>`), 'sitemap omits
 assert.ok(!sitemapXml.includes(`${WWW}/compute/plugin</loc>`), 'sitemap omits leftover /compute/plugin');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/plug-in</loc>`), 'sitemap omits leftover /compute/plug-in');
 assert.ok(!sitemapXml.includes(`${WWW}/compute/waitlist</loc>`), 'sitemap omits leftover /compute/waitlist');
+assert.ok(!sitemapXml.includes(`${WWW}/invent</loc>`), 'sitemap omits leftover /invent');
+assert.ok(!sitemapXml.includes(`${WWW}/doctor.txt</loc>`), 'sitemap omits leftover /doctor.txt');
+assert.ok(!sitemapXml.includes(`${WWW}/self-test</loc>`), 'sitemap omits leftover /self-test');
+assert.ok(!sitemapXml.includes(`${WWW}/plugin</loc>`), 'sitemap omits leftover /plugin');
+assert.ok(!sitemapXml.includes(`${WWW}/plug-in</loc>`), 'sitemap omits leftover /plug-in');
 assert.ok(!sitemapXml.includes(`${WWW}/provide</loc>`), 'sitemap omits leftover /provide');
 assert.ok(!sitemapXml.includes(`${WWW}/enroll</loc>`), 'sitemap omits leftover /enroll');
 assert.ok(!sitemapXml.includes(`${WWW}/setup</loc>`), 'sitemap omits leftover /setup');

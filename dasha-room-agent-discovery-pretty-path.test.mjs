@@ -65,6 +65,7 @@ assert.doesNotMatch(discoverySet, /['"]\/join['"]/, 'do not invent /join');
 assert.doesNotMatch(discoverySet, /['"]\/room\/join['"]/, 'do not invent /room/join');
 assert.doesNotMatch(discoverySet, /['"]\/room\/agent\.json['"]/, 'card leftover is dest special-case, not llms set');
 assert.doesNotMatch(discoverySet, /['"]\/room\/health['"]/, 'probe leftover is dest special-case, not llms set');
+assert.doesNotMatch(discoverySet, /['"]\/room\/healthz['"]/, 'healthz leftover is dest special-case, not llms set');
 assert.doesNotMatch(discoverySet, /['"]\/compute\/room/, 'do not fold Compute into Room');
 assert.doesNotMatch(proxySrc, /\/room\/skill\.md/, 'do not invent Room skill proxy');
 assert.doesNotMatch(proxySrc, /\/room\/agents\.md/, 'do not invent Room agents.md proxy');

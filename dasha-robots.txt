@@ -12,6 +12,10 @@ Allow: /listings.json
 Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /ai.txt
+Allow: /agents.json
+Allow: /.well-known/mcp.json
+Allow: /.well-known/agent.json
+Allow: /compute/skill.md
 
 Sitemap: https://www.getdasha.com/sitemap.xml
 Sitemap: https://lobby.getdasha.com/sitemap.xml

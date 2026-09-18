@@ -102,7 +102,7 @@ export const AGENTS_JSON = {
   site: {
     name: 'Dasha',
     url: 'https://www.getdasha.com/',
-    description: `OpenAI-compat base_url ${COMPUTE_AGENTS_BASE} (dsk_/dgk_). OCM base_url ${OCM_API_BASE} (ocm_live_). Never swap keys. Guest mint POST /compute/api/guest-keys.`,
+    description: `OpenAI-compat base_url ${COMPUTE_AGENTS_BASE} (dsk_/dgk_). OCM base_url ${OCM_API_BASE} (ocm_live_). Never swap keys. Guest mint POST /compute/api/guest-keys. Key · cap · receipt: /caps · /compute/proof.md · /keys.json.`,
   },
   skills: [
     { url: COMPUTE_SKILL_URL, description: 'First call on Dasha Compute.' },
@@ -133,6 +133,9 @@ export const DASHA_ASSOCIATED_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpu
 export const DASHA_BUY_URL = 'https://www.getdasha.com/how-to-buy';
 export const DASHA_JUP_TOKEN_URL = `https://jup.ag/tokens/${DASHA_ASSOCIATED_MINT}`;
 
+/** Citation-gap: Dasha Compute ≠ Dasha.AI voice. Shared by skill.md + /compute/llms.txt. */
+export const COMPUTE_NOT_DASHA_AI_TXT = 'Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.';
+
 /** Build on Dasha — mint + run factory. Shared by skill.md + /compute/llms.txt. UI is yours. */
 export const COMPUTE_BUILD_ON_DASHA_TXT = `## Build on Dasha
 
@@ -152,6 +155,8 @@ description: First call on Dasha Compute. OpenAI-compatible v1 chat/completions 
 ---
 
 # Dasha Compute
+
+${COMPUTE_NOT_DASHA_AI_TXT}
 
 OpenAI-compatible inference. A run factory with a public signed receipt chain, not an account ledger.
 
@@ -190,9 +195,12 @@ ${COMPUTE_PROVIDE_SPEED_TXT}
 packet ${COMPUTE_LLMS_URL}
 agent.json ${COMPUTE_AGENT_JSON_URL}
 MCP: ${COMPUTE_MCP_JSON_URL}
+key · cap · receipt: /caps · /compute/proof.md · /keys.json
 `;
 
 export const COMPUTE_LLMS_TXT = `# Dasha Compute
+
+${COMPUTE_NOT_DASHA_AI_TXT}
 
 Mac Ask / Provide / OpenAI-compatible chat completions. A run factory with a public signed receipt chain, not an account ledger.
 

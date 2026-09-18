@@ -100,8 +100,11 @@ const TAB_UNCHANGED = [
   ['/compute/agent/', COMPUTE],
   ['/Compute/agent', COMPUTE],
   ['/COMPUTE/AGENT', COMPUTE],
-  ['/compute/agents', COMPUTE],
-  ['/compute/agents/', COMPUTE],
+];
+const AGENTS_TXT = `${WWW}/compute/agents.txt`;
+const AGENTS_TXT_FOLDS = [
+  ['/compute/agents', AGENTS_TXT],
+  ['/compute/agents/', AGENTS_TXT],
 ];
 
 for (const path of FOLDS) {
@@ -109,6 +112,9 @@ for (const path of FOLDS) {
 }
 for (const [path, dest] of TAB_UNCHANGED) {
   assert.equal(potterHome308Dest(path), dest, `unchanged ${path}`);
+}
+for (const [path, dest] of AGENTS_TXT_FOLDS) {
+  assert.equal(potterHome308Dest(path), dest, `${path} folds to agents.txt`);
 }
 assert.equal(potterHome308Dest('/compute/skill.md'), null, '/compute/skill.md stays 200');
 assert.equal(potterHome308Dest('/compute/mcp.json'), null, '/compute/mcp.json stays 200');

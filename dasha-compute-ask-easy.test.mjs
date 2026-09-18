@@ -45,8 +45,10 @@ function assertAskEasy(html, label) {
   assert.ok(html.includes("background:var(--acid);border-color:var(--acid);color:var(--ink)"), `${label} primary ink on acid`);
   assert.ok(html.includes(".tf-choice.primary:hover,.primary:hover"), `${label} primary hover stays ink on acid`);
   assert.ok(html.includes("#step-ask .primary:disabled,#step-ask .primary:disabled:hover{background:transparent;border-color:var(--line);color:var(--paper-muted);opacity:1}"), `${label} disabled readable`);
-  assert.ok(html.includes(".ask-doors{display:grid"), `${label} Ask doors stack`);
+  assert.ok(html.includes(".ask-doors{display:grid"), `${label} Ask doors quiet grid`);
   assert.ok(html.includes("#step-ask .ask-door-sep{display:none}"), `${label} no tiny · row`);
+  assert.match(html, /id=["']ask-composer["']/, `${label} ask-composer`);
+  assert.match(html, /id=["']ask-more["']/, `${label} ask-more`);
   assert.match(html, /#ask-starters\{[^}]*display:flex;flex-wrap:wrap/, `${label} starter chips wrap`);
   assert.match(html, /function threadSpeaker\(/, `${label} threadSpeaker`);
   assert.match(html, /if\(route==='hosted'\)return 'Hosted'/, `${label} Hosted speaker`);
@@ -122,9 +124,15 @@ if (puppeteer && existsSync(chrome)) {
       const provide = document.getElementById("ask-provide");
       const ocm = document.getElementById("ask-ocm");
       const host = document.getElementById("ask-host");
-      const stacked = !!(doorBox && provide && ocm && host &&
-        provide.getBoundingClientRect().top < ocm.getBoundingClientRect().top &&
-        ocm.getBoundingClientRect().top < host.getBoundingClientRect().top);
+      const provideBox = provide?.getBoundingClientRect();
+      const ocmBox = ocm?.getBoundingClientRect();
+      const hostBox = host?.getBoundingClientRect();
+      const composer = document.getElementById("ask-composer");
+      const composerBox = composer?.getBoundingClientRect();
+      const threadBox = document.getElementById("ask-thread")?.getBoundingClientRect();
+      const quietRow = !!(doorBox && provideBox && ocmBox && hostBox &&
+        Math.abs(provideBox.top - ocmBox.top) < 36 &&
+        Math.abs(ocmBox.top - hostBox.top) < 36);
       const cs = login && vis(login) ? getComputedStyle(login) : (run ? getComputedStyle(run) : null);
       return {
         step: document.body.dataset.step,
@@ -136,9 +144,11 @@ if (puppeteer && existsSync(chrome)) {
         loginBg: login ? getComputedStyle(login).backgroundColor : "",
         runColor: run ? getComputedStyle(run).color : "",
         runBg: run ? getComputedStyle(run).backgroundColor : "",
-        stacked,
+        quietRow,
         wrapDoors: doors ? getComputedStyle(doors).flexWrap : "",
         displayDoors: doors ? getComputedStyle(doors).display : "",
+        composerBottom: composerBox ? composerBox.bottom : 0,
+        threadOrPromptAbove: composerBox && (threadBox?.bottom || document.getElementById("prompt")?.getBoundingClientRect().top || 0) <= composerBox.top + 8,
       };
     });
     assert.equal(askPaint.step, "ask");
@@ -146,8 +156,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(askPaint.placeholder, "Message Dasha");
     assert.equal(askPaint.prompt, true);
     assert.equal(askPaint.login, true, "guest primary is Sign in");
-    assert.equal(askPaint.displayDoors, "grid", "doors stack");
-    assert.equal(askPaint.stacked, true, "Provide / Marketplace / Host stack");
+    assert.equal(askPaint.displayDoors, "grid", "doors stay a quiet grid");
+    assert.equal(askPaint.quietRow, true, "Provide / Marketplace / Host sit as a quiet row");
     const loginInk = rgbOf(askPaint.loginColor);
     const loginAcid = rgbOf(askPaint.loginBg);
     assert.ok(isInk(loginInk), "Sign in text is ink");

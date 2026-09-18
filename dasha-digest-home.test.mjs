@@ -12,6 +12,7 @@ import edgeWorker, {
   orderHomeLongPage,
   stripDeadNav,
   stripHomeOtherCoinWarning,
+  stripHomeStudioFirstPaint,
 } from './dasha-lobby-worker.mjs';
 import {
   DEFAULT,
@@ -177,7 +178,17 @@ assert.match(workerSrc, /if \(isHome\) \{\s*try \{ html = applyDigestTape/);
 const remount = digestRemountScript();
 assert.match(remount, /\/digest\.json/, 'remount fetches /digest.json');
 assert.match(remount, /setAttribute\('href','\/digest'\)/, 'remount keeps /digest permalink');
-assert.match(remount, /pack\.tick/, 'remount uses live tick as row 1');
+assert.match(remount, /priceHref=['"]\/price['"]/, 'remount fetches same-origin /price');
+assert.match(remount, /tickFromPrice/, 'remount paints tape from /price fields');
+assert.match(remount, /p\.priceUsd/, 'remount reads /price priceUsd');
+assert.match(remount, /p\.change&&Number\(p\.change\.h24\)/, 'remount reads /price change.h24');
+assert.match(remount, /p\.liquidityUsd/, 'remount reads /price liquidityUsd');
+assert.match(remount, /p\.pair/, 'remount uses /price pair only');
+assert.match(remount, /setInterval\(go,60000\)/, 'remount refreshes /price ~60s');
+assert.match(remount, /hideStaleDex/, 'remount hides stale Dex numbers if /price fails');
+assert.doesNotMatch(remount, /pack\.tick/, 'evening digest tick is not the home tape number');
+assert.doesNotMatch(remount, /53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/, 'remount does not invent mint');
+assert.doesNotMatch(remount, /9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7/, 'remount does not invent pair');
 assert.match(remount, /#grok-door/, 'remount anchors on #grok-door');
 assert.match(remount, /dasha-crew-line|crew-line/, 'remount paints quiet crew line');
 assert.match(remount, /\/crew/, 'crew line links /crew');
@@ -200,6 +211,13 @@ assert.doesNotMatch(paint, /id=["']dasha-digest["']/, 'first paint slice has no 
 assert.match(paint, /id=["']dasha-digest-remount["']/, 'first paint keeps remount script');
 assert.doesNotMatch(paint, /<p[^>]*id=["']dasha-crew-line["']/, 'first paint has no crew chrome');
 assert.doesNotMatch(paint, /id=["']chess-door["']/);
+
+{
+  const remounted = injectDigestRemount('<!doctype html><html><head></head><body id="dasha-home"></body></html>');
+  const leftover = stripHomeStudioFirstPaint(remounted);
+  assert.match(leftover, /id=["']dasha-digest-remount["']/, 'leftover /price strip keeps remount');
+  assert.match(leftover, /priceHref=['"]\/price['"]/, 'leftover strip keeps same-origin /price fetch');
+}
 
 assert.match(workerSrc, /injectDigestRemount\(html\)/);
 assert.match(workerSrc, /injectDigestRemount\(out\)/);

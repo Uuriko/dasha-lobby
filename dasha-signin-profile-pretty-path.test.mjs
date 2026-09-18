@@ -9,7 +9,8 @@
  * Do not invent /terms /tos /legal /faq /cookie /aeo /shorts.
  * /help now folds via help/credits leftover → /compute (not /privacy).
  * /sdk /cli now fold via settlement-billing-endpoint leftover → /compute/api.
- * /dev /developer /developers /sdks now fold via leftover → /compute/api.
+ * /dev /developer /sdks now fold via leftover → /compute/api.
+ * /developers is the Muse developers face (200).
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

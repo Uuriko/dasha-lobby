@@ -186,7 +186,10 @@ for (const path of ['/how-tobuy', '/how-tobuy/', '/howto_buy', '/Howto_buy']) {
   assert.equal(res.status, 308, path);
   assert.equal(res.headers.get('location'), 'https://www.getdasha.com/how-to-buy', path);
 }
-for (const path of ['/start', '/Start', '/sponsor', '/sponsors', '/Sponsors', '/ask', '/Ask', '/pay', '/Pay', '/credits', '/Credits', '/host', '/Host', '/use', '/night', '/you', '/build', '/ocm', '/Ocm']) {
+assert.equal(potterHome308Dest('/start'), null, '/start Muse home dest null');
+assert.equal(potterHome308Dest('/start/'), null, '/start/ Muse home dest null');
+assert.equal(potterHome308Dest('/Start'), 'https://www.getdasha.com/start', '/Start casefolds to /start');
+for (const path of ['/sponsor', '/sponsors', '/Sponsors', '/ask', '/Ask', '/pay', '/Pay', '/credits', '/Credits', '/host', '/Host', '/use', '/night', '/you', '/build', '/ocm', '/Ocm']) {
   assert.equal(potterHome308Dest(path), 'https://www.getdasha.com/compute', path);
   const res = potterHome308Response(new Request(`https://www.getdasha.com${path}`), new URL(`https://www.getdasha.com${path}`));
   assert.equal(res.status, 308, path);
@@ -451,17 +454,21 @@ const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 assert.equal(sitemapXml.trim(), GEN_SITEMAP.trim(), 'worker and static-gen sitemaps agree');
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/privacy<\/loc>/);
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/which<\/loc>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/which<\/loc><lastmod>2026-09-01<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/which<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/bag<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/llms\.txt<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/llms-full\.txt<\/loc><lastmod>2026-09-01<\/lastmod>/);
-for (const path of ['/crew', '/digest', '/compute', '/which', '/contribute', '/bounties']) {
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/llms\.txt<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/llms-full\.txt<\/loc><lastmod>2026-09-16<\/lastmod>/);
+for (const path of ['/crew', '/digest', '/start', '/providers', '/developers', '/network', '/compute', '/which', '/contribute', '/bounties']) {
   assert.ok(sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap has ${path}`);
 }
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/crew<\/loc><lastmod>2026-09-01<\/lastmod>/);
 assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/digest<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/compute<\/loc><lastmod>2026-09-01<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/start<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/providers<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/developers<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/network<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/compute<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.doesNotMatch(sitemapXml, /lobby\?/);
 for (const path of ['/dasha', '/desk', '/studio', '/graph', '/verse', '/learn', '/login', '/dancer', '/compute/dancer']) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits ${path}`);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Worker-side Dexscreener tick for /digest.json. Remount puts pack.tick as row 1.
- * Browser never hits Dexscreener. Failure stays honest (seed tape).
+ * Worker-side Dexscreener tick for /digest.json. Home remount overlays GET /price.
+ * Browser never hits Dexscreener. Failure stays honest (hide stale numbers).
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -19,6 +19,7 @@ import {
   homeTapeWithTick,
   resetTickCache,
   tickFromDex,
+  tickFromPrice,
 } from './dasha-digest.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -118,9 +119,31 @@ assert.equal(tickFromDex(null), null);
   assert.equal(tick, null, 'failure is honest');
 }
 
+{
+  const live = tickFromPrice({
+    ok: true,
+    pair: PAIR,
+    priceUsd: 0.0000897,
+    change: { h24: -12.4 },
+    liquidityUsd: 55100.25,
+  });
+  assert.ok(live, 'tickFromPrice reads /price JSON');
+  assert.equal(live.source, 'Dexscreener');
+  assert.match(live.title, /\$dasha \$0\.0000897/);
+  assert.match(live.title, /-12\.4% 24h/);
+  assert.match(live.title, /liq \$55100\.25/);
+  assert.equal(live.href, DEX_HREF);
+  assert.equal(tickFromPrice({ ok: false, priceUsd: 0.0000897, pair: PAIR }), null, '/price ok:false is honest');
+  assert.equal(tickFromPrice({ ok: true, priceUsd: 0.0000897 }), null, 'missing pair is not invented');
+  assert.equal(tickFromPrice({ ok: true, pair: PAIR, priceUsd: 0 }), null, 'zero price is not invented');
+}
+
 const remount = digestRemountScript();
 assert.match(remount, /\/digest\.json/);
-assert.match(remount, /pack\.tick/);
+assert.match(remount, /priceHref=['"]\/price['"]/);
+assert.match(remount, /tickFromPrice/);
+assert.match(remount, /hideStaleDex/);
+assert.doesNotMatch(remount, /pack\.tick/);
 assert.match(remount, /dasha-crew-line|crew-line/);
 assert.match(remount, /\/crew/);
 assert.match(remount, /You keep the keys/);
@@ -133,4 +156,4 @@ assert.match(workerSrc, /applyLiveTick/);
 assert.match(workerSrc, /tick: pack\.tick/);
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
-console.log('dasha-digest-tick: PASS (worker Dex tick, remount row 1, cache, honest fail)');
+console.log('dasha-digest-tick: PASS (worker Dex tick, remount /price overlay, cache, honest fail)');

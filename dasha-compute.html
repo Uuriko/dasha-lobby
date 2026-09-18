@@ -22,6 +22,9 @@
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--ink)}body{margin:0;color:var(--paper);font:16px/1.5 Arial,Helvetica,sans-serif;background:radial-gradient(circle at 82% 0,#2a1730 0,transparent 26rem),var(--ink)}
 button,input,select,textarea{font:inherit}
 .shell{width:min(640px,calc(100% - 28px));margin:auto;padding:18px 0 56px}
+body[data-step=ask] .shell{width:min(52rem,calc(100% - 28px));max-width:52rem;padding-bottom:12px}
+body[data-step=ask] footer.ux-foot,body[data-step=ask] footer.listed-on{display:none!important}
+body[data-step=ask] #tf-progress{display:none!important}
 .skip{position:absolute;left:-9999px}.skip:focus{left:14px;top:14px;z-index:9;background:var(--acid);color:var(--ink);padding:10px}
 .topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.topbar .brand{justify-self:start}.topbar .state{justify-self:center;min-width:0}.topbar .home{justify-self:end;color:var(--paper-muted);font-weight:700}
 .brand,.home{color:inherit;text-decoration:none}.brand span,.acid{color:var(--acid)}.topbar .home:hover{color:var(--paper)}
@@ -87,6 +90,10 @@ button,input,select,textarea{font:inherit}
 .ask-run-chip[data-state=check]{border-color:var(--acid);background:color-mix(in srgb,var(--acid) 12%,transparent)}
 .ask-run-chip[data-state=check] .ask-run-spin{opacity:0}
 .ask-run-chip[data-state=check] .ask-run-check{opacity:1;transform:rotate(-45deg) scale(1)}
+.ask-run-chip[data-state=stopped]{border-color:var(--paper-muted)}
+.ask-run-chip[data-state=stopped] .ask-run-spin,.ask-run-chip[data-state=stopped] .ask-run-check{opacity:0}
+.ask-run-chip[data-state=error]{border-color:var(--hot)}
+.ask-run-chip[data-state=error] .ask-run-spin,.ask-run-chip[data-state=error] .ask-run-check{opacity:0}
 @media(prefers-reduced-motion:no-preference){
   .ask-run-chip[data-state=spin] .ask-run-spin{animation:ask-run-spin .7s linear infinite}
   .ask-run-chip[data-state=check] .ask-run-check{transition:transform .22s cubic-bezier(.22,1,.36,1),opacity .18s ease}
@@ -99,8 +106,9 @@ button,input,select,textarea{font:inherit}
   .ask-think.is-on,.ask-stream-chunk,.ask-run-chip[data-state=spin] .ask-run-spin{animation:none!important;transition:none!important;filter:none!important;opacity:1;transform:none}
   .ask-run-chip[data-state=check] .ask-run-check{transition:none!important;transform:rotate(-45deg) scale(1);opacity:1}
 }
-#ask-starters{margin:0 0 18px;display:flex;flex-wrap:wrap;gap:2px 14px}#ask-starters .tf-quiet{padding:10px 0;font-size:15px;color:var(--paper-muted)}
-.ask-thread{margin:0 0 28px;display:grid;gap:22px}
+#ask-starters{margin:0 0 18px;display:flex;flex-wrap:wrap;gap:8px}#ask-starters .tf-quiet{padding:8px 14px;font-size:14px;color:var(--paper);border:1px solid var(--line);border-radius:999px}
+#ask-starters .tf-quiet:hover{color:var(--ink);background:var(--paper);border-color:var(--paper)}
+.ask-thread{margin:0;display:grid;gap:28px;padding:4px 0 18px}
 .guide{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px;font-size:12px;color:var(--paper-muted)}
 .guide[hidden]{display:none!important}
 .guide-step{padding:3px 9px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
@@ -130,12 +138,35 @@ button,input,select,textarea{font:inherit}
 body[data-side=buyer] #gate-door-provide{display:none}
 body[data-side=provider] #gate-door-do,body[data-side=provider] #gate-money-row{display:none}
 .ask-thread[hidden]{display:none!important}
-.ask-turn{display:grid;gap:8px}
-.ask-who{color:var(--paper);font:800 13px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em}
-.ask-said{margin:0;padding:0;border:0;background:transparent;color:var(--paper);font:18px/1.5 Arial,Helvetica,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
-.ask-turn.mac .ask-said{color:var(--paper);font:16px/1.55 ui-monospace,monospace}
+.ask-turn{display:grid;gap:6px}
+.ask-who{color:var(--paper-muted);font:600 12px/1.25 Arial,Helvetica,sans-serif;letter-spacing:.02em}
+.ask-said{margin:0;padding:0;border:0;background:transparent;color:var(--paper);font:16.5px/1.65 Arial,Helvetica,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
+.ask-turn.mac .ask-said{color:var(--paper);font:16.5px/1.65 Arial,Helvetica,sans-serif}
+.ask-turn.you .ask-said{color:var(--paper);justify-self:start;max-width:36rem;background:color-mix(in srgb,var(--paper) 8%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,var(--paper));border-radius:16px;padding:10px 14px}
+.ask-said.ask-md{white-space:normal}
+.ask-said.ask-md p{margin:0 0 .55em}
+.ask-said.ask-md p:last-child,.ask-said.ask-md ul:last-child,.ask-said.ask-md ol:last-child,.ask-said.ask-md pre:last-child{margin-bottom:0}
+.ask-said.ask-md ul,.ask-said.ask-md ol{margin:.2em 0 .55em;padding-left:1.2em}
+.ask-said.ask-md li{margin:0 0 .2em}
+.ask-said.ask-md strong{font-weight:800;color:var(--paper)}
+.ask-said.ask-md code{font:13px/1.45 ui-monospace,monospace;background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:6px;padding:.05em .35em}
+.ask-said.ask-md pre{margin:.35em 0 .65em;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#09080b;color:#d8cfe0;font:13px/1.55 ui-monospace,monospace;white-space:pre;overflow-x:auto;width:fit-content;max-width:100%}
+.ask-said.ask-md pre code{background:transparent;border:0;padding:0;font:inherit;color:inherit}
+.ask-turn[data-state=thinking] .ask-said:empty::after,.ask-turn[data-state=streaming] .ask-said::after{content:'';display:inline-block;width:7px;height:1em;margin-left:3px;background:var(--acid);vertical-align:-2px}
+@media(prefers-reduced-motion:no-preference){
+  .ask-turn[data-state=thinking] .ask-said:empty::after,.ask-turn[data-state=streaming] .ask-said::after{animation:ask-caret 1s steps(1) infinite}
+}
+@keyframes ask-caret{50%{opacity:0}}
+.ask-acts{display:flex;flex-wrap:wrap;gap:0 12px;min-height:1.1em;opacity:0}
+.ask-turn:hover .ask-acts,.ask-turn:focus-within .ask-acts,.ask-acts:focus-within{opacity:1}
+.ask-act{border:0;background:transparent;color:var(--paper-muted);font:600 12px/1.2 Arial,Helvetica,sans-serif;cursor:pointer;padding:4px 0}
+.ask-act:hover,.ask-act:focus-visible{color:var(--acid)}
+.ask-turn[data-state=stopped] .ask-who::after{content:' · stopped';color:var(--paper-muted);font-weight:600}
+.ask-turn[data-state=error] .ask-who::after{content:' · error';color:var(--hot);font-weight:600}
+.ask-turn[data-state=thinking] .ask-who::after{content:' · thinking';color:var(--paper-muted);font-weight:600}
+.ask-turn[data-state=streaming] .ask-who::after{content:' · streaming';color:var(--acid);font-weight:600}
 body.has-chat #ask-starters,body.has-chat #ask-free-fine,body.has-chat #ask-range,body.has-chat #buyer-live-line{display:none!important}
-body.has-chat #prompt{min-height:5.5rem}
+body.has-chat #prompt{min-height:3rem}
 body.has-chat #step-ask .tf-q{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .tf-quiet{border:0;background:transparent;color:var(--paper-muted);font:400 13px/1.35 Arial,Helvetica,sans-serif;cursor:pointer;padding:10px 0;text-decoration:none;display:inline-flex}
 .tf-quiet:hover{color:var(--paper)}
@@ -151,18 +182,39 @@ body.has-chat #step-ask .tf-q{position:absolute;width:1px;height:1px;padding:0;m
 #gate-api-base{word-break:break-all;max-width:min(100%,22rem)}
 #step-gate>.ask-links .tf-quiet{font-size:14px;color:var(--paper-muted)}
 .ask-links .tf-quiet{padding:6px 0}
-.ask-doors{display:grid;justify-items:start;gap:2px;margin-top:18px;padding-top:18px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
-.ask-doors .tf-quiet{padding:10px 0;font-size:15px}
-#step-ask .ask-links{display:grid;justify-items:start;gap:2px;margin-top:14px}
-#step-ask .ask-links .tf-quiet{padding:10px 0;font-size:15px}
+.ask-doors{display:grid;grid-template-columns:repeat(auto-fill,minmax(4.5rem,max-content));justify-items:start;gap:2px 14px;margin-top:4px;padding-top:0;border-top:0}
+.ask-doors .tf-quiet{padding:8px 0;font-size:13px}
+#step-ask .ask-links{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0}
+#step-ask .ask-links .tf-quiet{padding:6px 10px;font-size:12px}
 #ask-prefer-mymac[aria-pressed=true]{color:var(--acid);font-weight:700}
 #ask-prefer-mymac[data-mac=offline]{color:var(--paper-muted);opacity:.72;font-weight:400}
 #step-ask .ask-door-sep{display:none}
 .ask-doors .ask-door-sep{color:var(--line);font-size:12px;user-select:none;line-height:1;padding:0 2px}
-#prompt{display:block;width:100%;min-height:9rem;max-height:42vh;font-size:clamp(24px,4.5vw,36px);line-height:1.28;font-weight:500;background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:16px 0 14px;caret-color:var(--acid);color:var(--paper);resize:vertical;margin:0 0 22px}
-#prompt:focus{border-bottom-color:var(--paper);outline:none}
-#prompt::placeholder{color:var(--paper-muted);opacity:1;font-weight:500}
-#step-ask .actions{gap:14px;margin-top:8px}
+#step-ask #guide{display:none!important}
+#step-ask:not([hidden]){display:flex;flex-direction:column;min-height:calc(100dvh - 7.25rem);padding:16px 0 8px}
+#step-ask .tf-q{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#step-ask .ask-pane{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+#step-ask .ask-scroll{flex:1 1 auto;overflow-y:auto;min-height:8rem;padding:4px 2px 18px;-webkit-overflow-scrolling:touch}
+body:not(.has-chat) #step-ask .ask-scroll{display:flex;flex-direction:column;justify-content:center}
+#step-ask .ask-composer{position:sticky;bottom:0;z-index:2;margin-top:auto;padding:10px 0 4px;background:linear-gradient(180deg,transparent,var(--ink) 28%)}
+#step-ask .ask-composer-box{border:1px solid color-mix(in srgb,var(--line) 88%,var(--paper));border-radius:22px;padding:10px 12px 10px;background:color-mix(in srgb,var(--panel) 92%,transparent);box-shadow:0 10px 32px color-mix(in srgb,var(--ink) 45%,transparent)}
+#step-ask .ask-composer-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}
+#change-engine,#ask-model{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;color:var(--paper-muted);background:transparent}
+#change-engine:hover,#ask-model:hover{color:var(--paper);border-color:color-mix(in srgb,var(--paper) 40%,var(--line))}
+#ask-model{appearance:none;-webkit-appearance:none;max-width:11rem;padding-right:26px;cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,var(--paper-muted) 50%),linear-gradient(135deg,var(--paper-muted) 50%,transparent 50%);background-position:calc(100% - 12px) 11px,calc(100% - 7px) 11px;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+#ask-model[hidden]{display:none!important}
+.ask-greet{margin:0 0 14px;color:var(--paper);font:600 clamp(22px,4vw,32px)/1.2 Arial,Helvetica,sans-serif;letter-spacing:-.03em}
+body.has-chat #ask-greet{display:none!important}
+#step-ask .ask-more{margin-top:6px}
+#step-ask .ask-more-sum{color:var(--paper-muted);font:400 12px/1.3 Arial,Helvetica,sans-serif;cursor:pointer;list-style:none;width:max-content;padding:4px 0}
+#step-ask .ask-more-sum::-webkit-details-marker{display:none}
+body:not(.has-chat) #step-ask .ask-more-sum{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#ask-more:not([open]) #ask-doors{display:none!important}
+#prompt{display:block;width:100%;min-height:3rem;max-height:32vh;font-size:16px;line-height:1.55;font-weight:400;background:transparent;border:0;padding:6px 4px 8px;caret-color:var(--acid);color:var(--paper);resize:none;margin:0;field-sizing:content}
+#prompt:focus{outline:none}
+#prompt::placeholder{color:var(--paper-muted);opacity:1;font-weight:400}
+#step-ask .actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:14px;margin-top:8px;width:auto}
+#step-ask .actions .primary,#step-ask .primary{width:auto;min-width:5.5rem;min-height:40px;padding:0 18px;font-size:14px;border-radius:999px;letter-spacing:.02em}
 #step-ask .primary:disabled,#step-ask .primary:disabled:hover{background:transparent;border-color:var(--line);color:var(--paper-muted);opacity:1}
 #run-demo[hidden],#run-demo[hidden]:disabled{display:none!important}
 #provider-name{display:block;width:100%;font-size:clamp(24px,5vw,40px);background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:12px 0;color:var(--paper);margin:0 0 22px;caret-color:var(--acid)}
@@ -229,7 +281,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
 .tf-choice.primary:focus-visible,.primary:focus-visible,.tf-choice[aria-pressed=true]:focus-visible{outline-width:2px;outline-offset:2px;outline-color:color-mix(in srgb,var(--acid) 65%,var(--ink))}
 @keyframes tf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.tf-step{animation:none!important}.ux-reveal{max-height:3em}}
-@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:7rem}#step-ask #run-demo,#step-ask #login{min-height:56px}#ask-starters{margin-bottom:12px}#step-ask .ask-doors,#step-ask .ask-links{display:grid;gap:2px;margin-top:12px;padding-top:12px}#step-ask .ask-doors .tf-quiet,#step-ask .ask-links .tf-quiet,#ask-starters .tf-quiet{padding:12px 0;font-size:15px}#step-gate>.ask-links{display:flex;flex-wrap:wrap;gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}.ux-triad,.ux-tech,.ux-foot-cols{grid-template-columns:1fr 1fr}.ux-triad{grid-template-columns:1fr}.ux-reveal{max-height:3em}}
+@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:2.75rem}#step-ask #run-demo,#step-ask #login{min-height:40px}#ask-starters{margin-bottom:12px}#step-ask .ask-doors,#step-ask .ask-links{gap:4px 12px;margin-top:6px;padding-top:0}#step-ask .ask-doors .tf-quiet,#step-ask .ask-links .tf-quiet{padding:8px 0;font-size:13px}#ask-starters .tf-quiet{padding:8px 12px;font-size:14px}#step-gate>.ask-links{display:flex;flex-wrap:wrap;gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}.ux-triad,.ux-tech,.ux-foot-cols{grid-template-columns:1fr 1fr}.ux-triad{grid-template-columns:1fr}.ux-reveal{max-height:3em}}
 
 .honesty-panel{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
 .honesty-panel[hidden]{display:none!important}
@@ -487,6 +539,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
       <option value="gpt-oss-20b">GPT-OSS 20B · 14 GB · reasoning + tools</option>
       <option value="qwen3-30b-a3b">Qwen 3 30B A3B · 19 GB · efficient MoE</option>
       <option value="gemma3-27b">Gemma 3 27B · 17 GB · large multimodal</option>
+      <option value="ternary-bonsai-2-27b">Ternary Bonsai 2 27B · PQ2 · community</option>
     </select>
     <span class="chip" id="mixture-chip" hidden>sub-24GB specialists · live default qwen3-8b</span>
   </div>
@@ -503,7 +556,10 @@ footer.listed-on img{display:block;height:32px;width:auto}
 
 <section class="tf-step" id="step-ask" data-tf="ask" hidden>
   <button type="button" class="tf-back" id="back-ask" data-back="" hidden>← Back</button>
+  <div class="ask-pane">
+  <div class="ask-scroll" id="ask-scroll">
   <h1 class="tf-q">Do.</h1>
+  <p class="ask-greet" id="ask-greet">What.</p>
   <div class="guide" id="guide" hidden>
     <span class="guide-step" id="guide-step-model">1 · Pick a model</span>
     <span class="guide-sep">→</span>
@@ -517,9 +573,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <!-- mac-receipt-tps:2026-09-09 -->
   <!-- do-not-ask:2026-09-10 -->
   <p class="fine" id="ask-receipt" hidden aria-live="polite"></p>
-  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Message Dasha" aria-label="Message Dasha" title="Enter to run · Esc back"></textarea></label>
   <p class="fine" id="ask-range">code · text · whatever</p>
-  <p class="fine" id="ask-hint" hidden aria-hidden="true"></p>
   <div class="ask-starters" id="ask-starters" role="group" aria-label="Starter prompts">
     <button type="button" class="tf-quiet" id="ask-starter" data-prompt="Write a Python function that reads a CSV and prints the column names.">Write code</button>
     <button type="button" class="tf-quiet" id="ask-starter-2" data-prompt="This while loop never ends. Find the bug and write the fix.">Fix a bug</button>
@@ -528,13 +582,28 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <button type="button" class="tf-quiet" id="ask-starter-5" data-prompt="Summarize this in five bullets.">Summarize</button>
     <button type="button" class="tf-quiet" id="ask-starter-6" data-prompt="Review this PR. What's wrong, what's fine, what I'd change.">Review a PR</button>
   </div>
-  <div class="actions">
-    <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
-    <a class="primary" id="login" href="/login?return=/compute%23ask">Sign in</a>
+  </div>
+  <div class="ask-composer" id="ask-composer">
+  <div class="ask-composer-box">
+  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Message Dasha" aria-label="Message Dasha" title="Enter to send · Shift+Enter newline · Esc back"></textarea></label>
+  <p class="fine" id="ask-hint" hidden aria-hidden="true"></p>
+  <div class="ask-composer-row">
     <div class="ask-links">
       <button class="tf-quiet" id="change-engine" type="button" title="Change engine" aria-label="Change engine">Hosted</button>
-      <button class="tf-quiet" id="clear-chat" type="button" hidden disabled>Clear</button>
+      <select id="ask-model" class="ask-model-pill" aria-label="Model" hidden></select>
+      <button class="tf-quiet" id="clear-chat" type="button" hidden disabled>New</button>
     </div>
+    <div class="actions">
+      <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
+      <a class="primary" id="login" href="/login?return=/compute%23ask">Sign in</a>
+    </div>
+  </div>
+  </div>
+    <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
+    <!-- buyer-live-models:2026-09-08 -->
+    <p class="fine" id="buyer-live-line" aria-live="polite">No Mac online.</p>
+    <details class="ask-more" id="ask-more" open>
+      <summary class="ask-more-sum">More</summary>
     <div class="ask-doors" id="ask-doors">
       <button type="button" class="tf-quiet" id="ask-prefer-mymac" title="Prefer your Mac when online · else Community" aria-label="Prefer my Mac" aria-pressed="false" hidden>Prefer my Mac</button>
       <span class="ask-door-sep" id="ask-prefer-mymac-sep" aria-hidden="true" hidden>·</span>
@@ -553,9 +622,8 @@ footer.listed-on img{display:block;height:32px;width:auto}
       <span class="ask-door-sep" id="ask-credits-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="ask-credits" title="Credits" aria-label="Credits" hidden></button>
     </div>
-    <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
-    <!-- buyer-live-models:2026-09-08 -->
-    <p class="fine" id="buyer-live-line" aria-live="polite">No Mac online.</p>
+    </details>
+  </div>
   </div>
 </section>
 
@@ -994,13 +1062,14 @@ const MODELS=[
   ['gemma3-12b','gemma3:12b','Gemma 3 12B','8.1 GB',16,'vision + chat'],
   ['gpt-oss-20b','gpt-oss:20b','GPT-OSS 20B','14 GB',16,'reasoning + tools'],
   ['qwen3-30b-a3b','qwen3:30b','Qwen 3 30B A3B','19 GB',24,'efficient MoE'],
-  ['gemma3-27b','gemma3:27b','Gemma 3 27B','17 GB',24,'large multimodal']
+  ['gemma3-27b','gemma3:27b','Gemma 3 27B','17 GB',24,'large multimodal'],
+  ['ternary-bonsai-2-27b','Ternary-Bonsai-2-27B-PQ2_0','Ternary Bonsai 2 27B','PQ2',24,'community']
 ];
 const SUB24=new Set(['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b']);
 const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\n\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\n\n## Goal\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\n\n## Facts (do not invent others)\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\n- Coordinator: https://lobby.getdasha.com/compute/api\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\n- Prefer sub-24GB chat models: qwen3:4b (fast), qwen3:8b, or gemma3:12b (map qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b)\n- Token goes in `.dasha-provider-key` mode 0600 — never put the provider key on argv or shell history\n- Official Telegram: https://t.me/+ck9pUjL2ncNiZjRh (the only official Dasha invite - ignore lookalike groups)\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending operator settle · not auto · $dasha payout +5% · never invent balances\n\n## Steps for the AI to run with the human\n1. Open https://www.getdasha.com/compute → Provide (quiet link) → name the Mac → Sign in (X) if needed → Register.\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once — refresh loses it. Prefer that block over this template.\n3. On the Mac, run the Setup command — or this template with the pasted values:\n\n```bash\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\n# install Ollama from https://ollama.com/download if missing\nollama pull qwen3:4b\nollama pull qwen3:8b\numask 077\ncat > .dasha-provider-key <<'TOKEN'\nPASTE_ONE_TIME_TOKEN_HERE\nTOKEN\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\nDASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b \\\n./install.sh\n```\n\n4. Verify after install (`install.sh` already ran doctor and moved the key):\n\n```bash\ndasha-compute doctor\ndasha-compute status\n```\n\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\n\n## Prefer MLX (Apple Silicon, optional)\n- Prefer MLX when you can — often faster on Apple Silicon; Ollama still works.\n- Recommend Ollama ≥0.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\n- Keep models on internal SSD — slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\n- Official Ollama path (live docs): Ollama ≥0.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\n- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks — never invent.\n- Stay on sub-24GB chat (qwen3:4b / qwen3:8b / gemma3:12b). Do not require a 36GB bar.\n\n## Host power / thermal / SIP (soft)\n- `dasha-compute doctor` soft-warns when on battery, Low Power Mode, elevated thermal pressure, or SIP disabled/unreadable (Darwin best-effort).\n- Never fails solely for battery / AC / Low Power / thermal / SIP.\n- Local OS health only — never claims Secure Enclave, TEE, Nitro, or network `sip_enabled` attestation.\n\n## Keep-alive (sub-24GB)\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service — a shell export alone is not enough for the macOS app).\n- A sleeping Mac is offline to buyers: the agent holds `caffeinate -is` while it runs (system sleep prevented on AC; battery can still sleep). For an always-on server Mac, also `sudo pmset -a sleep 0`. Doctor soft-warns when system sleep is enabled.\n- Do not pin 27B on a 16–24GB Air for interactive chat; use 4B/8B/12B.\n- `dasha-compute doctor` soft-hints when a mapped model looks ≥27B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.\n- Advertising/heartbeat OK while mid-Ask fails with `provider inference failed: URLError` → localhost Ollama on `127.0.0.1:11434` was refused/reset. Soft doctor does not block advertise alone — fix Ollama keep-alive / restart service.\n\n## Success\n- dasha-compute doctor exits 0\n- Heartbeats succeed\n- A Community Run from another session can complete on this Mac\n\n## If stuck\n- Re-register for a fresh token\n- Check dasha-compute logs\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\n- Mid-Ask `URLError` / partial stream while still online → `curl -sS http://127.0.0.1:11434/api/ps` (and `/api/tags`); set OLLAMA_KEEP_ALIVE=-1 on the Ollama launch agent; restart Ollama; re-run `dasha-compute doctor` (keepalive soft is OK — exit should still be 0)\n";
 const USE_SKILL="# Skill: Use Dasha Compute (run a prompt)\n\nPaste this into your AI assistant so it can help you run https://www.getdasha.com/compute — Hosted demo or community Macs — without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot → Start. (Do / Provide / Pay / Credits). Do → Community when a Mac is advertising · else Hosted · quiet Provide / Marketplace / Host · Change engine for Hosted/Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login · quiet named tip credits when signed in). Credits → balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b · 3 free / 10 min · then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- API billing: non-self `v1/chat/completions` spends prepaid credits via USDC/$dasha ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits · no card.\n- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Which key / which base: Compute chat uses `dsk_` or guest `dgk_` on https://lobby.getdasha.com/compute/api/v1. OCM uses `ocm_live_` on https://www.getdasha.com/compute/ocm/v1. Never swap. Compute X login is not an OCM session.\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.\n- Do top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.\n- When Macs are online, Do defaults to Community and the live advertised model (prefer gemma3-27b). Hosted stays a quieter door. Explicit Hosted click stays Hosted. Change engine still opens How.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. — Do → Community when a Mac is up, else Hosted. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Do · Top up → Buy). Optional on Do: quiet starter chips (Write code / Fix a bug / Do the thing) fill the prompt; empty input is Message Dasha; after a reply the thread stays and Enter sends a follow-up; Change engine for Hosted, Community, or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-4b / qwen3-8b / gemma3-12b for Mixture)\n4. Sign in if prompted\n5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available\n\n## Optional API\n\nv1 `chat/completions` is community Macs. None advertise the model → fail-loud `no_mac_online` (poll `/compute/api/network` · join `/compute#provide`). Hosted Ask is the browser `POST /compute/api/chat` — not a silent v1 swap.\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n- On stream, read `usage` from the final stop chunk (not earlier deltas)\n\n## If stuck\n- Hard-refresh, confirm login. UI Ask falls to Hosted when community shows 0 Macs. v1 stays fail-loud `no_mac_online`.\n- Telegram: https://t.me/+ck9pUjL2ncNiZjRh (the only official Dasha invite - ignore lookalike groups)\n";
 const API='https://lobby.getdasha.com';
-let conversation=[],threadRoute='',stayAskChat=false,noMacHostedFallback=false,loggedIn=false,sessionLabel='',hostedLive=false,hostedChosenThisSession=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,cardAvailable=false,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,lastSseFinishReason=null,askRunDoneTimer=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacKnown=0,ownMacIds=new Set(),ownMacModels=new Set(),ownMacTps=0,preferSelf=false,lastPreferAttempted=false,networkCapacity=[],jobsQueued=0,ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask',buildBack='answer',provideExpectingNew=false,provideExpectingIds=new Set(),provideExpectingNewId='',provideExpectingOnline=0;
+let conversation=[],threadRoute='',stayAskChat=false,noMacHostedFallback=false,askBusy=false,askLive=null,askEditAt=-1,loggedIn=false,sessionLabel='',hostedLive=false,hostedChosenThisSession=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,cardAvailable=false,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,lastSseFinishReason=null,askRunDoneTimer=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacKnown=0,ownMacIds=new Set(),ownMacModels=new Set(),ownMacTps=0,preferSelf=false,lastPreferAttempted=false,networkCapacity=[],jobsQueued=0,ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask',buildBack='answer',provideExpectingNew=false,provideExpectingIds=new Set(),provideExpectingNewId='',provideExpectingOnline=0;
 
 // Funnel telemetry (task 22): aggregate counters only. anon id is a local UUID, never an identity.
 function anonId(){let id='';try{id=localStorage.getItem('dasha-anon-id')||''}catch(e){}if(!id){try{id=crypto.randomUUID()}catch(e){id='00000000-0000-4000-8000-'+String(Math.random()).slice(2,14).padEnd(12,'0')}try{localStorage.setItem('dasha-anon-id',id)}catch(e){}}return id}
@@ -1049,28 +1118,123 @@ function threadSpeaker(role){
   }
   return 'Mac';
 }
-function askHasReply(){return conversation.some(m=>m.role==='assistant')}
-function paintAskTurn(message){
+function askHasReply(){return conversation.some(m=>m.role==='assistant')||!!(askLive&&askLive.assistant)}
+function escapeAskHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function askInlineBits(s){
+  return escapeAskHtml(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+}
+function askBlockMd(s){
+  const lines=String(s||'').split('\n');
+  let html='',buf=[],mode='';
+  const flush=()=>{
+    if(!buf.length)return;
+    if(mode==='ul')html+='<ul>'+buf.map(x=>'<li>'+askInlineBits(x)+'</li>').join('')+'</ul>';
+    else if(mode==='ol')html+='<ol>'+buf.map(x=>'<li>'+askInlineBits(x)+'</li>').join('')+'</ol>';
+    else html+='<p>'+buf.map(askInlineBits).join('<br>')+'</p>';
+    buf=[];mode='';
+  };
+  for(const line of lines){
+    const ul=line.match(/^\s*[-*]\s+(.+)/);
+    const ol=line.match(/^\s*\d+\.\s+(.+)/);
+    if(ul){if(mode!=='ul')flush();mode='ul';buf.push(ul[1]);continue}
+    if(ol){if(mode!=='ol')flush();mode='ol';buf.push(ol[1]);continue}
+    if(!line.trim()){flush();continue}
+    if(mode!=='p')flush();mode='p';buf.push(line);
+  }
+  flush();
+  return html;
+}
+function renderAskMarkdown(src,streaming){
+  const text=String(src||'');
+  const parts=[];
+  const re=/```([^\n`]*)\n?([\s\S]*?)```/g;
+  let m,last=0;
+  while((m=re.exec(text))){
+    if(m.index>last)parts.push({t:'md',s:text.slice(last,m.index)});
+    parts.push({t:'code',lang:m[1].trim(),s:m[2]});
+    last=m.index+m[0].length;
+  }
+  let tail=text.slice(last);
+  if(streaming){
+    const open=tail.match(/```([^\n`]*)\n?([\s\S]*)$/);
+    if(open){
+      if(open.index>0)parts.push({t:'md',s:tail.slice(0,open.index)});
+      parts.push({t:'code',lang:open[1].trim(),s:open[2],open:true});
+      tail='';
+    }
+  }
+  if(tail)parts.push({t:'md',s:tail});
+  if(!parts.length)return askBlockMd('');
+  return parts.map(p=>{
+    if(p.t!=='code')return askBlockMd(p.s);
+    const lang=escapeAskHtml(p.lang||'');
+    return '<pre'+(p.open?' data-open="1"':'')+'><code'+(lang?(' class="language-'+lang+'"'):'')+'>'+escapeAskHtml(p.s)+'</code></pre>';
+  }).join('');
+}
+function fillAskSaid(said,content,streaming){
+  if(!said)return;
+  said.classList.add('ask-md');
+  said.innerHTML=renderAskMarkdown(content,!!streaming);
+}
+function visibleAskTurns(){
+  const turns=conversation.map(m=>({...m,state:m.state||'complete'}));
+  if(askLive){
+    turns.push({role:'user',content:askLive.user,state:'complete'});
+    turns.push({role:'assistant',content:askLive.assistant||'',state:askLive.state||'thinking',live:true});
+  }
+  return turns;
+}
+function askAct(label,act){
+  const b=document.createElement('button');
+  b.type='button';b.className='ask-act';b.dataset.act=act;b.textContent=label;
+  return b;
+}
+function lastAskIndex(turns,role){
+  for(let i=turns.length-1;i>=0;i--)if(turns[i].role===role)return i;
+  return -1;
+}
+function paintAskTurn(message,index,turns){
   const turn=document.createElement('div');
+  const state=message.state||'complete';
   turn.className='ask-turn '+(message.role==='user'?'you':'mac');
+  turn.dataset.state=state;
+  if(message.live)turn.dataset.live='1';
   const who=document.createElement('div');
   who.className='ask-who';
   who.textContent=threadSpeaker(message.role)+'\n';
-  const said=document.createElement('pre');
+  const said=document.createElement(message.role==='assistant'?'div':'pre');
   said.className='ask-said';
-  said.textContent=message.content;
-  turn.append(who,said);
+  if(message.role==='assistant')fillAskSaid(said,message.content,state==='streaming'||state==='thinking');
+  else said.textContent=message.content;
+  const acts=document.createElement('div');
+  acts.className='ask-acts';
+  const lastUser=lastAskIndex(turns,'user');
+  const lastAsst=lastAskIndex(turns,'assistant');
+  if(message.role==='assistant'&&(state==='complete'||state==='stopped'||state==='error')){
+    acts.append(askAct('Copy','copy'));
+    if(index===lastAsst&&!askBusy)acts.append(askAct('Regenerate','regen'));
+  }
+  if(message.role==='user'&&index===lastUser&&!askBusy)acts.append(askAct('Edit','edit'));
+  turn.append(who,said,acts);
   return turn;
 }
+function sizeAskPrompt(){
+  const el=$('prompt'); if(!el)return;
+  el.style.height='auto';
+  const cap=Math.round(Math.min(window.innerHeight*0.32,280));
+  el.style.height=Math.max(48,Math.min(el.scrollHeight,cap))+'px';
+}
 function paintAskThread(){
-  const thread=$('ask-thread'),starters=$('ask-starters'),welcome=$('ask-starter'),clear=$('clear-chat');
-  const open=conversation.length>0;
+  const thread=$('ask-thread'),starters=$('ask-starters'),welcome=$('ask-starter'),clear=$('clear-chat'),more=$('ask-more');
+  const turns=visibleAskTurns();
+  const open=turns.length>0;
   document.body.classList.toggle('has-chat',open);
+  if(more){if(open)more.removeAttribute('open');else more.setAttribute('open','')}
   if(thread){
     thread.hidden=!open;
     if(open){
       thread.removeAttribute('hidden');
-      thread.replaceChildren(...conversation.map(paintAskTurn));
+      thread.replaceChildren(...turns.map((message,index)=>paintAskTurn(message,index,turns)));
     }else{
       thread.setAttribute('hidden','');
       thread.replaceChildren();
@@ -1134,10 +1298,101 @@ function paintAnswerMoney(){
   paintAnswerReceipt();
 }
 function clearAnswerMoney(){lastAskFailKind=null;lastPreferAttempted=false;lastPaidReceipt=null;paintAnswerMoney();paintAnswerReceipt()}
-function clearConversation(){conversation=[];threadRoute='';stayAskChat=false;noMacHostedFallback=false;renderConversation();paintRequest();hideNightOffer();clearAnswerMoney();paintAnswerApi()}
-$('prompt').addEventListener('input',()=>{paintRequest();updateRun();});
+function beginAskLive(userContent){
+  askLive={user:String(userContent||''),assistant:'',state:'thinking'};
+  askBusy=true;
+  paintAskThread();
+}
+function noteAskPartial(text,state){
+  if(!askLive)return;
+  askLive.assistant=String(text||'');
+  if(state)askLive.state=state;
+  paintAskLiveTurn();
+}
+function paintAskLiveTurn(){
+  const thread=$('ask-thread');
+  if(!thread||!askLive)return;
+  const turn=thread.querySelector('.ask-turn.mac[data-live="1"]');
+  if(!turn){paintAskThread();return}
+  turn.dataset.state=askLive.state||'streaming';
+  fillAskSaid(turn.querySelector('.ask-said'),askLive.assistant,askLive.state==='streaming'||askLive.state==='thinking');
+}
+function commitAskLive(state,text){
+  if(!askLive)return;
+  const user=askLive.user;
+  const content=String(text??askLive.assistant??'');
+  const kept=conversation.slice();
+  if(!kept.length||kept[kept.length-1].role!=='user'||kept[kept.length-1].content!==user){
+    kept.push({role:'user',content:user,state:'complete'});
+  }
+  const fallback=state==='error'?'No reply.':state==='stopped'?'Stopped.':'';
+  kept.push({role:'assistant',content:content||fallback,state:state||'complete'});
+  conversation=kept.slice(-12);
+  askLive=null;
+}
+function stopAskRun(){
+  if(!askBusy&&!runAbort)return;
+  jobCancelled=true;
+  try{runAbort?.abort()}catch{}
+  if(activeJob)api('/compute/api/jobs/'+activeJob,{method:'DELETE'}).catch(()=>{});
+}
+function regenerateLastAsk(){
+  if(askBusy)return;
+  const turns=visibleAskTurns();
+  let i=lastAskIndex(turns,'assistant');
+  if(i<0)return;
+  let u=i-1;
+  while(u>=0&&turns[u].role!=='user')u--;
+  if(u<0)return;
+  const userText=turns[u].content;
+  conversation=conversation.slice(0, Math.min(u, conversation.length));
+  askEditAt=-1;
+  $('prompt').value=userText;
+  sizeAskPrompt();
+  const run=$('run-demo');
+  if(run){run.hidden=false;run.removeAttribute('hidden');run.style.display='';run.disabled=false;run.click()}
+}
+function editLastUserAsk(){
+  if(askBusy)return;
+  let u=lastAskIndex(conversation,'user');
+  if(u<0)return;
+  askEditAt=u;
+  $('prompt').value=conversation[u].content;
+  sizeAskPrompt();
+  $('prompt').focus();
+}
+async function copyAskText(text,btn){
+  const value=String(text||'');
+  try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);else throw 0}
+  catch{
+    const ta=document.createElement('textarea');
+    ta.value=value;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy')}catch{}
+    ta.remove();
+  }
+  if(btn){const prev=btn.textContent;btn.textContent='Copied';setTimeout(()=>{if(btn.textContent==='Copied')btn.textContent=prev},900)}
+}
+function clearConversation(){
+  const busy=askBusy;
+  askBusy=false;askLive=null;askEditAt=-1;
+  conversation=[];threadRoute='';stayAskChat=false;noMacHostedFallback=false;
+  if(busy){jobCancelled=true;try{runAbort?.abort()}catch{}}
+  renderConversation();paintRequest();hideNightOffer();clearAnswerMoney();paintAnswerApi();updateRun();
+}
+$('prompt').addEventListener('input',()=>{paintRequest();updateRun();sizeAskPrompt();});
 $('prompt').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const run=$('run-demo');if(run&&!run.hidden){run.click();return}const login=$('login');if(login&&!login.hidden)login.click()}});
 $('clear-chat').addEventListener('click',clearConversation);
+$('ask-thread')?.addEventListener('click',event=>{
+  const btn=event.target?.closest?.('.ask-act');
+  if(!btn)return;
+  const turn=btn.closest('.ask-turn');
+  const said=turn?.querySelector('.ask-said');
+  const text=said?said.textContent:'';
+  if(btn.dataset.act==='copy')copyAskText(text,btn);
+  else if(btn.dataset.act==='regen')regenerateLastAsk();
+  else if(btn.dataset.act==='edit')editLastUserAsk();
+});
 $('guide-hide').addEventListener('click',hideGuide);
 $('guide').addEventListener('click',(e)=>{if(e.target.closest('#guide-step-verify a')){try{localStorage.setItem(GUIDE_KEY,'done')}catch{}}});
 let marketData=null,marketError='';
@@ -1295,6 +1550,7 @@ function enterAskEngine(advance=true){
 function maybeAdoptCommunityDefault(){
   if(hostedChosenThisSession)return;
   if(noMacHostedFallback)return;
+  if(askBusy)return;
   if(!(providersOnline>=1))return;
   if(runAbort||activeJob)return;
   const eng=$('engine')?.value||'hosted';
@@ -1341,7 +1597,7 @@ function setAskRunChip(state){
   const chip=$('ask-run-chip'); if(!chip)return;
   if(state==='idle'||!state){chip.hidden=true;chip.setAttribute('aria-hidden','true');chip.dataset.state='idle';chip.removeAttribute('title');return}
   chip.hidden=false;chip.removeAttribute('aria-hidden');chip.dataset.state=state;
-  chip.title=state==='check'?'Done':state==='spin'?'Running':'';
+  chip.title=state==='check'?'Done':state==='spin'?'Running':state==='stopped'?'Stopped':state==='error'?'Error':'';
 }
 function paintAskRunSpin(){setAskRunChip('spin')}
 function paintAskRunCheck(){setAskRunChip('check')}
@@ -1360,15 +1616,16 @@ function flashAskRunCheck(){
 function paintAskStreamDelta(node,settled,chunk){
   if(!node)return;
   const full=String(settled||'')+String(chunk||'');
-  if(prefersAskReducedMotion()||!chunk){node.textContent=full;return}
+  if(prefersAskReducedMotion()||!chunk){node.textContent=full;noteAskPartial(full,'streaming');return}
   node.textContent='';
   if(settled)node.appendChild(document.createTextNode(settled));
   const span=document.createElement('span');
   span.className='ask-stream-chunk';
   span.textContent=chunk;
   node.appendChild(span);
+  noteAskPartial(full,'streaming');
 }
-function settleAskStream(node,full){if(node)node.textContent=String(full||'')}
+function settleAskStream(node,full){if(node)node.textContent=String(full||'');noteAskPartial(String(full||''),askLive?'streaming':undefined)}
 function markAskStreamSuccess(){
   // Successful finish_reason=stop (or non-SSE complete). Never on midstream fail.
   paintAskRunCheck();
@@ -1409,7 +1666,7 @@ function paintCommunityStillOnline(){
   paintHonestyPanel();
 }
 function paintCommunityJobProgress(data){
-  if(data?.answer){if($('answer').textContent!==data.answer)noteRunProgress();$('answer').textContent=data.answer;onFirstToken();return}
+  if(data?.answer){if($('answer').textContent!==data.answer)noteRunProgress();$('answer').textContent=data.answer;noteAskPartial(data.answer,'streaming');onFirstToken();return}
   const cur=String($('answer')?.textContent||'').trim();
   if(cur==='Still online.')return;
   $('answer').textContent='A Mac is working.';
@@ -1529,7 +1786,7 @@ async function runHostedAsk(messages){
   if(ct.includes('event-stream')){answer=await readSse(res);hostedUsage=lastSseUsage}
   else{
     if(!res.ok){const err=await res.json().catch(()=>({}));const e=Error(err?.error?.message||err?.error||'Request failed');e.code=err?.error?.code||err?.code||null;throw e}
-    const data=await res.json();answer=String(data.answer||'');onFirstToken();$('answer').textContent=answer;if(String(answer||'').trim())lastSseFinishReason='stop';
+    const data=await res.json();answer=String(data.answer||'');onFirstToken();$('answer').textContent=answer;noteAskPartial(answer,answer?'streaming':'thinking');if(String(answer||'').trim())lastSseFinishReason='stop';
     if(Number.isFinite(Number(data?.balance_cents))){creditBalanceCents=Math.max(0,Math.floor(Number(data.balance_cents)));paintAskCredits()}
     if(data?.usage&&typeof data.usage==='object')hostedUsage=data.usage;
   }
@@ -1716,13 +1973,13 @@ function setEngine(value,advance=true){
     preferOnlineModel($('model'),eng==='mixture');
     if(eng==='mixture'&&!SUB24.has($('model').value))$('model').value='qwen3-8b';
     paintModelChoices();
-    showTf('model');
+    showTf('ask');
   }
 }
 function paintProgress(step){
   const bar=$('tf-progress');
   if(!bar)return;
-  if(step==='gate'||step==='credits'||step==='you'||step==='earn'){bar.hidden=true;bar.replaceChildren();return}
+  if(step==='gate'||step==='credits'||step==='you'||step==='earn'||step==='ask'){bar.hidden=true;bar.replaceChildren();return}
   const eng=$('engine')?.value||'hosted';
   let path;
   if(step.startsWith('provide'))path=['provide-name','provide-reg','provide-done'];
@@ -1888,10 +2145,12 @@ function showTf(step){
     const prompt=$('prompt');
     const backHidden=!!$('back-ask')?.hidden;
     if(prompt){
-      if(nightQueueIntent)prompt.title=backHidden?'Enter to queue':'Enter to queue · Esc back';
-      else if(askHasReply())prompt.title=backHidden?'Enter to send':'Enter to send · Esc back';
-      else prompt.title=backHidden?'Enter to run':'Enter to run · Esc back';
+      if(nightQueueIntent)prompt.title=backHidden?'Enter to queue · Shift+Enter newline':'Enter to queue · Shift+Enter newline · Esc back';
+      else if(askHasReply())prompt.title=backHidden?'Enter to send · Shift+Enter newline':'Enter to send · Shift+Enter newline · Esc back';
+      else prompt.title=backHidden?'Enter to send · Shift+Enter newline':'Enter to send · Shift+Enter newline · Esc back';
     }
+    paintAskModel();
+    sizeAskPrompt();
     setTimeout(()=>$('prompt')?.focus(),40);
   }else if(step==='provide-name'){
     const back=$('provide-name-back')||document.querySelector('#step-provide-name .tf-back');
@@ -2111,6 +2370,38 @@ function paintAskEngine(){
     btn.title='Change engine · '+bits.join(' · ')+' available';
   }else btn.title='Change engine';
   paintAskPlaceholder();
+  paintAskModel();
+}
+function askModelPool(){
+  const eng=$('engine')?.value||'hosted';
+  const mixture=eng==='mixture';
+  let pool=mixture?MODELS.filter(m=>SUB24.has(m[0])):MODELS.slice();
+  if(eng==='self'&&ownMacModels.size)pool=pool.filter(m=>ownMacModels.has(m[0]));
+  else if(networkModels.size>0)pool=pool.filter(m=>networkModels.has(m[0]));
+  return pool;
+}
+function paintAskModel(){
+  const pill=$('ask-model');
+  if(!pill)return;
+  const eng=$('engine')?.value||'hosted';
+  const mac=eng==='community'||eng==='mixture'||eng==='self';
+  if(!mac){pill.hidden=true;pill.setAttribute('hidden','');pill.replaceChildren();return}
+  const pool=askModelPool();
+  const cur=String($('model')?.value||'').trim();
+  pill.hidden=false;pill.removeAttribute('hidden');
+  pill.replaceChildren();
+  pool.forEach(([id,,label])=>{
+    const o=document.createElement('option');
+    o.value=id;o.textContent=label;
+    if(id===cur)o.selected=true;
+    pill.append(o);
+  });
+  if(cur&&![...pill.options].some(o=>o.value===cur)){
+    const o=document.createElement('option');
+    o.value=cur;o.textContent=cur;o.selected=true;
+    pill.append(o);
+  }
+  if(cur)pill.value=cur;
 }
 function paintAskMyMac(){
   const chip=$('ask-mymac'),sep=$('ask-mymac-sep'),prefer=$('ask-prefer-mymac'),preferSep=$('ask-prefer-mymac-sep'),engSelf=$('eng-self');
@@ -2236,6 +2527,7 @@ function updateRun(){
   const communityOption=[...$('engine').options].find(option=>option.value==='community');
   if(communityOption){communityOption.hidden=false;communityOption.text=providersOnline>=1?`Community · ${providersOnline}`:'Community'}
   $('run-demo').textContent=askHasReply()?'Send':'Run';
+  if(askBusy)$('run-demo').textContent='Stop';
   // Guest + Mac/hosted available: hide Run so Sign in is the only primary (no dual CTA muddle).
   // Guest + noMac: one primary Run (Hosted Ask miss); hide Ask #login.
   // Logged-in Community/Mixture with a Mac: Run. Miss (no Mac / model gone): Run still on if Hosted can take it.
@@ -2307,6 +2599,12 @@ function updateRun(){
     }
   }
   if(nightQueueIntent)$('run-demo').textContent='Queue';
+  if(askBusy){
+    $('run-demo').textContent='Stop';
+    run.hidden=false;run.removeAttribute('hidden');run.style.display='';run.disabled=false;
+    run.classList.add('is-run-busy');
+    if(loginBtn)loginBtn.hidden=true;
+  }
   if(!noMac&&tfStep!=='night')hideNightOffer();
   paintHowEngineDoors();
   paintAskEngine();paintAskMyMac();paintAskCommunity();paintHowFloorFine();paintAskFreeFine();
@@ -2375,6 +2673,7 @@ function startRunTick(waiting){
 function onFirstToken(){
   clearRunTick();
   clearAskThink();
+  if(askLive&&askLive.state==='thinking'){askLive.state='streaming';paintAskLiveTurn()}
   // Lean TTFT on Answer title only — decode split stays parked. Prefer miss waits still surface as TTFT.
   if(noMacHostedFallback){paintNoMacHostedFace();paintSplit();return}
   let title='Answer.';
@@ -2522,12 +2821,17 @@ $('queue-night').addEventListener('click',()=>queueForMac());
 $('night-use-hosted')?.addEventListener('click',()=>{if(window.__dashaAuthReady&&hostedLive===false)return;nightQueueIntent=false;hostedChosenThisSession=true;setEngine('hosted',true)});
 $('night-use-community')?.addEventListener('click',()=>{if(providersOnline<1)return;nightQueueIntent=false;cameFromHow=true;cameFromGate=false;preferOnlineModel($('model'),false);setEngine('community',false);showTf('ask');});
 $('run-demo').addEventListener('click',async()=>{
+  if(askBusy){stopAskRun();return}
   if(nightQueueIntent){queueForMac();return}
   stayAskChat=false;
   noMacHostedFallback=false;
   if(threadKeepsCommunity()&&!hostedChosenThisSession&&($('engine')?.value||'')==='hosted'){
     const keep=threadRoute||'community';
     $('engine').value=keep;
+  }
+  if(askEditAt>=0){
+    conversation=conversation.slice(0,askEditAt);
+    askEditAt=-1;
   }
   const prompt=$('prompt').value.trim();
   if(!prompt){$('answer').textContent='Write a prompt first.';return}
@@ -2563,21 +2867,27 @@ $('run-demo').addEventListener('click',async()=>{
   if(community)messages=modelIdentityFraming(messages,$('model').value);
   hideNightOffer();
   if(!loggedIn){$('answer').textContent='Sign in.';$('answer-title').textContent=noMacHostedFallback?'No Mac online. Hosted.':'Do.';showTf('answer');return}
-  button.disabled=true;$('clear-chat').disabled=true;
+  stayAskChat=true;
+  askBusy=true;
+  threadRoute=eng;
+  beginAskLive(prompt);
+  $('prompt').value='';
+  sizeAskPrompt();
+  button.disabled=false;$('clear-chat').disabled=false;
   clearAskRunDone();clearAskRunChip();lastSseFinishReason=null;
   button.classList.add('is-run-busy');
-  button.textContent=community?'A Mac is working.':'Running…';
+  button.textContent='Stop';
   if(community)paintCommunityWorkingFace();
   else {$('answer').textContent='Thinking…';setAskThink('hosted');paintAskRunSpin()}
   if(noMacHostedFallback)paintNoMacHostedFace();
-  showTf('answer');
-  beacon('ask','start');
-  $('after-answer').hidden=true;
-  {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
   jobCancelled=false;
   window.__dashaStreamResumeOnce=false;
   if(runAbort){try{runAbort.abort()}catch{}}
   runAbort=new AbortController();
+  showTf('ask');
+  beacon('ask','start');
+  $('after-answer').hidden=true;
+  {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
   startRunWatch();
   $('cancel-job').hidden=false;$('cancel-job').disabled=false;
   startRunTick(!!community);
@@ -2687,14 +2997,23 @@ $('run-demo').addEventListener('click',async()=>{
       // Keep prompt for quiet Retry. Do not push empty assistant / do not count sent.
       // Never paint settle success on empty/fail — USDC/$dasha cents only on real complete.
       // Never auto-retry an empty Community completion onto Hosted.
+      $('prompt').value=prompt;sizeAskPrompt();
       clearAnswerMoney();
       lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
-      scheduleSameEngineRetry(eng);
+      if(window.__dashaEmptyRetryOnce){
+        setAskRunChip('error');
+        commitAskLive('error',$('answer').textContent||'No reply.');
+        window.__dashaEmptyRetryOnce=false;
+      }else{
+        askLive=null;
+        scheduleSameEngineRetry(eng);
+      }
     }else{
       window.__dashaEmptyRetryOnce=false;
       const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}
       beacon('ask','complete');
-      conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer}].slice(-12);
+      askLive=null;
+      conversation=[...messages.filter(m=>m.role!=='system'),{role:'assistant',content:answer,state:'complete'}].slice(-12);
       threadRoute=eng;stayAskChat=true;
       renderConversation();$('prompt').value='';paintRequest();sent++;onFirstToken();lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
       // Spinner→check only on honest finish_reason=stop (poll/JSON complete sets stop).
@@ -2702,7 +3021,7 @@ $('run-demo').addEventListener('click',async()=>{
       else {clearAskRunChip();clearAskRunDone()}
     }
   }catch(error){
-    clearAskThink();clearAskRunChip();clearAskRunDone();
+    clearAskThink();
     const msg=String(error?.message||error||'');
     const emptyFail=/empty completion/i.test(msg);
     // Mid-stream provider die (URLError / provider_cut) — fail loud + Retry; never settle/success face.
@@ -2714,12 +3033,21 @@ $('run-demo').addEventListener('click',async()=>{
       if(runHasProgress)$('answer').textContent+='\n\n'+runTimeoutMessage;
       else $('answer').textContent=runTimeoutMessage;
       const retry=$('answer-retry');if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent||runTimeoutMessage);
     }else if(jobCancelled||error?.name==='AbortError'){
       // Keep partial tokens already painted; only replace waiting placeholders.
-      const cur=String($('answer')?.textContent||'');
-      const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|A Mac is working\.|Still online\.|Queued)/.test(cur);
-      if(waiting||!cur.trim()){$('answer').textContent='Request cancelled. Prompt deleted.';}
+      const cur=String(askLive?.assistant||$('answer')?.textContent||'');
+      const waiting=/^(Waiting for a Mac…|Waiting for Mac…|Thinking…|A Mac is generating…|A Mac is working\.|Still online\.|Queued|Stopped\.|Request cancelled\. Prompt deleted\.)$/.test(cur.trim());
+      const keep=cur.trim()&&!waiting?cur:'';
+      if(keep)$('answer').textContent=keep;
+      else if(waiting||!cur.trim()){$('answer').textContent=askLive?'Stopped.':'Request cancelled. Prompt deleted.';}
       $('answer-title').textContent='Answer.';
+      setAskRunChip('stopped');
+      if(askLive)commitAskLive('stopped',keep||'Stopped.');
+      stayAskChat=!!(conversation.length||keep);
+      clearAskRunDone();
       clearAnswerMoney();
       {const retry=$('answer-retry'); if(retry){retry.hidden=true;retry.setAttribute('hidden','')}}
     }else if(emptyFail){
@@ -2736,9 +3064,17 @@ $('run-demo').addEventListener('click',async()=>{
         $('answer').textContent=shortJob?('No reply.\n'+shortJob):'No reply.';
       }
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      $('prompt').value=prompt;sizeAskPrompt();
       clearAnswerMoney();
       lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
-      scheduleSameEngineRetry(eng);
+      if(window.__dashaEmptyRetryOnce){
+        setAskRunChip('error');
+        commitAskLive('error',$('answer').textContent||'No reply.');
+        window.__dashaEmptyRetryOnce=false;
+      }else{
+        askLive=null;
+        scheduleSameEngineRetry(eng);
+      }
     }else if(providerCut){
       clearAnswerMoney();
       lastAskFailKind='provider_cut';
@@ -2747,6 +3083,9 @@ $('run-demo').addEventListener('click',async()=>{
       const note=providersOnline>0?'\nStill listed online.':'';
       $('answer').textContent='Mac cut out.'+note;
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent);
       paintAnswerMoney();paintAnswerReceipt();
     }else if(hostedCut){
       // Hosted denial (Workers AI / unavailable) — fail loud + Retry; never settle/success face.
@@ -2756,11 +3095,17 @@ $('run-demo').addEventListener('click',async()=>{
       const note=providersOnline>=1?'\nTry Community or Queue.':'';
       $('answer').textContent='Hosted cut out.'+note;
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent);
       paintAnswerMoney();paintAnswerReceipt();
     }else if(community&&(error?.code==='community_stream_miss'||isAskNetworkDrop(error))){
       // Dropped Community SSE is not "the network is down" while a Mac still advertises.
       paintCommunityNoReply(activeJob);
       const retry=$('answer-retry'); if(retry){retry.hidden=false;retry.removeAttribute('hidden')}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent||'No reply.');
       clearAnswerMoney();
       lastAskFailKind=null;paintAnswerMoney();paintAnswerReceipt();loadSettled24h();
     }else{
@@ -2779,9 +3124,12 @@ $('run-demo').addEventListener('click',async()=>{
         $('answer-title').textContent='Answer.';
       }
       else {clearAnswerMoney();$('answer').textContent=msg||'Request failed';}
+      setAskRunChip('error');
+      $('prompt').value=prompt;sizeAskPrompt();
+      commitAskLive('error',$('answer').textContent||'Request failed');
     }
   }
-  finally{clearRunWatch();clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;const _run=$('run-demo');if(_run)_run.classList.remove('is-run-busy');if(!stayAskChat){clearAskThink()}paintAnswerApi();paintAnswerMoney();paintAnswerReceipt();paintGuide();updateRun();if(stayAskChat)showTf('ask');else $('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
+  finally{askBusy=false;if(askLive){commitAskLive(askLive.assistant?'stopped':'error',askLive.assistant||'No reply.');stayAskChat=true}clearRunWatch();clearRunTick();activeJob='';runAbort=null;$('cancel-job').hidden=true;$('cancel-job').disabled=false;$('after-answer').hidden=false;const _run=$('run-demo');if(_run)_run.classList.remove('is-run-busy');if(!stayAskChat){clearAskThink()}paintAnswerApi();paintGuide();paintAnswerMoney();paintAnswerReceipt();updateRun();if(stayAskChat)showTf('ask');else $('clear-chat').disabled=!conversation.length;if(!community&&loggedIn)loadCreditsBalance()}
 });
 document.querySelectorAll('.engines [data-engine]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.engine==='hosted'&&window.__dashaAuthReady&&hostedLive===false)return;if(b.dataset.engine==='hosted')hostedChosenThisSession=true;setEngine(b.dataset.engine,true)}));
 $('model').addEventListener('change',updateRun);
@@ -4207,6 +4555,11 @@ document.querySelectorAll('#faq-areas [data-faq-area]').forEach(btn=>btn.addEven
 $('login')?.addEventListener('click',()=>{if(!loggedIn)saveAskDraftForLogin();});
 
 $('change-engine')?.addEventListener('click',()=>{cameFromHow=true;cameFromGate=false;showTf('how');});
+$('ask-model')?.addEventListener('change',()=>{
+  const id=String($('ask-model').value||'').trim();
+  if(id&&$('model'))$('model').value=id;
+  updateRun();
+});
 $('ask-prefer-mymac')?.addEventListener('click',()=>{
   if(ownMacOnline<1)return; // offline Prefer chip is visibility-only
   preferSelf=!preferSelf;
@@ -4260,12 +4613,8 @@ document.querySelectorAll('[data-back]').forEach(btn=>{
     if(btn.id==='back-ask'){
       const eng=$('engine').value;
       if(nightQueueIntent||(eng!=='hosted'&&fleetEmpty(eng))){nightQueueIntent=false;showNightEmpty();return}
-      if(eng==='hosted'){
-        if(cameFromHow){showTf('how');return}
-        if(cameFromGate){showTf('gate');return}
-        return;
-      }
-      showTf('model');
+      if(cameFromHow){showTf('how');return}
+      if(cameFromGate){showTf('gate');return}
       return;
     }
     if(dest)showTf(dest);
@@ -4277,6 +4626,7 @@ document.addEventListener('keydown',event=>{
   const tag=(document.activeElement&&document.activeElement.tagName||'').toLowerCase();
   const typing=tag==='input'||tag==='textarea'||tag==='select'||!!(document.activeElement&&document.activeElement.isContentEditable);
   if(event.key==='Escape'){
+    // Esc back only — never clear the Ask thread.
     const step=document.querySelector('[data-tf]:not([hidden])');
     const back=step&&(step.querySelector('.tf-back')||step.querySelector('#back-ask'));
     if(back&&!back.hidden){event.preventDefault();back.click()}

@@ -53,8 +53,8 @@ assert.doesNotMatch(which, /before using a token link/);
 
 const sitemap = extractConst('SITEMAP_XML');
 assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/forum<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/llms\.txt<\/loc><lastmod>2026-09-01<\/lastmod>/);
-assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/how-to-buy<\/loc><lastmod>2026-09-01<\/lastmod>/);
+assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/llms\.txt<\/loc><lastmod>2026-09-16<\/lastmod>/);
+assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/how-to-buy<\/loc><lastmod>2026-09-16<\/lastmod>/);
 assert.match(sitemap, /<loc>https:\/\/www\.getdasha\.com\/privacy<\/loc>/);
 assert.doesNotMatch(sitemap, /<loc>https:\/\/www\.getdasha\.com\/dasha<\/loc>/);
 assert.doesNotMatch(sitemap, /<loc>https:\/\/www\.getdasha\.com\/studio<\/loc>/);
@@ -64,6 +64,10 @@ assert.doesNotMatch(sitemap, /<loc>https:\/\/www\.getdasha\.com\/learn<\/loc>/);
 const robots = extractConst('ROBOTS_TXT');
 assert.match(robots, /Allow: \/llms\.txt/);
 assert.match(robots, /Allow: \/llms-full\.txt/);
+assert.match(robots, /^Allow: \/agents\.json$/m);
+assert.match(robots, /^Allow: \/\.well-known\/mcp\.json$/m);
+assert.match(robots, /^Allow: \/\.well-known\/agent\.json$/m);
+assert.match(robots, /^Allow: \/compute\/skill\.md$/m);
 assert.ok(!/^Allow:\s*\/verse\s*$/m.test(robots));
 assert.ok(!/^Allow:\s*\/learn\s*$/m.test(robots));
 

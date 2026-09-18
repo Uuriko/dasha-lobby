@@ -7,6 +7,8 @@ import { ComputeNetwork, growAllowedModels, openaiErrorBody } from './dasha-comp
 assert.deepEqual(growAllowedModels(['qwen3-8b'], ['qwen3-4b', 'qwen3-8b']).sort(), ['qwen3-4b', 'qwen3-8b']);
 assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-8b', 'not-a-model']).includes('not-a-model'));
 assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-4b']).includes('gpt-oss-120b'));
+assert.deepEqual(growAllowedModels(['qwen3-8b'], ['ternary-bonsai-2-27b', 'qwen3-8b']).sort(), ['qwen3-8b', 'ternary-bonsai-2-27b']);
+assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-8b']).includes('ternary-bonsai-2-27b'), 'unpolled bonsai stays locked');
 
 const env = { LOBBY_SESSION_SECRET: 'providers-verify-poll-slash-head-secret', AI: { run: async () => ({ response: 'ok' }) } };
 const rows = new Map();

@@ -147,7 +147,7 @@ export function dashaChatSpendHeaders({ route, model, spendCents = null } = {}) 
 export const SSE_BUYER_HOLD_MS = 35_000;
 export const SSE_KEEPALIVE_MS = 10_000;
 
-const MODELS = new Set(['qwen3-4b', 'qwen3-8b', 'gemma3-12b', 'gpt-oss-20b', 'qwen3-30b-a3b', 'gemma3-27b', 'gpt-oss-120b']);
+const MODELS = new Set(['qwen3-4b', 'qwen3-8b', 'gemma3-12b', 'gpt-oss-20b', 'qwen3-30b-a3b', 'gemma3-27b', 'ternary-bonsai-2-27b', 'gpt-oss-120b']);
 export const COMPUTE_CATALOG_MODELS = MODELS;
 
 /**

@@ -157,6 +157,7 @@ import {
 import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
 import { applyCrewShareOg, crewApi, isCrewPagePath } from './dasha-crew.mjs';
+import { isMuseProductPath, museProductKind, museProductPageHtml, MUSE_FACES } from './dasha-muse-product.mjs';
 import { bagRecordApi, isBagRecordPath, lookupRecord, normalizeMint, renderBagShareHtml } from './dasha-bag-record.mjs';
 import { bagExitApi, isBagExitPath } from './dasha-bag-exit.mjs';
 import { appendFill, collectInboundFills, FAUCET_TAPE_SCAN_CAP, fillShareApi, isBareFaucetFillPath, isFaucetFillPath, isFaucetTapePath, shouldScanTape, tapeApi } from './dasha-faucet-tape.mjs';
@@ -177,7 +178,7 @@ export { stripDigestLeftoverDupSectionCss };
 
 /* assets-build overwrites static-gen robots/sitemap; live-verify and disk SoR are this set. */
 const ROBOTS_TXT = `# getdasha.com — public crawl rules (also served at lobby.getdasha.com/robots.txt)
-# Machine-readable identity: /ai.txt, /llms.txt (index), and /llms-full.txt (full markdown).
+# Machine-readable identity: /ai.txt, /llms.txt (index), /llms-full.txt (full markdown), /agents.json, /.well-known/mcp.json, /.well-known/agent.json, /compute/skill.md.
 
 User-agent: *
 Allow: /
@@ -191,6 +192,10 @@ Allow: /listings.json
 Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /ai.txt
+Allow: /agents.json
+Allow: /.well-known/mcp.json
+Allow: /.well-known/agent.json
+Allow: /compute/skill.md
 
 Sitemap: https://www.getdasha.com/sitemap.xml
 Sitemap: https://lobby.getdasha.com/sitemap.xml
@@ -214,29 +219,33 @@ export function stripRobotsLecture(txt) {
 }
 const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.getdasha.com/</loc><lastmod>2026-09-01</lastmod></url>
+  <url><loc>https://www.getdasha.com/</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/simp</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/lobby</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/forum</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/faucet</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/bag</loc><lastmod>2026-09-01</lastmod></url>
-  <url><loc>https://www.getdasha.com/which</loc><lastmod>2026-09-01</lastmod></url>
+  <url><loc>https://www.getdasha.com/which</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/verify</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://www.getdasha.com/benchmarks</loc><lastmod>2026-09-08</lastmod></url>
   <url><loc>https://www.getdasha.com/listings</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/listings.json</loc><lastmod>2026-09-06</lastmod></url>
   <url><loc>https://www.getdasha.com/crew</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/digest</loc><lastmod>2026-09-01</lastmod></url>
-  <url><loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-15</lastmod></url>
+  <url><loc>https://www.getdasha.com/start</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/providers</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/developers</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/network</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/proof</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/start</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/caps</loc><lastmod>2026-09-15</lastmod></url>
-  <url><loc>https://www.getdasha.com/how-to-buy</loc><lastmod>2026-09-01</lastmod></url>
+  <url><loc>https://www.getdasha.com/how-to-buy</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/chess</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/privacy</loc><lastmod>2026-09-04</lastmod></url>
-  <url><loc>https://www.getdasha.com/llms.txt</loc><lastmod>2026-09-01</lastmod></url>
-  <url><loc>https://www.getdasha.com/llms-full.txt</loc><lastmod>2026-09-01</lastmod></url>
-  <url><loc>https://www.getdasha.com/ai.txt</loc><lastmod>2026-09-01</lastmod></url>
+  <url><loc>https://www.getdasha.com/llms.txt</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/llms-full.txt</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/ai.txt</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/contribute</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/bounties</loc><lastmod>2026-09-01</lastmod></url>
 </urlset>
@@ -341,6 +350,7 @@ compute https://www.getdasha.com/compute
 compute packet https://www.getdasha.com/compute/llms.txt
 agent.json https://www.getdasha.com/.well-known/agent.json
 compute skill https://www.getdasha.com/compute/skill.md
+Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.
 mcp https://www.getdasha.com/compute/mcp.json
 Use a Mac https://www.getdasha.com/compute#ask
 Join a Mac https://www.getdasha.com/compute#provide
@@ -395,6 +405,21 @@ index https://www.getdasha.com/llms.txt
 full https://www.getdasha.com/llms-full.txt
 `;
 
+/** Honest /humans.txt face. Team/contact/contribute pointers only — no people-data. */
+const HUMANS_TXT = `/* TEAM */
+Site: https://www.getdasha.com/
+Crew: https://www.getdasha.com/crew
+X: https://x.com/dash_eats
+GitHub: https://github.com/Uuriko/dasha-lobby
+
+/* CONTACT */
+Contribute: https://www.getdasha.com/contribute
+Security: https://www.getdasha.com/.well-known/security.txt
+
+/* SITE */
+Language: English
+`;
+
 const LLMS_FULL_TXT = `# $dasha is dash_eats on Solana
 
 > dash_eats on Solana. Site https://www.getdasha.com/. Associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. CoinGecko dash_eats. Jupiter is jup.ag with that mint.
@@ -419,17 +444,21 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 
 ## Which $dasha?
 
+This mint.
+
 This is dash_eats on Solana. Its associated Solana mint is:
 
 \`53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump\`
+
+Raydium pair:
+
+\`9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7\`
 
 The other Dasha is VVAIFU:
 
 \`FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8\`
 
 That is a different token, not this one.
-
-Pair: \`9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7\`
 
 CoinGecko lists this one as dash_eats. Jupiter is jup.ag. Token path and swap path both carry the associated mint in full.
 
@@ -483,6 +512,7 @@ Compute: Start. (Do / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Spo
 Agent packet: https://www.getdasha.com/compute/llms.txt
 Agent JSON: https://www.getdasha.com/.well-known/agent.json
 Agent skill: https://www.getdasha.com/compute/skill.md
+Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.
 MCP catalog: https://www.getdasha.com/compute/mcp.json
 Use a Mac: https://www.getdasha.com/compute#ask
 Join a Mac: https://www.getdasha.com/compute#provide
@@ -525,7 +555,7 @@ const WHICH_HTML = `<!doctype html>
   <link rel="describedby" href="/llms-full.txt" type="text/plain">
   <meta property="og:type" content="website"><meta property="og:url" content="https://www.getdasha.com/which"><meta property="og:title" content="Which $dasha? dash_eats"><meta property="og:description" content="dash_eats. Buy $dasha."><meta property="og:image" content="https://lobby.getdasha.com/og/dasha-social-card.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Which $dasha? dash_eats"><meta name="twitter:description" content="dash_eats. Buy $dasha."><meta name="twitter:image" content="https://lobby.getdasha.com/og/dasha-social-card.png">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Which $dasha? dash_eats, not VVAIFU","url":"https://www.getdasha.com/which","description":"dash_eats on Solana. Associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. CoinGecko dash_eats. The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8."}</script>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Which dasha coin?","acceptedAnswer":{"@type":"Answer","text":"This one. dash_eats. 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8. Not this."}},{"@type":"Question","name":"What is dash_eats?","acceptedAnswer":{"@type":"Answer","text":"dash_eats is $dasha on Solana. Associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Site https://www.getdasha.com/."}}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Which dasha coin?","acceptedAnswer":{"@type":"Answer","text":"This one. dash_eats. 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Raydium pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8. Not this."}},{"@type":"Question","name":"What is dash_eats?","acceptedAnswer":{"@type":"Answer","text":"dash_eats is $dasha on Solana. Associated mint 53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump. Raydium pair 9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7. Site https://www.getdasha.com/."}}]}</script>
   <style>
     :root { color-scheme: dark; font: 18px/1.5 Arial, Helvetica, sans-serif; background: #070608; color: #f4eddb; }
     body { max-width: 44rem; margin: auto; padding: 2rem 1rem; }
@@ -538,12 +568,14 @@ const WHICH_HTML = `<!doctype html>
 <body>
   <main>
     <h1>Which $dasha?</h1>
+    <h2>This mint</h2>
     <p>This is dash_eats on Solana. Its associated Solana mint is:</p>
     <code>53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code>
+    <p>Raydium pair:</p>
+    <code>9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code>
     <p>The other Dasha is VVAIFU:</p>
     <code>FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8</code>
     <p>That is a different token, not this one.</p>
-    <p>Pair: <code>9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7</code></p>
     <p>CoinGecko: <a href="https://www.coingecko.com/en/coins/dash_eats">dash_eats</a></p>
     <p><a href="https://jup.ag/tokens/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" rel="noopener noreferrer">Open the associated mint on Jupiter</a></p>
     <p>Compute. <a href="https://www.getdasha.com/compute#ask">Use a Mac</a> — Hosted when no Mac. <a href="https://www.getdasha.com/compute#provide">Provide</a></p>
@@ -1484,6 +1516,13 @@ export function polishHowtoHtml(html) {
   page = page.replace(/<h2>What you can check yourself<\/h2>/g, '<h2>On-chain</h2>');
   /* Leftover /how-to-buy disclaimer crawlers still see after style/script strip. Buy on Jupiter stays. */
   page = page.replace(/\s*Review the route there before confirming\./g, '');
+  /* Citation-gap: mint in plain text next to Buy / Jupiter, not only in step 02 / href. */
+  if (!/<code class="ca" id="buy-mint">/.test(page)) {
+    page = page.replace(
+      /(<p>Opens Jupiter with SOL selling into the exact mint above\.<\/p>)(\s*)(<div class="actions">)/i,
+      '$1$2<code class="ca" id="buy-mint">53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code>$2$3',
+    );
+  }
   /* Leftover /how-to-buy when-lecture crawlers still see after style/script strip. On-chain facts stay. */
   page = page.replace(/\s*Read from the Solana mint account on 18 August 2026 at finalized commitment\./g, '');
   page = page.replace(/<p class="when">\s*<\/p>/gi, '');
@@ -3605,15 +3644,14 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/profile/",
   "/compute/settings",
   "/compute/settings/",
-  // Apex product doors: /start /sponsor(s) /ask /pay /credits /host /use
+  // Apex product doors: /sponsor(s) /ask /pay /credits /host /use
   // /you /night /build /ocm already 308→/compute.
+  // /start is the Muse marketing home (200). Start CTA still → /compute.
   // /provide (+slash) folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS
   // → /compute#provide (join a Mac). Not Ask first-paint.
   // Apex /marketplace /market leftover pretty-paths are POTTER_COMPUTE_MARKET_OCM_308_PATHS → /compute/ocm.
   // Leftover apex Product/Provider/Mac + Prefer-MLX (/mlx /prefer-mlx /kit) still
   // html-404 while peers 308. /api is dedicated → /compute/api (not this set).
-  "/start",
-  "/start/",
   "/sponsor",
   "/sponsor/",
   "/sponsors",
@@ -3669,8 +3707,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/products/",
   "/provider",
   "/provider/",
-  "/providers",
-  "/providers/",
+  // /providers is the Muse providers face (200). Singular leftover still folds.
   "/mac",
   "/mac/",
   "/macs",
@@ -3895,7 +3932,7 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/mac-kit",
   "/compute/mac-kit/",
   // Apex Hosts/Keys/Install/Doctor/Me/Usage leftovers: live html-404 while /host
-  // /providers /kit /account /you /models peers already 308→/compute. Plural /hosts
+  // /provider /kit /account /you /models peers already 308→/compute. /providers is Muse 200. Plural /hosts
   // peer of /host. Plural /inferences peer of /inference. API-key doors fold to
   // Compute UI (browser); /api/keys has a dedicated API fold below. Skip /openai
   // /v1 /resend /email /health /status.
@@ -4240,11 +4277,11 @@ const POTTER_COMPUTE_TAB_308_PATHS = new Set([
   "/compute/mac-setup/",
   "/compute/mac_setup",
   "/compute/mac_setup/",
-  // Exact /compute/agent|/compute/agents stay tab → /compute.
+  // Exact /compute/agent stays tab → /compute.
+  // Bare leftover /compute/agents|/compute/agents/ fold via
+  // POTTER_AGENTS_TXT_308_PATHS → /compute/agents.txt.
   // Leftover /compute/agent.md|/compute/agents.md fold via
   // POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS → skill.md.
-  "/compute/agents",
-  "/compute/agents/",
   "/compute/agent",
   "/compute/agent/",
   "/compute/tools",
@@ -4748,7 +4785,8 @@ const POTTER_ROOM_308_PATHS = new Set([
  * /join. Do not overwrite site-root /.well-known/agent.json. Do not fold
  * Compute into Room. Exact /room /room/llms.txt stay 200. Card leftover
  * /room/agent.json and probe leftover /room/health are dest special-cases
- * (not this llms.txt set). */
+ * (not this llms.txt set). Probe leftover /room/healthz folds to the live
+ * /room/health face (same-host 308, not this set). */
 const POTTER_ROOM_AGENT_DISCOVERY_308_PATHS = new Set([
   '/room/skill.md', '/room/skill.md/',
   '/room/agents.md', '/room/agents.md/',
@@ -4917,9 +4955,11 @@ const POTTER_COMPUTE_MCP_JSON_308_PATHS = new Set([
   '/mcp', '/mcp/',
   '/compute/mcp', '/compute/mcp/',
 ]);
-/** Leftover pretty skill doors → /compute/skill.md. Exact /compute/skill.md stays 200. */
+/** Leftover pretty skill doors → /compute/skill.md. Exact /compute/skill.md stays 200.
+ *  Apex /skill.json (+slash / Title-case) is a live Motley leftover. */
 const POTTER_COMPUTE_SKILL_FACE_308_PATHS = new Set([
   '/skill.md', '/skill.md/',
+  '/skill.json', '/skill.json/',
   '/compute/skill.md/',
   '/compute/agents/skill.md', '/compute/agents/skill.md/',
   '/compute/agent/skill.md', '/compute/agent/skill.md/',
@@ -4982,9 +5022,16 @@ const POTTER_COMPUTE_DOCS_SKILL_308_PATHS = new Set([
  *  /compute/plug-in (+slash / Title-case) still HTML 404 on www while
  *  /compute/doctor already 308 → /compute#provide. Same soft-doctor
  *  invent family. Do not invent doctor.md.
+ *  Live Motley restore already 308s apex /doctor.txt /self-test /plugin
+ *  /plug-in → /compute#provide. Fold those plus leftover /invent
+ *  (+slash / Title-case) here so tip deploys do not wipe them.
+ *  Do not invent /compute/invent or doctor.md.
  *  Live GET /compute/waitlist (+slash / Title-case) still HTML 404 on
  *  www (Morgan growth door) while invent four already fold here.
  *  Apex /waitlist stays skipped. Do not invent doctor.md.
+ *  Live leftover /invent /compute/invent (+slash / Title-case via
+ *  toLowerCase) fold here with that invent family.
+ *  Do not invent doctor.md / PROVIDE.md.
  *  Fold this join family to /compute#provide. */
 const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/doctor', '/compute/doctor/',
@@ -4993,7 +5040,14 @@ const POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS = new Set([
   '/compute/plugin', '/compute/plugin/',
   '/compute/plug-in', '/compute/plug-in/',
   '/compute/waitlist', '/compute/waitlist/',
+  '/invent', '/invent/',
+  '/compute/invent', '/compute/invent/',
   '/doctor', '/doctor/',
+  '/doctor.txt', '/doctor.txt/',
+  '/self-test', '/self-test/',
+  '/plugin', '/plugin/',
+  '/plug-in', '/plug-in/',
+  '/invent', '/invent/',
   '/provide', '/provide/',
   '/compute/provide', '/compute/provide/',
   '/compute/provide/enroll', '/compute/provide/enroll/',
@@ -5063,12 +5117,15 @@ const POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS = new Set([
   '/guest-key', '/guest-key/',
   '/guest-keys', '/guest-keys/',
 ]);
-/** Leftover /agents /agents/ /agents.txt/ /compute/agents.txt/ → face.
- *  Exact /agents.txt stays 200. Bare leftover /compute/agents stays tab → /compute. */
+/** Leftover /agents /agents/ /agents.txt/ /compute/agents /compute/agents/
+ *  /compute/agents.txt/ → face. Exact /agents.txt + /compute/agents.txt stay 200.
+ *  Bare leftover /compute/agents folds here → /compute/agents.txt (not tab). */
 const POTTER_AGENTS_TXT_308_PATHS = new Set([
   '/agents',
   '/agents/',
   '/agents.txt/',
+  '/compute/agents',
+  '/compute/agents/',
   '/compute/agents.txt/',
 ]);
 /** Leftover /agents.json/ /compute/agents.json/ → face. Exact stays 200. */
@@ -5105,7 +5162,8 @@ const POTTER_COMPUTE_API_STATUS_308_PATHS = new Set([
   '/compute/status', '/compute/status/',
   '/api/status', '/api/status/',
 ]);
-/** /compute/network /api/network → /compute/api/network. */
+/** /compute/network /api/network → /compute/api/network.
+ *  Bare /network is the Muse network face (200). Never fold it to /compute. */
 const POTTER_COMPUTE_API_NETWORK_308_PATHS = new Set([
   '/compute/network', '/compute/network/',
   '/api/network', '/api/network/',
@@ -5138,6 +5196,10 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/bag', 'https://www.getdasha.com/bag'],
   ['/simp', 'https://www.getdasha.com/simp'],
   ['/crew', 'https://www.getdasha.com/crew'],
+  ['/start', 'https://www.getdasha.com/start'],
+  ['/providers', 'https://www.getdasha.com/providers'],
+  ['/developers', 'https://www.getdasha.com/developers'],
+  ['/network', 'https://www.getdasha.com/network'],
   ['/contribute', 'https://www.getdasha.com/contribute'],
   ['/privacy', 'https://www.getdasha.com/privacy'],
   ['/which', 'https://www.getdasha.com/which'],
@@ -5146,15 +5208,16 @@ const POTTER_PRODUCT_CASEFOLD_DEST = new Map([
   ['/how-to-buy', 'https://www.getdasha.com/how-to-buy'],
   ['/bounties', 'https://www.getdasha.com/bounties'],
   ['/login', 'https://www.getdasha.com/login'],
-  // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Agents.txt
-  // /Agents.json html-404 while lowercase siblings already 200. Exact lowercase
-  // stays null so 200 handlers run. Bare leftover /agents|/agents/ fold via
-  // POTTER_AGENTS_TXT_308_PATHS. /compute/agents stays tab exact-path only —
-  // do not catch *.txt/*.json.
+  // Machine files: Title-case /Llms.txt /Robots.txt /Sitemap.xml /Ai.txt /Humans.txt
+  // /Agents.txt /Agents.json html-404 while lowercase siblings already 200. Exact
+  // lowercase stays null so 200 handlers run. Bare leftover /agents|/agents/ fold via
+  // POTTER_AGENTS_TXT_308_PATHS. Bare leftover /compute/agents folds there
+  // → /compute/agents.txt. Do not catch *.txt/*.json (exact faces stay 200).
   // Do NOT put /forum /chat here — that would drop ?t=; use isForumChatAliasPath + forumToLobbyRedirect.
   ['/llms.txt', 'https://www.getdasha.com/llms.txt'],
   ['/llms-full.txt', 'https://www.getdasha.com/llms-full.txt'],
   ['/ai.txt', 'https://www.getdasha.com/ai.txt'],
+  ['/humans.txt', 'https://www.getdasha.com/humans.txt'],
   ['/agents.txt', 'https://www.getdasha.com/agents.txt'],
   ['/agents.json', 'https://www.getdasha.com/agents.json'],
   ['/compute/llms.txt', 'https://www.getdasha.com/compute/llms.txt'],
@@ -5190,9 +5253,281 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
   '/dasha-compute-open-alpha', '/dasha-compute-open-alpha/',
 ]);
 
+/** Motley leftover agent-discovery doors: live GET/HEAD /api/lobby + nested
+ *  /compute/api/{agents.md,agent.md,AGENTS.md,swagger.json,faucet,lobby,bag,
+ *  crew,which,simp,forum,robots.txt,sitemap.xml,security.txt,digest,digest.json}
+ *  (+slash / Title-case via toLowerCase) html-404 while faces already 200.
+ *  Fold to documented faces. /forum dest is /lobby (forum 308, not a 200).
+ *  AGENTS.md stores as /compute/api/agents.md. Nested swagger.json dest is
+ *  /compute/api (same as apex /swagger.json leftover). Exact /compute/api
+ *  + product faces stay 200. Must win over the /compute/api/ casefold
+ *  catch-all. Do not invent /compute/api/openapi.json leftover (real
+ *  OpenAPI face is /compute/openapi.json). No Muse product HTML. No Room
+ *  source. Apex /api/benchmarks.json (+/) Title-case 308 → /benchmarks
+ *  (face already 200; lobby same-host). Nested /compute/api/benchmarks.json
+ *  is already a live leftover 308 — keep it. Do not invent /benchmarks.json
+ *  or /api/models /api/providers /api/v1 /api/v1/status.
+ *  Live Motley restore also 308s apex /api/{contribute,bounties,listings,
+ *  chess,verify.json,proof.json} + nested /compute/api/{listings,verify.json,
+ *  proof.json} → faces. Fold those here so tip deploys do not wipe Motley.
+ *  Nested /compute/api/contribute folds via POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.
+ *  Do not invent nested /compute/api/{bounties,chess}.
+ *  Apex agent-ish file synonyms (2026-09-17): live GET/HEAD /contribute.md
+ *  /crew.json /bag.json (+slash / Title-case) html-404 while faces 200.
+ *  Fold to /contribute /crew /bag. Exact /humans.txt is a 200 text/plain
+ *  face (not a Motley leftover into /contribute HTML). Slash /humans.txt/
+ *  + nested /compute/api/humans fold to that face. Muse brand door /muse
+ *  (+slash / Title-case) 308 → / (home is Muse Webflow). Do not fold /muse
+ *  → /start — /start is reserved for Muse #225 face. Stay out of /providers
+ *  /developers /network /start (Muse #225 HTML). No Muse product HTML. */
+const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map([
+  ['/api/lobby', 'https://www.getdasha.com/lobby'],
+  ['/api/lobby/', 'https://www.getdasha.com/lobby'],
+  ['/api/contribute', 'https://www.getdasha.com/contribute'],
+  ['/api/contribute/', 'https://www.getdasha.com/contribute'],
+  ['/api/bounties', 'https://www.getdasha.com/bounties'],
+  ['/api/bounties/', 'https://www.getdasha.com/bounties'],
+  ['/api/listings', 'https://www.getdasha.com/listings'],
+  ['/api/listings/', 'https://www.getdasha.com/listings'],
+  ['/api/chess', 'https://www.getdasha.com/chess'],
+  ['/api/chess/', 'https://www.getdasha.com/chess'],
+  ['/api/verify.json', 'https://www.getdasha.com/verify.json'],
+  ['/api/verify.json/', 'https://www.getdasha.com/verify.json'],
+  ['/api/proof.json', 'https://www.getdasha.com/compute/proof.json'],
+  ['/api/proof.json/', 'https://www.getdasha.com/compute/proof.json'],
+  ['/api/benchmarks.json', 'https://www.getdasha.com/benchmarks'],
+  ['/api/benchmarks.json/', 'https://www.getdasha.com/benchmarks'],
+  ['/compute/api/benchmarks.json', 'https://www.getdasha.com/benchmarks'],
+  ['/compute/api/benchmarks.json/', 'https://www.getdasha.com/benchmarks'],
+  ['/compute/api/listings', 'https://www.getdasha.com/listings'],
+  ['/compute/api/listings/', 'https://www.getdasha.com/listings'],
+  ['/compute/api/verify.json', 'https://www.getdasha.com/verify.json'],
+  ['/compute/api/verify.json/', 'https://www.getdasha.com/verify.json'],
+  ['/compute/api/proof.json', 'https://www.getdasha.com/compute/proof.json'],
+  ['/compute/api/proof.json/', 'https://www.getdasha.com/compute/proof.json'],
+  ['/compute/api/agents.md', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/api/agents.md/', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/api/agent.md', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/api/agent.md/', 'https://www.getdasha.com/compute/skill.md'],
+  ['/compute/api/swagger.json', 'https://www.getdasha.com/compute/api'],
+  ['/compute/api/swagger.json/', 'https://www.getdasha.com/compute/api'],
+  ['/compute/api/faucet', 'https://www.getdasha.com/faucet'],
+  ['/compute/api/faucet/', 'https://www.getdasha.com/faucet'],
+  ['/compute/api/lobby', 'https://www.getdasha.com/lobby'],
+  ['/compute/api/lobby/', 'https://www.getdasha.com/lobby'],
+  ['/compute/api/bag', 'https://www.getdasha.com/bag'],
+  ['/compute/api/bag/', 'https://www.getdasha.com/bag'],
+  ['/compute/api/crew', 'https://www.getdasha.com/crew'],
+  ['/compute/api/crew/', 'https://www.getdasha.com/crew'],
+  ['/compute/api/which', 'https://www.getdasha.com/which'],
+  ['/compute/api/which/', 'https://www.getdasha.com/which'],
+  ['/compute/api/simp', 'https://www.getdasha.com/simp'],
+  ['/compute/api/simp/', 'https://www.getdasha.com/simp'],
+  ['/compute/api/forum', 'https://www.getdasha.com/lobby'],
+  ['/compute/api/forum/', 'https://www.getdasha.com/lobby'],
+  ['/compute/api/robots.txt', 'https://www.getdasha.com/robots.txt'],
+  ['/compute/api/robots.txt/', 'https://www.getdasha.com/robots.txt'],
+  ['/compute/api/sitemap.xml', 'https://www.getdasha.com/sitemap.xml'],
+  ['/compute/api/sitemap.xml/', 'https://www.getdasha.com/sitemap.xml'],
+  ['/compute/api/security.txt', 'https://www.getdasha.com/.well-known/security.txt'],
+  ['/compute/api/security.txt/', 'https://www.getdasha.com/.well-known/security.txt'],
+  ['/compute/api/digest.json', 'https://www.getdasha.com/digest.json'],
+  ['/compute/api/digest.json/', 'https://www.getdasha.com/digest.json'],
+  // Bare /compute/api/digest (+/) Title-case 308 → /digest.json.
+  // Sibling /compute/api/digest.json already maps there — keep it.
+  // Do not retarget apex /api/digest (Motley HTML → /digest stays).
+  ['/compute/api/digest', 'https://www.getdasha.com/digest.json'],
+  ['/compute/api/digest/', 'https://www.getdasha.com/digest.json'],
+  // Apex agent-ish file synonyms + Muse brand door (2026-09-17).
+  // Live www html-404 while /contribute /crew /bag / already 200.
+  // Exact /humans.txt is the 200 text/plain face (not this map).
+  // /muse → / (home). Do not fold /muse → /start. Stay out of
+  // /providers /developers /network /start (Muse #225).
+  ['/contribute.md', 'https://www.getdasha.com/contribute'],
+  ['/contribute.md/', 'https://www.getdasha.com/contribute'],
+  ['/crew.json', 'https://www.getdasha.com/crew'],
+  ['/crew.json/', 'https://www.getdasha.com/crew'],
+  ['/bag.json', 'https://www.getdasha.com/bag'],
+  ['/bag.json/', 'https://www.getdasha.com/bag'],
+  ['/muse', 'https://www.getdasha.com/'],
+  ['/muse/', 'https://www.getdasha.com/'],
+]);
+/** Leftover /humans.txt/ (+ Title-case via toLowerCase) → /humans.txt face.
+ *  Exact /humans.txt stays 200 text/plain. Do not invent apex /humans. */
+const POTTER_HUMANS_TXT_308_PATHS = new Set([
+  '/humans.txt/',
+]);
+/** Nested Motley leftover /compute/api/humans (+slash / Title-case via
+ *  toLowerCase) while /humans.txt is the 200 text/plain face. Must win
+ *  over the /compute/api/ casefold catch-all. Do not invent /api/humans. */
+const POTTER_COMPUTE_API_HUMANS_308_PATHS = new Set([
+  '/compute/api/humans', '/compute/api/humans/',
+]);
+/** Leftover apex /openapi.yaml (+slash / Title-case) → /compute/openapi.json.
+ *  Exact /compute/openapi.yaml stays the 200 YAML spec. */
+const POTTER_OPENAPI_YAML_308_PATHS = new Set([
+  '/openapi.yaml', '/openapi.yaml/',
+]);
+/** Leftover apex /openapi.json + live Motley /api/openapi.json (+slash /
+ *  Title-case) → /compute/openapi.json (real OpenAPI 3.1). /openapi and
+ *  /api/openapi (no .json) stay gateway leftovers → /compute/api. Exact
+ *  /compute/openapi.json stays the 200 spec. Do not invent
+ *  /compute/api/openapi.json leftover. */
+const POTTER_OPENAPI_JSON_308_PATHS = new Set([
+  '/openapi.json', '/openapi.json/',
+  '/api/openapi.json', '/api/openapi.json/',
+]);
+/** Nested Motley leftover /compute/api/robots (+slash / Title-case via
+ *  toLowerCase) while /robots.txt is already 200. .txt peers + apex
+ *  /api/robots already 308. Must win over the /compute/api/ casefold
+ *  catch-all. Do not invent /api/v1. */
+const POTTER_COMPUTE_API_ROBOTS_308_PATHS = new Set([
+  '/compute/api/robots', '/compute/api/robots/',
+]);
+/** Nested Motley leftover /compute/api/sitemap (+slash / Title-case via
+ *  toLowerCase) while /sitemap.xml is already 200. .xml peers already
+ *  308. Must win over the /compute/api/ casefold catch-all. */
+const POTTER_COMPUTE_API_SITEMAP_308_PATHS = new Set([
+  '/compute/api/sitemap', '/compute/api/sitemap/',
+]);
+/** Nested Motley leftover /compute/api/llms (+slash / Title-case via
+ *  toLowerCase) while /compute/llms.txt is already 200. Must win over
+ *  the /compute/api/ casefold catch-all. Do not invent /api/llms.
+ *  /compute/api/llms.json sibling lives in POTTER_COMPUTE_API_LLMS_JSON_308_PATHS. */
+const POTTER_COMPUTE_API_LLMS_308_PATHS = new Set([
+  '/compute/api/llms', '/compute/api/llms/',
+]);
+/** Nested Motley leftover /compute/api/llms.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/llms.txt is already 200 (compute
+ *  packet; /llms.txt is the site index). Must win over the /compute/api/
+ *  casefold catch-all. Bare /compute/api/llms stays its Set. Do not invent
+ *  apex /llms.json or /api/llms.json. Lobby same-host. */
+const POTTER_COMPUTE_API_LLMS_JSON_308_PATHS = new Set([
+  '/compute/api/llms.json', '/compute/api/llms.json/',
+]);
+/** Nested Motley leftover /compute/api/agents (+slash / Title-case via
+ *  toLowerCase) while /compute/agents.txt is already 200. Not the
+ *  /compute/api/agents.md skill leftover. Bare /compute/agents folds
+ *  via POTTER_AGENTS_TXT_308_PATHS → /compute/agents.txt. Must win over
+ *  the /compute/api/ casefold catch-all. Do not invent /api/agents. */
+const POTTER_COMPUTE_API_AGENTS_308_PATHS = new Set([
+  '/compute/api/agents', '/compute/api/agents/',
+]);
+/** Leftover /.well-known/ai-plugin.json (+slash / Title-case via
+ *  toLowerCase) html-404 while /.well-known/mcp.json is already 200.
+ *  Fold to the existing well-known mcp.json face. Do not invent apex
+ *  /ai-plugin.json. */
+const POTTER_AI_PLUGIN_JSON_308_PATHS = new Set([
+  '/.well-known/ai-plugin.json', '/.well-known/ai-plugin.json/',
+]);
+/** Nested Motley leftover /compute/api/ai (+slash / Title-case via
+ *  toLowerCase) while /ai.txt is already 200. Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent /api/ai. */
+const POTTER_COMPUTE_API_AI_308_PATHS = new Set([
+  '/compute/api/ai', '/compute/api/ai/',
+]);
+/** Nested Motley leftover /compute/api/skill (+slash / Title-case via
+ *  toLowerCase) while /compute/skill.md is already 200. Not the
+ *  /compute/api/docs skill leftover. Must win over the /compute/api/
+ *  casefold catch-all. Do not invent /api/skill. */
+const POTTER_COMPUTE_API_SKILL_308_PATHS = new Set([
+  '/compute/api/skill', '/compute/api/skill/',
+]);
+/** Nested Motley leftover /compute/api/mcp (+slash / Title-case via
+ *  toLowerCase) while /compute/mcp.json is already 200. Not the
+ *  /compute/mcp catalog leftover. Must win over the /compute/api/
+ *  casefold catch-all. Do not invent /api/mcp. */
+const POTTER_COMPUTE_API_MCP_308_PATHS = new Set([
+  '/compute/api/mcp', '/compute/api/mcp/',
+]);
+/** Nested Motley leftover /compute/api/openapi (+slash / Title-case via
+ *  toLowerCase) while /compute/openapi.json is already 200. Do not invent
+ *  /compute/api/openapi.json leftover. Must win over the /compute/api/
+ *  casefold catch-all. Do not invent /api/openapi. */
+const POTTER_COMPUTE_API_OPENAPI_308_PATHS = new Set([
+  '/compute/api/openapi', '/compute/api/openapi/',
+]);
+/** Nested Motley leftover /compute/api/contribute (+slash / Title-case via
+ *  toLowerCase) while /contribute is already 200. Apex /api/contribute
+ *  stays Motley map (#235). Must win over the /compute/api/ casefold
+ *  catch-all. /contribute.md lives on the Motley map.
+ *  /compute/api/contribute.json sibling lives in
+ *  POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS. */
+const POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS = new Set([
+  '/compute/api/contribute', '/compute/api/contribute/',
+]);
+/** Nested Motley leftover /compute/api/contribute.json (+slash / Title-case
+ *  via toLowerCase) JSON-404 while /contribute is already 200 HTML. Not
+ *  /humans.txt (200 text/plain face). Apex /api/contribute stays Motley
+ *  map (#235). Do not invent apex /contribute.json. Must win over the
+ *  /compute/api/ casefold catch-all. Lobby same-host, not www cross-host. */
+const POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS = new Set([
+  '/compute/api/contribute.json', '/compute/api/contribute.json/',
+]);
+/** Nested Motley leftover /compute/api/proof (+slash / Title-case via
+ *  toLowerCase) while /compute/proof.md is already 200. Not the
+ *  /compute/api/proof.json leftover (#235). Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent /api/proof. */
+const POTTER_COMPUTE_API_PROOF_308_PATHS = new Set([
+  '/compute/api/proof', '/compute/api/proof/',
+]);
+/** Nested Motley leftover /compute/api/network.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/api/network is already the 200/401
+ *  face (same dest as /compute/network leftover). Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent apex /network.json.
+ *  Exact /compute/api/network stays handler. */
+const POTTER_COMPUTE_API_NETWORK_JSON_308_PATHS = new Set([
+  '/compute/api/network.json', '/compute/api/network.json/',
+]);
+/** Nested Motley leftover /compute/api/pricing.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/api/pricing is already 200. Must
+ *  win over the /compute/api/ casefold catch-all. Do not invent apex
+ *  /pricing.json. Exact /compute/api/pricing stays handler. */
+const POTTER_COMPUTE_API_PRICING_JSON_308_PATHS = new Set([
+  '/compute/api/pricing.json', '/compute/api/pricing.json/',
+]);
+/** Nested Motley leftover /compute/api/receipts.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/api/receipts is already the 401
+ *  face (same dest as /receipt leftover). Must win over the /compute/api/
+ *  casefold catch-all. Do not invent apex /receipts.json. Exact
+ *  /compute/api/receipts stays handler. */
+const POTTER_COMPUTE_API_RECEIPTS_JSON_308_PATHS = new Set([
+  '/compute/api/receipts.json', '/compute/api/receipts.json/',
+]);
+/** Nested Motley leftover /compute/api/chain.json (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /compute/api/chain is already 200. Must
+ *  win over the /compute/api/ casefold catch-all. Do not invent apex
+ *  /chain.json. Exact /compute/api/chain stays handler. */
+const POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS = new Set([
+  '/compute/api/chain.json', '/compute/api/chain.json/',
+]);
+/** Bare leftover /proof (+slash / Title-case via toLowerCase) html-404
+ *  while /compute/proof is already 200. /proof.json already 308 →
+ *  /compute/proof.json. Same-host dest. Do not rewrite the #216 proof
+ *  page body. Do not invent /api/proof. */
+const POTTER_PROOF_308_PATHS = new Set([
+  '/proof', '/proof/',
+]);
+/** Nested leftover /compute/digest (+slash / Title-case via toLowerCase)
+ *  html-404 while Motley /digest is already 200 and /compute/api/digest
+ *  already 308 → /digest.json. Quiet synonym to the Motley HTML face.
+ *  Do not retarget /api/digest or /compute/api/digest. */
+const POTTER_COMPUTE_DIGEST_308_PATHS = new Set([
+  '/compute/digest', '/compute/digest/',
+]);
+
 export function potterHome308Dest(path) {
   const raw = String(path || "");
   const p = raw.toLowerCase();
+  // Muse product IA: leftover maps must not steal these 200 faces.
+  // Exact lowercase (+slash) stays null so the Muse handler runs.
+  // Title-case still casefolds via POTTER_PRODUCT_CASEFOLD_DEST.
+  if (
+    raw === "/start" || raw === "/start/" ||
+    raw === "/providers" || raw === "/providers/" ||
+    raw === "/developers" || raw === "/developers/" ||
+    raw === "/network" || raw === "/network/"
+  ) return null;
   if (POTTER_HOWTO_308_PATHS.has(p)) return "https://www.getdasha.com/how-to-buy";
   if (POTTER_HOME_308_PATHS.has(p)) return "https://www.getdasha.com/";
   if (POTTER_LOGIN_308_PATHS.has(p)) return "https://www.getdasha.com/login#grok";
@@ -5214,6 +5549,14 @@ export function potterHome308Dest(path) {
   // /room/api/health is 200. Not the llms.txt discovery set.
   if (p === "/room/health" || p === "/room/health/") {
     return "https://www.getdasha.com/room/api/health";
+  }
+  // Leftover /room/healthz (2026-09-17): live probe synonym html-404 on
+  // www+lobby while /room/health is the 200 face. Same-host 308 like
+  // other /room doors (join/connect). Title-case + trailing slash via
+  // toLowerCase. Not the llms.txt set. Do not invent apex /healthz or
+  // /room/readyz. Do not fold Compute /compute/healthz here.
+  if (p === "/room/healthz" || p === "/room/healthz/") {
+    return "https://www.getdasha.com/room/health";
   }
   if (p === "/socials" || p === "/socials/" || p === "/social" || p === "/social/") {
     return "https://www.getdasha.com/lobby";
@@ -5348,12 +5691,12 @@ export function potterHome308Dest(path) {
   }
   if (p === "/documentation" || p === "/documentation/") return "https://www.getdasha.com/compute/api";
   if (p === "/readme" || p === "/readme/") return "https://www.getdasha.com/compute/api";
-  if (p === "/endpoint" || p === "/endpoint/" || p === "/endpoints" || p === "/endpoints/" || p === "/sdk" || p === "/sdk/" || p === "/sdks" || p === "/sdks/" || p === "/dev" || p === "/dev/" || p === "/developer" || p === "/developer/" || p === "/developers" || p === "/developers/" || p === "/devtools" || p === "/devtools/" || p === "/devtool" || p === "/devtool/" || p === "/developer-docs" || p === "/developer-docs/" || p === "/sdk-docs" || p === "/sdk-docs/" || p === "/cli-docs" || p === "/cli-docs/" || p === "/sdks-docs" || p === "/sdks-docs/" || p === "/api-reference" || p === "/api-reference/" || p === "/sdk-reference" || p === "/sdk-reference/" || p === "/cli-reference" || p === "/cli-reference/" || p === "/developer-api" || p === "/developer-api/" || p === "/dev-api" || p === "/dev-api/" || p === "/cli" || p === "/cli/" || p === "/curl" || p === "/curl/" || p === "/openai-compat" || p === "/openai-compat/" || p === "/completions" || p === "/completions/" || p === "/compat" || p === "/compat/" || p === "/base-url" || p === "/base-url/" || p === "/baseurl" || p === "/baseurl/" || p === "/base_url" || p === "/base_url/" || p === "/chat-completions" || p === "/chat-completions/" || p === "/chatcompletions" || p === "/chatcompletions/" || p === "/chat_completions" || p === "/chat_completions/" || p === "/embeddings" || p === "/embeddings/" || p === "/embedding" || p === "/embedding/" || p === "/responses" || p === "/responses/" || p === "/response" || p === "/response/" || p === "/completion" || p === "/completion/" || p === "/compute/endpoint" || p === "/compute/endpoint/" || p === "/compute/endpoints" || p === "/compute/endpoints/" || p === "/compute/sdks" || p === "/compute/sdks/" || p === "/compute/dev" || p === "/compute/dev/" || p === "/compute/developer" || p === "/compute/developer/" || p === "/compute/developers" || p === "/compute/developers/" || p === "/compute/devtools" || p === "/compute/devtools/" || p === "/compute/devtool" || p === "/compute/devtool/" || p === "/compute/developer-docs" || p === "/compute/developer-docs/" || p === "/compute/cli-docs" || p === "/compute/cli-docs/" || p === "/compute/sdks-docs" || p === "/compute/sdks-docs/" || p === "/compute/sdk-reference" || p === "/compute/sdk-reference/" || p === "/compute/cli-reference" || p === "/compute/cli-reference/" || p === "/compute/developer-api" || p === "/compute/developer-api/" || p === "/compute/dev-api" || p === "/compute/dev-api/" || p === "/compute/curl" || p === "/compute/curl/" || p === "/compute/openai-compat" || p === "/compute/openai-compat/" || p === "/compute/completions" || p === "/compute/completions/" || p === "/compute/compat" || p === "/compute/compat/" || p === "/compute/base-url" || p === "/compute/base-url/" || p === "/compute/baseurl" || p === "/compute/baseurl/" || p === "/compute/base_url" || p === "/compute/base_url/" || p === "/compute/chat-completions" || p === "/compute/chat-completions/" || p === "/compute/chatcompletions" || p === "/compute/chatcompletions/" || p === "/compute/chat_completions" || p === "/compute/chat_completions/" || p === "/compute/embeddings" || p === "/compute/embeddings/" || p === "/compute/embedding" || p === "/compute/embedding/" || p === "/compute/responses" || p === "/compute/responses/" || p === "/compute/response" || p === "/compute/response/" || p === "/compute/completion" || p === "/compute/completion/" || // Vision/TTS modality peers of /embeddings (live html-404).
+  if (p === "/endpoint" || p === "/endpoint/" || p === "/endpoints" || p === "/endpoints/" || p === "/sdk" || p === "/sdk/" || p === "/sdks" || p === "/sdks/" || p === "/dev" || p === "/dev/" || p === "/developer" || p === "/developer/" || p === "/devtools" || p === "/devtools/" || p === "/devtool" || p === "/devtool/" || p === "/developer-docs" || p === "/developer-docs/" || p === "/sdk-docs" || p === "/sdk-docs/" || p === "/cli-docs" || p === "/cli-docs/" || p === "/sdks-docs" || p === "/sdks-docs/" || p === "/api-reference" || p === "/api-reference/" || p === "/sdk-reference" || p === "/sdk-reference/" || p === "/cli-reference" || p === "/cli-reference/" || p === "/developer-api" || p === "/developer-api/" || p === "/dev-api" || p === "/dev-api/" || p === "/cli" || p === "/cli/" || p === "/curl" || p === "/curl/" || p === "/openai-compat" || p === "/openai-compat/" || p === "/completions" || p === "/completions/" || p === "/compat" || p === "/compat/" || p === "/base-url" || p === "/base-url/" || p === "/baseurl" || p === "/baseurl/" || p === "/base_url" || p === "/base_url/" || p === "/chat-completions" || p === "/chat-completions/" || p === "/chatcompletions" || p === "/chatcompletions/" || p === "/chat_completions" || p === "/chat_completions/" || p === "/embeddings" || p === "/embeddings/" || p === "/embedding" || p === "/embedding/" || p === "/responses" || p === "/responses/" || p === "/response" || p === "/response/" || p === "/completion" || p === "/completion/" || p === "/compute/endpoint" || p === "/compute/endpoint/" || p === "/compute/endpoints" || p === "/compute/endpoints/" || p === "/compute/sdks" || p === "/compute/sdks/" || p === "/compute/dev" || p === "/compute/dev/" || p === "/compute/developer" || p === "/compute/developer/" || p === "/compute/developers" || p === "/compute/developers/" || p === "/compute/devtools" || p === "/compute/devtools/" || p === "/compute/devtool" || p === "/compute/devtool/" || p === "/compute/developer-docs" || p === "/compute/developer-docs/" || p === "/compute/cli-docs" || p === "/compute/cli-docs/" || p === "/compute/sdks-docs" || p === "/compute/sdks-docs/" || p === "/compute/sdk-reference" || p === "/compute/sdk-reference/" || p === "/compute/cli-reference" || p === "/compute/cli-reference/" || p === "/compute/developer-api" || p === "/compute/developer-api/" || p === "/compute/dev-api" || p === "/compute/dev-api/" || p === "/compute/curl" || p === "/compute/curl/" || p === "/compute/openai-compat" || p === "/compute/openai-compat/" || p === "/compute/completions" || p === "/compute/completions/" || p === "/compute/compat" || p === "/compute/compat/" || p === "/compute/base-url" || p === "/compute/base-url/" || p === "/compute/baseurl" || p === "/compute/baseurl/" || p === "/compute/base_url" || p === "/compute/base_url/" || p === "/compute/chat-completions" || p === "/compute/chat-completions/" || p === "/compute/chatcompletions" || p === "/compute/chatcompletions/" || p === "/compute/chat_completions" || p === "/compute/chat_completions/" || p === "/compute/embeddings" || p === "/compute/embeddings/" || p === "/compute/embedding" || p === "/compute/embedding/" || p === "/compute/responses" || p === "/compute/responses/" || p === "/compute/response" || p === "/compute/response/" || p === "/compute/completion" || p === "/compute/completion/" || // Vision/TTS modality peers of /embeddings (live html-404). // Apex /developers is the Muse developers face (200).
   p === "/vision" || p === "/vision/" || p === "/tts" || p === "/tts/" || p === "/text-to-speech" || p === "/text-to-speech/" || p === "/text_to_speech" || p === "/text_to_speech/" || p === "/compute/vision" || p === "/compute/vision/" || p === "/compute/tts" || p === "/compute/tts/" || p === "/compute/text-to-speech" || p === "/compute/text-to-speech/" || p === "/compute/text_to_speech" || p === "/compute/text_to_speech/") return "https://www.getdasha.com/compute/api";
   if (p === "/gateway" || p === "/gateway/" || p === "/compute/gateway" || p === "/compute/gateway/") {
     return "https://www.getdasha.com/compute/api";
   }
-  if (p === "/openapi" || p === "/openapi/" || p === "/openapi.json" || p === "/openapi.json/" || p === "/swagger" || p === "/swagger/" || p === "/swagger.json" || p === "/swagger.json/" || p === "/swagger-ui" || p === "/swagger-ui/" || p === "/swagger-ui.html" || p === "/swagger-ui.html/" || p === "/swagger_ui" || p === "/swagger_ui/" || p === "/swagger_ui.html" || p === "/swagger_ui.html/" || p === "/compute/swagger" || p === "/compute/swagger/" || p === "/compute/swagger.json" || p === "/compute/swagger.json/" || p === "/compute/swagger-ui" || p === "/compute/swagger-ui/" || p === "/compute/swagger_ui" || p === "/compute/swagger_ui/" || p === "/compute/api-docs" || p === "/compute/api-docs/" || p === "/compute/api_docs" || p === "/compute/api_docs/" || p === "/docs/api" || p === "/docs/api/" || p === "/api/docs" || p === "/api/docs/" || p === "/api-docs" || p === "/api-docs/" || p === "/api_docs" || p === "/api_docs/" || p === "/api/openapi" || p === "/api/openapi/" || p === "/api/openapi.json" || p === "/api/openapi.json/" || p === "/api/swagger" || p === "/api/swagger/" || p === "/api/swagger.json" || p === "/api/swagger.json/") {
+  if (p === "/openapi" || p === "/openapi/" || p === "/swagger" || p === "/swagger/" || p === "/swagger.json" || p === "/swagger.json/" || p === "/swagger-ui" || p === "/swagger-ui/" || p === "/swagger-ui.html" || p === "/swagger-ui.html/" || p === "/swagger_ui" || p === "/swagger_ui/" || p === "/swagger_ui.html" || p === "/swagger_ui.html/" || p === "/compute/swagger" || p === "/compute/swagger/" || p === "/compute/swagger.json" || p === "/compute/swagger.json/" || p === "/compute/swagger-ui" || p === "/compute/swagger-ui/" || p === "/compute/swagger_ui" || p === "/compute/swagger_ui/" || p === "/compute/api-docs" || p === "/compute/api-docs/" || p === "/compute/api_docs" || p === "/compute/api_docs/" || p === "/docs/api" || p === "/docs/api/" || p === "/api/docs" || p === "/api/docs/" || p === "/api-docs" || p === "/api-docs/" || p === "/api_docs" || p === "/api_docs/" || p === "/api/openapi" || p === "/api/openapi/" || p === "/api/swagger" || p === "/api/swagger/" || p === "/api/swagger.json" || p === "/api/swagger.json/") {
     return "https://www.getdasha.com/compute/api";
   }
   if (p === "/jobs" || p === "/jobs/" || p === "/job" || p === "/job/" || p === "/compute/jobs" || p === "/compute/jobs/" || p === "/compute/job" || p === "/compute/job/" || p === "/api/jobs" || p === "/api/jobs/" || p === "/api/job" || p === "/api/job/") {
@@ -5434,6 +5777,66 @@ export function potterHome308Dest(path) {
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
+  if (POTTER_HUMANS_TXT_308_PATHS.has(p) || POTTER_COMPUTE_API_HUMANS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/humans.txt";
+  }
+  if (POTTER_OPENAPI_YAML_308_PATHS.has(p) || POTTER_OPENAPI_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/openapi.json";
+  }
+  if (POTTER_COMPUTE_API_ROBOTS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/robots.txt";
+  }
+  if (POTTER_COMPUTE_API_SITEMAP_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/sitemap.xml";
+  }
+  if (POTTER_COMPUTE_API_LLMS_308_PATHS.has(p) || POTTER_COMPUTE_API_LLMS_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/llms.txt";
+  }
+  if (POTTER_COMPUTE_API_AGENTS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/agents.txt";
+  }
+  if (POTTER_AI_PLUGIN_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/.well-known/mcp.json";
+  }
+  if (POTTER_COMPUTE_API_AI_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/ai.txt";
+  }
+  if (POTTER_COMPUTE_API_SKILL_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/skill.md";
+  }
+  if (POTTER_COMPUTE_API_MCP_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/mcp.json";
+  }
+  if (POTTER_COMPUTE_API_OPENAPI_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/openapi.json";
+  }
+  if (POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.has(p) || POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/contribute";
+  }
+  if (POTTER_COMPUTE_API_PROOF_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/proof.md";
+  }
+  if (POTTER_COMPUTE_API_NETWORK_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/api/network";
+  }
+  if (POTTER_COMPUTE_API_PRICING_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/api/pricing";
+  }
+  if (POTTER_COMPUTE_API_RECEIPTS_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/api/receipts";
+  }
+  if (POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/api/chain";
+  }
+  if (POTTER_PROOF_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/proof";
+  }
+  if (POTTER_COMPUTE_DIGEST_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/digest";
+  }
+  if (POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(p)) {
+    return POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.get(p);
+  }
   if (p === "/compute/api" || p === "/compute/api/") {
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
@@ -5509,7 +5912,9 @@ export function potterHome308Response(request, url) {
           src === '/room/agent.json' ||
           src === '/room/agent.json/' ||
           src === '/room/health' ||
-          src === '/room/health/'
+          src === '/room/health/' ||
+          src === '/room/healthz' ||
+          src === '/room/healthz/'
         ) &&
         u.hostname === 'www.getdasha.com' &&
         (u.pathname === '/room' || u.pathname.startsWith('/room/'))
@@ -5523,8 +5928,21 @@ export function potterHome308Response(request, url) {
           (u.pathname === '/compute/skill.md' && (
             POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src) ||
             POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src) ||
-            POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src)
+            POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src) ||
+            POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src) ||
+            POTTER_COMPUTE_API_SKILL_308_PATHS.has(src)
           )) ||
+          (u.pathname === '/benchmarks' && (
+            src === '/api/benchmarks.json' ||
+            src === '/api/benchmarks.json/' ||
+            src === '/compute/api/benchmarks.json' ||
+            src === '/compute/api/benchmarks.json/'
+          )) ||
+          (u.pathname === '/compute/proof.json' && POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src)) ||
+          (u.pathname === '/compute/proof' && POTTER_PROOF_308_PATHS.has(src)) ||
+          (u.pathname === '/digest' && POTTER_COMPUTE_DIGEST_308_PATHS.has(src)) ||
+          (u.pathname === '/compute/llms.txt' && POTTER_COMPUTE_API_LLMS_JSON_308_PATHS.has(src)) ||
+          (u.pathname === '/contribute' && POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(src)) ||
           (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )
       ) {
@@ -6096,6 +6514,19 @@ function securityTxtResponse(request, host) {
       ...SECURITY,
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+    },
+  });
+}
+
+function humansTxtResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : HUMANS_TXT, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      'Strict-Transport-Security': 'max-age=31536000',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Dasha-Edge': 'humans',
     },
   });
 }
@@ -7525,6 +7956,20 @@ async function computeProofMdResponse(request, env) {
 function computeKitResponse(request, env) {
   if (!env?.ASSETS?.fetch) return new Response(null, { status: 404, headers: { 'X-Dasha-Edge': 'compute-kit' } });
   return env.ASSETS.fetch(request);
+}
+
+function museProductPageResponse(request, pathname) {
+  const kind = museProductKind(pathname);
+  const html = museProductPageHtml(pathname);
+  if (!kind || !html) return null;
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(html), {
+    status: 200,
+    headers: htmlLlmsHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=120',
+      'X-Dasha-Edge': MUSE_FACES[kind].edge,
+    }),
+  });
 }
 
 function crewPageResponse(request) {
@@ -11324,6 +11769,9 @@ async function digestEdge(request, env) {
 async function productEdge(request, url, env) {
   const agentsFace = agentsDiscoveryResponse(request);
   if (agentsFace) return agentsFace;
+  if ((request.method === 'GET' || request.method === 'HEAD') && isMuseProductPath(url.pathname)) {
+    return museProductPageResponse(request, url.pathname);
+  }
   const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
     const simpOg = await simpOgResponse(request, url, env);
@@ -12561,6 +13009,9 @@ export default {
     }
     const agentsFace = agentsDiscoveryResponse(request);
     if (agentsFace) return agentsFace;
+    if ((request.method === 'GET' || request.method === 'HEAD') && isMuseProductPath(url.pathname)) {
+      return museProductPageResponse(request, url.pathname);
+    }
     const potter308 = potterHome308Response(request, url);
     if (potter308) return potter308;
     if (isMailSmokePath(url.pathname)) {
@@ -12633,6 +13084,9 @@ export default {
           'X-Dasha-Edge': 'ai',
         },
       });
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/humans.txt') {
+      return humansTxtResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD' || request.method === 'OPTIONS') && url.pathname === '/.well-known/grok-bot.json') {
       if (request.method === 'OPTIONS') {

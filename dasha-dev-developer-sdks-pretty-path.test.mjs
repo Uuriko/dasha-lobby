@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Leftover pretty path (Worker f881c0a7-030e-4a51-a39e-1856bacacd77):
- * live /dev /developer /developers /sdks (+ /compute/* tabs, slash /
+ * live /dev /developer /sdks (+ /compute/* tabs, slash /
  * Title-case) html-404 → 308 /compute/api (same dest as /sdk /cli /docs).
+ * /developers is the Muse developers face (200).
  * /sdk /cli /docs /openapi /gateway peers already fold /compute/api.
  * Exact /compute stays 200 (null dest). Exact /compute/api stays JSON.
  * Skip /openai /v1 /admin /blog /tos /redoc — do not invent a fold.
@@ -26,7 +27,7 @@ assert.match(
 );
 
 
-const API_LEAVES = ['dev', 'developer', 'developers', 'sdks'];
+const API_LEAVES = ['dev', 'developer', 'sdks'];
 const PRIOR_API_LEAVES = ['sdk', 'cli', 'docs', 'openapi'];
 
 for (const leaf of API_LEAVES) {
@@ -71,6 +72,9 @@ assert.equal(potterHome308Dest('/compute/'), COMPUTE, '/compute/ still folds to 
 assert.equal(potterHome308Dest('/compute/api'), null, '/compute/api stays JSON');
 assert.equal(potterHome308Dest('/compute/api/'), null, '/compute/api/ stays JSON');
 assert.equal(potterHome308Dest('/privacy'), null, '/privacy stays 200');
+assert.equal(potterHome308Dest('/developers'), null, '/developers Muse face dest null');
+assert.equal(potterHome308Dest('/developers/'), null, '/developers/ Muse face dest null');
+assert.equal(potterHome308Dest('/Developers'), 'https://www.getdasha.com/developers', 'Title-case /Developers casefolds');
 for (const path of SKIP_404) {
   assert.equal(potterHome308Dest(path), null, `do not fold ${path}`);
 }
@@ -110,6 +114,11 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   if (host === 'www.getdasha.com') {
     assert.equal(compute.headers.get('x-dasha-edge'), 'compute');
   }
+  const developers = await edgeWorker.fetch(new Request(`https://${host}/developers`), env);
+  assert.equal(developers.status, 200, `${host} /developers Muse 200`);
+  if (host === 'www.getdasha.com') {
+    assert.equal(developers.headers.get('x-dasha-edge'), 'muse-developers');
+  }
   for (const method of ['GET', 'HEAD']) {
     const api = await edgeWorker.fetch(new Request(`https://${host}/compute/api`, { method }), env);
     assert.equal(api.status, 200, `${host} /compute/api ${method} stays 200`);
@@ -127,11 +136,12 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 for (const path of [
-  '/dev', '/developer', '/developers', '/sdks',
+  '/dev', '/developer', '/sdks',
   '/sdk', '/cli', '/docs', '/openapi',
   '/openai', '/v1', '/admin', '/blog', '/tos', '/redoc',
 ]) {
   assert.ok(!sitemapXml.includes(`https://www.getdasha.com${path}</loc>`), `sitemap omits leftover ${path}`);
 }
+assert.match(sitemapXml, /https:\/\/www\.getdasha\.com\/developers<\/loc>/, 'sitemap lists Muse /developers');
 
-console.log('dasha-dev-developer-sdks-pretty-path: PASS (/dev+/developer+/developers+/sdks + /compute/* tabs 308 /compute/api; /sdk+/cli+/docs+/openapi peers still fold; Title-case+slash; www+lobby GET+HEAD; /compute+/compute/api 200; /openai+/v1+/admin+/blog+/tos+/redoc stay out; no plugin.jup.ag)');
+console.log('dasha-dev-developer-sdks-pretty-path: PASS (/dev+/developer+/sdks + /compute/* tabs 308 /compute/api; /developers Muse 200; /sdk+/cli+/docs+/openapi peers still fold; Title-case+slash; www+lobby GET+HEAD; /compute+/compute/api 200; /openai+/v1+/admin+/blog+/tos+/redoc stay out; no plugin.jup.ag)');
