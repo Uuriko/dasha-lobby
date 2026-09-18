@@ -65,8 +65,8 @@ function assertImmersitySteal(html, label) {
   assert.match(html, /class=["']ux-device["'][^>]*>phone</, `${label} phone`);
 
   assert.match(html, /id=["']ask-starter-4["'][^>]*>Explain this</, `${label} Explain this`);
-  assert.match(html, /id=["']ask-starter-5["'][^>]*>Summarize</, `${label} Summarize`);
-  assert.match(html, /id=["']ask-starter-6["'][^>]*>Review a PR</, `${label} Review a PR`);
+  assert.doesNotMatch(html, /id=["']ask-starter-5["']/, `${label} ≤4 starter chips`);
+  assert.doesNotMatch(html, /id=["']ask-starter-6["']/, `${label} no sixth starter`);
   assert.match(html, /data-prompt=["']Explain this like I'm new to it\.["']/, `${label} Explain prompt`);
   assert.match(html, /querySelectorAll\(['"]#ask-starters \[data-prompt\]['"]\)/, `${label} chip fill wiring`);
 

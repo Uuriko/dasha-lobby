@@ -31,8 +31,8 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']ask-starter-2["'][^>]*>Fix a bug</, `${label} Fix a bug chip`);
   assert.match(html, /id=["']ask-starter-3["'][^>]*>Do the thing</, `${label} Do the thing chip`);
   assert.match(html, /id=["']ask-starter-4["'][^>]*>Explain this</, `${label} Explain this chip`);
-  assert.match(html, /id=["']ask-starter-5["'][^>]*>Summarize</, `${label} Summarize chip`);
-  assert.match(html, /id=["']ask-starter-6["'][^>]*>Review a PR</, `${label} Review a PR chip`);
+  assert.doesNotMatch(html, /id=["']ask-starter-5["']/, `${label} ≤4 starter chips`);
+  assert.doesNotMatch(html, /id=["']ask-starter-6["']/, `${label} no sixth starter`);
   assert.match(html, /placeholder=["']Message Dasha["']/, `${label} Message Dasha placeholder`);
   assert.match(html, /id=["']ask-range["'][^>]*>code · text · whatever</, `${label} quiet range`);
   assert.doesNotMatch(html, /Welcome note/, `${label} no welcome-note toy`);

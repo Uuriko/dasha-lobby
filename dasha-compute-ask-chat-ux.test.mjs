@@ -19,6 +19,9 @@ function assertAskChatUx(html, label) {
   assert.match(html, /id=["']step-ask["'][^>]*hidden/, `${label} ask hidden default`);
   assert.match(html, /id=["']ask-composer["']/, `${label} composer`);
   assert.match(html, /id=["']ask-scroll["']/, `${label} scroll column`);
+  assert.match(html, /id=["']ask-input["']/, `${label} ask-input`);
+  assert.match(html, /id=["']ask-send["']/, `${label} ask-send`);
+  assert.match(html, /id=["']ask-nav["']/, `${label} quiet Ask nav`);
   assert.match(html, /id=["']ask-more["']/, `${label} More fold`);
   assert.match(html, /<h1 class=["']tf-q["']>Do\.<\/h1>/, `${label} Do H1 stays`);
   assert.match(html, /id=["']ask-thread["']/, `${label} ask-thread`);
@@ -53,7 +56,7 @@ function assertAskChatUx(html, label) {
   assert.match(html, /#ask-starters\{[^}]*display:flex;flex-wrap:wrap/, `${label} starter chips wrap`);
   assert.match(html, /\.ask-said\{[^}]*Arial,Helvetica,sans-serif/, `${label} Claude sans turns`);
   assert.match(html, /body\.has-chat #step-ask \.tf-q\{/, `${label} hide Do. after first turn`);
-  assert.match(html, /body\[data-step=ask\] \.shell\{[^}]*52rem/, `${label} 52rem chat column`);
+  assert.match(html, /body\[data-step=ask\] \.shell\{[^}]*42rem/, `${label} 42rem chat column`);
   assert.match(html, /body\[data-step=ask\] #tf-progress\{display:none!important\}/, `${label} no Typeform progress on Ask`);
   assert.match(html, /#step-ask #guide\{display:none!important\}/, `${label} no How-guide on Ask`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
@@ -132,8 +135,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(cold.askModel, false, "Hosted hides model pill");
     assert.equal(cold.starters, true, "starter chips on empty");
     assert.equal(cold.threadHidden, true);
-    assert.equal(cold.provide, true, "doors visible as quiet footer");
-    assert.equal(cold.moreOpen, true, "More open on empty");
+    assert.equal(cold.provide, true, "Provide stays a quiet nav link");
+    assert.equal(cold.moreOpen, false, "More stays closed on empty");
     assert.ok(cold.engineRadius >= 12, "engine is a pill");
     assert.ok(cold.promptFont <= 22, "composer type is chat-sized");
     assert.ok(cold.composerBottom > cold.promptTop, "composer holds the prompt");
@@ -218,7 +221,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(afterTurn.threadHidden, false, "thread dominates");
     assert.equal(afterTurn.startersHidden, true, "chips hide");
     assert.equal(afterTurn.clearHidden, false, "Clear quiet-visible");
-    assert.equal(afterTurn.moreOpen, false, "doors fold into More");
+    assert.equal(afterTurn.moreOpen, false, "More stays closed on the thread");
     assert.equal(afterTurn.provide, false, "Provide not fighting the thread");
     assert.equal(afterTurn.greetClipped, true, "Do. recedes once focused");
     assert.deepEqual(afterTurn.who, ["You", "Hosted"]);
@@ -241,7 +244,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(afterClear.hasChat, false);
     assert.equal(afterClear.threadHidden, true);
     assert.equal(afterClear.starters, true, "chips return after Clear");
-    assert.equal(afterClear.moreOpen, true);
+    assert.equal(afterClear.moreOpen, false, "More stays closed after New");
     assert.equal(afterClear.provide, true);
 
     await page.setViewport({ width: 390, height: 844 });

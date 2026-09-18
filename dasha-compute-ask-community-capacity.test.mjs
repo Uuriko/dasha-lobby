@@ -153,7 +153,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(onAsk.comHidden, true, "Community door hidden when already Community");
     assert.equal(onAsk.comDoor, false, "Community door not a second primary");
     assert.equal(onAsk.hostHidden, false, "Hosted door not hidden attr");
-    assert.equal(onAsk.hostDoor, true, "Hosted quieter door on Community Ask");
+    assert.equal(onAsk.hostDoor, false, "Hosted door stays in collapsed More");
     assert.equal(onAsk.hostText, "Hosted");
     assert.equal(onAsk.howComPrimary, true, "How Community is the one primary");
     assert.equal(onAsk.howHostSecondary, true, "How Hosted is secondary");
@@ -195,7 +195,7 @@ if (puppeteer && existsSync(chrome)) {
       };
     });
     assert.equal(explicit.engine, "hosted", "explicit Hosted click stays Hosted");
-    assert.equal(explicit.comDoor, true, "Community door on explicit Hosted");
+    assert.equal(explicit.comDoor, false, "Community door stays in collapsed More");
     assert.equal(explicit.hostDoor, false, "Hosted door hidden when already Hosted");
     assert.equal(explicit.howHostPrimary, true, "How Hosted primary after explicit click");
     assert.equal(explicit.howComSecondary, true, "How Community secondary after explicit Hosted");

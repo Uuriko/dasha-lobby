@@ -22,7 +22,7 @@
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--ink)}body{margin:0;color:var(--paper);font:16px/1.5 Arial,Helvetica,sans-serif;background:radial-gradient(circle at 82% 0,#2a1730 0,transparent 26rem),var(--ink)}
 button,input,select,textarea{font:inherit}
 .shell{width:min(640px,calc(100% - 28px));margin:auto;padding:18px 0 56px}
-body[data-step=ask] .shell{width:min(52rem,calc(100% - 28px));max-width:52rem;padding-bottom:12px}
+body[data-step=ask] .shell{width:min(42rem,calc(100% - 28px));max-width:42rem;padding-bottom:12px}
 body[data-step=ask] footer.ux-foot,body[data-step=ask] footer.listed-on{display:none!important}
 body[data-step=ask] #tf-progress{display:none!important}
 .skip{position:absolute;left:-9999px}.skip:focus{left:14px;top:14px;z-index:9;background:var(--acid);color:var(--ink);padding:10px}
@@ -106,8 +106,8 @@ body[data-step=ask] #tf-progress{display:none!important}
   .ask-think.is-on,.ask-stream-chunk,.ask-run-chip[data-state=spin] .ask-run-spin{animation:none!important;transition:none!important;filter:none!important;opacity:1;transform:none}
   .ask-run-chip[data-state=check] .ask-run-check{transition:none!important;transform:rotate(-45deg) scale(1);opacity:1}
 }
-#ask-starters{margin:0 0 18px;display:flex;flex-wrap:wrap;gap:8px}#ask-starters .tf-quiet{padding:8px 14px;font-size:14px;color:var(--paper);border:1px solid var(--line);border-radius:999px}
-#ask-starters .tf-quiet:hover{color:var(--ink);background:var(--paper);border-color:var(--paper)}
+#ask-starters{margin:0 0 18px;display:flex;flex-wrap:wrap;gap:8px 16px}#ask-starters .tf-quiet{padding:6px 0;font-size:14px;color:var(--paper-muted);border:0;border-radius:0}
+#ask-starters .tf-quiet:hover{color:var(--paper);background:transparent;border:0}
 .ask-thread{margin:0;display:grid;gap:28px;padding:4px 0 18px}
 .guide{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px;font-size:12px;color:var(--paper-muted)}
 .guide[hidden]{display:none!important}
@@ -138,11 +138,11 @@ body[data-step=ask] #tf-progress{display:none!important}
 body[data-side=buyer] #gate-door-provide{display:none}
 body[data-side=provider] #gate-door-do,body[data-side=provider] #gate-money-row{display:none}
 .ask-thread[hidden]{display:none!important}
-.ask-turn{display:grid;gap:6px}
+.ask-turn{display:grid;gap:6px;position:relative}
 .ask-who{color:var(--paper-muted);font:600 12px/1.25 Arial,Helvetica,sans-serif;letter-spacing:.02em}
 .ask-said{margin:0;padding:0;border:0;background:transparent;color:var(--paper);font:16.5px/1.65 Arial,Helvetica,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
 .ask-turn.mac .ask-said{color:var(--paper);font:16.5px/1.65 Arial,Helvetica,sans-serif}
-.ask-turn.you .ask-said{color:var(--paper);justify-self:start;max-width:36rem;background:color-mix(in srgb,var(--paper) 8%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,var(--paper));border-radius:16px;padding:10px 14px}
+.ask-turn.you .ask-said{color:var(--paper);justify-self:start;max-width:36rem;background:color-mix(in srgb,var(--paper) 7%,transparent);border:0;border-radius:16px;padding:10px 14px}
 .ask-said.ask-md{white-space:normal}
 .ask-said.ask-md p{margin:0 0 .55em}
 .ask-said.ask-md p:last-child,.ask-said.ask-md ul:last-child,.ask-said.ask-md ol:last-child,.ask-said.ask-md pre:last-child{margin-bottom:0}
@@ -157,15 +157,14 @@ body[data-side=provider] #gate-door-do,body[data-side=provider] #gate-money-row{
   .ask-turn[data-state=thinking] .ask-said:empty::after,.ask-turn[data-state=streaming] .ask-said::after{animation:ask-caret 1s steps(1) infinite}
 }
 @keyframes ask-caret{50%{opacity:0}}
-.ask-acts{display:flex;flex-wrap:wrap;gap:0 12px;min-height:1.1em;opacity:0}
-.ask-turn:hover .ask-acts,.ask-turn:focus-within .ask-acts,.ask-acts:focus-within{opacity:1}
+.ask-acts{display:flex;flex-wrap:wrap;gap:0 12px;opacity:0;pointer-events:none;position:absolute;right:0;top:0;z-index:1}
+.ask-turn:hover .ask-acts,.ask-turn:focus-within .ask-acts,.ask-acts:focus-within{opacity:1;pointer-events:auto}
 .ask-act{border:0;background:transparent;color:var(--paper-muted);font:600 12px/1.2 Arial,Helvetica,sans-serif;cursor:pointer;padding:4px 0}
-.ask-act:hover,.ask-act:focus-visible{color:var(--acid)}
-.ask-turn[data-state=stopped] .ask-who::after{content:' · stopped';color:var(--paper-muted);font-weight:600}
-.ask-turn[data-state=error] .ask-who::after{content:' · error';color:var(--hot);font-weight:600}
-.ask-turn[data-state=thinking] .ask-who::after{content:' · thinking';color:var(--paper-muted);font-weight:600}
-.ask-turn[data-state=streaming] .ask-who::after{content:' · streaming';color:var(--acid);font-weight:600}
-body.has-chat #ask-starters,body.has-chat #ask-free-fine,body.has-chat #ask-range,body.has-chat #buyer-live-line{display:none!important}
+.ask-act:hover,.ask-act:focus-visible{color:var(--paper)}
+.ask-turn[data-state=stopped] .ask-who::after{content:' Stopped';color:var(--paper-muted);font-weight:600}
+.ask-turn[data-state=error] .ask-who::after{content:' Error';color:var(--hot);font-weight:600}
+.ask-turn[data-state=thinking] .ask-who::after,.ask-turn[data-state=streaming] .ask-who::after{content:' Thinking…';color:var(--paper-muted);font-weight:600}
+body.has-chat #ask-starters,body.has-chat #ask-free-fine,body.has-chat #ask-range,body.has-chat #buyer-live-line,body.has-chat #ask-nav{display:none!important}
 body.has-chat #prompt{min-height:3rem}
 body.has-chat #step-ask .tf-q{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .tf-quiet{border:0;background:transparent;color:var(--paper-muted);font:400 13px/1.35 Arial,Helvetica,sans-serif;cursor:pointer;padding:10px 0;text-decoration:none;display:inline-flex}
@@ -197,18 +196,24 @@ body.has-chat #step-ask .tf-q{position:absolute;width:1px;height:1px;padding:0;m
 #step-ask .ask-scroll{flex:1 1 auto;overflow-y:auto;min-height:8rem;padding:4px 2px 18px;-webkit-overflow-scrolling:touch}
 body:not(.has-chat) #step-ask .ask-scroll{display:flex;flex-direction:column;justify-content:center}
 #step-ask .ask-composer{position:sticky;bottom:0;z-index:2;margin-top:auto;padding:10px 0 4px;background:linear-gradient(180deg,transparent,var(--ink) 28%)}
-#step-ask .ask-composer-box{border:1px solid color-mix(in srgb,var(--line) 88%,var(--paper));border-radius:22px;padding:10px 12px 10px;background:color-mix(in srgb,var(--panel) 92%,transparent);box-shadow:0 10px 32px color-mix(in srgb,var(--ink) 45%,transparent)}
+#step-ask .ask-composer-box{border:0;border-radius:22px;padding:10px 12px 10px;background:color-mix(in srgb,var(--panel) 88%,transparent);box-shadow:none}
 #step-ask .ask-composer-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}
-#change-engine,#ask-model{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;color:var(--paper-muted);background:transparent}
-#change-engine:hover,#ask-model:hover{color:var(--paper);border-color:color-mix(in srgb,var(--paper) 40%,var(--line))}
+#change-engine,#ask-model{border:0;border-radius:999px;padding:6px 8px;font-size:12px;color:var(--paper-muted);background:transparent}
+#change-engine:hover,#ask-model:hover{color:var(--paper)}
 #ask-model{appearance:none;-webkit-appearance:none;max-width:11rem;padding-right:26px;cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,var(--paper-muted) 50%),linear-gradient(135deg,var(--paper-muted) 50%,transparent 50%);background-position:calc(100% - 12px) 11px,calc(100% - 7px) 11px;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
 #ask-model[hidden]{display:none!important}
 .ask-greet{margin:0 0 14px;color:var(--paper);font:600 clamp(22px,4vw,32px)/1.2 Arial,Helvetica,sans-serif;letter-spacing:-.03em}
 body.has-chat #ask-greet{display:none!important}
+#step-ask .ask-top{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:1.25rem;margin:0 0 6px}
+#step-ask .ask-top .tf-back{padding:0}
+#step-ask .ask-top #clear-chat{margin-left:auto;padding:4px 0;font-size:12px;color:var(--paper-muted);border:0;background:transparent}
+#step-ask .ask-top #clear-chat:hover,#step-ask .ask-top #clear-chat:focus-visible{color:var(--paper)}
+#step-ask .ask-nav{display:flex;flex-wrap:wrap;align-items:center;gap:0 14px;margin:8px 0 0}
+#step-ask .ask-nav .tf-quiet{padding:4px 0;font-size:12px;color:var(--paper-muted)}
+#step-ask #ask-receipt,#step-ask #ask-mac-line,#step-ask #ask-range{display:none!important}
 #step-ask .ask-more{margin-top:6px}
 #step-ask .ask-more-sum{color:var(--paper-muted);font:400 12px/1.3 Arial,Helvetica,sans-serif;cursor:pointer;list-style:none;width:max-content;padding:4px 0}
 #step-ask .ask-more-sum::-webkit-details-marker{display:none}
-body:not(.has-chat) #step-ask .ask-more-sum{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 #ask-more:not([open]) #ask-doors{display:none!important}
 #prompt{display:block;width:100%;min-height:3rem;max-height:32vh;font-size:16px;line-height:1.55;font-weight:400;background:transparent;border:0;padding:6px 4px 8px;caret-color:var(--acid);color:var(--paper);resize:none;margin:0;field-sizing:content}
 #prompt:focus{outline:none}
@@ -281,7 +286,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
 .tf-choice.primary:focus-visible,.primary:focus-visible,.tf-choice[aria-pressed=true]:focus-visible{outline-width:2px;outline-offset:2px;outline-color:color-mix(in srgb,var(--acid) 65%,var(--ink))}
 @keyframes tf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.tf-step{animation:none!important}.ux-reveal{max-height:3em}}
-@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:2.75rem}#step-ask #run-demo,#step-ask #login{min-height:40px}#ask-starters{margin-bottom:12px}#step-ask .ask-doors,#step-ask .ask-links{gap:4px 12px;margin-top:6px;padding-top:0}#step-ask .ask-doors .tf-quiet,#step-ask .ask-links .tf-quiet{padding:8px 0;font-size:13px}#ask-starters .tf-quiet{padding:8px 12px;font-size:14px}#step-gate>.ask-links{display:flex;flex-wrap:wrap;gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}.ux-triad,.ux-tech,.ux-foot-cols{grid-template-columns:1fr 1fr}.ux-triad{grid-template-columns:1fr}.ux-reveal{max-height:3em}}
+@media(max-width:560px){.topbar{grid-template-columns:1fr auto;grid-template-areas:"brand home" "state state";row-gap:0;column-gap:10px;min-height:0;padding-bottom:10px}.topbar .brand{grid-area:brand}.topbar .home{grid-area:home}.topbar .state{grid-area:state;justify-self:stretch;max-width:100%;flex-wrap:nowrap;row-gap:0;margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);min-height:0}.topbar #top-state{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:.05em;font-size:10px;font-weight:800;color:var(--paper-muted)}.tf-step{padding:36px 0 20px}.tf-choice,.primary,.secondary{min-height:54px;font-size:17px;border-radius:11px}.tf-choice.secondary,.secondary{font-size:15px}#prompt{min-height:2.75rem}#step-ask #run-demo,#step-ask #login{min-height:40px}#ask-starters{margin-bottom:12px}#step-ask .ask-doors,#step-ask .ask-links,#step-ask .ask-nav{gap:4px 12px;margin-top:6px;padding-top:0}#step-ask .ask-doors .tf-quiet,#step-ask .ask-links .tf-quiet,#step-ask .ask-nav .tf-quiet{padding:6px 0;font-size:13px}#ask-starters .tf-quiet{padding:6px 0;font-size:14px}#step-gate>.ask-links{display:flex;flex-wrap:wrap;gap:0 12px}pre.setup,pre#code,pre#api-key-output,pre#check-result{font-size:11px;line-height:1.5;padding:10px;overflow-x:auto}.ux-triad,.ux-tech,.ux-foot-cols{grid-template-columns:1fr 1fr}.ux-triad{grid-template-columns:1fr}.ux-reveal{max-height:3em}}
 
 .honesty-panel{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
 .honesty-panel[hidden]{display:none!important}
@@ -555,7 +560,10 @@ footer.listed-on img{display:block;height:32px;width:auto}
 </section>
 
 <section class="tf-step" id="step-ask" data-tf="ask" hidden>
+  <div class="ask-top">
   <button type="button" class="tf-back" id="back-ask" data-back="" hidden>← Back</button>
+  <button class="tf-quiet" id="clear-chat" type="button" hidden disabled>New</button>
+  </div>
   <div class="ask-pane">
   <div class="ask-scroll" id="ask-scroll">
   <h1 class="tf-q">Do.</h1>
@@ -579,21 +587,18 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <button type="button" class="tf-quiet" id="ask-starter-2" data-prompt="This while loop never ends. Find the bug and write the fix.">Fix a bug</button>
     <button type="button" class="tf-quiet" id="ask-starter-3" data-prompt="Write the working curl that POSTs this JSON to an HTTPS API.">Do the thing</button>
     <button type="button" class="tf-quiet" id="ask-starter-4" data-prompt="Explain this like I'm new to it.">Explain this</button>
-    <button type="button" class="tf-quiet" id="ask-starter-5" data-prompt="Summarize this in five bullets.">Summarize</button>
-    <button type="button" class="tf-quiet" id="ask-starter-6" data-prompt="Review this PR. What's wrong, what's fine, what I'd change.">Review a PR</button>
   </div>
   </div>
   <div class="ask-composer" id="ask-composer">
   <div class="ask-composer-box">
-  <label class="field" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Message Dasha" aria-label="Message Dasha" title="Enter to send · Shift+Enter newline · Esc back"></textarea></label>
+  <label class="field" id="ask-input" style="font-size:0;margin:0;gap:0">Prompt<textarea id="prompt" maxlength="2000" placeholder="Message Dasha" aria-label="Message Dasha" title="Enter to send · Shift+Enter newline · Esc back"></textarea></label>
   <p class="fine" id="ask-hint" hidden aria-hidden="true"></p>
   <div class="ask-composer-row">
     <div class="ask-links">
       <button class="tf-quiet" id="change-engine" type="button" title="Change engine" aria-label="Change engine">Hosted</button>
       <select id="ask-model" class="ask-model-pill" aria-label="Model" hidden></select>
-      <button class="tf-quiet" id="clear-chat" type="button" hidden disabled>New</button>
     </div>
-    <div class="actions">
+    <div class="actions" id="ask-send">
       <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
       <a class="primary" id="login" href="/login?return=/compute%23ask">Sign in</a>
     </div>
@@ -602,7 +607,12 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
     <!-- buyer-live-models:2026-09-08 -->
     <p class="fine" id="buyer-live-line" aria-live="polite">No Mac online.</p>
-    <details class="ask-more" id="ask-more" open>
+    <nav class="ask-nav" id="ask-nav" aria-label="Ask">
+      <button type="button" class="tf-quiet" id="ask-provide" title="Join with a Mac" aria-label="Provide · Join with a Mac">Provide</button>
+      <button type="button" class="tf-quiet" id="ask-ocm" title="OCM console" aria-label="Marketplace · OCM console">Marketplace</button>
+      <button type="button" class="tf-quiet" id="ask-host" title="OCM host · enroll" aria-label="Host · OCM enroll">Host</button>
+    </nav>
+    <details class="ask-more" id="ask-more">
       <summary class="ask-more-sum">More</summary>
     <div class="ask-doors" id="ask-doors">
       <button type="button" class="tf-quiet" id="ask-prefer-mymac" title="Prefer your Mac when online · else Community" aria-label="Prefer my Mac" aria-pressed="false" hidden>Prefer my Mac</button>
@@ -614,11 +624,6 @@ footer.listed-on img{display:block;height:32px;width:auto}
       <button type="button" class="tf-quiet" id="ask-hosted" title="Hosted" aria-label="Hosted" hidden>Hosted</button>
       <span class="ask-door-sep" id="ask-hosted-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="copy-skill-use">Copy AI skill</button>
-      <button type="button" class="tf-quiet" id="ask-provide" title="Join with a Mac" aria-label="Provide · Join with a Mac">Provide</button>
-      <span class="ask-door-sep" aria-hidden="true">·</span>
-      <button type="button" class="tf-quiet" id="ask-ocm" title="OCM console" aria-label="Marketplace · OCM console">Marketplace</button>
-      <span class="ask-door-sep" aria-hidden="true">·</span>
-      <button type="button" class="tf-quiet" id="ask-host" title="OCM host · enroll" aria-label="Host · OCM enroll">Host</button>
       <span class="ask-door-sep" id="ask-credits-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="ask-credits" title="Credits" aria-label="Credits" hidden></button>
     </div>
@@ -1229,7 +1234,7 @@ function paintAskThread(){
   const turns=visibleAskTurns();
   const open=turns.length>0;
   document.body.classList.toggle('has-chat',open);
-  if(more){if(open)more.removeAttribute('open');else more.setAttribute('open','')}
+  if(more)more.removeAttribute('open');
   if(thread){
     thread.hidden=!open;
     if(open){
@@ -2350,10 +2355,7 @@ function paintAskEngine(){
   if(preferSelf&&(eng==='community'||eng==='mixture')){
     const base=eng==='mixture'?'Mixture':(providersOnline>=1?('Community · '+providersOnline):'Community');
     btn.textContent='Prefer · '+base;
-  }else if(eng==='community'){
-    const live=String($('model')?.value||'').trim();
-    btn.textContent=(live&&networkModels.has(live))?`Community · ${live}`:(providersOnline>=1?`Community · ${providersOnline}`:'Community');
-  }
+  }else if(eng==='community')btn.textContent='Community';
   else if(eng==='mixture')btn.textContent='Mixture';
   else if(eng==='self')btn.textContent='My Mac · free';
   else if(eng==='hosted'&&window.__dashaAuthReady&&hostedLive===false)btn.textContent='Hosted · —';

@@ -127,13 +127,17 @@ if (puppeteer && existsSync(chrome)) {
     skill: !!(document.getElementById('copy-skill-use')?.offsetParent),
     label: document.getElementById('copy-skill-use')?.textContent || '',
     doors: !!(document.getElementById('ask-provide')?.offsetParent),
+    moreOpen: document.getElementById('ask-more')?.open === true,
     starter: document.getElementById('ask-starter')?.textContent || '',
+    starters: [...document.querySelectorAll('#ask-starters [data-prompt]')].map((el) => el.id),
   }));
   assert.equal(ask.step, 'ask');
-  assert.equal(ask.skill, true, 'Copy AI skill on Ask after gate');
+  assert.equal(ask.moreOpen, false, 'Copy AI skill stays in collapsed More');
+  assert.equal(ask.skill, false, 'Copy AI skill not on empty Ask canvas');
   assert.equal(ask.label, 'Copy AI skill');
-  assert.equal(ask.doors, true);
+  assert.equal(ask.doors, true, 'Provide stays a quiet nav link');
   assert.equal(ask.starter, 'Write code');
+  assert.deepEqual(ask.starters, ['ask-starter', 'ask-starter-2', 'ask-starter-3', 'ask-starter-4']);
   await p.goto(file + '#provide', { waitUntil: 'domcontentloaded' });
   await p.waitForFunction(() => document.body.dataset.step === 'provide-name' || document.getElementById('step-provide-name')?.hidden === false);
   // ensure provide-name visible then next
