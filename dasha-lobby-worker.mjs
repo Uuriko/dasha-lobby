@@ -9168,7 +9168,17 @@ export class DashaLobby {
         tags: [{ name: 'kind', value: 'email-login' }],
         idempotencyKey: `email-login/${nonce}`,
       });
-      if (!sent.ok) return json({ error: 'Could not send the sign-in code. Please try again.' }, 502, allowedOrigin, cred);
+      if (!sent.ok) {
+        await bumpLobbyMetric(this.state.storage, 'signin:fail:email');
+        // Internal-only record so the next failure is diagnosable without
+        // exposing provider detail to the browser. Never read by public routes.
+        await this.state.storage.put('emailLoginLastError', {
+          at: now,
+          error: String(sent.error || 'send failed').slice(0, 160),
+          status: Number(sent.status) || 0,
+        });
+        return json({ error: 'Could not send the sign-in code. Please try again.' }, 502, allowedOrigin, cred);
+      }
       await this.state.storage.put('emailLogins', bounded);
       sendLog[email] = [...(sendLog[email] || []), now];
       await this.state.storage.put('emailLoginSends', sendLog);
