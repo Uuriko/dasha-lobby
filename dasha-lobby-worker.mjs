@@ -335,6 +335,12 @@ import {
   visibleReplies,
 } from './dasha-forum.mjs';
 import { handleMailSmoke, isMailSmokePath, sendResendMail } from './dasha-mail-resend.mjs';
+import {
+  enqueueMailRetry,
+  isMailRetryPath,
+  mailInternalAllowed,
+  pumpMailRetryQueue,
+} from './dasha-mail-resend.mjs';
 
 const LLMS_TXT = `# $dasha is dash_eats on Solana
 
@@ -9137,7 +9143,48 @@ export class DashaLobby {
         tags: [{ name: 'kind', value: 'email-login' }],
         idempotencyKey: `email-login/${nonce}`,
       });
-      if (!sent.ok) return json({ error: 'Could not send the sign-in code. Please try again.' }, 502, allowedOrigin, cred);
+      if (!sent.ok) {
+        // Failure classification: config (fix by changing config) vs
+        // provider-rejection (do not retry) vs transient (bounded retry).
+        // Every failure path is observable; nothing user-identifying leaves
+        // the worker (metric names + last-error record, browser copy stays
+        // generic).
+        const failure = sent.failure || { kind: 'transient', retryable: true };
+        await bumpLobbyMetric(this.state.storage, 'signin:fail:email');
+        await bumpLobbyMetric(this.state.storage, `signin:fail:email:${failure.kind}`);
+        await bumpLobbyMetric(this.state.storage, `mail:send:fail:${failure.kind}`);
+        await this.state.storage.put('emailLoginLastError', {
+          at: now,
+          error: String(sent.error || 'send failed').slice(0, 160),
+          status: Number(sent.status) || 0,
+          kind: failure.kind,
+          retryable: Boolean(failure.retryable),
+        });
+        if (failure.retryable) {
+          // Bounded retry queue: the queued entry is the one place the
+          // plaintext code rests (so a transient provider failure can still
+          // deliver it); 5 attempts, 30s->8m backoff, 24h TTL. emailLogins
+          // still stores hash-only codes. On delivery the pending login is
+          // persisted by the retry pump's onDelivered hook.
+          const enq = await enqueueMailRetry(this.state.storage, {
+            id: `retry/email-login/${nonce}`,
+            kind: 'email-login',
+            email,
+            to: [email],
+            subject: 'Your Dasha sign-in code',
+            text: `Your Dasha sign-in code is ${code}. It expires in 10 minutes. If you did not ask for it, ignore this email.`,
+            tags: [{ name: 'kind', value: 'email-login' }],
+            idempotencyKey: `email-login/${nonce}`,
+            lastError: String(sent.error || 'send failed').slice(0, 160),
+            lastKind: failure.kind,
+            payload: { login: { codeHash, nonce, exp: expiresAt } },
+          }, now);
+          if (enq.queued) await bumpLobbyMetric(this.state.storage, 'mail:retry:queued');
+          else await bumpLobbyMetric(this.state.storage, 'mail:retry:enqueue-failed');
+        }
+        return json({ error: 'Could not send the sign-in code. Please try again.' }, 502, allowedOrigin, cred);
+      }
+      await bumpLobbyMetric(this.state.storage, 'mail:send:ok');
       await this.state.storage.put('emailLogins', bounded);
       sendLog[email] = [...(sendLog[email] || []), now];
       await this.state.storage.put('emailLoginSends', sendLog);
@@ -10837,6 +10884,47 @@ export class DashaLobby {
       return this.handleDigest(request);
     }
 
+
+    if (isMailRetryPath(url.pathname)) {
+      // Internal-only pump for the Resend retry queue (transient failures).
+      // Same gate as the mail smoke endpoint; cron target for Grok Bot.
+      if (request.method !== 'POST') return new Response('method not allowed', { status: 405, headers: SECURITY });
+      if (!mailInternalAllowed(request, this.env)) return new Response('forbidden', { status: 403, headers: SECURITY });
+      const retryStorage = this.state.storage;
+      const stats = await pumpMailRetryQueue({
+        storage: retryStorage,
+        env: this.env,
+        now: Date.now(),
+        bump: (name) => bumpLobbyMetric(retryStorage, name),
+        shouldSkip: async (entry) => {
+          // Delivering an expired or superseded code wastes a send: skip if
+          // the code already expired, or a newer code was issued after this
+          // entry was queued.
+          if (entry.kind !== 'email-login' || !entry.email) return false;
+          if (entry.payload?.login?.exp && Number(entry.payload.login.exp) <= Date.now()) return true;
+          const logins = await retryStorage.get('emailLogins');
+          const pending = logins && typeof logins === 'object' ? logins[entry.email] : null;
+          return Boolean(pending && pending.nonce && pending.nonce !== entry.payload?.login?.nonce && Number(pending.exp) > Date.now());
+        },
+        onDelivered: async (entry) => {
+          // The first attempt never stored the pending login; the retry that
+          // delivered it does (hash-only code, bounded like the normal path).
+          if (entry.kind !== 'email-login' || !entry.email || !entry.payload?.login) return;
+          const login = entry.payload.login;
+          const saved = await retryStorage.get('emailLogins');
+          const live = Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {})
+            .filter(([, row]) => Number(row?.exp) > Date.now()));
+          live[entry.email] = { codeHash: login.codeHash, nonce: login.nonce, exp: login.exp, attempts: 0 };
+          const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 200));
+          await retryStorage.put('emailLogins', bounded);
+          const sendLogRaw = await retryStorage.get('emailLoginSends');
+          const sendLog = sendLogRaw && typeof sendLogRaw === 'object' ? sendLogRaw : {};
+          sendLog[entry.email] = [...(sendLog[entry.email] || []), Date.now()];
+          await retryStorage.put('emailLoginSends', sendLog);
+        },
+      });
+      return json({ ok: true, ...stats }, 200, null);
+    }
 
     if (
       url.pathname.startsWith('/simp/') ||
