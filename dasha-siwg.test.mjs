@@ -142,7 +142,8 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com', 
 }
 
 {
-  const login = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), {});
+  // Grok Bot door renders only when its config (LOBBY_SESSION_SECRET) is present.
+  const login = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), { LOBBY_SESSION_SECRET: 'test-session-secret' });
   assert.equal(login.status, 200);
   assert.equal(login.headers.get('x-dasha-edge'), 'login');
   const body = await login.text();

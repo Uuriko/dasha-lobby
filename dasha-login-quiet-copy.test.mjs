@@ -45,12 +45,35 @@ function assertQuietLogin(html, label) {
 assertQuietLogin(loginSrc, 'login source');
 assertQuietLogin(LOGIN_PAGE_HTML, 'LOGIN_PAGE_HTML');
 
+const FULL_ENV = {
+  LOBBY_SESSION_SECRET: 'test-session-secret',
+  X_CLIENT_ID: 'test-x-client-id',
+  X_CLIENT_SECRET: 'test-x-client-secret',
+  GOOGLE_CLIENT_ID: 'test-google-client-id',
+  GOOGLE_CLIENT_SECRET: 'test-google-client-secret',
+  RESEND_API_KEY: 'test-resend-key',
+};
+
 {
-  const login = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), {});
+  const login = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), FULL_ENV);
   assert.equal(login.status, 200, '/login 200');
   assert.equal(login.headers.get('x-dasha-edge'), 'login', '/login edge');
   const html = await login.text();
-  assertQuietLogin(html, 'served /login');
+  assertQuietLogin(html, 'served /login (all configured)');
+}
+
+{
+  // Nothing configured: only the client-side wallet door renders — no dead buttons.
+  const login = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), {});
+  assert.equal(login.status, 200, '/login 200 (unconfigured)');
+  const html = await login.text();
+  const body = visible(html);
+  assert.match(body, /data-wallet-login/, 'unconfigured wallet door still renders');
+  assert.doesNotMatch(body, /data-grok-login/, 'unconfigured no dead Grok Bot button');
+  assert.doesNotMatch(body, /data-x-login/, 'unconfigured no dead X button');
+  assert.doesNotMatch(body, /data-google-login/, 'unconfigured no dead Google button');
+  assert.doesNotMatch(body, /data-email-form/, 'unconfigured no dead email form');
+  assert.match(body, /<p>Sign in with a wallet\.<\/p>/, 'unconfigured lede names live methods only');
 }
 
 {
@@ -84,7 +107,8 @@ async function assertLoginUx(html, label) {
 assertLoginUx(loginSrc, 'login source');
 assertLoginUx(LOGIN_PAGE_HTML, 'LOGIN_PAGE_HTML');
 {
-  const login = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), {});
-  assertLoginUx(await login.text(), 'served /login');
+  // Email structures render only when the Resend rail is configured.
+  const login = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), FULL_ENV);
+  assertLoginUx(await login.text(), 'served /login (email configured)');
 }
 console.log('dasha-login-ux: PASS (resend cooldown, provider hint, OTP hardening, expiry copy)');
