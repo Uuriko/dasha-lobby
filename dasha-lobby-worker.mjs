@@ -5282,7 +5282,8 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  /crew.json /bag.json (+slash / Title-case) html-404 while faces 200.
  *  Fold to /contribute /crew /bag. Exact /humans.txt is a 200 text/plain
  *  face (not a Motley leftover into /contribute HTML). Slash /humans.txt/
- *  + nested /compute/api/humans fold to that face. Muse brand door /muse
+ *  + nested /compute/api/humans + /compute/humans + /compute/humans.txt
+ *  fold to that face. Muse brand door /muse
  *  (+slash / Title-case) 308 → / (home is Muse Webflow). Do not fold /muse
  *  → /start — /start is reserved for Muse #225 face. Stay out of /providers
  *  /developers /network /start (Muse #225 HTML). No Muse product HTML. */
@@ -5365,9 +5366,22 @@ const POTTER_HUMANS_TXT_308_PATHS = new Set([
 ]);
 /** Nested Motley leftover /compute/api/humans (+slash / Title-case via
  *  toLowerCase) while /humans.txt is the 200 text/plain face. Must win
- *  over the /compute/api/ casefold catch-all. Do not invent /api/humans. */
+ *  over the /compute/api/ casefold catch-all. Live /compute/api/humans.json
+ *  already 308 → /humans.txt — keep it so tip deploys do not wipe Motley.
+ *  Do not invent /api/humans. Sibling /compute/humans + /compute/humans.txt
+ *  leftovers live in POTTER_COMPUTE_HUMANS_308_PATHS. */
 const POTTER_COMPUTE_API_HUMANS_308_PATHS = new Set([
   '/compute/api/humans', '/compute/api/humans/',
+  '/compute/api/humans.json', '/compute/api/humans.json/',
+]);
+/** Nested Motley leftover /compute/humans + /compute/humans.txt (+slash /
+ *  Title-case via toLowerCase) html-404 while /humans.txt is the 200
+ *  text/plain face (#251). Fold to that face, NOT /contribute HTML.
+ *  Nested /compute/api/humans stays its Set. Do not invent apex /humans.
+ *  Lobby same-host, not www cross-host. */
+const POTTER_COMPUTE_HUMANS_308_PATHS = new Set([
+  '/compute/humans', '/compute/humans/',
+  '/compute/humans.txt', '/compute/humans.txt/',
 ]);
 /** Leftover apex /openapi.yaml (+slash / Title-case) → /compute/openapi.json.
  *  Exact /compute/openapi.yaml stays the 200 YAML spec. */
@@ -5793,7 +5807,7 @@ export function potterHome308Dest(path) {
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  if (POTTER_HUMANS_TXT_308_PATHS.has(p) || POTTER_COMPUTE_API_HUMANS_308_PATHS.has(p)) {
+  if (POTTER_HUMANS_TXT_308_PATHS.has(p) || POTTER_COMPUTE_API_HUMANS_308_PATHS.has(p) || POTTER_COMPUTE_HUMANS_308_PATHS.has(p)) {
     return "https://www.getdasha.com/humans.txt";
   }
   if (POTTER_OPENAPI_YAML_308_PATHS.has(p) || POTTER_OPENAPI_JSON_308_PATHS.has(p)) {
@@ -5960,6 +5974,7 @@ export function potterHome308Response(request, url) {
           (u.pathname === '/compute/llms.txt' && POTTER_COMPUTE_API_LLMS_JSON_308_PATHS.has(src)) ||
           (u.pathname === '/compute/openapi.json' && POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS.has(src)) ||
           (u.pathname === '/contribute' && POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(src)) ||
+          (u.pathname === '/humans.txt' && POTTER_COMPUTE_HUMANS_308_PATHS.has(src)) ||
           (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )
       ) {
