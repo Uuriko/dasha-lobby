@@ -80,6 +80,17 @@ assert.equal(m2.days[today]['key:create'], 1, 'key create counted');
 const hour = new Date().toISOString().slice(0, 13);
 assert.equal(typeof m2.providers_online_hourly[hour], 'number', 'hourly providers sample present');
 
+// Money-funnel beacons (client ask/run lifecycle + pay completion) land on /event and roll up.
+for (const [name, step] of [['run', 'start'], ['run', 'success'], ['run', 'fail'], ['ask', 'start'], ['ask', 'complete'], ['ask', 'fail'], ['pay', 'done']]) {
+  const r = await post({ name, step, anon_id: ANON });
+  assert.equal(r.status, 202, `funnel beacon ${name}:${step} accepted`);
+}
+res = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/metrics'), origin);
+const funnel = (await res.json()).days[today];
+for (const [name, step] of [['run', 'start'], ['run', 'success'], ['run', 'fail'], ['ask', 'start'], ['ask', 'complete'], ['ask', 'fail'], ['pay', 'done']]) {
+  assert.equal(funnel[`${name}:${step}`], 1, `funnel ${name}:${step} counted`);
+}
+
 console.log('dasha-compute-telemetry: PASS');
 
 // Module-level computeApi must proxy event/metrics/badge-era paths to the DO (regression: 404 on live).

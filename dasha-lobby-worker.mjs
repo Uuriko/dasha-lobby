@@ -6007,6 +6007,17 @@ export function ensureCanonical(html, pageUrl) {
   return out;
 }
 
+/** Favicon link for proxied pages missing one. Home strips the default Webflow
+ * favicon.ico, so without this the served head has no icon at all. Idempotent:
+ * keeps any rel=icon / shortcut icon the page already ships. */
+const FAVICON_TAG = '<link rel="icon" type="image/png" href="/favicon.ico">';
+const ICON_LINK_RE = /<link\b[^>]*\brel=["'](?:shortcut\s+)?icon["']/i;
+export function ensureFavicon(html) {
+  const out = String(html || '');
+  if (ICON_LINK_RE.test(out)) return out;
+  return /<\/head>/i.test(out) ? out.replace(/<\/head>/i, `${FAVICON_TAG}</head>`) : FAVICON_TAG + out;
+}
+
 /**
  * dasha-lobby-page.html is a Webflow embed fragment (no document chrome).
  * Worker /lobby is a first-class page — without a <title>, browsers invent one
@@ -7172,7 +7183,7 @@ export function stripNotFoundDroppedCtaCss(html) {
 const NOT_FOUND_HTML = htmlPage('Not found — $dasha', `<h1>Not this page.</h1>
 <p>Simp Board, Lobby, faucet, and how to buy live on getdasha.com. This URL is not one of them.</p>
 <p><code>53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code></p>
-<p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/simp">Simp</a> · <a href="https://www.getdasha.com/lobby">Lobby</a> · <a href="https://www.getdasha.com/faucet">Faucet</a> · <a href="https://www.getdasha.com/how-to-buy">How to buy</a> · <a href="https://www.getdasha.com/privacy">Privacy</a></p>`, { robots: 'noindex,follow' });
+<p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/compute">Compute</a> · <a href="https://www.getdasha.com/compute/start">Compute start</a> · <a href="https://www.getdasha.com/simp">Simp</a> · <a href="https://www.getdasha.com/lobby">Lobby</a> · <a href="https://www.getdasha.com/faucet">Faucet</a> · <a href="https://www.getdasha.com/how-to-buy">How to buy</a> · <a href="https://www.getdasha.com/privacy">Privacy</a> · <a href="https://www.getdasha.com/sitemap.xml">Sitemap</a></p>`, { robots: 'noindex,follow' });
 
 function isComputePagePath(pathname) {
   return pathname === '/compute' || pathname === '/compute/' || pathname === '/compute/index.html';
@@ -12307,6 +12318,7 @@ async function productEdge(request, url, env) {
     ? 'https://www.getdasha.com/'
     : `https://www.getdasha.com${url.pathname.replace(/\/$/, '')}`;
   html = ensureCanonical(html, pageUrl);
+  html = ensureFavicon(html);
   html = stripDeadNav(html);
   html = stripLegacyFonts(html);
   html = injectXConnectPrompt(html);

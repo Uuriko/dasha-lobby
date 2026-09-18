@@ -16,7 +16,7 @@ assert.match(body, />Marketplace</);
 assert.match(body, /hashchange/);
 assert.doesNotMatch(body, /not an investment/);
 assert.doesNotMatch(body, /id=[\"']tab-sponsor[\"']/);
-assert.match(body, /Start\. Do\. Provide\. Pay\. Credits\./);
+assert.match(body, /Run open-weight AI models on real Macs — or put your own Mac to work and earn\. OpenAI-compatible API, \$0\.05 per job\./);
 assert.doesNotMatch(body, /Night Shift/);
 assert.match(body, /<title>Dasha Compute/);
 assert.match(body, /property="og:title" content="Dasha Compute"/);

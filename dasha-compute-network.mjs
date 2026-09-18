@@ -308,7 +308,7 @@ function maybeHead(request, res) {
 /** Funnel telemetry (task 22): aggregate counters only - no emails, prompts, or fingerprints. */
 const METRIC_STEP_RE = /^[a-z0-9:_-]{1,32}$/;
 const METRIC_ANON_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const METRIC_CLIENT_EVENTS = new Set(['page', 'provide', 'ask', 'pay', 'signin', 'kit']);
+const METRIC_CLIENT_EVENTS = new Set(['page', 'provide', 'ask', 'run', 'pay', 'signin', 'kit']);
 const metricDay = () => new Date().toISOString().slice(0, 10);
 const metricHour = (now) => new Date(now).toISOString().slice(0, 13);
 
