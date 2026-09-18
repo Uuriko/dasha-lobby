@@ -2,7 +2,7 @@
 /**
  * Quiet buyer live-model line on /compute from GET /compute/api/network.
  * Live. {models_available ids} only when providers_online>=1 and models nonempty.
- * Empty / fail → No Mac online. Never invent a model. No tok/s. No $0.05/job on Ask.
+ * SSR first paint → … (pending). Empty / fail after network → No Mac online. Never invent a model. No tok/s. No $0.05/job on Ask.
  * Test-only. No wrangler. No Designer. No plugin.jup.ag. No /which or /contribute.
  */
 import assert from 'node:assert/strict';
@@ -31,20 +31,20 @@ function buyerBlock(html) {
 
 function assertBuyerLiveModels(html, label) {
   assert.match(html, /<!-- buyer-live-models:2026-09-08 -->/, `${label} marker`);
-  assert.match(html, /id=["']buyer-live-line["'][^>]*>No Mac online\.</, `${label} Ask first paint no invented model`);
-  assert.match(html, /id=["']buyer-live-line-build["'][^>]*>No Mac online\.</, `${label} API first paint no invented model`);
+  assert.match(html, /id=["']buyer-live-line["'][^>]*data-ssr-mac=["']pending["'][^>]*>…</, `${label} Ask first paint pending (no offline claim before network)`);
+  assert.match(html, /id=["']buyer-live-line-build["'][^>]*data-ssr-mac=["']pending["'][^>]*>…</, `${label} API first paint pending (no offline claim before network)`);
   assert.match(html, /function paintBuyerLiveLine\(/, `${label} paintBuyerLiveLine`);
   assert.match(html, /paintBuyerLiveLine\(\)/, `${label} paintBuyerLiveLine called`);
   assert.match(html, /api\(['"]\/compute\/api\/network['"]\)/, `${label} reads GET /compute/api/network`);
   assert.match(
     html,
-    /Show Live\. \{models_available ids\} only when providers_online>=1 and models_available nonempty/,
+    /Pending.+until network known.+Live\. ids only when providers_online>=1/,
     `${label} show condition`,
   );
   assert.match(html, /const live=n>=1&&ids\.length>0/, `${label} live = n>=1 && ids`);
   assert.match(html, /'Live\. '\+ids\.join\(' '\)/, `${label} Live. + response ids`);
   assert.match(html, /'No Mac online\.'/, `${label} empty/fail copy`);
-  assert.match(html, /never invent a model/, `${label} never invent`);
+  assert.match(html, /[Nn]ever invent a model/, `${label} never invent`);
   assert.match(html, /No tok\/s/, `${label} skip tok/s`);
   assert.match(html, /No \$0\.05\/job/, `${label} no earn rate on buyer line`);
   assert.match(html, /id=["']ask-free-fine["'][^>]*>3 free \/ 10 min · then credits\./, `${label} Hosted Ask path stays`);
@@ -93,8 +93,8 @@ if (puppeteer && existsSync(chrome)) {
         askHasEarn: (document.getElementById('step-ask')?.innerText || '').includes('$0.05/job'),
       };
     });
-    assert.equal(first.ask, 'No Mac online.', 'first paint does not invent a model');
-    assert.equal(first.build, 'No Mac online.', 'API first paint does not invent a model');
+    assert.equal(first.ask, '…', 'first paint pending — does not invent a model or claim offline');
+    assert.equal(first.build, '…', 'API first paint pending — does not invent a model or claim offline');
     assert.match(first.hosted, /3 free \/ 10 min · then credits\.|Hosted · unavailable/, 'Hosted Ask path stays');
     assert.equal(first.askHasEarn, false, 'Ask path has no $0.05/job');
     assert.doesNotMatch(first.ask, /gemma3-27b|qwen3-8b|gpt-oss/);

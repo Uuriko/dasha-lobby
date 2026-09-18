@@ -21,7 +21,7 @@ assert.equal(html, COMPUTE_PAGE_HTML, 'html ↔ page.mjs sync');
 
 assert.match(html, /id=["']honesty-panel["']/);
 assert.match(html, /id=["']honesty-hosted["'][^>]*>Hosted · live</);
-assert.match(html, /id=["']honesty-macs["'][^>]*>No Mac online</);
+assert.match(html, /id=["']honesty-macs["'][^>]*data-ssr-mac=["']pending["'][^>]*>…</);
 assert.match(html, /id=["']honesty-enrolled-sep["'][^>]*\bhidden\b/);
 assert.match(html, /id=["']honesty-enrolled["'][^>]*\bhidden\b/);
 assert.match(html, /id=["']honesty-settled["'][^>]*>0 tok · 24h</);
@@ -93,7 +93,7 @@ assert.doesNotMatch(html, /~12 Macs|12 Macs online|fake sparkline|plugin\.jup\.a
 assert.doesNotMatch(html, /network warming up|join our waitlist|alpha may be empty/i);
 
 assert.match(html, /id=["']settled-24h["']/);
-assert.match(html, /id=["']night-q["'][^>]*>No Mac online\.</);
+assert.match(html, /id=["']night-q["'][^>]*data-ssr-mac=["']pending["'][^>]*>…</);
 assert.match(html, /paintSettled24h[\s\S]*?paintHonestyPanel\(\)/);
 
 const chrome = process.env.CHROME_BIN || '/usr/bin/google-chrome';
@@ -112,7 +112,7 @@ if (puppeteer && existsSync(chrome)) {
       return { hidden: panel?.hidden === true, text: (macs?.textContent || '').trim() };
     });
     assert.equal(first.hidden, true, 'gate first paint hides panel');
-    assert.equal(first.text, 'No Mac online');
+    assert.equal(first.text, '…');
 
     const zero = await page.evaluate(() => {
       providersOnline = 0;
