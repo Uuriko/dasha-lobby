@@ -11292,8 +11292,8 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
     if (!configured) {
       return googleOauthHtmlResponse(
         htmlPage(
-          'Google sign-in unavailable',
-          '<h1>Google sign-in not configured</h1><p>Dasha still works where identity is optional. An operator needs to set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, and <code>LOBBY_SESSION_SECRET</code> on the worker.</p><p><a href="https://www.getdasha.com/">Back to Dasha</a></p>',
+          'Google sign-in is not on yet',
+          '<h1>Google sign-in is not on yet</h1><p>You can still read and browse Dasha without signing in. Google sign-in is being set up — please try again soon.</p><p><a href="https://www.getdasha.com/">Back to Dasha</a></p>',
         ),
         503,
       );
@@ -11369,8 +11369,9 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', googleOauthStateCookie());
       return new Response(body, { status: 200, headers });
     } catch (error) {
+      await bumpLobbyMetric(env?.__lobbyMetricStorage, 'signin:fail:google');
       return googleOauthHtmlResponse(
-        htmlPage('Error', `<h1>Could not sign in with Google</h1><p>${escapeHtml(String(error?.message || error).slice(0, 200))}</p><p><a href="/oauth/google/start">Try again</a></p>`),
+        htmlPage('Error', '<h1>Could not sign in with Google</h1><p>Something went wrong on our side. Please try again.</p><p><a href="/oauth/google/start">Try again</a></p>'),
         502,
       );
     }
@@ -11470,8 +11471,9 @@ async function handleGithubOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', githubOauthStateCookie());
       return new Response(body, { status: 200, headers });
     } catch (error) {
+      await bumpLobbyMetric(env?.__lobbyMetricStorage, 'signin:fail:github');
       return githubOauthHtmlResponse(
-        htmlPage('Error', `<h1>Could not link GitHub</h1><p>${escapeHtml(String(error?.message || error).slice(0, 200))}</p><p><a href="/oauth/github/start">Try again</a></p>`),
+        htmlPage('Error', '<h1>Could not link GitHub</h1><p>Something went wrong on our side. Please try again.</p><p><a href="/oauth/github/start">Try again</a></p>'),
         502,
       );
     }
