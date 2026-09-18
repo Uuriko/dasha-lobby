@@ -155,6 +155,12 @@ import {
   computeAgentAeoResponse,
 } from './dasha-compute-agent.mjs';
 import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
+import {
+  recordLoginEvent,
+  recordWorkerLoginMetric,
+  loginObservedRoute,
+  loginCompletionOutcome,
+} from './dasha-login-metrics.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
 import { applyCrewShareOg, crewApi, isCrewPagePath } from './dasha-crew.mjs';
 import { isMuseProductPath, museProductKind, museProductPageHtml, MUSE_FACES } from './dasha-muse-product.mjs';
@@ -9043,6 +9049,22 @@ export class DashaLobby {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, '') || '/';
     const cred = { credentials: true };
+    // Login observability (theme e): per-handler latency origin for semantic
+    // funnel events below. Aggregate-only; no PII ever reaches the metrics.
+    const loginT0 = Date.now();
+    const loginMark = (method, route, outcome) =>
+      recordLoginEvent(this.state.storage, { method, route, outcome, latencyMs: Date.now() - loginT0 });
+
+    // Internal aggregate-metrics ingest (worker isolate -> lobby DO).
+    // Browser POSTs always carry Origin/Referer and are rejected; the payload
+    // is whitelist-validated inside recordLoginEvent, so no PII can be stored.
+    if (path === '/auth/__login-metrics') {
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      if (request.headers.get('Origin') || request.headers.get('Referer')) return json({ error: 'forbidden' }, 403, null);
+      const body = await requestJson(request).catch(() => null);
+      const ok = await recordLoginEvent(this.state.storage, body);
+      return json({ ok }, ok ? 200 : 400, allowedOrigin, cred);
+    }
 
     if (path === '/auth/wallet/challenge') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
@@ -9052,9 +9074,15 @@ export class DashaLobby {
       if (!isValidSolanaAddress(publicKey)) return json({ error: 'valid Solana address required' }, 400, allowedOrigin, cred);
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       const ipAllowed = simpRate(this.simpRates, `wallet-login-ip:${ip}`, 12);
-      if (!ipAllowed.ok) return json({ error: 'wallet login rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      if (!ipAllowed.ok) {
+        await loginMark('wallet', 'challenge', 'rate-limited');
+        return json({ error: 'wallet login rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      }
       const allowed = simpRate(this.simpRates, `wallet-login-challenge:${publicKey}`, 6);
-      if (!allowed.ok) return json({ error: 'wallet login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      if (!allowed.ok) {
+        await loginMark('wallet', 'challenge', 'rate-limited');
+        return json({ error: 'wallet login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      }
       const issuedAt = Date.now(), expiresAt = issuedAt + 5 * 60_000;
       const nonce = [...crypto.getRandomValues(new Uint8Array(16))].map(byte => byte.toString(16).padStart(2, '0')).join('');
       const proofOrigin = new URL(allowedOrigin);
@@ -9066,6 +9094,7 @@ export class DashaLobby {
       live[publicKey] = { nonce, exp: expiresAt };
       const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 100));
       await this.state.storage.put('walletLogins', bounded);
+      await loginMark('wallet', 'challenge', 'start');
       return json({ ok: true, message, challenge, expiresAt }, 200, allowedOrigin, cred);
     }
 
@@ -9075,20 +9104,30 @@ export class DashaLobby {
       const body = await requestJson(request);
       const challenge = await verifyPayload(this.env.LOBBY_SESSION_SECRET, body.challenge);
       if (!challenge || challenge.kind !== 'wallet_login' || challenge.publicKey !== body.publicKey || challenge.origin !== allowedOrigin) {
+        await loginMark('wallet', 'verify', 'fail');
         return json({ error: 'invalid wallet login challenge' }, 401, allowedOrigin, cred);
       }
       const allowed = simpRate(this.simpRates, `wallet-login-verify:${body.publicKey}`, 4);
-      if (!allowed.ok) return json({ error: 'wallet login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      if (!allowed.ok) {
+        await loginMark('wallet', 'verify', 'rate-limited');
+        return json({ error: 'wallet login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      }
       const signatureOk = await verifyEd25519(challenge.message, body.publicKey, body.signature).catch(() => false);
-      if (!signatureOk) return json({ error: 'invalid wallet signature' }, 400, allowedOrigin, cred);
+      if (!signatureOk) {
+        await loginMark('wallet', 'verify', 'fail');
+        return json({ error: 'invalid wallet signature' }, 400, allowedOrigin, cred);
+      }
       const logins = await this.state.storage.get('walletLogins');
       const pending = logins && typeof logins === 'object' ? logins[body.publicKey] : null;
-      if (!pending || pending.nonce !== challenge.nonce || pending.exp < Date.now()) return json({ error: 'wallet login challenge already used' }, 409, allowedOrigin, cred);
+      if (!pending || pending.nonce !== challenge.nonce || pending.exp < Date.now()) {
+        await loginMark('wallet', 'verify', 'fail');
+        return json({ error: 'wallet login challenge already used' }, 409, allowedOrigin, cred);
+      }
       delete logins[body.publicKey];
       if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
       else await this.state.storage.delete('walletLogins');
       const token = await createWalletSessionToken(this.env, body.publicKey);
-      await bumpLobbyMetric(this.state.storage, 'signin:success:wallet');
+      await loginMark('wallet', 'verify', 'success');
       return json({ ok: true, provider: 'wallet' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -9104,9 +9143,15 @@ export class DashaLobby {
       if (!email) return json({ error: 'valid email required' }, 400, allowedOrigin, cred);
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       const ipAllowed = simpRate(this.simpRates, `email-login-ip:${ip}`, 12);
-      if (!ipAllowed.ok) return json({ error: 'email login rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      if (!ipAllowed.ok) {
+        await loginMark('email', 'start', 'rate-limited');
+        return json({ error: 'email login rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      }
       const emailAllowed = simpRate(this.simpRates, `email-login-start:${email}`, 4);
-      if (!emailAllowed.ok) return json({ error: 'email login rate limited', waitMs: emailAllowed.waitMs }, 429, allowedOrigin, cred);
+      if (!emailAllowed.ok) {
+        await loginMark('email', 'start', 'rate-limited');
+        return json({ error: 'email login rate limited', waitMs: emailAllowed.waitMs }, 429, allowedOrigin, cred);
+      }
       const now = Date.now();
       // Persistent per-email send cap: max 3 codes per 10 minutes (initial + resends).
       const SEND_CAP_MAX = 3, SEND_CAP_WINDOW = 10 * 60_000;
@@ -9119,6 +9164,7 @@ export class DashaLobby {
       const sentTimes = sendLog[email] || [];
       if (sentTimes.length >= SEND_CAP_MAX) {
         const waitMs = Math.max(0, Math.min(...sentTimes) + SEND_CAP_WINDOW - now);
+        await loginMark('email', 'start', 'rate-limited');
         return json({ error: 'email login rate limited', waitMs }, 429, allowedOrigin, cred);
       }
       const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
@@ -9137,10 +9183,14 @@ export class DashaLobby {
         tags: [{ name: 'kind', value: 'email-login' }],
         idempotencyKey: `email-login/${nonce}`,
       });
-      if (!sent.ok) return json({ error: 'Could not send the sign-in code. Please try again.' }, 502, allowedOrigin, cred);
+      if (!sent.ok) {
+        await loginMark('email', 'start', 'provider-error');
+        return json({ error: 'Could not send the sign-in code. Please try again.' }, 502, allowedOrigin, cred);
+      }
       await this.state.storage.put('emailLogins', bounded);
       sendLog[email] = [...(sendLog[email] || []), now];
       await this.state.storage.put('emailLoginSends', sendLog);
+      await loginMark('email', 'start', 'start');
       return json({ ok: true, expiresIn: 600 }, 200, allowedOrigin, cred);
     }
 
@@ -9152,22 +9202,32 @@ export class DashaLobby {
       const code = String(body.code || '').trim();
       if (!email || !/^\d{6}$/.test(code)) return json({ error: 'email and 6-digit code required' }, 400, allowedOrigin, cred);
       const allowed = simpRate(this.simpRates, `email-login-verify:${email}`, 6);
-      if (!allowed.ok) return json({ error: 'email login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      if (!allowed.ok) {
+        await loginMark('email', 'verify', 'rate-limited');
+        return json({ error: 'email login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      }
       const logins = await this.state.storage.get('emailLogins');
       const pending = logins && typeof logins === 'object' ? logins[email] : null;
-      if (!pending || Number(pending.exp) < Date.now()) return json({ error: 'code expired - request a new one' }, 409, allowedOrigin, cred);
-      if (Number(pending.attempts) >= 5) return json({ error: 'too many tries - request a new code' }, 429, allowedOrigin, cred);
+      if (!pending || Number(pending.exp) < Date.now()) {
+        await loginMark('email', 'verify', 'fail');
+        return json({ error: 'code expired - request a new one' }, 409, allowedOrigin, cred);
+      }
+      if (Number(pending.attempts) >= 5) {
+        await loginMark('email', 'verify', 'fail');
+        return json({ error: 'too many tries - request a new code' }, 429, allowedOrigin, cred);
+      }
       const candidate = await emailLoginCodeHash(email, pending.nonce, code);
       if (candidate !== pending.codeHash) {
         pending.attempts = Number(pending.attempts || 0) + 1;
         await this.state.storage.put('emailLogins', logins);
+        await loginMark('email', 'verify', 'fail');
         return json({ error: 'wrong code' }, 401, allowedOrigin, cred);
       }
       delete logins[email];
       if (Object.keys(logins).length) await this.state.storage.put('emailLogins', logins);
       else await this.state.storage.delete('emailLogins');
       const token = await createEmailSessionToken(this.env, email);
-      await bumpLobbyMetric(this.state.storage, 'signin:success:email');
+      await loginMark('email', 'verify', 'success');
       return json({ ok: true, provider: 'email' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -9180,7 +9240,10 @@ export class DashaLobby {
       if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'grok login unavailable' }, 503, allowedOrigin, cred);
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       const ipAllowed = simpRate(this.simpRates, `grok-login-ip:${ip}`, 12);
-      if (!ipAllowed.ok) return json({ error: 'grok login rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      if (!ipAllowed.ok) {
+        await loginMark('grok', 'start', 'rate-limited');
+        return json({ error: 'grok login rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      }
       const now = Date.now();
       const code = mintGrokPairCode();
       const startNonce = randomUrlToken(16);
@@ -9197,6 +9260,7 @@ export class DashaLobby {
         nonce: startNonce,
         exp: expiresAt,
       });
+      await loginMark('grok', 'start', 'start');
       return json({ code, expiresIn: 300, poll: '/auth/grok/status' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': grokStartCookieHeader(startHandle) },
@@ -9219,6 +9283,7 @@ export class DashaLobby {
           if (Object.keys(logins).length) await this.state.storage.put('grokLogins', logins);
           else await this.state.storage.delete('grokLogins');
         }
+        await loginMark('grok', 'status', 'fail');
         return json({ state: 'expired' }, 200, allowedOrigin, cred);
       }
       if (!pending.claimed) return json({ state: 'pending' }, 200, allowedOrigin, cred);
@@ -9230,7 +9295,7 @@ export class DashaLobby {
       if (Object.keys(logins).length) await this.state.storage.put('grokLogins', logins);
       else await this.state.storage.delete('grokLogins');
       const token = await createGrokSessionToken(this.env, pending.displayName);
-      await bumpLobbyMetric(this.state.storage, 'signin:success:grok');
+      await loginMark('grok', 'status', 'success');
       return json({ state: 'ok', provider: 'grok' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -10843,6 +10908,7 @@ export class DashaLobby {
       url.pathname.startsWith('/auth/wallet/') ||
       url.pathname.startsWith('/auth/grok/') ||
       url.pathname.startsWith('/auth/email/') ||
+      url.pathname === '/auth/__login-metrics' ||
       url.pathname.startsWith('/studio/') ||
       url.pathname.startsWith('/chess/') ||
       url.pathname.startsWith('/forum/') ||
@@ -10858,6 +10924,20 @@ export class DashaLobby {
             : null;
       if (url.pathname.startsWith('/chess/')) return this.handleChess(request, allowedOrigin);
       if (url.pathname.startsWith('/forum/')) return this.handleForum(request, allowedOrigin);
+      // Login observability (theme e): automatic per-route latency histogram +
+      // completion outcome for every login route. Aggregate-only, PII-free.
+      const observed = loginObservedRoute(url.pathname);
+      if (observed) {
+        const t0 = Date.now();
+        const res = await this.handleSimp(request, allowedOrigin);
+        await recordLoginEvent(this.state.storage, {
+          method: observed[0],
+          route: observed[1],
+          outcome: loginCompletionOutcome(res.status),
+          latencyMs: Date.now() - t0,
+        });
+        return res;
+      }
       return this.handleSimp(request, allowedOrigin);
     }
 
@@ -11120,6 +11200,11 @@ export class DashaLobby {
 
 async function handleOAuth(request, env, allowedOrigin) {
   const url = new URL(request.url);
+  // Login observability (theme e): per-handler latency origin for the X
+  // funnel events below. Aggregate-only; no PII ever reaches the metrics.
+  const xT0 = Date.now();
+  const xMark = (route, outcome) =>
+    recordWorkerLoginMetric(env, { method: 'x', route, outcome, latencyMs: Date.now() - xT0 });
 
   if (url.pathname === '/oauth/x/status') {
     const link = await sessionFromRequest(env, request);
@@ -11187,6 +11272,7 @@ async function handleOAuth(request, env, allowedOrigin) {
       state,
       challenge,
     });
+    await xMark('start', 'start');
     return new Response(null, {
       status: 302,
       headers: {
@@ -11203,6 +11289,7 @@ async function handleOAuth(request, env, allowedOrigin) {
     }
     const err = url.searchParams.get('error');
     if (err) {
+      await xMark('callback', 'fail');
       return oauthHtmlResponse(
         htmlPage('Cancelled', `<h1>Link cancelled</h1><p>${escapeHtml(err)}</p><p><a href="https://www.getdasha.com/">Back to Dasha</a></p>`),
         400,
@@ -11216,6 +11303,7 @@ async function handleOAuth(request, env, allowedOrigin) {
     })();
     const st = oauthCookie ? await verifyPayload(env.LOBBY_SESSION_SECRET, oauthCookie) : null;
     if (!code || !state || st?.kind !== 'oauth_state' || st?.state !== state || !st?.verifier) {
+      await xMark('callback', 'fail');
       return oauthHtmlResponse(htmlPage('Error', '<h1>Invalid OAuth state</h1><p><a href="/oauth/x/start">Try again</a></p>'), 400);
     }
     try {
@@ -11223,8 +11311,7 @@ async function handleOAuth(request, env, allowedOrigin) {
       const user = await fetchXUser(tokens.access_token);
       if (!user.handle) throw new Error('missing handle');
       const session = await createSessionToken(env, user);
-      // Worker isolate — no room Durable Object storage on this path.
-      await bumpLobbyMetric(env?.__lobbyMetricStorage, 'signin:success:x');
+      await xMark('callback', 'success');
       const safeHandle = escapeHtml(user.handle);
       const scriptHandle = JSON.stringify(user.handle).replace(/</g, '\\u003c');
       const scriptNonce = randomUrlToken(18);
@@ -11243,6 +11330,7 @@ async function handleOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', oauthStateCookie());
       return new Response(body, { status: 200, headers });
     } catch (e) {
+      await xMark('callback', 'provider-error');
       return oauthHtmlResponse(
         htmlPage('Error', `<h1>Could not link X</h1><p>${escapeHtml(oauthLinkErrorMessage(e))}</p><p><a href="/oauth/x/start">Try again</a></p>`),
         502,
@@ -11256,6 +11344,11 @@ async function handleOAuth(request, env, allowedOrigin) {
 async function handleGoogleOAuth(request, env, allowedOrigin) {
   const url = new URL(request.url);
   const configured = googleConfigured(env);
+  // Login observability (theme e): per-handler latency origin for the Google
+  // funnel events below. Aggregate-only; no PII ever reaches the metrics.
+  const gT0 = Date.now();
+  const gMark = (route, outcome) =>
+    recordWorkerLoginMetric(env, { method: 'google', route, outcome, latencyMs: Date.now() - gT0 });
 
   if (url.pathname === GOOGLE_START_PATH && (request.method === 'GET' || request.method === 'HEAD')) {
     if (!configured) {
@@ -11290,6 +11383,7 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
       state,
       challenge,
     });
+    await gMark('start', 'start');
     return new Response(null, {
       status: 302,
       headers: {
@@ -11306,6 +11400,7 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
     }
     const err = url.searchParams.get('error');
     if (err) {
+      await gMark('callback', 'fail');
       return googleOauthHtmlResponse(
         htmlPage('Cancelled', `<h1>Sign-in cancelled</h1><p>${escapeHtml(err)}</p><p><a href="https://www.getdasha.com/">Back to Dasha</a></p>`),
         400,
@@ -11316,6 +11411,7 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
     const oauthCookie = readCookie(request.headers.get('Cookie') || '', GOOGLE_OAUTH_COOKIE);
     const st = oauthCookie ? await verifyPayload(env.LOBBY_SESSION_SECRET, oauthCookie) : null;
     if (!code || !state || st?.v !== 1 || st?.kind !== 'google_oauth_state' || st.state !== state || !st.verifier) {
+      await gMark('callback', 'fail');
       return googleOauthHtmlResponse(htmlPage('Error', '<h1>Invalid OAuth state</h1><p><a href="/oauth/google/start">Try again</a></p>'), 400);
     }
     try {
@@ -11323,8 +11419,7 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
       const claims = await verifyGoogleIdToken(tokens.id_token, env.GOOGLE_CLIENT_ID);
       const user = normalizeGoogleUser(claims);
       const session = await createGoogleSessionToken(env, user);
-      // Worker isolate — no room Durable Object storage on this path.
-      await bumpLobbyMetric(env?.__lobbyMetricStorage, 'signin:success:google');
+      await gMark('callback', 'success');
       const profile = publicGoogleLink(user);
       const scriptProfile = JSON.stringify(profile).replace(/</g, '\\u003c');
       const scriptNonce = randomUrlToken(18);
@@ -11338,6 +11433,7 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', googleOauthStateCookie());
       return new Response(body, { status: 200, headers });
     } catch (error) {
+      await gMark('callback', 'provider-error');
       return googleOauthHtmlResponse(
         htmlPage('Error', `<h1>Could not sign in with Google</h1><p>${escapeHtml(String(error?.message || error).slice(0, 200))}</p><p><a href="/oauth/google/start">Try again</a></p>`),
         502,
@@ -13427,16 +13523,44 @@ export default {
     }
 
     if (url.pathname.startsWith('/oauth/google')) {
-      return handleGoogleOAuth(request, env, allowedOrigin);
+      const t0 = Date.now();
+      const res = await handleGoogleOAuth(request, env, allowedOrigin);
+      // Automatic per-route latency + completion outcome (theme e). Semantic
+      // funnel events are recorded inside handleGoogleOAuth.
+      recordWorkerLoginMetric(env, {
+        method: 'google',
+        route: loginObservedRoute(url.pathname)?.[1] || 'start',
+        outcome: loginCompletionOutcome(res?.status),
+        latencyMs: Date.now() - t0,
+      }).catch(() => {});
+      return res;
     }
 
     if (url.pathname.startsWith('/oauth/x')) {
+      const t0 = Date.now();
       const oauthRes = await handleOAuth(request, env, allowedOrigin);
-      if (oauthRes) return oauthRes;
+      if (oauthRes) {
+        // Automatic per-route latency + completion outcome (theme e). Semantic
+        // funnel events are recorded inside handleOAuth.
+        recordWorkerLoginMetric(env, {
+          method: 'x',
+          route: loginObservedRoute(url.pathname)?.[1] || 'start',
+          outcome: loginCompletionOutcome(oauthRes.status),
+          latencyMs: Date.now() - t0,
+        }).catch(() => {});
+        return oauthRes;
+      }
     }
 
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/login' || url.pathname === '/login/')) {
-      return loginPageResponse(request);
+      const t0 = Date.now();
+      const res = loginPageResponse(request);
+      // Best-effort page-view latency (theme e, perf budget). Not awaited so
+      // the static page stays fast; terminal login events above are awaited.
+      recordWorkerLoginMetric(env, {
+        method: 'login', route: 'page', outcome: 'view', latencyMs: Date.now() - t0,
+      }).catch(() => {});
+      return res;
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/.well-known/security.txt') {
       return securityTxtResponse(request, url.hostname);
