@@ -117,6 +117,8 @@ import {
   verifyEd25519,
   walletLoginMessage,
   walletMessage,
+  parseSiwsMessage,
+  validateSiwsSignin,
 } from './dasha-simp-actions.mjs';
 import {
   LOBBY_CLIENT_JS,
@@ -8068,7 +8070,10 @@ function privacyPageResponse(request) {
 }
 
 function loginPageResponse(request) {
-  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LOGIN_PAGE_HTML), {
+  // Resolve the client-script SRI pin at serve time so the wallet/Grok login
+  // controller always carries a real hash (the source keeps the placeholder).
+  const html = attachLlmsHtmlLinks(LOGIN_PAGE_HTML.split('__X_CONNECT_SRI__').join(X_CONNECT_SRI));
+  return new Response(request.method === 'HEAD' ? null : html, {
     status: 200,
     headers: htmlLlmsHeaders({
       'Content-Type': 'text/html; charset=utf-8',
@@ -9079,7 +9084,43 @@ export class DashaLobby {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
       if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'wallet login unavailable' }, 503, allowedOrigin, cred);
-      const publicKey = String((await requestJson(request)).publicKey || '');
+      const challengeBody = await requestJson(request);
+      if (challengeBody.mode === 'signin') {
+        // One-click SIWS (wallet-standard `signIn`): the wallet builds the
+        // standardized auth message itself, so the address is unknown until it
+        // signs. The challenge is therefore an origin-bound, single-use server
+        // nonce the wallet echoes back inside the signed message; /verify
+        // re-checks domain, URI, nonce, chain ID, and freshness before
+        // checking the signature. Security properties match the legacy path.
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        const ipAllowed = simpRate(this.simpRates, `wallet-login-ip:${ip}`, 12);
+        if (!ipAllowed.ok) return json({ error: 'wallet login rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+        const allowed = simpRate(this.simpRates, `wallet-login-challenge:signin:${ip}`, 12);
+        if (!allowed.ok) return json({ error: 'wallet login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+        const issuedAt = Date.now(), expiresAt = issuedAt + 5 * 60_000;
+        const nonce = [...crypto.getRandomValues(new Uint8Array(16))].map(byte => byte.toString(16).padStart(2, '0')).join('');
+        const proofOrigin = new URL(allowedOrigin);
+        const challenge = await signPayload(this.env.LOBBY_SESSION_SECRET, { kind: 'wallet_signin', nonce, origin: proofOrigin.origin, exp: expiresAt });
+        const saved = await this.state.storage.get('walletLogins');
+        const live = Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {})
+          .filter(([, row]) => Number(row?.exp) > issuedAt));
+        live[`signin:${nonce}`] = { nonce, exp: expiresAt };
+        const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 100));
+        await this.state.storage.put('walletLogins', bounded);
+        return json({
+          ok: true,
+          mode: 'signin',
+          nonce,
+          domain: proofOrigin.host,
+          uri: `${proofOrigin.origin}/login`,
+          statement: 'Log in to Dasha. This signature sends no transaction and proves address control only.',
+          version: '1',
+          chainId: 'solana:mainnet',
+          challenge,
+          expiresAt,
+        }, 200, allowedOrigin, cred);
+      }
+      const publicKey = String(challengeBody.publicKey || '');
       if (!isValidSolanaAddress(publicKey)) return json({ error: 'valid Solana address required' }, 400, allowedOrigin, cred);
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       const ipAllowed = simpRate(this.simpRates, `wallet-login-ip:${ip}`, 12);
@@ -9105,6 +9146,43 @@ export class DashaLobby {
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
       const body = await requestJson(request);
       const challenge = await verifyPayload(this.env.LOBBY_SESSION_SECRET, body.challenge);
+      if (body.mode === 'signin') {
+        // One-click SIWS verify: the wallet signed a standardized message it
+        // built from the challenge fields. Parse that exact message, bind it
+        // to this origin + the single-use challenge nonce, then verify the
+        // signature over those same bytes. The address is taken from the
+        // signed message, never trusted from the request body.
+        if (!challenge || challenge.kind !== 'wallet_signin' || challenge.origin !== allowedOrigin) {
+          return json({ error: 'invalid wallet login challenge' }, 401, allowedOrigin, cred);
+        }
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        const allowed = simpRate(this.simpRates, `wallet-login-verify:signin:${ip}`, 4);
+        if (!allowed.ok) return json({ error: 'wallet login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+        let parsed;
+        try {
+          parsed = validateSiwsSignin(parseSiwsMessage(body.message), {
+            domain: new URL(allowedOrigin).host,
+            uri: `${allowedOrigin}/login`,
+            nonce: challenge.nonce,
+          });
+        } catch {
+          return json({ error: 'invalid sign-in message' }, 400, allowedOrigin, cred);
+        }
+        const signatureOk = await verifyEd25519(body.message, parsed.address, body.signature).catch(() => false);
+        if (!signatureOk) return json({ error: 'invalid wallet signature' }, 400, allowedOrigin, cred);
+        const logins = await this.state.storage.get('walletLogins');
+        const pending = logins && typeof logins === 'object' ? logins[`signin:${challenge.nonce}`] : null;
+        if (!pending || pending.exp < Date.now()) return json({ error: 'wallet login challenge already used' }, 409, allowedOrigin, cred);
+        delete logins[`signin:${challenge.nonce}`];
+        if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
+        else await this.state.storage.delete('walletLogins');
+        const token = await createWalletSessionToken(this.env, parsed.address);
+        await bumpLobbyMetric(this.state.storage, 'signin:success:wallet');
+        return json({ ok: true, provider: 'wallet' }, 200, allowedOrigin, {
+          credentials: true,
+          headers: { 'Set-Cookie': cookieHeader(token) },
+        });
+      }
       if (!challenge || challenge.kind !== 'wallet_login' || challenge.publicKey !== body.publicKey || challenge.origin !== allowedOrigin) {
         return json({ error: 'invalid wallet login challenge' }, 401, allowedOrigin, cred);
       }

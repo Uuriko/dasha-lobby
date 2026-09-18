@@ -41,8 +41,99 @@ export const X_CONNECT_JS = `/** Site-wide login status + /login controller. No 
     return out || '1';
   }
 
+  function walletCandidates() {
+    var out = [];
+    function add(p) { if (p && out.indexOf(p) < 0) out.push(p); }
+    if (global.phantom && global.phantom.solana) add(global.phantom.solana);
+    add(global.solflare);
+    add(global.backpack);
+    add(global.solana);
+    return out;
+  }
+
   function walletProvider() {
-    return global.phantom && global.phantom.solana || global.solflare || global.solana || null;
+    var list = walletCandidates();
+    var i;
+    // Prefer wallet-standard one-click \`signIn\` (Phantom 23.11+, Solflare, Backpack).
+    for (i = 0; i < list.length; i++) if (typeof list[i].signIn === 'function') return list[i];
+    for (i = 0; i < list.length; i++) if (list[i].connect && list[i].signMessage) return list[i];
+    return list[0] || null;
+  }
+
+  function walletSigBase58(sig) {
+    if (typeof sig === 'string') return sig;
+    return base58(sig);
+  }
+
+  function isMobileWalletUa() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+  function rememberWallet() {
+    try { localStorage.setItem('dasha_last_provider', 'wallet'); } catch (e) {}
+  }
+
+  function walletErrorKind(error) {
+    var msg = String((error && error.message) || error || '');
+    if (/user rejected|rejected the request|denied|cancelled|canceled|declined/i.test(msg)) return 'cancelled';
+    if (/wallet login unavailable/i.test(msg)) return 'unavailable';
+    if (/rate limited|too many/i.test(msg)) return 'limited';
+    if (/already used|expired/i.test(msg)) return 'expired';
+    if (/network|failed to fetch|load failed/i.test(msg)) return 'network';
+    return 'other';
+  }
+
+  // One-click Sign in with Solana: a single wallet approval covers connect +
+  // sign. The server issued an origin-bound, single-use nonce (challenge);
+  // the wallet echoes it inside the standardized SIWS message it builds.
+  function walletSigninOneClick(provider) {
+    return fetchJson('/auth/wallet/challenge', { method: 'POST', body: JSON.stringify({ mode: 'signin' }) })
+      .then(function (c) {
+        if (!c || !c.nonce || !c.challenge) throw new Error('Wallet login unavailable');
+        return Promise.resolve().then(function () {
+          return provider.signIn({
+            domain: c.domain,
+            uri: c.uri,
+            statement: c.statement,
+            nonce: c.nonce,
+            chainId: c.chainId || 'solana:mainnet',
+            version: c.version || '1',
+          });
+        }).then(function (out) { return { out: out, challenge: c.challenge }; });
+      })
+      .then(function (r) {
+        var out = r.out || {};
+        var account = out.account || {};
+        var address = account.address || (account.publicKey ? String(account.publicKey) : '');
+        var msgBytes = out.signedMessage;
+        var sigBytes = out.signature;
+        if (!address || !msgBytes || !sigBytes) throw new Error('Wallet returned no signature');
+        var message = typeof msgBytes === 'string' ? msgBytes : new TextDecoder().decode(msgBytes);
+        return fetchJson('/auth/wallet/verify', {
+          method: 'POST',
+          body: JSON.stringify({ mode: 'signin', challenge: r.challenge, message: message, signature: walletSigBase58(sigBytes) }),
+        });
+      });
+  }
+
+  // Legacy two-step fallback for wallets without wallet-standard \`signIn\`.
+  function walletLegacyConnectSign(provider) {
+    var publicKey;
+    return provider.connect().then(function (connected) {
+      var key = provider.publicKey || connected && connected.publicKey;
+      if (!key) throw new Error('Wallet returned no public key');
+      publicKey = key.toString();
+      return fetchJson('/auth/wallet/challenge', { method: 'POST', body: JSON.stringify({ publicKey: publicKey }) });
+    }).then(function (challenge) {
+      return provider.signMessage(new TextEncoder().encode(challenge.message), 'utf8').then(function (signed) {
+        var bytes = signed && signed.signature || signed;
+        if (!bytes || typeof bytes.length !== 'number') throw new Error('Wallet returned no signature');
+        return fetchJson('/auth/wallet/verify', {
+          method: 'POST',
+          body: JSON.stringify({ publicKey: publicKey, challenge: challenge.challenge, signature: walletSigBase58(bytes) }),
+        });
+      });
+    });
   }
 
   function loginLabel(data) {
@@ -152,34 +243,50 @@ export const X_CONNECT_JS = `/** Site-wide login status + /login controller. No 
       say('Finish in the X window…', '');
     });
 
+    function sayWalletLink(text, href, linkText) {
+      message.textContent = '';
+      message.dataset.kind = '';
+      message.appendChild(document.createTextNode(text + ' '));
+      var a = document.createElement('a');
+      a.href = href;
+      a.textContent = linkText;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.color = 'inherit';
+      message.appendChild(a);
+    }
+
+    function walletFail(error) {
+      switch (walletErrorKind(error)) {
+        case 'cancelled': say('Sign-in cancelled.', ''); break;
+        case 'unavailable': say('Sign-in with Solana isn\\u2019t available right now.', 'bad'); break;
+        case 'limited': say('Too many tries. Wait a bit, then try again.', 'bad'); break;
+        case 'expired': say('That sign-in expired. Try again.', 'bad'); break;
+        case 'network': say('Network error \\u2014 try again.', 'bad'); break;
+        default: say('Couldn\\u2019t sign in. Try again.', 'bad');
+      }
+    }
+
     wallet.addEventListener('click', function () {
       var provider = walletProvider();
-      if (!provider || !provider.connect || !provider.signMessage) {
-        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      if (!provider) {
+        if (isMobileWalletUa()) {
+          say('Opening your wallet\\u2026', '');
           location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(location.href) + '?ref=' + encodeURIComponent(location.origin);
-        } else say('Open this page in a Solana wallet.', 'bad');
+        } else {
+          sayWalletLink('No Solana wallet found on this browser.', 'https://phantom.com', 'Get Phantom');
+        }
         return;
       }
       wallet.disabled = true;
-      say('Connect, then sign the login message…', '');
-      var publicKey;
-      provider.connect().then(function (connected) {
-        var key = provider.publicKey || connected && connected.publicKey;
-        if (!key) throw new Error('Wallet returned no public key');
-        publicKey = key.toString();
-        return fetchJson('/auth/wallet/challenge', { method: 'POST', body: JSON.stringify({ publicKey: publicKey }) });
-      }).then(function (challenge) {
-        return provider.signMessage(new TextEncoder().encode(challenge.message), 'utf8').then(function (signed) {
-          var bytes = signed && signed.signature || signed;
-          if (!bytes || typeof bytes.length !== 'number') throw new Error('Wallet returned no signature');
-          return fetchJson('/auth/wallet/verify', {
-            method: 'POST',
-            body: JSON.stringify({ publicKey: publicKey, challenge: challenge.challenge, signature: base58(bytes) }),
-          });
-        });
-      }).then(function () { return status(); }).then(paint).catch(function (error) {
-        say(String(error.message || error).slice(0, 120), 'bad');
-      }).finally(function () { wallet.disabled = false; });
+      say('Check your wallet\\u2026', '');
+      var flow = typeof provider.signIn === 'function'
+        ? walletSigninOneClick(provider)
+        : walletLegacyConnectSign(provider);
+      flow.then(function () { return status(); }).then(function (data) {
+        rememberWallet();
+        paint(data);
+      }).catch(walletFail).finally(function () { wallet.disabled = false; });
     });
 
     logout.addEventListener('click', function () {
@@ -210,7 +317,7 @@ export const X_CONNECT_JS = `/** Site-wide login status + /login controller. No 
   else boot();
 })(typeof window !== 'undefined' ? window : this);
 `;
-export const X_CONNECT_SRI = "sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD";
+export const X_CONNECT_SRI = "sha384-4Si709ykvUW8IJbnelCWlQNTwQKP0HGdI41z2hhTPvhW5y4VUTNQw9nSBDKVk6TM";
 export const ROBOTS_TXT = `# getdasha.com — public crawl rules (also served at lobby.getdasha.com/robots.txt)
 #
 # This file is the source for what the Worker serves at /robots.txt. It used to be a different
@@ -450,7 +557,7 @@ let tickDelay=30000;let every=setTimeout(function again(){tick();tickDelay=Math.
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){tickDelay=30000;tick()}});
 window.addEventListener('pagehide',()=>clearTimeout(every));
 }catch(e){}})();</script>
-<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-4Si709ykvUW8IJbnelCWlQNTwQKP0HGdI41z2hhTPvhW5y4VUTNQw9nSBDKVk6TM" crossorigin="anonymous" defer></script>
 </body></html>`;
 export const HOWTO_HTML = `<!doctype html>
 <html lang="en">
@@ -869,7 +976,7 @@ $('promotion').addEventListener('close',function(){var choice=this.returnValue,m
 function onBuyClick(event){event.preventDefault();trackEvent('buy_intent','dasha-chess-buy-intent');openBuySheet()}var buy=$('buy-dasha');if(buy)buy.addEventListener('click',onBuyClick);var buyStage=$('buy-dasha-stage');if(buyStage)buyStage.addEventListener('click',onBuyClick);var stage=stageEl();if(stage)stage.addEventListener('click',function(event){var a=event.target.closest&&event.target.closest('a.buy-dasha');if(!a||!stage.contains(a)||a===buy||a===buyStage)return;event.preventDefault();onBuyClick(event)});var stageOut=$('stage-out');if(stageOut)stageOut.addEventListener('click',leaveStageChrome);document.addEventListener('fullscreenchange',function(){var el=stageEl();if(!(document.fullscreenElement||document.webkitFullscreenElement)&&el)el.classList.remove('stage-on');paintStage()});document.addEventListener('webkitfullscreenchange',function(){var el=stageEl();if(!(document.fullscreenElement||document.webkitFullscreenElement)&&el)el.classList.remove('stage-on');paintStage()});window.addEventListener('message',function(event){if(event.origin===LOBBY&&event.data&&event.data.type==='dasha-x-linked'&&!replay)resumeRoute()});window.addEventListener('offline',function(){stopPoll();clearTimeout(tournamentPoll);tournamentPoll=0;if(game&&game.status==='active')$('game-status').textContent='Offline · clocks continue on the server'});window.addEventListener('online',function(){resumeVisible()});document.addEventListener('visibilitychange',function(){if(document.hidden){stopPoll();clearTimeout(tournamentPoll);tournamentPoll=0;clearInterval(clockTimer);clockTimer=0}else{restoreChessTitle();resumeVisible();armHere()}});window.addEventListener('focus',restoreChessTitle);trackEvent('page_open','dasha-chess-page-open');bindBoard();resumeRoute();
 })();
 </script>
-<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-4Si709ykvUW8IJbnelCWlQNTwQKP0HGdI41z2hhTPvhW5y4VUTNQw9nSBDKVk6TM" crossorigin="anonymous" defer></script>
 </body>
 </html>
 `;
@@ -936,7 +1043,7 @@ export const LOBBY_PAGE_HTML = `<!doctype html>
 <script>(function(){var mint='53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';var btn=document.getElementById('forum-copy');var ca=document.querySelector('.forum-ca');if(!btn)return;btn.addEventListener('click',function(){function ok(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1200)}function select(){if(!ca){btn.textContent='Select';return}try{var r=document.createRange();r.selectNodeContents(ca);var s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Select'}catch(e){}}function legacy(){try{var ta=document.createElement('textarea');ta.value=mint;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.select();var copied=false;try{copied=document.execCommand('copy')}catch(e){}document.body.removeChild(ta);return copied}catch(e){return false}}function timed(p){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('copy'))},600)})])}if(navigator.clipboard&&navigator.clipboard.writeText)timed(navigator.clipboard.writeText(mint)).then(ok).catch(function(){legacy()?ok():select()});else if(legacy())ok();else select()});})();</script>
 <script>(function(){var go=document.getElementById('forum-play-go');var box=document.getElementById('dasha-chess');if(!go||!box)return;go.addEventListener('click',function(){if(!box.querySelector('iframe')){var f=document.createElement('iframe');f.src='/chess?embed=1';f.title='Dasha chess';f.setAttribute('allow','fullscreen');f.setAttribute('referrerpolicy','same-origin');box.appendChild(f)}box.hidden=false;go.textContent='Playing'});})();</script>
 <script>(function(){var s=document.createElement('script');s.src='https://lobby.getdasha.com/client/lobby.js';s.integrity='sha384-QyS6u83TtPr4qqs3MLV+QHyL4x87QQ3CTkTUiKk48exXmx/9LArLQf9Pb3NA92ka';s.crossOrigin='anonymous';s.defer=true;document.head.appendChild(s)})();</script>
-<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-4Si709ykvUW8IJbnelCWlQNTwQKP0HGdI41z2hhTPvhW5y4VUTNQw9nSBDKVk6TM" crossorigin="anonymous" defer></script>
 </body>
 </html>
 `;
@@ -965,7 +1072,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
       <a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>
       <a class="button primary" href="https://lobby.getdasha.com/oauth/x/start" data-x-login>Continue with X</a>
       <a class="button" href="https://lobby.getdasha.com/oauth/google/start" data-google-login>Continue with Google</a>
-      <button class="button" type="button" data-wallet-login>Connect wallet</button>
+      <button class="button" type="button" data-wallet-login>Sign in with Solana</button>
       <div class="email-form" data-email-form>
         <input class="field" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" aria-label="Email address" data-email-input>
         <button class="button" type="button" data-email-send>Email me a sign-in code</button>
@@ -1066,7 +1173,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     function requestCode(isResend) {
       dashaBeacon(isResend ? 'resend:email' : 'start:email');
       var email = emailInput.value.trim();
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
+      if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
       sendBtn.disabled = true; resendBtn.disabled = true;
       say('', isResend ? 'Sending a new code...' : 'Sending code...');
       fetch(API + '/auth/email/start', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) })
@@ -1098,7 +1205,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     verifyBtn.addEventListener('click', function () {
       var email = emailInput.value.trim();
       var code = codeInput.value.trim();
-      if (!/^\d{6}$/.test(code)) { fail('Enter the 6-digit code.'); return; }
+      if (!/^\\d{6}$/.test(code)) { fail('Enter the 6-digit code.'); return; }
       if (codeSentAt && Date.now() - codeSentAt >= 600000) { codeExpired(); return; }
       verifyBtn.disabled = true; say('', 'Checking...');
       fetch(API + '/auth/email/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, code: code }) })
@@ -1219,7 +1326,7 @@ main{display:block;width:min(36rem,calc(100% - 32px));margin:0 auto;padding:28px
 })();
 </script>
 <script src="https://lobby.getdasha.com/client/faucet.js" integrity="sha384-LSNvl1mUDLnGLVel61mnmtvL4pk4j8TZf9ZO6fzIgoUw5zJ/SgbRkfYCpkXsw14x" crossorigin="anonymous" defer></script>
-<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
+<script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-4Si709ykvUW8IJbnelCWlQNTwQKP0HGdI41z2hhTPvhW5y4VUTNQw9nSBDKVk6TM" crossorigin="anonymous" defer></script>
 </body>
 </html>`;
 export const ASSET_HASH = "42943546cbdc1e6e";
