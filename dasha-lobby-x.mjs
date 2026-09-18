@@ -387,6 +387,10 @@ export function sessionIdentityKey(session) {
 }
 
 const REVOKED_SIDS_KEY = 'lobby:revoked-sids';
+const REVOKED_SID_LEN = 128;
+function revokedSidKey(sid) {
+  return String(sid).slice(0, REVOKED_SID_LEN);
+}
 
 /**
  * Server-side session invalidation (task 17): mark a session id as revoked.
@@ -402,14 +406,14 @@ export async function revokeSessionSid(storage, sid) {
   for (const [key, at] of Object.entries(map)) {
     if (now - Number(at) > SESSION_TTL_MS) delete map[key];
   }
-  map[sid.slice(0, 128)] = now;
+  map[revokedSidKey(sid)] = now;
   await storage.put(REVOKED_SIDS_KEY, map);
 }
 
 export async function isSessionSidRevoked(storage, sid) {
   if (!storage || typeof sid !== 'string' || !sid) return false;
   const raw = await storage.get(REVOKED_SIDS_KEY);
-  const at = raw && typeof raw === 'object' ? Number(raw[sid]) : NaN;
+  const at = raw && typeof raw === 'object' ? Number(raw[revokedSidKey(sid)]) : NaN;
   if (!Number.isFinite(at)) return false;
   return Date.now() - at <= SESSION_TTL_MS;
 }

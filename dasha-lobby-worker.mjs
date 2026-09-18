@@ -11156,24 +11156,43 @@ export class DashaLobby {
 
 /**
  * Task-17 rotation from worker-isolate paths (no DO storage there): revoke a
- * session id via the lobby DO's internal endpoint. Best-effort — the cookie
- * is always replaced/cleared regardless; a failed RPC only weakens the
- * server-side kill, never the client-visible flow.
+ * session id in both DO registries — the lobby DO (lobby + compute sessions)
+ * and the faucet DO (its session reads enforce revocation against its own
+ * storage). Best-effort — the cookie is always replaced/cleared regardless;
+ * a failed RPC only weakens the server-side kill, never the client-visible flow.
  */
-async function revokeSessionViaLobbyDO(env, sid) {
+async function revokeSessionServerSide(env, sid) {
   try {
-    if (!sid || !env?.LOBBY || !env?.LOBBY_SESSION_SECRET) return;
-    const stub = env.LOBBY.get(env.LOBBY.idFromName('public'));
-    await stub.fetch(
-      new Request('https://lobby.getdasha.com/internal/session/revoke', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-dasha-internal': String(env.LOBBY_SESSION_SECRET),
-        },
-        body: JSON.stringify({ sid }),
-      }),
-    );
+    if (!sid || !env?.LOBBY_SESSION_SECRET) return;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-dasha-internal': String(env.LOBBY_SESSION_SECRET),
+    };
+    const body = JSON.stringify({ sid });
+    const calls = [];
+    if (env.LOBBY) {
+      calls.push(
+        env.LOBBY.get(env.LOBBY.idFromName('public')).fetch(
+          new Request('https://lobby.getdasha.com/internal/session/revoke', {
+            method: 'POST',
+            headers,
+            body,
+          }),
+        ),
+      );
+    }
+    if (env.FAUCET) {
+      calls.push(
+        env.FAUCET.get(env.FAUCET.idFromName('main')).fetch(
+          new Request('https://lobby.getdasha.com/internal/session/revoke', {
+            method: 'POST',
+            headers,
+            body,
+          }),
+        ),
+      );
+    }
+    await Promise.allSettled(calls);
   } catch {
     /* best-effort */
   }
@@ -11212,7 +11231,7 @@ async function handleOAuth(request, env, allowedOrigin) {
     if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, { credentials: true });
     if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
     // Task 17: unlink kills the token server-side too, not just the cookie.
-    await revokeSessionViaLobbyDO(env, await currentSessionSid(env, request));
+    await revokeSessionServerSide(env, await currentSessionSid(env, request));
     const headers = new Headers({
         ...SECURITY,
         ...corsHeaders(allowedOrigin, { credentials: true }),
@@ -11311,7 +11330,7 @@ async function handleOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', clearLegacyCookieHeader());
       headers.append('Set-Cookie', oauthStateCookie());
       // Task 17: linking a method rotates the session — the pre-login token dies server-side.
-      await revokeSessionViaLobbyDO(env, await currentSessionSid(env, request));
+      await revokeSessionServerSide(env, await currentSessionSid(env, request));
       return new Response(body, { status: 200, headers });
     } catch (e) {
       return oauthHtmlResponse(
@@ -11408,7 +11427,7 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', clearLegacyCookieHeader());
       headers.append('Set-Cookie', googleOauthStateCookie());
       // Task 17: signing in rotates the session — the pre-login token dies server-side.
-      await revokeSessionViaLobbyDO(env, await currentSessionSid(env, request));
+      await revokeSessionServerSide(env, await currentSessionSid(env, request));
       return new Response(body, { status: 200, headers });
     } catch (error) {
       return googleOauthHtmlResponse(
@@ -11439,7 +11458,7 @@ async function handleGithubOAuth(request, env, allowedOrigin) {
     if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, { credentials: true });
     if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
     // Task 17: unlink kills the token server-side too, not just the cookie.
-    await revokeSessionViaLobbyDO(env, (await githubSessionFromRequest(env, request))?.sid || null);
+    await revokeSessionServerSide(env, (await githubSessionFromRequest(env, request))?.sid || null);
     const headers = new Headers({
       ...SECURITY,
       ...corsHeaders(allowedOrigin, { credentials: true }),
@@ -11513,7 +11532,7 @@ async function handleGithubOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', githubCookieHeader(session));
       headers.append('Set-Cookie', githubOauthStateCookie());
       // Task 17: linking rotates the session — the pre-link token dies server-side.
-      await revokeSessionViaLobbyDO(env, (await githubSessionFromRequest(env, request))?.sid || null);
+      await revokeSessionServerSide(env, (await githubSessionFromRequest(env, request))?.sid || null);
       return new Response(body, { status: 200, headers });
     } catch (error) {
       return githubOauthHtmlResponse(
@@ -13094,6 +13113,25 @@ export class DashaFaucet {
   }
 
   async fetch(request) {
+    const url = new URL(request.url);
+    // Task-17 revocation mirror: the faucet DO's session reads enforce
+    // revocation against its own storage, so revocations must be mirrored here
+    // (the lobby DO's registry is a different storage namespace). Secret-gated,
+    // same trust as the worker itself.
+    if (url.pathname === '/internal/session/revoke' && request.method === 'POST') {
+      const secret = request.headers.get('x-dasha-internal');
+      if (!this.env.LOBBY_SESSION_SECRET || secret !== String(this.env.LOBBY_SESSION_SECRET)) {
+        return json({ error: 'unauthorized' }, 401, null);
+      }
+      let sid = null;
+      try {
+        sid = (await request.json())?.sid;
+      } catch {
+        sid = null;
+      }
+      if (typeof sid === 'string' && sid) await revokeSessionSid(this.state.storage, sid);
+      return json({ ok: true }, 200, null);
+    }
     const origin = request.headers.get('Origin');
     const allowedOrigin =
       origin && originAllowed(origin, this.env.ALLOWED_ORIGINS || '')
@@ -13494,7 +13532,7 @@ export default {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, { credentials: true });
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
       // Task 17: logout kills the token server-side too, not just the cookie.
-      await revokeSessionViaLobbyDO(env, await currentSessionSid(env, request));
+      await revokeSessionServerSide(env, await currentSessionSid(env, request));
       return json({ ok: true, loggedIn: false }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader('', { clear: true }) },

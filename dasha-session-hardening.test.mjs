@@ -338,11 +338,13 @@ async function payloadOf(token) {
 // ---------- 11. wiring assertions (repo style: source must call the rotation paths) ----------
 {
   const must = (src, re, label) => assert.match(src, re, label);
-  // internal endpoint mounted + secret-gated in the DO
-  must(workerSrc, /\/internal\/session\/revoke/, 'internal revoke endpoint mounted');
+  // internal endpoint mounted + secret-gated in both DOs (lobby + faucet)
+  const mounts = (workerSrc.match(/\/internal\/session\/revoke/g) || []).length;
+  assert.ok(mounts >= 4, `internal revoke endpoint mounted in both DOs (refs: ${mounts})`);
   must(workerSrc, /x-dasha-internal/, 'internal endpoint uses x-dasha-internal gate');
   // worker-isolate rotation points
-  must(workerSrc, /revokeSessionViaLobbyDO\(env, await currentSessionSid\(env, request\)\)/, 'oauth callbacks + logouts revoke via DO');
+  must(workerSrc, /revokeSessionServerSide\(env, await currentSessionSid\(env, request\)\)/, 'oauth callbacks + logouts revoke via DOs');
+  must(workerSrc, /env\.FAUCET\.get\(env\.FAUCET\.idFromName\('main'\)\)/, 'revocation fans out to the faucet DO');
   must(workerSrc, /await revokePreviousSessionSid\(this, request\)/, 'DO mint points revoke previous sid');
   // privilege-sensitive compute endpoints rotate
   for (const label of ['key:create', 'API key not found', 'payout-pref', 'provider:payout']) {
