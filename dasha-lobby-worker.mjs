@@ -7157,7 +7157,7 @@ export function stripNotFoundDroppedCtaCss(html) {
 const NOT_FOUND_HTML = htmlPage('Not found — $dasha', `<h1>Not this page.</h1>
 <p>Simp Board, Lobby, faucet, and how to buy live on getdasha.com. This URL is not one of them.</p>
 <p><code>53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump</code></p>
-<p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/simp">Simp</a> · <a href="https://www.getdasha.com/lobby">Lobby</a> · <a href="https://www.getdasha.com/faucet">Faucet</a> · <a href="https://www.getdasha.com/how-to-buy">How to buy</a> · <a href="https://www.getdasha.com/privacy">Privacy</a></p>`, { robots: 'noindex,follow' });
+<p><a href="https://www.getdasha.com/">Home</a> · <a href="https://www.getdasha.com/compute">Compute</a> · <a href="https://www.getdasha.com/compute/start">Compute start</a> · <a href="https://www.getdasha.com/simp">Simp</a> · <a href="https://www.getdasha.com/lobby">Lobby</a> · <a href="https://www.getdasha.com/faucet">Faucet</a> · <a href="https://www.getdasha.com/how-to-buy">How to buy</a> · <a href="https://www.getdasha.com/privacy">Privacy</a> · <a href="https://www.getdasha.com/sitemap.xml">Sitemap</a></p>`, { robots: 'noindex,follow' });
 
 function isComputePagePath(pathname) {
   return pathname === '/compute' || pathname === '/compute/' || pathname === '/compute/index.html';
