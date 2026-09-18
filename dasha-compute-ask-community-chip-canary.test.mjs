@@ -83,7 +83,7 @@ function assertCommunityChipQuiet(html, label) {
   assert.match(links, /id=["']ask-model["']/, `${label} T050 model pill beside engine chip`);
   assert.match(
     links,
-    /id=["']change-engine["'][^>]*class=["']tf-quiet["']/,
+    /class=["']tf-quiet["'] id=["']change-engine["']/,
     `${label} T050 engine chip is tf-quiet`,
   );
   assert.match(links, /id=["']change-engine["'][^>]*>Hosted</, `${label} T050 default chip is Hosted`);
