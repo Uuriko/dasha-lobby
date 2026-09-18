@@ -140,7 +140,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { COMPUTE_START_PAGE_HTML } from './dasha-compute-start-page.mjs';
 import { CAPS_PAGE_HTML } from './dasha-compute-caps-page.mjs';
-import { LAUNCH_PAGE_HTML, VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
+import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { DOCS_OPENAPI_JSON, DOCS_OPENAPI_YAML, DOCS_PAGE_HTML } from './dasha-docs-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
@@ -13215,13 +13215,13 @@ export default {
       return stub.fetch(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && ['/launch', '/launch/'].includes(String(url.pathname || '').toLowerCase())) {
-      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LAUNCH_PAGE_HTML), {
-        headers: htmlHeaders({
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
-          'X-Dasha-Edge': 'launch',
-          Link: LLMS_DESCRIBEDBY,
-        }),
+      // Launch-day framing was retired (no dates/timelines). Fold /launch into /compute.
+      return new Response(request.method === 'HEAD' ? null : null, {
+        status: 308,
+        headers: {
+          Location: 'https://www.getdasha.com/compute',
+          'Cache-Control': 'public, max-age=3600',
+        },
       });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && ['/compute/leaderboard', '/compute/leaderboard/'].includes(String(url.pathname || '').toLowerCase())) {
