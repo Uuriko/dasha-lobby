@@ -157,24 +157,84 @@ def no_think_tokens():
 NO_THINK = no_think_tokens()
 
 
-def think_disabled(local_model):
+def truthy_flag(value):
+    if value is True:
+        return True
+    if value is False or value is None:
+        return False
+    return str(value).strip().lower() in ("1", "true", "on", "yes")
+
+
+def think_opted_in(job=None):
+    """Explicit think mode: job.think or DASHA_OLLAMA_THINK=1/true/on."""
+    job = job or {}
+    if truthy_flag(job.get("think")):
+        return True
+    return truthy_flag(os.getenv("DASHA_OLLAMA_THINK"))
+
+
+def think_disabled(local_model, job=None):
+    """Community Ask / Ollama stream defaults think off so content arrives promptly.
+
+    Opt in with job.think or DASHA_OLLAMA_THINK=1. DASHA_NO_THINK (default qwen)
+    still force-disables matching models unless job.think is set explicitly.
+    """
+    job = job or {}
     name = str(local_model or "").lower()
-    return any(token in name for token in NO_THINK)
+    force_off = any(token in name for token in NO_THINK)
+    if truthy_flag(job.get("think")):
+        return False
+    if force_off:
+        return True
+    return not think_opted_in(job)
 
 
 def chat_payload(job, stream):
     local = MODELS[job["model"]]
-    payload = {"model": local, "messages": job["messages"], "stream": stream, "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)}}
-    if think_disabled(local):
-        payload["think"] = False
+    payload = {
+        "model": local,
+        "messages": job["messages"],
+        "stream": stream,
+        "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)},
+        "think": not think_disabled(local, job),
+    }
     return payload
 
 
-def answer_content(message, local):
+def answer_content(message, local, job=None):
     content = str(message.get("content") or "")
-    if not content and not think_disabled(local):
+    if not content and not think_disabled(local, job):
         content = str(message.get("thinking") or message.get("reasoning") or "")
     return content
+
+
+def final_assistant_content(reply):
+    """Final assistant content only. Never thinking/reasoning."""
+    if reply is None:
+        return ""
+    if isinstance(reply, str):
+        return reply
+    if not isinstance(reply, dict):
+        return ""
+    message = reply.get("message")
+    if isinstance(message, dict):
+        return str(message.get("content") or "")
+    if any(key in reply for key in ("content", "thinking", "reasoning")):
+        return str(reply.get("content") or "")
+    nested = reply.get("reply")
+    if nested is not None and nested is not reply:
+        return final_assistant_content(nested)
+    return ""
+
+
+def score_warm_ok(reply):
+    """True only if final assistant content equals or starts with WARM_OK.
+
+    Thinking/reasoning text that merely mentions WARM_OK is never success.
+    A bare string is treated as content and must start with WARM_OK — substring is not enough.
+    """
+    text = final_assistant_content(reply).lstrip()
+    return text == "WARM_OK" or text.startswith("WARM_OK")
 
 
 def make_request(url, method="GET", payload=None, token=None):
@@ -234,7 +294,7 @@ def run_ollama(job):
         timeout=600,
     )
     message = result.get("message") or {}
-    content = answer_content(message, MODELS[job["model"]])
+    content = answer_content(message, MODELS[job["model"]], job)
     if not content.strip():
         raise RuntimeError("empty completion")
     return {"content": content, "finish_reason": "stop", "usage": usage_from(result)}
@@ -285,8 +345,8 @@ def stream_ollama(job, cancelled):
             final = event
             message = event.get("message") or {}
             # Prefer assistant content. Thinking/reasoning-only chunks are forwarded only when the model
-            # is allowed to think; no-think models never leak chain-of-thought as answer deltas.
-            content = answer_content(message, MODELS[job["model"]])
+            # is allowed to think; Community Ask defaults think:false so content arrives without CoT.
+            content = answer_content(message, MODELS[job["model"]], job)
             if content:
                 report_chunk(job["id"], delta=content)
                 sent = True
