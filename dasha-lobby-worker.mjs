@@ -122,6 +122,7 @@ import {
   verifyEd25519,
   walletLoginMessage,
   walletStepUpMessage,
+  walletStepUpStatement,
   walletMessage,
   parseSiwsMessage,
   validateSiwsSignin,
@@ -9195,7 +9196,8 @@ export class DashaLobby {
         return json({ error: 'wallet step-up requires a wallet session' }, 401, allowedOrigin, cred);
       }
       const publicKey = stepSession.wallet;
-      const scope = String((await requestJson(request)).scope || '');
+      const stepBody = await requestJson(request);
+      const scope = String(stepBody.scope || '');
       if (!STEP_UP_SCOPES.includes(scope)) return json({ error: 'valid step-up scope required' }, 400, allowedOrigin, cred);
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       const ipAllowed = simpRate(this.simpRates, `wallet-stepup-ip:${ip}`, 12);
@@ -9205,6 +9207,33 @@ export class DashaLobby {
       const issuedAt = Date.now(), expiresAt = issuedAt + STEP_UP_CHALLENGE_TTL_MS;
       const nonce = [...crypto.getRandomValues(new Uint8Array(16))].map(byte => byte.toString(16).padStart(2, '0')).join('');
       const proofOrigin = new URL(allowedOrigin);
+      if (stepBody.mode === 'signin') {
+        // One-click SIWS step-up (wallet-standard `signIn`): the wallet builds
+        // the standardized auth message itself from this input, so the server
+        // issues only an origin-bound, single-use nonce plus the exact
+        // statement the wallet must echo. The scope has no field in the
+        // wallet-standard input shape — it rides inside the statement, which
+        // /verify matches byte-for-byte against the signed challenge, binding
+        // the signature to one sensitive action. Security properties match the
+        // legacy signMessage path (origin-bound, single-use, Ed25519, 2-min
+        // TTL, 3-attempt invalidation).
+        const statement = walletStepUpStatement(scope);
+        const signinChallenge = await signPayload(this.env.LOBBY_SESSION_SECRET, {
+          kind: 'wallet_stepup_signin', publicKey, nonce, scope, statement, origin: proofOrigin.origin, exp: expiresAt,
+        });
+        const saved = await this.state.storage.get('walletLogins');
+        const live = Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {})
+          .filter(([, row]) => Number(row?.exp) > issuedAt));
+        live[`stepup-signin:${nonce}`] = { nonce, exp: expiresAt, scope, statement, publicKey, attempts: 0 };
+        const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 100));
+        await this.state.storage.put('walletLogins', bounded);
+        return json({
+          ok: true, mode: 'signin', scope, nonce,
+          domain: proofOrigin.host, uri: `${proofOrigin.origin}/login`, statement,
+          version: '1', chainId: 'solana:mainnet',
+          challenge: signinChallenge, expiresAt, ttlSeconds: STEP_UP_CHALLENGE_TTL_MS / 1000,
+        }, 200, allowedOrigin, cred);
+      }
       const message = walletStepUpMessage({ publicKey, nonce, scope, issuedAt, expiresAt, domain: proofOrigin.host, uri: `${proofOrigin.origin}/login` });
       const challenge = await signPayload(this.env.LOBBY_SESSION_SECRET, {
         kind: 'wallet_stepup', publicKey, nonce, scope, message, origin: proofOrigin.origin, exp: expiresAt,
@@ -9234,7 +9263,14 @@ export class DashaLobby {
       if (!stepSession || stepSession.provider !== 'wallet' || !stepSession.wallet || stepClaims?.auth_method !== 'wallet') {
         return json({ error: 'wallet step-up requires a wallet session' }, 401, allowedOrigin, cred);
       }
-      if (!challenge || challenge.kind !== 'wallet_stepup' || challenge.origin !== allowedOrigin ||
+      // One-click SIWS verify (`mode: 'signin'`) parses the standardized
+      // message the wallet built; legacy mode verifies the server-composed
+      // message stored in the signed challenge. Either way the challenge is
+      // origin-bound, single-use, scope-bound, and Ed25519-verified.
+      const signinMode = body.mode === 'signin';
+      const expectedKind = signinMode ? 'wallet_stepup_signin' : 'wallet_stepup';
+      const pendingKey = signinMode ? `stepup-signin:${challenge?.nonce}` : `stepup:${challenge?.nonce}`;
+      if (!challenge || challenge.kind !== expectedKind || challenge.origin !== allowedOrigin ||
           challenge.publicKey !== stepSession.wallet || !STEP_UP_SCOPES.includes(challenge.scope) ||
           challenge.scope !== String(body.scope || '')) {
         return json({ error: 'invalid step-up challenge' }, 401, allowedOrigin, cred);
@@ -9242,17 +9278,39 @@ export class DashaLobby {
       const allowed = simpRate(this.simpRates, `wallet-stepup-verify:${challenge.publicKey}`, 4);
       if (!allowed.ok) return json({ error: 'wallet step-up rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
       const logins = await this.state.storage.get('walletLogins');
-      const pending = logins && typeof logins === 'object' ? logins[`stepup:${challenge.nonce}`] : null;
+      const pending = logins && typeof logins === 'object' ? logins[pendingKey] : null;
       if (!pending || pending.exp < Date.now() || pending.publicKey !== challenge.publicKey || pending.scope !== challenge.scope) {
         return json({ error: 'step-up challenge already used' }, 409, allowedOrigin, cred);
       }
-      const signatureOk = await verifyEd25519(challenge.message, challenge.publicKey, body.signature).catch(() => false);
+      let signedMessage = challenge.message;
+      if (signinMode) {
+        // The address is taken from the signed message, never the request
+        // body, and must equal the session wallet. The statement is matched
+        // byte-for-byte against the signed challenge — that exact statement
+        // names the scope, so a re-sign for one action cannot be replayed
+        // against another.
+        let parsed;
+        try {
+          parsed = validateSiwsSignin(parseSiwsMessage(body.message), {
+            domain: new URL(allowedOrigin).host,
+            uri: `${allowedOrigin}/login`,
+            nonce: challenge.nonce,
+          });
+        } catch {
+          return json({ error: 'invalid sign-in message' }, 400, allowedOrigin, cred);
+        }
+        if (parsed.address !== challenge.publicKey || parsed.statement !== challenge.statement) {
+          return json({ error: 'invalid step-up challenge' }, 401, allowedOrigin, cred);
+        }
+        signedMessage = body.message;
+      }
+      const signatureOk = await verifyEd25519(signedMessage, challenge.publicKey, body.signature).catch(() => false);
       if (!signatureOk) {
         const attempts = Number(pending.attempts || 0) + 1;
         pending.attempts = attempts;
         await bumpLobbyMetric(this.state.storage, 'stepup:failure:wallet');
         if (attempts >= STEP_UP_MAX_ATTEMPTS) {
-          delete logins[`stepup:${challenge.nonce}`];
+          delete logins[pendingKey];
           if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
           else await this.state.storage.delete('walletLogins');
           return json({ error: 'too many failed attempts — request a fresh step-up challenge' }, 409, allowedOrigin, cred);
@@ -9260,7 +9318,7 @@ export class DashaLobby {
         await this.state.storage.put('walletLogins', logins);
         return json({ error: 'invalid wallet signature', attempts_left: STEP_UP_MAX_ATTEMPTS - attempts }, 400, allowedOrigin, cred);
       }
-      delete logins[`stepup:${challenge.nonce}`];
+      delete logins[pendingKey];
       if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
       else await this.state.storage.delete('walletLogins');
       const grantToken = await mintStepUpGrantToken(this.env.LOBBY_SESSION_SECRET, stepClaims, 'wallet');
