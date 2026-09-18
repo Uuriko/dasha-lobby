@@ -39,6 +39,7 @@ import {
   createEmailSessionToken,
   authSessionFromRequest,
   sessionFromRequest,
+  revokeSessionSid,
   cookieHeader,
   grokStartCookieHeader,
   GROK_START_COOKIE,
@@ -50,6 +51,11 @@ import {
   ANON_SOFT_CAP,
   signPayload,
   verifyPayload,
+  requestSessionClaims,
+  mintStepUpGrantToken,
+  STEP_UP_SCOPES,
+  STEP_UP_CHALLENGE_TTL_MS,
+  STEP_UP_MAX_ATTEMPTS,
 } from './dasha-lobby-x.mjs';
 import {
   GH_OAUTH_COOKIE,
@@ -116,7 +122,11 @@ import {
   submitClaim,
   verifyEd25519,
   walletLoginMessage,
+  walletStepUpMessage,
+  walletStepUpStatement,
   walletMessage,
+  parseSiwsMessage,
+  validateSiwsSignin,
 } from './dasha-simp-actions.mjs';
 import {
   LOBBY_CLIENT_JS,
@@ -8037,7 +8047,10 @@ function privacyPageResponse(request) {
 }
 
 function loginPageResponse(request) {
-  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LOGIN_PAGE_HTML), {
+  // Resolve the client-script SRI pin at serve time so the wallet/Grok login
+  // controller always carries a real hash (the source keeps the placeholder).
+  const html = attachLlmsHtmlLinks(LOGIN_PAGE_HTML.split('__X_CONNECT_SRI__').join(X_CONNECT_SRI));
+  return new Response(request.method === 'HEAD' ? null : html, {
     status: 200,
     headers: htmlLlmsHeaders({
       'Content-Type': 'text/html; charset=utf-8',
@@ -8626,6 +8639,16 @@ export function grokBotWellKnownResponse(request) {
   });
 }
 
+/**
+ * Task-17 rotation on DO paths (storage available): revoke the request's
+ * current session sid server-side, if any. Call before minting a new token
+ * (login) or after destructive actions (account deletion).
+ */
+async function revokePreviousSessionSid(doInstance, request) {
+  const prev = await authSessionFromRequest(doInstance.env, request);
+  if (prev?.sid) await revokeSessionSid(doInstance.state.storage, prev.sid);
+}
+
 export class DashaLobby {
   constructor(state, env) {
     this.state = state;
@@ -9048,7 +9071,43 @@ export class DashaLobby {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
       if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'wallet login unavailable' }, 503, allowedOrigin, cred);
-      const publicKey = String((await requestJson(request)).publicKey || '');
+      const challengeBody = await requestJson(request);
+      if (challengeBody.mode === 'signin') {
+        // One-click SIWS (wallet-standard `signIn`): the wallet builds the
+        // standardized auth message itself, so the address is unknown until it
+        // signs. The challenge is therefore an origin-bound, single-use server
+        // nonce the wallet echoes back inside the signed message; /verify
+        // re-checks domain, URI, nonce, chain ID, and freshness before
+        // checking the signature. Security properties match the legacy path.
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        const ipAllowed = simpRate(this.simpRates, `wallet-login-ip:${ip}`, 12);
+        if (!ipAllowed.ok) return json({ error: 'wallet login rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+        const allowed = simpRate(this.simpRates, `wallet-login-challenge:signin:${ip}`, 12);
+        if (!allowed.ok) return json({ error: 'wallet login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+        const issuedAt = Date.now(), expiresAt = issuedAt + 5 * 60_000;
+        const nonce = [...crypto.getRandomValues(new Uint8Array(16))].map(byte => byte.toString(16).padStart(2, '0')).join('');
+        const proofOrigin = new URL(allowedOrigin);
+        const challenge = await signPayload(this.env.LOBBY_SESSION_SECRET, { kind: 'wallet_signin', nonce, origin: proofOrigin.origin, exp: expiresAt });
+        const saved = await this.state.storage.get('walletLogins');
+        const live = Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {})
+          .filter(([, row]) => Number(row?.exp) > issuedAt));
+        live[`signin:${nonce}`] = { nonce, exp: expiresAt };
+        const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 100));
+        await this.state.storage.put('walletLogins', bounded);
+        return json({
+          ok: true,
+          mode: 'signin',
+          nonce,
+          domain: proofOrigin.host,
+          uri: `${proofOrigin.origin}/login`,
+          statement: 'Log in to Dasha. This signature sends no transaction and proves address control only.',
+          version: '1',
+          chainId: 'solana:mainnet',
+          challenge,
+          expiresAt,
+        }, 200, allowedOrigin, cred);
+      }
+      const publicKey = String(challengeBody.publicKey || '');
       if (!isValidSolanaAddress(publicKey)) return json({ error: 'valid Solana address required' }, 400, allowedOrigin, cred);
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       const ipAllowed = simpRate(this.simpRates, `wallet-login-ip:${ip}`, 12);
@@ -9074,6 +9133,43 @@ export class DashaLobby {
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
       const body = await requestJson(request);
       const challenge = await verifyPayload(this.env.LOBBY_SESSION_SECRET, body.challenge);
+      if (body.mode === 'signin') {
+        // One-click SIWS verify: the wallet signed a standardized message it
+        // built from the challenge fields. Parse that exact message, bind it
+        // to this origin + the single-use challenge nonce, then verify the
+        // signature over those same bytes. The address is taken from the
+        // signed message, never trusted from the request body.
+        if (!challenge || challenge.kind !== 'wallet_signin' || challenge.origin !== allowedOrigin) {
+          return json({ error: 'invalid wallet login challenge' }, 401, allowedOrigin, cred);
+        }
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        const allowed = simpRate(this.simpRates, `wallet-login-verify:signin:${ip}`, 4);
+        if (!allowed.ok) return json({ error: 'wallet login rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+        let parsed;
+        try {
+          parsed = validateSiwsSignin(parseSiwsMessage(body.message), {
+            domain: new URL(allowedOrigin).host,
+            uri: `${allowedOrigin}/login`,
+            nonce: challenge.nonce,
+          });
+        } catch {
+          return json({ error: 'invalid sign-in message' }, 400, allowedOrigin, cred);
+        }
+        const signatureOk = await verifyEd25519(body.message, parsed.address, body.signature).catch(() => false);
+        if (!signatureOk) return json({ error: 'invalid wallet signature' }, 400, allowedOrigin, cred);
+        const logins = await this.state.storage.get('walletLogins');
+        const pending = logins && typeof logins === 'object' ? logins[`signin:${challenge.nonce}`] : null;
+        if (!pending || pending.exp < Date.now()) return json({ error: 'wallet login challenge already used' }, 409, allowedOrigin, cred);
+        delete logins[`signin:${challenge.nonce}`];
+        if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
+        else await this.state.storage.delete('walletLogins');
+        const token = await createWalletSessionToken(this.env, parsed.address);
+        await bumpLobbyMetric(this.state.storage, 'signin:success:wallet');
+        return json({ ok: true, provider: 'wallet' }, 200, allowedOrigin, {
+          credentials: true,
+          headers: { 'Set-Cookie': cookieHeader(token) },
+        });
+      }
       if (!challenge || challenge.kind !== 'wallet_login' || challenge.publicKey !== body.publicKey || challenge.origin !== allowedOrigin) {
         return json({ error: 'invalid wallet login challenge' }, 401, allowedOrigin, cred);
       }
@@ -9089,9 +9185,160 @@ export class DashaLobby {
       else await this.state.storage.delete('walletLogins');
       const token = await createWalletSessionToken(this.env, body.publicKey);
       await bumpLobbyMetric(this.state.storage, 'signin:success:wallet');
+      // Task 17: a fresh login rotates the session — revoke the pre-login sid if any.
+      await revokePreviousSessionSid(this, request);
       return json({ ok: true, provider: 'wallet' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
+      });
+    }
+
+    if (path === '/auth/wallet/stepup/challenge') {
+      // Step-up re-sign challenge for wallet sessions (task 18; design PR #291).
+      // Fresh, single-use, origin-bound, and scope-bound: the signed message
+      // names the sensitive action it approves, so one signature cannot be
+      // replayed against another. Tighter TTL than the login challenge.
+      // A stolen session cookie alone can never mint one — only the keyholder
+      // can sign it.
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+      if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'wallet step-up unavailable' }, 503, allowedOrigin, cred);
+      const stepSession = await authSessionFromRequest(this.env, request);
+      const stepClaims = await requestSessionClaims(this.env, request);
+      if (!stepSession || stepSession.provider !== 'wallet' || !stepSession.wallet || stepClaims?.auth_method !== 'wallet') {
+        return json({ error: 'wallet step-up requires a wallet session' }, 401, allowedOrigin, cred);
+      }
+      const publicKey = stepSession.wallet;
+      const stepBody = await requestJson(request);
+      const scope = String(stepBody.scope || '');
+      if (!STEP_UP_SCOPES.includes(scope)) return json({ error: 'valid step-up scope required' }, 400, allowedOrigin, cred);
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const ipAllowed = simpRate(this.simpRates, `wallet-stepup-ip:${ip}`, 12);
+      if (!ipAllowed.ok) return json({ error: 'wallet step-up rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      const allowed = simpRate(this.simpRates, `wallet-stepup-challenge:${publicKey}`, 6);
+      if (!allowed.ok) return json({ error: 'wallet step-up rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      const issuedAt = Date.now(), expiresAt = issuedAt + STEP_UP_CHALLENGE_TTL_MS;
+      const nonce = [...crypto.getRandomValues(new Uint8Array(16))].map(byte => byte.toString(16).padStart(2, '0')).join('');
+      const proofOrigin = new URL(allowedOrigin);
+      if (stepBody.mode === 'signin') {
+        // One-click SIWS step-up (wallet-standard `signIn`): the wallet builds
+        // the standardized auth message itself from this input, so the server
+        // issues only an origin-bound, single-use nonce plus the exact
+        // statement the wallet must echo. The scope has no field in the
+        // wallet-standard input shape — it rides inside the statement, which
+        // /verify matches byte-for-byte against the signed challenge, binding
+        // the signature to one sensitive action. Security properties match the
+        // legacy signMessage path (origin-bound, single-use, Ed25519, 2-min
+        // TTL, 3-attempt invalidation).
+        const statement = walletStepUpStatement(scope);
+        const signinChallenge = await signPayload(this.env.LOBBY_SESSION_SECRET, {
+          kind: 'wallet_stepup_signin', publicKey, nonce, scope, statement, origin: proofOrigin.origin, exp: expiresAt,
+        });
+        const saved = await this.state.storage.get('walletLogins');
+        const live = Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {})
+          .filter(([, row]) => Number(row?.exp) > issuedAt));
+        live[`stepup-signin:${nonce}`] = { nonce, exp: expiresAt, scope, statement, publicKey, attempts: 0 };
+        const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 100));
+        await this.state.storage.put('walletLogins', bounded);
+        return json({
+          ok: true, mode: 'signin', scope, nonce,
+          domain: proofOrigin.host, uri: `${proofOrigin.origin}/login`, statement,
+          version: '1', chainId: 'solana:mainnet',
+          challenge: signinChallenge, expiresAt, ttlSeconds: STEP_UP_CHALLENGE_TTL_MS / 1000,
+        }, 200, allowedOrigin, cred);
+      }
+      const message = walletStepUpMessage({ publicKey, nonce, scope, issuedAt, expiresAt, domain: proofOrigin.host, uri: `${proofOrigin.origin}/login` });
+      const challenge = await signPayload(this.env.LOBBY_SESSION_SECRET, {
+        kind: 'wallet_stepup', publicKey, nonce, scope, message, origin: proofOrigin.origin, exp: expiresAt,
+      });
+      const saved = await this.state.storage.get('walletLogins');
+      const live = Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {})
+        .filter(([, row]) => Number(row?.exp) > issuedAt));
+      live[`stepup:${nonce}`] = { nonce, exp: expiresAt, scope, publicKey, attempts: 0 };
+      const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 100));
+      await this.state.storage.put('walletLogins', bounded);
+      return json({ ok: true, scope, message, challenge, expiresAt, ttlSeconds: STEP_UP_CHALLENGE_TTL_MS / 1000 }, 200, allowedOrigin, cred);
+    }
+
+    if (path === '/auth/wallet/stepup/verify') {
+      // Step-up re-sign verify: single-use challenge, scope binding, then a
+      // fresh interactive proof is recorded as `step_up_at` / `step_up_method`
+      // on a re-issued session token — the only event that may write those
+      // claims. Failure never logs the user out; 3 failed attempts invalidate
+      // the challenge and the user simply requests a fresh one.
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+      if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'wallet step-up unavailable' }, 503, allowedOrigin, cred);
+      const body = await requestJson(request);
+      const challenge = await verifyPayload(this.env.LOBBY_SESSION_SECRET, body.challenge);
+      const stepSession = await authSessionFromRequest(this.env, request);
+      const stepClaims = await requestSessionClaims(this.env, request);
+      if (!stepSession || stepSession.provider !== 'wallet' || !stepSession.wallet || stepClaims?.auth_method !== 'wallet') {
+        return json({ error: 'wallet step-up requires a wallet session' }, 401, allowedOrigin, cred);
+      }
+      // One-click SIWS verify (`mode: 'signin'`) parses the standardized
+      // message the wallet built; legacy mode verifies the server-composed
+      // message stored in the signed challenge. Either way the challenge is
+      // origin-bound, single-use, scope-bound, and Ed25519-verified.
+      const signinMode = body.mode === 'signin';
+      const expectedKind = signinMode ? 'wallet_stepup_signin' : 'wallet_stepup';
+      const pendingKey = signinMode ? `stepup-signin:${challenge?.nonce}` : `stepup:${challenge?.nonce}`;
+      if (!challenge || challenge.kind !== expectedKind || challenge.origin !== allowedOrigin ||
+          challenge.publicKey !== stepSession.wallet || !STEP_UP_SCOPES.includes(challenge.scope) ||
+          challenge.scope !== String(body.scope || '')) {
+        return json({ error: 'invalid step-up challenge' }, 401, allowedOrigin, cred);
+      }
+      const allowed = simpRate(this.simpRates, `wallet-stepup-verify:${challenge.publicKey}`, 4);
+      if (!allowed.ok) return json({ error: 'wallet step-up rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      const logins = await this.state.storage.get('walletLogins');
+      const pending = logins && typeof logins === 'object' ? logins[pendingKey] : null;
+      if (!pending || pending.exp < Date.now() || pending.publicKey !== challenge.publicKey || pending.scope !== challenge.scope) {
+        return json({ error: 'step-up challenge already used' }, 409, allowedOrigin, cred);
+      }
+      let signedMessage = challenge.message;
+      if (signinMode) {
+        // The address is taken from the signed message, never the request
+        // body, and must equal the session wallet. The statement is matched
+        // byte-for-byte against the signed challenge — that exact statement
+        // names the scope, so a re-sign for one action cannot be replayed
+        // against another.
+        let parsed;
+        try {
+          parsed = validateSiwsSignin(parseSiwsMessage(body.message), {
+            domain: new URL(allowedOrigin).host,
+            uri: `${allowedOrigin}/login`,
+            nonce: challenge.nonce,
+          });
+        } catch {
+          return json({ error: 'invalid sign-in message' }, 400, allowedOrigin, cred);
+        }
+        if (parsed.address !== challenge.publicKey || parsed.statement !== challenge.statement) {
+          return json({ error: 'invalid step-up challenge' }, 401, allowedOrigin, cred);
+        }
+        signedMessage = body.message;
+      }
+      const signatureOk = await verifyEd25519(signedMessage, challenge.publicKey, body.signature).catch(() => false);
+      if (!signatureOk) {
+        const attempts = Number(pending.attempts || 0) + 1;
+        pending.attempts = attempts;
+        await bumpLobbyMetric(this.state.storage, 'stepup:failure:wallet');
+        if (attempts >= STEP_UP_MAX_ATTEMPTS) {
+          delete logins[pendingKey];
+          if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
+          else await this.state.storage.delete('walletLogins');
+          return json({ error: 'too many failed attempts — request a fresh step-up challenge' }, 409, allowedOrigin, cred);
+        }
+        await this.state.storage.put('walletLogins', logins);
+        return json({ error: 'invalid wallet signature', attempts_left: STEP_UP_MAX_ATTEMPTS - attempts }, 400, allowedOrigin, cred);
+      }
+      delete logins[pendingKey];
+      if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
+      else await this.state.storage.delete('walletLogins');
+      const grantToken = await mintStepUpGrantToken(this.env.LOBBY_SESSION_SECRET, stepClaims, 'wallet');
+      await bumpLobbyMetric(this.state.storage, 'stepup:success:wallet');
+      return json({ ok: true, provider: 'wallet', scope: challenge.scope, step_up: true }, 200, allowedOrigin, {
+        credentials: true,
+        headers: { 'Set-Cookie': cookieHeader(grantToken) },
       });
     }
 
@@ -9168,6 +9415,8 @@ export class DashaLobby {
       else await this.state.storage.delete('emailLogins');
       const token = await createEmailSessionToken(this.env, email);
       await bumpLobbyMetric(this.state.storage, 'signin:success:email');
+      // Task 17: a fresh login rotates the session — revoke the pre-login sid if any.
+      await revokePreviousSessionSid(this, request);
       return json({ ok: true, provider: 'email' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -9231,6 +9480,8 @@ export class DashaLobby {
       else await this.state.storage.delete('grokLogins');
       const token = await createGrokSessionToken(this.env, pending.displayName);
       await bumpLobbyMetric(this.state.storage, 'signin:success:grok');
+      // Task 17: a fresh login rotates the session — revoke the pre-login sid if any.
+      await revokePreviousSessionSid(this, request);
       return json({ state: 'ok', provider: 'grok' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -9425,7 +9676,7 @@ export class DashaLobby {
     }
 
     if (path === '/simp/me' && request.method === 'GET') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       let referralChanged = Boolean(this.pruneReferralState());
       if (session?.xId) {
         const key = String(session.xId), pending = this.simpReferrals[key];
@@ -9474,7 +9725,7 @@ export class DashaLobby {
     }
 
     if (path === '/simp/referral') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const xId = String(session?.xId || '');
       if (!xId) return json({ error: 'link X first' }, 401, allowedOrigin, cred);
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
@@ -9513,7 +9764,7 @@ export class DashaLobby {
     }
 
     if (path === '/simp/quiz') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const xId = session?.xId ? String(session.xId) : null;
       const completed = xId ? this.simpProfiles[xId]?.quiz : null;
       if (request.method === 'GET') return json({ ok: true, ...quizPublic(), ...(completed ? { completed: true, quiz: completed } : { ready: true }) }, 200, allowedOrigin, cred);
@@ -9635,7 +9886,7 @@ export class DashaLobby {
     if (path === '/simp/spotlight') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const xId = String(session?.xId || '');
       const rate = simpRate(this.simpRates, `simp-spotlight:${xId || 'anon'}`, 6);
       if (!rate.ok) return json({ error: 'spotlight updates rate limited', waitMs: rate.waitMs }, 429, allowedOrigin, cred);
@@ -9651,7 +9902,7 @@ export class DashaLobby {
       if (request.method !== 'POST') {
         return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       }
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const result = joinBoard(this.simpProfiles, session);
       if (!result.ok) return json({ error: result.error }, result.status || 401, allowedOrigin, cred);
       this.simpProfiles = result.store;
@@ -9673,7 +9924,7 @@ export class DashaLobby {
       if (request.method !== 'POST') {
         return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       }
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const profile = session?.xId ? this.simpProfiles[String(session.xId)] : null;
       const result = leaveBoard(this.simpProfiles, session);
       if (!result.ok) return json({ error: result.error }, result.status || 401, allowedOrigin, cred);
@@ -9689,6 +9940,8 @@ export class DashaLobby {
       await this.state.storage.delete(`simpHolder:${session.xId}`);
       await this.persistSimpState();
       await this.persistChess();
+      // Task 17: account deletion kills the session server-side too.
+      await revokePreviousSessionSid(this, request);
       return json(
         {
           ok: true,
@@ -9702,7 +9955,7 @@ export class DashaLobby {
     }
 
     if (path === '/simp/claims') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (request.method === 'GET') return json({ ok: true, claims: claimsForSession(this.simpClaims, session) }, 200, allowedOrigin, cred);
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       const result = submitClaim(this.simpClaims, this.simpProfiles, session, await requestJson(request), { id: id() });
@@ -9748,7 +10001,7 @@ export class DashaLobby {
     if (path === '/simp/wallet/challenge') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId || !this.simpProfiles[String(session.xId)]) return json({ error: 'join board first' }, 401, allowedOrigin, cred);
       const publicKey = String((await requestJson(request)).publicKey || '');
       if (!isValidSolanaAddress(publicKey)) return json({ error: 'valid Solana address required' }, 400, allowedOrigin, cred);
@@ -9766,7 +10019,7 @@ export class DashaLobby {
     if (path === '/simp/wallet/verify') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (session?.xId) {
         const allowed = simpRate(this.simpRates, `holder-verify:${session.xId}`, 4);
         if (!allowed.ok) return json({ error: 'holder check rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
@@ -9798,7 +10051,7 @@ export class DashaLobby {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, '');
     const cred = { credentials: true };
-    const session = await sessionFromRequest(this.env, request);
+    const session = await sessionFromRequest(this.env, request, this.state.storage);
     const xId = session?.xId ? String(session.xId) : '';
     const profile = xId ? this.simpProfiles[xId] : null;
     const holder = Boolean(profile && Number(profile.holderUntil) > Date.now());
@@ -10635,7 +10888,7 @@ export class DashaLobby {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, '');
     const cred = { credentials: true };
-    const session = await sessionFromRequest(this.env, request);
+    const session = await sessionFromRequest(this.env, request, this.state.storage);
     const xId = session?.xId ? String(session.xId) : '';
     const handle = session?.handle || '';
     const avatar = session?.avatar || null;
@@ -10813,6 +11066,23 @@ export class DashaLobby {
 
   async fetch(request) {
     const url = new URL(request.url);
+    // Internal session-revocation RPC for worker-isolate paths (OAuth callbacks,
+    // logouts) that mint/clear cookies without DO storage. Gated by the session
+    // secret — same trust as the worker itself.
+    if (url.pathname === '/internal/session/revoke' && request.method === 'POST') {
+      const secret = request.headers.get('x-dasha-internal');
+      if (!this.env.LOBBY_SESSION_SECRET || secret !== String(this.env.LOBBY_SESSION_SECRET)) {
+        return json({ error: 'unauthorized' }, 401, null);
+      }
+      let sid = null;
+      try {
+        sid = (await request.json())?.sid;
+      } catch {
+        sid = null;
+      }
+      if (typeof sid === 'string' && sid) await revokeSessionSid(this.state.storage, sid);
+      return json({ ok: true }, 200, null);
+    }
     if (isComputeApiPath(url.pathname) || isHeadsPath(url.pathname) || isComputeBadgePath(url.pathname)) {
       const origin = request.headers.get('Origin');
       const allowedOrigin = origin && originAllowed(origin, this.env.ALLOWED_ORIGINS || '') ? origin : null;
@@ -10872,7 +11142,7 @@ export class DashaLobby {
       return new Response('origin not allowed', { status: 403, headers: SECURITY });
     }
 
-    const link = await sessionFromRequest(this.env, request);
+    const link = await sessionFromRequest(this.env, request, this.state.storage);
     const holder = Boolean(link?.xId && Number(this.simpProfiles[String(link.xId)]?.holderUntil) > Date.now());
     const limits = linkedLimits(Boolean(link), holder);
     const count = this.liveCount();
@@ -11118,6 +11388,56 @@ export class DashaLobby {
   }
 }
 
+/**
+ * Task-17 rotation from worker-isolate paths (no DO storage there): revoke a
+ * session id in both DO registries — the lobby DO (lobby + compute sessions)
+ * and the faucet DO (its session reads enforce revocation against its own
+ * storage). Best-effort — the cookie is always replaced/cleared regardless;
+ * a failed RPC only weakens the server-side kill, never the client-visible flow.
+ */
+async function revokeSessionServerSide(env, sid) {
+  try {
+    if (!sid || !env?.LOBBY_SESSION_SECRET) return;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-dasha-internal': String(env.LOBBY_SESSION_SECRET),
+    };
+    const body = JSON.stringify({ sid });
+    const calls = [];
+    if (env.LOBBY) {
+      calls.push(
+        env.LOBBY.get(env.LOBBY.idFromName('public')).fetch(
+          new Request('https://lobby.getdasha.com/internal/session/revoke', {
+            method: 'POST',
+            headers,
+            body,
+          }),
+        ),
+      );
+    }
+    if (env.FAUCET) {
+      calls.push(
+        env.FAUCET.get(env.FAUCET.idFromName('main')).fetch(
+          new Request('https://lobby.getdasha.com/internal/session/revoke', {
+            method: 'POST',
+            headers,
+            body,
+          }),
+        ),
+      );
+    }
+    await Promise.allSettled(calls);
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Read the current main-cookie session id (if any) so rotation can revoke it. */
+async function currentSessionSid(env, request) {
+  const session = await authSessionFromRequest(env, request);
+  return session?.sid || null;
+}
+
 async function handleOAuth(request, env, allowedOrigin) {
   const url = new URL(request.url);
 
@@ -11144,6 +11464,8 @@ async function handleOAuth(request, env, allowedOrigin) {
   if (url.pathname === '/oauth/x/logout') {
     if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, { credentials: true });
     if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+    // Task 17: unlink kills the token server-side too, not just the cookie.
+    await revokeSessionServerSide(env, await currentSessionSid(env, request));
     const headers = new Headers({
         ...SECURITY,
         ...corsHeaders(allowedOrigin, { credentials: true }),
@@ -11241,6 +11563,8 @@ async function handleOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', cookieHeader(session));
       headers.append('Set-Cookie', clearLegacyCookieHeader());
       headers.append('Set-Cookie', oauthStateCookie());
+      // Task 17: linking a method rotates the session — the pre-login token dies server-side.
+      await revokeSessionServerSide(env, await currentSessionSid(env, request));
       return new Response(body, { status: 200, headers });
     } catch (e) {
       return oauthHtmlResponse(
@@ -11336,6 +11660,8 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', cookieHeader(session));
       headers.append('Set-Cookie', clearLegacyCookieHeader());
       headers.append('Set-Cookie', googleOauthStateCookie());
+      // Task 17: signing in rotates the session — the pre-login token dies server-side.
+      await revokeSessionServerSide(env, await currentSessionSid(env, request));
       return new Response(body, { status: 200, headers });
     } catch (error) {
       return googleOauthHtmlResponse(
@@ -11365,6 +11691,8 @@ async function handleGithubOAuth(request, env, allowedOrigin) {
   if (url.pathname === '/oauth/github/logout') {
     if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, { credentials: true });
     if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+    // Task 17: unlink kills the token server-side too, not just the cookie.
+    await revokeSessionServerSide(env, (await githubSessionFromRequest(env, request))?.sid || null);
     const headers = new Headers({
       ...SECURITY,
       ...corsHeaders(allowedOrigin, { credentials: true }),
@@ -11437,6 +11765,8 @@ async function handleGithubOAuth(request, env, allowedOrigin) {
       const headers = new Headers(privateHtmlHeaders({ 'Content-Type': 'text/html; charset=utf-8' }, scriptNonce));
       headers.append('Set-Cookie', githubCookieHeader(session));
       headers.append('Set-Cookie', githubOauthStateCookie());
+      // Task 17: linking rotates the session — the pre-link token dies server-side.
+      await revokeSessionServerSide(env, (await githubSessionFromRequest(env, request))?.sid || null);
       return new Response(body, { status: 200, headers });
     } catch (error) {
       return githubOauthHtmlResponse(
@@ -12583,7 +12913,7 @@ export class DashaFaucet {
     }
 
     if (path === '/faucet/me' && (request.method === 'GET' || request.method === 'HEAD')) {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const xId = session?.xId ? String(session.xId) : '';
       const bind = xId ? this.faucetBinds[xId] : null;
       const cfgMe = faucetConfig(this.env);
@@ -12604,7 +12934,7 @@ export class DashaFaucet {
       const input = await body();
       const err = destShapeError(input.dest, input.last4);
       if (err) return json({ ok: false, error: err }, 200, allowedOrigin, cred);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ ok: false, error: 'link X first' }, 200, allowedOrigin, cred);
       // Shape probe only. Never persist a bind. Never label IS_WALLET.
       return json({ ok: true, dest: String(input.dest).trim() }, 200, allowedOrigin, cred);
@@ -12636,7 +12966,7 @@ export class DashaFaucet {
     if (path === '/faucet/wallet/verify' && request.method === 'POST') {
       if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'not_configured' }, 501, allowedOrigin, cred);
       const input = await body();
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ ok: false, error: 'link X first' }, 401, allowedOrigin, cred);
       const xId = String(session.xId);
 
@@ -12679,7 +13009,7 @@ export class DashaFaucet {
     }
 
     if (path === '/faucet/claim' && request.method === 'POST') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ error: 'link X first' }, 401, allowedOrigin, cred);
       const xId = String(session.xId);
       const bind = this.faucetBinds[xId];
@@ -12764,7 +13094,7 @@ export class DashaFaucet {
 
     if (path === '/faucet/burn/preview' && request.method === 'POST') {
       if (!BURN_RECEIPTS_ENABLED) return json({ error: 'burn receipts unavailable' }, 503, allowedOrigin, cred);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ error: 'link X first' }, 401, allowedOrigin, cred);
       const xId = String(session.xId);
       const bind = this.faucetBinds[xId];
@@ -12806,7 +13136,7 @@ export class DashaFaucet {
 
     if (path === '/faucet/burn/confirm' && request.method === 'POST') {
       if (!BURN_RECEIPTS_ENABLED) return json({ error: 'burn receipts unavailable' }, 503, allowedOrigin, cred);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ error: 'link X first' }, 401, allowedOrigin, cred);
       const xId = String(session.xId);
       const bind = this.faucetBinds[xId];
@@ -12928,7 +13258,7 @@ export class DashaFaucet {
         solscan: `https://solscan.io/tx/${sig}`,
         share: `https://www.getdasha.com/faucet/fill/${sig}`,
       };
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json(landed, 200, allowedOrigin, cred);
       const bind = this.faucetBinds[String(session.xId)];
       if (!bind?.dest || bind.kind !== 'IS_WALLET') {
@@ -13017,6 +13347,25 @@ export class DashaFaucet {
   }
 
   async fetch(request) {
+    const url = new URL(request.url);
+    // Task-17 revocation mirror: the faucet DO's session reads enforce
+    // revocation against its own storage, so revocations must be mirrored here
+    // (the lobby DO's registry is a different storage namespace). Secret-gated,
+    // same trust as the worker itself.
+    if (url.pathname === '/internal/session/revoke' && request.method === 'POST') {
+      const secret = request.headers.get('x-dasha-internal');
+      if (!this.env.LOBBY_SESSION_SECRET || secret !== String(this.env.LOBBY_SESSION_SECRET)) {
+        return json({ error: 'unauthorized' }, 401, null);
+      }
+      let sid = null;
+      try {
+        sid = (await request.json())?.sid;
+      } catch {
+        sid = null;
+      }
+      if (typeof sid === 'string' && sid) await revokeSessionSid(this.state.storage, sid);
+      return json({ ok: true }, 200, null);
+    }
     const origin = request.headers.get('Origin');
     const allowedOrigin =
       origin && originAllowed(origin, this.env.ALLOWED_ORIGINS || '')
@@ -13416,6 +13765,8 @@ export default {
     if (url.pathname === '/auth/logout') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, { credentials: true });
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+      // Task 17: logout kills the token server-side too, not just the cookie.
+      await revokeSessionServerSide(env, await currentSessionSid(env, request));
       return json({ ok: true, loggedIn: false }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader('', { clear: true }) },

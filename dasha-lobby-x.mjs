@@ -224,66 +224,69 @@ export async function fetchXUser(accessToken) {
   };
 }
 
-export async function createSessionToken(env, user) {
+/**
+ * Session claims (task 16/17): every session token carries
+ *   auth_method — which login method proved the identity (x/google/wallet/email/grok/github)
+ *   auth_time   — epoch ms of the authentication moment (NOT refreshed on rotation;
+ *                 step-up auth compares against this)
+ *   sid         — unique session id, the server-side revocation handle
+ * No fingerprinting: never IP, user-agent, or device signals in the token.
+ */
+export function sessionClaims(authMethod, opts = {}) {
+  const now = Date.now();
+  const authTime = Number.isFinite(opts.authTime) ? opts.authTime : now;
+  const sid = typeof opts.sid === 'string' && opts.sid ? opts.sid : randomUrlToken(16);
+  return { v: 1, sid, auth_method: authMethod, auth_time: authTime, iat: now, exp: now + SESSION_TTL_MS };
+}
+
+export async function createSessionToken(env, user, opts = {}) {
   const handle = normalizeHandle(user.handle);
   if (!handle) throw new Error('bad handle');
-  const now = Date.now();
   const xCreatedAt = Number(user.xCreatedAt);
   return signPayload(env.LOBBY_SESSION_SECRET, {
-    v: 1,
+    ...sessionClaims('x', opts),
     xId: String(user.xId),
     handle,
     name: user.name || '',
     verifiedType: user.verifiedType || null,
     avatar: user.avatar || null,
     ...(Number.isFinite(xCreatedAt) ? { xCreatedAt } : {}),
-    iat: now,
-    exp: now + SESSION_TTL_MS,
   });
 }
 
 /** Wallet login proves control of one address. It does not imply holdings or an X identity. */
-export async function createWalletSessionToken(env, publicKey) {
+export async function createWalletSessionToken(env, publicKey, opts = {}) {
   const wallet = String(publicKey || '');
   if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) throw new Error('bad wallet');
-  const now = Date.now();
   return signPayload(env.LOBBY_SESSION_SECRET, {
-    v: 1,
+    ...sessionClaims('wallet', opts),
     wallet,
-    iat: now,
-    exp: now + SESSION_TTL_MS,
   });
 }
 
 /** Email code login proves control of one inbox. It does not imply an X identity or wallet. */
-export async function createEmailSessionToken(env, email) {
+export async function createEmailSessionToken(env, email, opts = {}) {
   const normalized = String(email || '').trim().toLowerCase().slice(0, 254);
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalized)) throw new Error('bad email');
-  const now = Date.now();
   return signPayload(env.LOBBY_SESSION_SECRET, {
-    v: 1,
+    ...sessionClaims('email', opts),
     provider: 'email',
     email: normalized,
-    iat: now,
-    exp: now + SESSION_TTL_MS,
   });
 }
 
 /** Grok Bot device-code login. displayName is optional and public. */
-export async function createGrokSessionToken(env, displayName) {
-  const now = Date.now();
+export async function createGrokSessionToken(env, displayName, opts = {}) {
   const name = String(displayName || '').trim().slice(0, 48);
   return signPayload(env.LOBBY_SESSION_SECRET, {
-    v: 1,
+    ...sessionClaims('grok', opts),
     provider: 'grok',
     displayName: name,
-    iat: now,
-    exp: now + SESSION_TTL_MS,
   });
 }
 
-/** Read either supported login without granting provider-specific perks. */
-export async function authSessionFromRequest(env, request) {
+/** HMAC-only parse of the session cookie. Returns { payload, session } or null. No revocation check. */
+async function parseAuthSession(env, request) {
   if (!env?.LOBBY_SESSION_SECRET) return null;
   const raw = readCookie(request.headers.get('Cookie'));
   if (!raw) return null;
@@ -291,44 +294,71 @@ export async function authSessionFromRequest(env, request) {
   if (payload?.v !== 1 || !Number.isFinite(payload.exp)) return null;
   if (payload.provider === 'grok') {
     const displayName = String(payload.displayName || '').trim().slice(0, 48);
-    return { provider: 'grok', displayName };
+    return { payload, session: { provider: 'grok', displayName } };
   }
   if (payload.provider === 'email') {
     const email = String(payload.email || '').trim().toLowerCase().slice(0, 254);
-    if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { provider: 'email', email };
+    if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { payload, session: { provider: 'email', email } };
     return null;
   }
   if (payload.provider === 'google') {
     const googleSub = String(payload.googleSub || '');
     if (!/^[1-9][0-9]{0,254}$/.test(googleSub)) return null;
     return {
-      provider: 'google',
-      googleSub,
-      email: typeof payload.email === 'string' ? payload.email.slice(0, 254) : null,
-      name: payload.name || '',
-      avatar: typeof payload.avatar === 'string' ? payload.avatar.slice(0, 300) : null,
+      payload,
+      session: {
+        provider: 'google',
+        googleSub,
+        email: typeof payload.email === 'string' ? payload.email.slice(0, 254) : null,
+        name: payload.name || '',
+        avatar: typeof payload.avatar === 'string' ? payload.avatar.slice(0, 300) : null,
+      },
     };
   }
   const handle = normalizeHandle(payload.handle);
   if (payload.xId && handle) {
     const xCreatedAt = Number(payload.xCreatedAt);
     return {
-      provider: 'x',
-      xId: String(payload.xId),
-      handle,
-      name: payload.name || '',
-      verifiedType: payload.verifiedType || null,
-      avatar: typeof payload.avatar === 'string' ? payload.avatar.slice(0, 300) : null,
-      ...(Number.isFinite(xCreatedAt) ? { xCreatedAt } : {}),
+      payload,
+      session: {
+        provider: 'x',
+        xId: String(payload.xId),
+        handle,
+        name: payload.name || '',
+        verifiedType: payload.verifiedType || null,
+        avatar: typeof payload.avatar === 'string' ? payload.avatar.slice(0, 300) : null,
+        ...(Number.isFinite(xCreatedAt) ? { xCreatedAt } : {}),
+      },
     };
   }
   const wallet = String(payload.wallet || '');
-  if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) return { provider: 'wallet', wallet };
+  if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) return { payload, session: { provider: 'wallet', wallet } };
   return null;
 }
 
-export async function sessionFromRequest(env, request) {
-  const payload = await authSessionFromRequest(env, request);
+/**
+ * Read either supported login without granting provider-specific perks.
+ * Attaches task-16 claims (authMethod/authTime/sid) with legacy backfill so
+ * pre-claim tokens keep working. When `storage` (Durable Object storage) is
+ * given, revoked session ids are rejected — pass it on every server path that
+ * trusts the session. Worker-isolate read-only paths stay HMAC-only.
+ */
+export async function authSessionFromRequest(env, request, storage = null) {
+  const parsed = await parseAuthSession(env, request);
+  if (!parsed) return null;
+  const { payload, session } = parsed;
+  const out = { ...session };
+  const method = typeof payload.auth_method === 'string' && payload.auth_method ? payload.auth_method : out.provider;
+  out.authMethod = method;
+  const authTime = Number(payload.auth_time);
+  out.authTime = Number.isFinite(authTime) ? authTime : (Number.isFinite(payload.iat) ? payload.iat : null);
+  out.sid = typeof payload.sid === 'string' && payload.sid ? payload.sid : null;
+  if (storage && out.sid && (await isSessionSidRevoked(storage, out.sid))) return null;
+  return out;
+}
+
+export async function sessionFromRequest(env, request, storage = null) {
+  const payload = await authSessionFromRequest(env, request, storage);
   if (payload?.provider !== 'x') return null;
   const xCreatedAt = Number(payload.xCreatedAt);
   return {
@@ -342,6 +372,101 @@ export async function sessionFromRequest(env, request) {
   };
 }
 
+/** Stable per-method identity key for server-side session bookkeeping. Method identity only — no fingerprinting. */
+export function sessionIdentityKey(session) {
+  if (!session || typeof session !== 'object') return null;
+  switch (session.provider) {
+    case 'x': return session.xId ? `x:${session.xId}` : null;
+    case 'google': return session.googleSub ? `google:${session.googleSub}` : null;
+    case 'wallet': return session.wallet ? `wallet:${session.wallet}` : null;
+    case 'email': return session.email ? `email:${session.email}` : null;
+    case 'grok': return `grok:${String(session.displayName || '').slice(0, 48) || 'anon'}`;
+    case 'github': return session.ghId ? `github:${session.ghId}` : null;
+    default: return null;
+  }
+}
+
+const REVOKED_SIDS_KEY = 'lobby:revoked-sids';
+const REVOKED_SID_LEN = 128;
+function revokedSidKey(sid) {
+  return String(sid).slice(0, REVOKED_SID_LEN);
+}
+
+/**
+ * Server-side session invalidation (task 17): mark a session id as revoked.
+ * Entries older than the session TTL are pruned — the token itself is expired
+ * by then, so pruning never resurrects a usable session. No count cap: an
+ * eviction cap could drop an unexpired revocation under heavy rotation.
+ */
+export async function revokeSessionSid(storage, sid) {
+  if (!storage || typeof sid !== 'string' || !sid) return;
+  const now = Date.now();
+  const raw = await storage.get(REVOKED_SIDS_KEY);
+  const map = raw && typeof raw === 'object' && !Array.isArray(raw) ? { ...raw } : {};
+  for (const [key, at] of Object.entries(map)) {
+    if (now - Number(at) > SESSION_TTL_MS) delete map[key];
+  }
+  map[revokedSidKey(sid)] = now;
+  await storage.put(REVOKED_SIDS_KEY, map);
+}
+
+export async function isSessionSidRevoked(storage, sid) {
+  if (!storage || typeof sid !== 'string' || !sid) return false;
+  const raw = await storage.get(REVOKED_SIDS_KEY);
+  const at = raw && typeof raw === 'object' ? Number(raw[revokedSidKey(sid)]) : NaN;
+  if (!Number.isFinite(at)) return false;
+  return Date.now() - at <= SESSION_TTL_MS;
+}
+
+/**
+ * Mint a fresh token for the same identity, preserving auth_method/auth_time
+ * (rotation is not a fresh authentication — step-up auth must not be fooled)
+ * with a new sid/iat/exp.
+ */
+export async function reissueSessionToken(env, session) {
+  if (!session || typeof session.provider !== 'string') throw new Error('bad session');
+  const opts = { authTime: session.authTime };
+  switch (session.provider) {
+    case 'x':
+      return createSessionToken(
+        env,
+        {
+          xId: session.xId,
+          handle: session.handle,
+          name: session.name,
+          verifiedType: session.verifiedType,
+          avatar: session.avatar,
+          xCreatedAt: session.xCreatedAt,
+        },
+        opts,
+      );
+    case 'wallet':
+      return createWalletSessionToken(env, session.wallet, opts);
+    case 'email':
+      return createEmailSessionToken(env, session.email, opts);
+    case 'grok':
+      return createGrokSessionToken(env, session.displayName, opts);
+    default:
+      throw new Error(`unsupported session provider for reissue: ${session.provider}`);
+  }
+}
+
+/**
+ * Task-17 rotation for DO paths: revoke the request's current session id
+ * server-side, then mint a fresh token for the same identity (auth_time
+ * preserved). `reissue` lets callers cover providers whose creators live in
+ * other modules (google) without an import cycle. Returns
+ * { token, session, rotated }.
+ */
+export async function rotateSessionForRequest(env, storage, request, reissue = reissueSessionToken) {
+  const session = await authSessionFromRequest(env, request, storage);
+  if (!session) return { token: null, session: null, rotated: false };
+  // Reissue before revoking: a reissue failure must never strand the user logged out.
+  const token = await reissue(env, session);
+  if (session.sid) await revokeSessionSid(storage, session.sid);
+  return { token, session, rotated: true };
+}
+
 /** Public fields safe to show clients. */
 export function publicLink(link) {
   if (!link?.handle) return null;
@@ -351,5 +476,111 @@ export function publicLink(link) {
     href: `https://x.com/${link.handle}`,
     avatar: link.avatar || null,
     verifiedType: link.verifiedType || null,
+  };
+}
+
+/* ------------------------------------------------------------------------ *
+ * Step-up authentication for sensitive actions (task 18; design PR #291).  *
+ * Reference implementation for the wallet SIWS path.                      *
+ *                                                                          *
+ * Session hijack turns a stolen cookie into full control of payout-wallet   *
+ * and API-key actions until the 30-day TTL expires. Step-up demands a fresh *
+ * interactive proof (for wallets: a re-signature of a fresh challenge)     *
+ * before those money-adjacent actions, then grants a short window.         *
+ * ------------------------------------------------------------------------ */
+
+/** How long a fresh proof satisfies the gate (design §5). */
+export const STEP_UP_WINDOW_MS = 10 * 60_000;
+/**
+ * Single-use step-up challenge TTL — tighter than the 5-minute login
+ * challenge (§6 tightened for sensitive actions).
+ */
+export const STEP_UP_CHALLENGE_TTL_MS = 2 * 60_000;
+/** Actions that may request a step-up challenge; bound into the signed challenge. */
+export const STEP_UP_SCOPES = ['payout-wallet', 'payout-request', 'api-key-create'];
+/** Failed step-up attempts before the challenge is invalidated (design §7). */
+export const STEP_UP_MAX_ATTEMPTS = 3;
+/** Which step-up methods an account may use, per the method that authenticated it. */
+export const STEP_UP_METHODS_BY_AUTH_METHOD = {
+  wallet: ['wallet'],
+  email: ['email'],
+  x: ['x'],
+  google: ['google'],
+  github: ['github'],
+  grok: ['grok'],
+};
+
+function backfillAuthMethod(payload) {
+  if (payload && typeof payload.auth_method === 'string' && payload.auth_method) return payload.auth_method;
+  const provider = String(payload?.provider || '');
+  if (provider) return provider;
+  if (payload?.xId && payload?.handle) return 'x';
+  if (payload?.wallet) return 'wallet';
+  return null;
+}
+
+/**
+ * Raw verified session payload with step-up claims normalized.
+ *
+ * Legacy (pre-claim) tokens backfill `auth_method` from provider/xId/wallet
+ * and `auth_time` from `iat` — step-up treats a backfilled `auth_time` the
+ * same as a real one, so there is no migration cliff (design §2).
+ */
+export async function requestSessionClaims(env, request) {
+  if (!env?.LOBBY_SESSION_SECRET) return null;
+  const raw = readCookie(request.headers.get('Cookie'));
+  if (!raw) return null;
+  const payload = await verifyPayload(env.LOBBY_SESSION_SECRET, raw);
+  if (payload?.v !== 1 || !Number.isFinite(payload.exp)) return null;
+  const iat = Number.isFinite(payload.iat) ? payload.iat : null;
+  return {
+    raw: payload,
+    auth_method: backfillAuthMethod(payload),
+    auth_time: Number.isFinite(payload.auth_time) ? payload.auth_time : iat,
+    step_up_at: Number.isFinite(payload.step_up_at) ? payload.step_up_at : null,
+    step_up_method: typeof payload.step_up_method === 'string' ? payload.step_up_method : null,
+  };
+}
+
+/**
+ * Does this session satisfy the step-up gate for a sensitive action?
+ *
+ * A grant from a completed step-up (`step_up_at` within the window) counts,
+ * and so does a fresh login (`auth_time` within the window — one
+ * authentication, not two). Rotation never re-arms `auth_time`, so a
+ * freshly-rotated stolen token does not satisfy the gate.
+ */
+export function requireStepUp(claims, windowMs = STEP_UP_WINDOW_MS, now = Date.now()) {
+  if (!claims) return { ok: false, reason: 'no session' };
+  if (Number.isFinite(claims.step_up_at) && now - claims.step_up_at < windowMs) {
+    return { ok: true, via: 'grant', method: claims.step_up_method || null };
+  }
+  if (Number.isFinite(claims.auth_time) && now - claims.auth_time < windowMs) {
+    return { ok: true, via: 'fresh-login', method: claims.auth_method || null };
+  }
+  return { ok: false, reason: 'stale' };
+}
+
+/**
+ * Re-issue the session token with a fresh step-up grant. Only step-up may
+ * write `step_up_at` (design §5); `auth_time` and the original `iat`/`exp`
+ * are preserved untouched — rotation can never buy freshness.
+ */
+export async function mintStepUpGrantToken(secret, claims, step_up_method) {
+  if (!claims?.raw || typeof claims.raw !== 'object') throw new Error('no claims');
+  return signPayload(secret, { ...claims.raw, step_up_at: Date.now(), step_up_method: String(step_up_method || '') });
+}
+
+/**
+ * The 403 contract gated endpoints return (machine-readable so the page and
+ * API clients behave the same — design §6).
+ */
+export function stepUpRequiredBody(claims) {
+  const methods = STEP_UP_METHODS_BY_AUTH_METHOD[claims?.auth_method] || [];
+  return {
+    error: 'step_up_required',
+    step_up_methods: methods,
+    expires: Math.floor(STEP_UP_CHALLENGE_TTL_MS / 1000),
+    copy: 'Confirm it\u2019s you to continue \u2014 this action needs a fresh sign-in proof.',
   };
 }
