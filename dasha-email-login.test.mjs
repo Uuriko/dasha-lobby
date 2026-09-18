@@ -113,9 +113,28 @@ assert.equal(bad.status, 400);
   }));
   assert.equal(res.status, 502);
   const body = await res.json();
-  assert.match(body.error, /email send failed/);
+  assert.match(body.error, /Could not send the sign-in code/);
   assert.equal(downRows.has('emailLogins') && Boolean(downRows.get('emailLogins')['mac@example.com']), false, 'nothing stored on send failure');
   resendBehavior = async () => new Response(JSON.stringify({ id: 'mail_123' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+}
+
+// 8. Persistent send cap: max 3 codes per 10 minutes per email
+{
+  const { lobby: capLobby, ready: r4 } = makeLobby(env);
+  await r4;
+  const capEmail = 'resend-cap@example.com';
+  for (let i = 0; i < 3; i++) {
+    const res = await capLobby.fetch(new Request('https://lobby.getdasha.com/auth/email/start', {
+      method: 'POST', headers: originHeaders, body: JSON.stringify({ email: capEmail }),
+    }));
+    assert.equal(res.status, 200, `send ${i + 1} 200`);
+  }
+  const fourth = await capLobby.fetch(new Request('https://lobby.getdasha.com/auth/email/start', {
+    method: 'POST', headers: originHeaders, body: JSON.stringify({ email: capEmail }),
+  }));
+  assert.equal(fourth.status, 429, '4th send capped');
+  const fourthBody = await fourth.json();
+  assert.ok(Number(fourthBody.waitMs) > 0, 'waitMs present');
 }
 
 globalThis.fetch = realFetch;

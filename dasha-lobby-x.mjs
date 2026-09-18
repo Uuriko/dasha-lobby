@@ -298,6 +298,17 @@ export async function authSessionFromRequest(env, request) {
     if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { provider: 'email', email };
     return null;
   }
+  if (payload.provider === 'google') {
+    const googleSub = String(payload.googleSub || '');
+    if (!/^[1-9][0-9]{0,254}$/.test(googleSub)) return null;
+    return {
+      provider: 'google',
+      googleSub,
+      email: typeof payload.email === 'string' ? payload.email.slice(0, 254) : null,
+      name: payload.name || '',
+      avatar: typeof payload.avatar === 'string' ? payload.avatar.slice(0, 300) : null,
+    };
+  }
   const handle = normalizeHandle(payload.handle);
   if (payload.xId && handle) {
     const xCreatedAt = Number(payload.xCreatedAt);

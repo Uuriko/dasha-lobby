@@ -946,12 +946,12 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Log in — $dasha</title>
-  <meta name="description" content="Sign in. Grok Bot, X, email, or a wallet.">
+  <meta name="description" content="Sign in. Grok Bot, X, Google, email, or a wallet.">
   <meta name="robots" content="noindex,follow">
   <meta name="theme-color" content="#070608">
   <style>
     :root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81;--line:rgba(244,237,219,.24)}
-    *{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 70% 15%,rgba(124,77,255,.3),transparent 25rem),var(--ink);color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif}.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:12px 16px;background:var(--acid);color:var(--ink)!important;font-weight:900;text-decoration:none}.skip-link:focus{left:12px;top:12px;outline:3px solid var(--paper);outline-offset:2px}.login{width:min(28rem,100%);padding:28px;border:1px solid var(--line);background:#120c18;box-shadow:10px 10px 0 var(--hot)}.brand{color:var(--acid);font-size:13px;font-weight:900;letter-spacing:.12em;text-decoration:none;text-transform:uppercase}h1{margin:14px 0 8px;font-size:clamp(2.5rem,12vw,4.5rem);line-height:.9;letter-spacing:-.06em}p{margin:0 0 18px;color:rgba(244,237,219,.78)}.methods{display:grid;gap:12px}.button{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border:1px solid var(--paper);border-radius:999px;background:transparent;color:var(--paper);font:900 14px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em;text-decoration:none;cursor:pointer}.button.primary{border-color:var(--acid);background:var(--acid);color:var(--ink);box-shadow:4px 4px 0 var(--hot)}.button:disabled{opacity:.6;cursor:wait}.siwg{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#22d3ee);color:#fff;font:900 15px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em;text-decoration:none;cursor:pointer;box-shadow:0 0 22px rgba(124,58,237,.55),0 0 28px rgba(34,211,238,.4)}.siwg .siwg-icon{width:28px;height:28px;flex:0 0 28px;display:block;border-radius:6px}.siwg:focus-visible{outline:3px solid var(--paper);outline-offset:3px}.siwg[aria-disabled=true]{opacity:.6;cursor:wait}.status{min-height:1.45em;margin:16px 0 0;font-size:14px}.status[data-kind=ok]{color:var(--acid)}.status[data-kind=bad]{color:var(--hot)}.grok-pair{margin:16px 0 0}.grok-code{margin:0 0 8px;color:#fff;font:900 clamp(1.8rem,8vw,2.6rem)/1.05 Arial,Helvetica,sans-serif;letter-spacing:.12em}.grok-say{margin:0;color:rgba(244,237,219,.86)}.note{margin:14px 0 0;font-size:13px}.note a{display:inline-flex;align-items:center;min-height:44px;color:var(--paper)}.payout-note{margin:-6px 0 18px;font-size:13px;color:rgba(244,237,219,.55)}.email-form{display:grid;gap:10px}.field{width:100%;min-height:52px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:#0b0710;color:var(--paper);font:16px/1.2 Arial,Helvetica,sans-serif}.field::placeholder{color:rgba(244,237,219,.4)}[hidden]{display:none!important}:focus-visible{outline:3px solid var(--acid);outline-offset:4px}
+    *{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 70% 15%,rgba(124,77,255,.3),transparent 25rem),var(--ink);color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif}.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:12px 16px;background:var(--acid);color:var(--ink)!important;font-weight:900;text-decoration:none}.skip-link:focus{left:12px;top:12px;outline:3px solid var(--paper);outline-offset:2px}.login{width:min(28rem,100%);padding:28px;border:1px solid var(--line);background:#120c18;box-shadow:10px 10px 0 var(--hot)}.brand{color:var(--acid);font-size:13px;font-weight:900;letter-spacing:.12em;text-decoration:none;text-transform:uppercase}h1{margin:14px 0 8px;font-size:clamp(2.5rem,12vw,4.5rem);line-height:.9;letter-spacing:-.06em}p{margin:0 0 18px;color:rgba(244,237,219,.78)}.methods{display:grid;gap:12px}.button{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border:1px solid var(--paper);border-radius:999px;background:transparent;color:var(--paper);font:900 14px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em;text-decoration:none;cursor:pointer}.button.primary{border-color:var(--acid);background:var(--acid);color:var(--ink);box-shadow:4px 4px 0 var(--hot)}.button:disabled{opacity:.6;cursor:wait}.siwg{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#22d3ee);color:#fff;font:900 15px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em;text-decoration:none;cursor:pointer;box-shadow:0 0 12px rgba(124,58,237,.35),0 0 14px rgba(34,211,238,.25)}.siwg .siwg-icon{width:28px;height:28px;flex:0 0 28px;display:block;border-radius:6px}.siwg:focus-visible{outline:3px solid var(--paper);outline-offset:3px}.siwg[aria-disabled=true]{opacity:.6;cursor:wait}.status{min-height:1.45em;margin:16px 0 0;font-size:14px}.status[data-kind=ok]{color:var(--acid)}.status[data-kind=bad]{color:var(--hot)}.grok-pair{margin:16px 0 0}.grok-code{margin:0 0 8px;color:#fff;font:900 clamp(1.8rem,8vw,2.6rem)/1.05 Arial,Helvetica,sans-serif;letter-spacing:.12em}.grok-say{margin:0;color:rgba(244,237,219,.86)}.note{margin:14px 0 0;font-size:13px}.note a{display:inline-flex;align-items:center;min-height:44px;color:var(--paper)}.provider-hint{margin:-4px 0 12px;font-size:13px;color:rgba(244,237,219,.6)}.email-form{display:grid;gap:10px}.field{width:100%;min-height:52px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:#0b0710;color:var(--paper);font:16px/1.2 Arial,Helvetica,sans-serif}.field::placeholder{color:rgba(244,237,219,.4)}.resend-attn{border-color:var(--acid);box-shadow:0 0 0 2px rgba(223,255,0,.35)}[hidden]{display:none!important}:focus-visible{outline:3px solid var(--acid);outline-offset:4px}
   </style>
 </head>
 <body>
@@ -959,18 +959,20 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
   <main class="login" id="dasha-login" data-dasha-login>
     <a class="brand" href="https://www.getdasha.com/">$dasha</a>
     <h1>Log in.</h1>
-    <p>Sign in. Grok Bot, X, email, or a wallet.</p>
-    <p class="payout-note">Providing a Mac? Payout is via Solana wallet.</p>
+    <p>Sign in. Grok Bot, X, Google, email, or a wallet.</p>
+    <p class="provider-hint" data-provider-hint hidden></p>
     <div class="methods" data-login-methods>
       <a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>
       <a class="button primary" href="https://lobby.getdasha.com/oauth/x/start" data-x-login>Continue with X</a>
+      <a class="button" href="https://lobby.getdasha.com/oauth/google/start" data-google-login>Continue with Google</a>
       <button class="button" type="button" data-wallet-login>Connect wallet</button>
       <div class="email-form" data-email-form>
         <input class="field" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" aria-label="Email address" data-email-input>
         <button class="button" type="button" data-email-send>Email me a sign-in code</button>
-        <input class="field" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" aria-label="Sign-in code" data-email-code hidden>
+        <button class="button" type="button" data-email-resend hidden>Resend code</button>
+        <input class="field" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" aria-label="Sign-in code" aria-describedby="dasha-email-status" data-email-code hidden>
         <button class="button primary" type="button" data-email-verify hidden>Sign in</button>
-        <p class="status" data-email-status role="status" aria-live="polite"></p>
+        <p class="status" id="dasha-email-status" data-email-status role="status" aria-live="polite"></p>
       </div>
     </div>
     <div class="grok-pair" data-grok-pair hidden>
@@ -1004,48 +1006,111 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     }
     document.querySelector('[data-grok-login]') && document.querySelector('[data-grok-login]').addEventListener('click', function () { dashaBeacon('start:grok'); });
     document.querySelector('[data-x-login]') && document.querySelector('[data-x-login]').addEventListener('click', function () { dashaBeacon('start:x'); });
+    document.querySelector('[data-google-login]') && document.querySelector('[data-google-login]').addEventListener('click', function () { dashaBeacon('start:google'); });
     document.querySelector('[data-wallet-login]') && document.querySelector('[data-wallet-login]').addEventListener('click', function () { dashaBeacon('start:wallet'); });
     var form = document.querySelector('[data-email-form]');
     if (!form) return;
+    // "Last time you signed in with X" — device-local only, no enumeration risk.
+    var hint = document.querySelector('[data-provider-hint]');
+    function providerName(p) {
+      return { email: 'email', x: 'X', google: 'Google', github: 'GitHub', grok: 'Grok Bot', wallet: 'your wallet' }[p] || p;
+    }
+    function rememberProvider(p) { try { localStorage.setItem('dasha_last_provider', p); } catch (e) {} }
+    try {
+      var lastP = localStorage.getItem('dasha_last_provider');
+      if (lastP && hint) { hint.textContent = 'Last time you signed in with ' + providerName(lastP) + '.'; hint.hidden = false; }
+    } catch (e) {}
+    window.addEventListener('message', function (ev) {
+      if (ev.origin !== API || !ev.data || typeof ev.data.type !== 'string') return;
+      var p = ev.data.type === 'dasha-x-linked' ? 'x'
+        : ev.data.type === 'dasha-google-linked' ? 'google'
+        : ev.data.type === 'dasha-github-linked' ? 'github' : null;
+      if (p) rememberProvider(p);
+    });
     var emailInput = form.querySelector('[data-email-input]');
     var codeInput = form.querySelector('[data-email-code]');
     var sendBtn = form.querySelector('[data-email-send]');
+    var resendBtn = form.querySelector('[data-email-resend]');
     var verifyBtn = form.querySelector('[data-email-verify]');
     var status = form.querySelector('[data-email-status]');
+    var codeSentAt = 0;
+    var cooldownTimer = null;
     function say(kind, text) { status.dataset.kind = kind; status.textContent = text; }
     function fail(msg) { say('bad', msg || 'Something went wrong. Try again.'); }
-    sendBtn.addEventListener('click', function () {
-      dashaBeacon('start:email');
+    function stopCooldown() { if (cooldownTimer) { clearTimeout(cooldownTimer); cooldownTimer = null; } }
+    function resetResendBtn() {
+      stopCooldown();
+      resendBtn.disabled = false;
+      resendBtn.textContent = 'Resend code';
+      resendBtn.classList.remove('resend-attn');
+    }
+    function startCooldown(sec) {
+      stopCooldown();
+      var left = sec;
+      resendBtn.disabled = true;
+      (function tick() {
+        if (left <= 0) { resetResendBtn(); return; }
+        resendBtn.textContent = 'Resend in 0:' + String(left).padStart(2, '0');
+        left -= 1;
+        cooldownTimer = setTimeout(tick, 1000);
+      })();
+    }
+    function codeExpired() {
+      say('bad', 'That code expired. Get a new one.');
+      sendBtn.hidden = true;
+      resendBtn.hidden = false;
+      resetResendBtn();
+      resendBtn.classList.add('resend-attn');
+      setTimeout(function () { resendBtn.classList.remove('resend-attn'); }, 6000);
+    }
+    function requestCode(isResend) {
+      dashaBeacon(isResend ? 'resend:email' : 'start:email');
       var email = emailInput.value.trim();
-      if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
-      sendBtn.disabled = true; say('', 'Sending code...');
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
+      sendBtn.disabled = true; resendBtn.disabled = true;
+      say('', isResend ? 'Sending a new code...' : 'Sending code...');
       fetch(API + '/auth/email/start', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) })
         .then(function (res) { return res.json().then(function (body) { return { status: res.status, body: body }; }); })
         .then(function (r) {
           sendBtn.disabled = false;
           if (r.status === 200 && r.body.ok) {
-            codeInput.hidden = false; verifyBtn.hidden = false; codeInput.focus();
-            say('ok', 'Code sent - check your inbox. It expires in 10 minutes.');
+            codeSentAt = Date.now();
+            codeInput.hidden = false; verifyBtn.hidden = false;
+            sendBtn.hidden = true; resendBtn.hidden = false;
+            startCooldown(60);
+            codeInput.focus();
+            say('ok', isResend ? 'New code sent - check your inbox. It expires in 10 minutes.' : 'Code sent - check your inbox. It expires in 10 minutes.');
           } else if (r.status === 503) {
-            fail('Email sign-in is not available yet. Use Grok Bot, X, or a wallet.');
+            fail('Email sign-in is not available yet. Use Grok Bot, X, Google, or a wallet.');
+            resetResendBtn();
+          } else if (r.status === 429) {
+            fail('Too many tries. Wait a bit, then try again.');
+            resetResendBtn();
           } else {
             fail(r.body && r.body.error ? r.body.error : 'Could not send the code.');
+            resetResendBtn();
           }
         })
-        .catch(function () { sendBtn.disabled = false; fail('Network error - try again.'); });
-    });
+        .catch(function () { sendBtn.disabled = false; resetResendBtn(); fail('Network error - try again.'); });
+    }
+    sendBtn.addEventListener('click', function () { requestCode(false); });
+    resendBtn.addEventListener('click', function () { requestCode(true); });
     verifyBtn.addEventListener('click', function () {
       var email = emailInput.value.trim();
       var code = codeInput.value.trim();
-      if (!/^\\d{6}$/.test(code)) { fail('Enter the 6-digit code.'); return; }
+      if (!/^\d{6}$/.test(code)) { fail('Enter the 6-digit code.'); return; }
+      if (codeSentAt && Date.now() - codeSentAt >= 600000) { codeExpired(); return; }
       verifyBtn.disabled = true; say('', 'Checking...');
       fetch(API + '/auth/email/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, code: code }) })
         .then(function (res) { return res.json().then(function (body) { return { status: res.status, body: body }; }); })
         .then(function (r) {
           verifyBtn.disabled = false;
           if (r.status === 200 && r.body.ok) {
+            rememberProvider('email');
             say('ok', 'Signed in. Redirecting...');
             window.location.href = '/contribute';
+          } else if (r.status === 409) {
+            codeExpired();
           } else {
             fail(r.body && r.body.error ? r.body.error : 'Sign-in failed.');
           }
@@ -1054,7 +1119,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     });
   })();
   </script>
-  <script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer></script>
+  <script src="https://lobby.getdasha.com/client/x-connect.js" integrity="__X_CONNECT_SRI__" crossorigin="anonymous" defer></script>
 </body>
 </html>
 `;
