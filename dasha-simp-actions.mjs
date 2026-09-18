@@ -269,6 +269,75 @@ export function walletLoginMessage({ publicKey, nonce, issuedAt, expiresAt, doma
   return `${domain} wants you to sign in with your Solana account:\n${publicKey}\n\nLog in to Dasha. This signature sends no transaction and proves address control only.\n\nURI: ${uri}\nVersion: 1\nChain ID: mainnet\nNonce: ${nonce}\nIssued At: ${new Date(issuedAt).toISOString()}\nExpiration Time: ${new Date(expiresAt).toISOString()}\nRequest ID: dasha-login`;
 }
 
+/**
+ * Sign-In with Solana (wallet-standard `signIn`, Phantom 23.11+) message parsing.
+ *
+ * Unlike the legacy connect+signMessage flow (where the server composes
+ * `walletLoginMessage`), the wallet itself builds the standardized auth message
+ * from the client's signIn input. The server must therefore parse the exact
+ * bytes the wallet signed and validate every security-relevant field against
+ * the issued challenge: domain + URI stay origin-bound, the nonce must match
+ * the single-use server nonce, and the chain ID + timestamps must be sane.
+ * Shape per the phantom/sign-in-with-solana spec.
+ *
+ * Returns the parsed fields (plus `raw`) or throws on any shape violation.
+ */
+export function parseSiwsMessage(text) {
+  const raw = String(text || '');
+  if (!raw || raw.length > 4096) throw new Error('invalid sign-in message');
+  const lines = raw.split('\n');
+  const head = /^(\S+) wants you to sign in with your Solana account:$/.exec(lines[0] || '');
+  if (!head) throw new Error('invalid sign-in message');
+  const address = (lines[1] || '').trim();
+  if (!isValidSolanaAddress(address)) throw new Error('invalid sign-in message');
+  const fields = {};
+  const resources = [];
+  let statement = '';
+  for (let i = 2; i < lines.length; i++) {
+    const line = lines[i];
+    const kv = /^([A-Za-z][A-Za-z0-9 ]*): (.*)$/.exec(line);
+    if (kv) {
+      fields[kv[1].trim().toLowerCase()] = kv[2].trim();
+      continue;
+    }
+    if (/^- /.test(line)) { resources.push(line.slice(2).trim()); continue; }
+    if (line.trim() === '') continue;
+    statement += (statement ? '\n' : '') + line;
+  }
+  return {
+    domain: head[1],
+    address,
+    statement,
+    uri: fields['uri'] || '',
+    version: fields['version'] || '',
+    chainId: fields['chain id'] || '',
+    nonce: fields['nonce'] || '',
+    issuedAt: fields['issued at'] || '',
+    expirationTime: fields['expiration time'] || '',
+    resources,
+    raw,
+  };
+}
+
+/**
+ * Validate a parsed SIWS message against the issued challenge.
+ * Throws on the first violation; returns the parsed message when valid.
+ */
+export function validateSiwsSignin(parsed, { domain, uri, nonce, now = Date.now() } = {}) {
+  if (!parsed || typeof parsed !== 'object') throw new Error('invalid sign-in message');
+  if (parsed.domain !== domain) throw new Error('sign-in domain mismatch');
+  if (parsed.uri !== uri) throw new Error('sign-in uri mismatch');
+  if (!parsed.nonce || parsed.nonce !== nonce) throw new Error('sign-in nonce mismatch');
+  if (parsed.chainId !== 'solana:mainnet') throw new Error('sign-in chain mismatch');
+  const issuedAt = Date.parse(parsed.issuedAt);
+  const expirationTime = Date.parse(parsed.expirationTime);
+  if (!Number.isFinite(issuedAt) || !Number.isFinite(expirationTime)) throw new Error('invalid sign-in message');
+  if (issuedAt > now + 60_000) throw new Error('sign-in message from the future');
+  if (expirationTime <= now) throw new Error('sign-in message expired');
+  if (expirationTime - issuedAt > 15 * 60_000) throw new Error('invalid sign-in message');
+  return parsed;
+}
+
 export function base58Decode(text) {
   const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
   let value = 0n;
