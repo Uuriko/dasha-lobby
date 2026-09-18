@@ -79,5 +79,42 @@ export function attachReceiptHonesty(receipt, job) {
   Object.assign(next, honestLoopFields(job));
   const latency = firstCompletionLatencyMs(job);
   if (latency != null) next.latency_ms = latency;
-  return next;
+  return attachResidualControl(next, job);
+}
+
+export const BONSAI_MODEL_ID = 'ternary-bonsai-2-27b';
+export const BONSAI_RESIDUAL_SITES = 129;
+
+/** Fail-closed. Missing / non-finite / out-of-range is omit — never invent 0. */
+export function parseResidualAlpha(raw) {
+  if (raw == null || raw === '') return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < -8 || n > 8) return null;
+  return n;
+}
+
+function isBonsaiModel(id) {
+  return String(id || '').trim().toLowerCase().includes('bonsai');
+}
+
+/**
+ * Provider-reported residual control on Bonsai only.
+ * Worker never defaults α — kit default 0 is stock and must be sent to appear.
+ */
+export function residualControlFields(input, model) {
+  const id = String(model || input?.model || '').trim();
+  if (!isBonsaiModel(id)) return {};
+  const alpha = parseResidualAlpha(input?.residual_alpha);
+  if (alpha == null) return {};
+  const fields = { residual_alpha: alpha };
+  const sites = Math.floor(Number(input?.residual_site_count));
+  if (Number.isFinite(sites) && sites > 0 && sites <= 1024) fields.residual_site_count = sites;
+  return fields;
+}
+
+export function attachResidualControl(receipt, job) {
+  if (!receipt || typeof receipt !== 'object') return receipt;
+  const fields = residualControlFields(job, job?.model);
+  if (!Object.keys(fields).length) return receipt;
+  return { ...receipt, ...fields };
 }

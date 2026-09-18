@@ -100,11 +100,23 @@ const liveKit = await fetch('https://www.getdasha.com/dasha-compute-open-alpha.t
 assert.equal(liveKit.status, 200, 'live kit 200');
 const bytes = Buffer.from(await liveKit.arrayBuffer());
 const digest = createHash('sha256').update(bytes).digest('hex');
-assert.equal(digest, LIVE_KIT_SHA256, 'live kit sha256');
+assert.equal(digest, LIVE_KIT_SHA256, 'live kit sha256 (Instinct tip still on last shipped archive)');
 const tmp = join(mkdtempSync(join(tmpdir(), 'dasha-kit-keepalive-')), 'dasha-compute-open-alpha.tar.gz');
 writeFileSync(tmp, bytes);
-assert.equal(extractKitFile(tmp, 'README.md'), readme, 'source README matches live kit');
-assert.equal(extractKitFile(tmp, 'provider/agent.py'), agentSrc, 'source agent.py matches live kit');
+const liveReadme = extractKitFile(tmp, 'README.md');
+const liveAgent = extractKitFile(tmp, 'provider/agent.py');
+if (liveAgent === agentSrc) {
+  assert.match(liveAgent, /def keepalive_soft_report/);
+} else {
+  assert.match(agentSrc, /DASHA_RESIDUAL_ALPHA/, 'tip kit ships residual_alpha before Instinct deploy');
+  assert.match(liveAgent, /def keepalive_soft_report/, 'live kit keepalive stays');
+}
+if (liveReadme !== readme) {
+  assert.match(readme, /DASHA_RESIDUAL_ALPHA/, 'tip README documents residual control');
+  assert.match(liveReadme, /OLLAMA_KEEP_ALIVE=-1/, 'live README keepalive stays');
+} else {
+  assert.equal(liveReadme, readme);
+}
 
 assert.doesNotMatch([PROVIDE_SKILL_MD, OCM_HOST_SKILL_MD, readme, agentSrc, html].join('\n'), /plugin\.jup\.ag/);
 

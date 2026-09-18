@@ -110,6 +110,7 @@ import {
   attachReceiptHonesty,
   countConversationTurns,
   honestLoopFields,
+  residualControlFields,
 } from './dasha-compute-receipt-honesty.mjs';
 import { canAdvertiseModel, filterAdvertisableModels } from './dasha-compute-model-license.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
@@ -2068,7 +2069,8 @@ export class ComputeNetwork {
         }
       }
       if (error) await this.refundJobDebit(job, now, error);
-      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, usage_gateway: usageGateway, ...(usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), attempts: closeAttempt(job.attempts, error ? 'failed' : 'complete'), messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
+      const residual = residualControlFields(input, job.model);
+      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, usage_gateway: usageGateway, ...(usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), attempts: closeAttempt(job.attempts, error ? 'failed' : 'complete'), messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch, ...residual });
       await this.finishNight(job, error ? 'failed' : 'complete', error ? null : answer, error || null, now);
       await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
       return json({ accepted: true }, 202);
@@ -2119,7 +2121,8 @@ export class ComputeNetwork {
       const failed = Boolean(streamError);
       const finished = failed || Boolean(input.done);
       if (failed) await this.refundJobDebit(job, now, streamError);
-      await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, ...(usageGateway ? { usage_gateway: usageGateway } : {}), ...(finishedEarly && usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), ...(finishedEarly ? { attempts: closeAttempt(job.attempts, failed ? 'failed' : 'complete') } : {}), messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
+      const residual = finished ? residualControlFields(input, job.model) : {};
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, ...(usageGateway ? { usage_gateway: usageGateway } : {}), ...(finishedEarly && usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), ...(finishedEarly ? { attempts: closeAttempt(job.attempts, failed ? 'failed' : 'complete') } : {}), messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch, ...residual });
       if (finished) {
         await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : joinedStripped, streamError || null, now);
         await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
