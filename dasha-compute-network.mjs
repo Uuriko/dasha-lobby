@@ -2453,46 +2453,6 @@ export class ComputeNetwork {
         verify: 'checkpoint.sig = ed25519 over the UTF-8 bytes of checkpoint.text with the signer key from /keys.json; head.hash = sha256(JSON.stringify({ts,tip,prev_head_hash})); head.sig per /compute/llms.txt. Store a checkpoint and compare against future /heads responses to catch a rewritten tail.',
       }, 200, '*', false, { 'Cache-Control': 'no-cache' }));
     }
-    if (path === '/compute/api/launch-notify/count' || path === '/compute/api/launch-notify/count/') {
-      const items = [...await this.state.storage.list({ prefix: 'launch:notify:' })].filter((entry) => !String(entry[0]).startsWith('launch:notify:ip:'));
-      return maybeHead(request, json({ count: items.length }, 200, allowedOrigin, true));
-    }
-    if (path === '/compute/api/launch-notify' || path === '/compute/api/launch-notify/') {
-      if (request.method === 'DELETE') {
-        const removeInput = await body(request);
-        const removeEmail = String(removeInput && removeInput.email || '').trim().toLowerCase();
-        if (!/^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/.test(removeEmail)) {
-          return maybeHead(request, json({ error: 'a valid email address is required' }, 400, allowedOrigin, true));
-        }
-        const removeKey = 'launch:notify:' + removeEmail;
-        const removeExisting = await this.state.storage.get(removeKey);
-        if (removeExisting) {
-          await this.state.storage.delete(removeKey);
-        }
-        return maybeHead(request, json({ ok: true, status: removeExisting ? 'removed' : 'not_found' }, 200, allowedOrigin, true));
-      }
-      if (request.method !== 'POST') {
-        return maybeHead(request, json({ error: 'method not allowed; POST {email} here, DELETE {email} to remove, GET count at /compute/api/launch-notify/count' }, 405, allowedOrigin, true));
-      }
-      const launchInput = await body(request);
-      const launchEmail = String(launchInput && launchInput.email || '').trim().toLowerCase();
-      if (!/^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/.test(launchEmail)) {
-        return maybeHead(request, json({ error: 'a valid email address is required' }, 400, allowedOrigin, true));
-      }
-      const launchIp = request.headers.get('cf-connecting-ip') || 'unknown';
-      const launchIpKey = 'launch:notify:ip:' + launchIp + ':' + Math.floor(Date.now() / 36e5);
-      const launchIpCount = Number(await this.state.storage.get(launchIpKey) || 0);
-      if (launchIpCount >= 5) {
-        return maybeHead(request, json({ error: 'rate limited; try again later' }, 429, allowedOrigin, true));
-      }
-      await this.state.storage.put(launchIpKey, launchIpCount + 1);
-      const launchKey = 'launch:notify:' + launchEmail;
-      const launchExisting = await this.state.storage.get(launchKey);
-      if (!launchExisting) {
-        await this.state.storage.put(launchKey, { email: launchEmail, ts: Date.now() });
-      }
-      return maybeHead(request, json({ ok: true, status: launchExisting ? 'already' : 'subscribed' }, launchExisting ? 200 : 201, allowedOrigin, true));
-    }
     const headsArchiveMatch = path.match(/^\/heads\/archive\/(\d{4}-\d{2}-\d{2})\.json$/);
     if (headsArchiveMatch && (request.method === 'GET' || request.method === 'HEAD')) {
       const key = await headsSigningKey(this.env);
@@ -3412,10 +3372,6 @@ export async function computeApi(request, env, allowedOrigin) {
     } catch {
       return computeApiError('internal error; the request may already be accepted. If you received a job id (job_id field or X-Dasha-Job header), GET /compute/api/jobs/<id> for the recorded outcome; retry with the same Idempotency-Key to avoid a second charge.', 500, allowedOrigin, credentials, 'server_error');
     }
-  }
-  if (path === '/compute/api/launch-notify' || path === '/compute/api/launch-notify/' || path === '/compute/api/launch-notify/count' || path === '/compute/api/launch-notify/count/') {
-    const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
-    return stub ? stub.fetch(request) : json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
   }
   if (path !== '/compute/api/chat' && path !== '/compute/api/chat/') return computeApiError('not found', 404, allowedOrigin, credentials);
   if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
