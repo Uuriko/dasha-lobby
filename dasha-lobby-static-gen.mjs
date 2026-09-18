@@ -962,10 +962,19 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     <p>Sign in. Grok Bot, X, Google, email, or a wallet.</p>
     <p class="provider-hint" data-provider-hint hidden></p>
     <div class="methods" data-login-methods>
+      <!--login-method:grok-->
       <a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>
+      <!--/login-method:grok-->
+      <!--login-method:x-->
       <a class="button primary" href="https://lobby.getdasha.com/oauth/x/start" data-x-login>Continue with X</a>
+      <!--/login-method:x-->
+      <!--login-method:google-->
       <a class="button" href="https://lobby.getdasha.com/oauth/google/start" data-google-login>Continue with Google</a>
+      <!--/login-method:google-->
+      <!--login-method:wallet-->
       <button class="button" type="button" data-wallet-login>Connect wallet</button>
+      <!--/login-method:wallet-->
+      <!--login-method:email-->
       <div class="email-form" data-email-form>
         <input class="field" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" aria-label="Email address" data-email-input>
         <button class="button" type="button" data-email-send>Email me a sign-in code</button>
@@ -974,6 +983,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
         <button class="button primary" type="button" data-email-verify hidden>Sign in</button>
         <p class="status" id="dasha-email-status" data-email-status role="status" aria-live="polite"></p>
       </div>
+      <!--/login-method:email-->
     </div>
     <div class="grok-pair" data-grok-pair hidden>
       <p class="grok-code" data-grok-code></p>
@@ -1008,18 +1018,27 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     document.querySelector('[data-x-login]') && document.querySelector('[data-x-login]').addEventListener('click', function () { dashaBeacon('start:x'); });
     document.querySelector('[data-google-login]') && document.querySelector('[data-google-login]').addEventListener('click', function () { dashaBeacon('start:google'); });
     document.querySelector('[data-wallet-login]') && document.querySelector('[data-wallet-login]').addEventListener('click', function () { dashaBeacon('start:wallet'); });
-    var form = document.querySelector('[data-email-form]');
-    if (!form) return;
     // "Last time you signed in with X" — device-local only, no enumeration risk.
+    // Hidden when that method is not configured: never advertise a dead door.
     var hint = document.querySelector('[data-provider-hint]');
     function providerName(p) {
       return { email: 'email', x: 'X', google: 'Google', github: 'GitHub', grok: 'Grok Bot', wallet: 'your wallet' }[p] || p;
     }
     function rememberProvider(p) { try { localStorage.setItem('dasha_last_provider', p); } catch (e) {} }
+    function loginMethodsAvailable() {
+      try {
+        var raw = document.querySelector('[data-login-methods]').getAttribute('data-login-methods');
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    }
     try {
       var lastP = localStorage.getItem('dasha_last_provider');
-      if (lastP && hint) { hint.textContent = 'Last time you signed in with ' + providerName(lastP) + '.'; hint.hidden = false; }
+      var methodsAvail = loginMethodsAvailable();
+      if (lastP && hint && (methodsAvail === null || methodsAvail[lastP] !== false)) { hint.textContent = 'Last time you signed in with ' + providerName(lastP) + '.'; hint.hidden = false; }
     } catch (e) {}
+    var form = document.querySelector('[data-email-form]');
+    if (!form) return;
     window.addEventListener('message', function (ev) {
       if (ev.origin !== API || !ev.data || typeof ev.data.type !== 'string') return;
       var p = ev.data.type === 'dasha-x-linked' ? 'x'
@@ -1066,7 +1085,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     function requestCode(isResend) {
       dashaBeacon(isResend ? 'resend:email' : 'start:email');
       var email = emailInput.value.trim();
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
+      if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
       sendBtn.disabled = true; resendBtn.disabled = true;
       say('', isResend ? 'Sending a new code...' : 'Sending code...');
       fetch(API + '/auth/email/start', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) })
@@ -1098,7 +1117,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     verifyBtn.addEventListener('click', function () {
       var email = emailInput.value.trim();
       var code = codeInput.value.trim();
-      if (!/^\d{6}$/.test(code)) { fail('Enter the 6-digit code.'); return; }
+      if (!/^\\d{6}$/.test(code)) { fail('Enter the 6-digit code.'); return; }
       if (codeSentAt && Date.now() - codeSentAt >= 600000) { codeExpired(); return; }
       verifyBtn.disabled = true; say('', 'Checking...');
       fetch(API + '/auth/email/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, code: code }) })
