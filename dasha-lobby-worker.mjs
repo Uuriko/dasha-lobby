@@ -39,6 +39,7 @@ import {
   createEmailSessionToken,
   authSessionFromRequest,
   sessionFromRequest,
+  revokeSessionSid,
   cookieHeader,
   grokStartCookieHeader,
   GROK_START_COOKIE,
@@ -8626,6 +8627,16 @@ export function grokBotWellKnownResponse(request) {
   });
 }
 
+/**
+ * Task-17 rotation on DO paths (storage available): revoke the request's
+ * current session sid server-side, if any. Call before minting a new token
+ * (login) or after destructive actions (account deletion).
+ */
+async function revokePreviousSessionSid(doInstance, request) {
+  const prev = await authSessionFromRequest(doInstance.env, request);
+  if (prev?.sid) await revokeSessionSid(doInstance.state.storage, prev.sid);
+}
+
 export class DashaLobby {
   constructor(state, env) {
     this.state = state;
@@ -9089,6 +9100,8 @@ export class DashaLobby {
       else await this.state.storage.delete('walletLogins');
       const token = await createWalletSessionToken(this.env, body.publicKey);
       await bumpLobbyMetric(this.state.storage, 'signin:success:wallet');
+      // Task 17: a fresh login rotates the session — revoke the pre-login sid if any.
+      await revokePreviousSessionSid(this, request);
       return json({ ok: true, provider: 'wallet' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -9168,6 +9181,8 @@ export class DashaLobby {
       else await this.state.storage.delete('emailLogins');
       const token = await createEmailSessionToken(this.env, email);
       await bumpLobbyMetric(this.state.storage, 'signin:success:email');
+      // Task 17: a fresh login rotates the session — revoke the pre-login sid if any.
+      await revokePreviousSessionSid(this, request);
       return json({ ok: true, provider: 'email' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -9231,6 +9246,8 @@ export class DashaLobby {
       else await this.state.storage.delete('grokLogins');
       const token = await createGrokSessionToken(this.env, pending.displayName);
       await bumpLobbyMetric(this.state.storage, 'signin:success:grok');
+      // Task 17: a fresh login rotates the session — revoke the pre-login sid if any.
+      await revokePreviousSessionSid(this, request);
       return json({ state: 'ok', provider: 'grok' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
@@ -9425,7 +9442,7 @@ export class DashaLobby {
     }
 
     if (path === '/simp/me' && request.method === 'GET') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       let referralChanged = Boolean(this.pruneReferralState());
       if (session?.xId) {
         const key = String(session.xId), pending = this.simpReferrals[key];
@@ -9474,7 +9491,7 @@ export class DashaLobby {
     }
 
     if (path === '/simp/referral') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const xId = String(session?.xId || '');
       if (!xId) return json({ error: 'link X first' }, 401, allowedOrigin, cred);
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
@@ -9513,7 +9530,7 @@ export class DashaLobby {
     }
 
     if (path === '/simp/quiz') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const xId = session?.xId ? String(session.xId) : null;
       const completed = xId ? this.simpProfiles[xId]?.quiz : null;
       if (request.method === 'GET') return json({ ok: true, ...quizPublic(), ...(completed ? { completed: true, quiz: completed } : { ready: true }) }, 200, allowedOrigin, cred);
@@ -9635,7 +9652,7 @@ export class DashaLobby {
     if (path === '/simp/spotlight') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const xId = String(session?.xId || '');
       const rate = simpRate(this.simpRates, `simp-spotlight:${xId || 'anon'}`, 6);
       if (!rate.ok) return json({ error: 'spotlight updates rate limited', waitMs: rate.waitMs }, 429, allowedOrigin, cred);
@@ -9651,7 +9668,7 @@ export class DashaLobby {
       if (request.method !== 'POST') {
         return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       }
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const result = joinBoard(this.simpProfiles, session);
       if (!result.ok) return json({ error: result.error }, result.status || 401, allowedOrigin, cred);
       this.simpProfiles = result.store;
@@ -9673,7 +9690,7 @@ export class DashaLobby {
       if (request.method !== 'POST') {
         return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       }
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const profile = session?.xId ? this.simpProfiles[String(session.xId)] : null;
       const result = leaveBoard(this.simpProfiles, session);
       if (!result.ok) return json({ error: result.error }, result.status || 401, allowedOrigin, cred);
@@ -9689,6 +9706,8 @@ export class DashaLobby {
       await this.state.storage.delete(`simpHolder:${session.xId}`);
       await this.persistSimpState();
       await this.persistChess();
+      // Task 17: account deletion kills the session server-side too.
+      await revokePreviousSessionSid(this, request);
       return json(
         {
           ok: true,
@@ -9702,7 +9721,7 @@ export class DashaLobby {
     }
 
     if (path === '/simp/claims') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (request.method === 'GET') return json({ ok: true, claims: claimsForSession(this.simpClaims, session) }, 200, allowedOrigin, cred);
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       const result = submitClaim(this.simpClaims, this.simpProfiles, session, await requestJson(request), { id: id() });
@@ -9748,7 +9767,7 @@ export class DashaLobby {
     if (path === '/simp/wallet/challenge') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId || !this.simpProfiles[String(session.xId)]) return json({ error: 'join board first' }, 401, allowedOrigin, cred);
       const publicKey = String((await requestJson(request)).publicKey || '');
       if (!isValidSolanaAddress(publicKey)) return json({ error: 'valid Solana address required' }, 400, allowedOrigin, cred);
@@ -9766,7 +9785,7 @@ export class DashaLobby {
     if (path === '/simp/wallet/verify') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (session?.xId) {
         const allowed = simpRate(this.simpRates, `holder-verify:${session.xId}`, 4);
         if (!allowed.ok) return json({ error: 'holder check rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
@@ -9798,7 +9817,7 @@ export class DashaLobby {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, '');
     const cred = { credentials: true };
-    const session = await sessionFromRequest(this.env, request);
+    const session = await sessionFromRequest(this.env, request, this.state.storage);
     const xId = session?.xId ? String(session.xId) : '';
     const profile = xId ? this.simpProfiles[xId] : null;
     const holder = Boolean(profile && Number(profile.holderUntil) > Date.now());
@@ -10635,7 +10654,7 @@ export class DashaLobby {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, '');
     const cred = { credentials: true };
-    const session = await sessionFromRequest(this.env, request);
+    const session = await sessionFromRequest(this.env, request, this.state.storage);
     const xId = session?.xId ? String(session.xId) : '';
     const handle = session?.handle || '';
     const avatar = session?.avatar || null;
@@ -10813,6 +10832,23 @@ export class DashaLobby {
 
   async fetch(request) {
     const url = new URL(request.url);
+    // Internal session-revocation RPC for worker-isolate paths (OAuth callbacks,
+    // logouts) that mint/clear cookies without DO storage. Gated by the session
+    // secret — same trust as the worker itself.
+    if (url.pathname === '/internal/session/revoke' && request.method === 'POST') {
+      const secret = request.headers.get('x-dasha-internal');
+      if (!this.env.LOBBY_SESSION_SECRET || secret !== String(this.env.LOBBY_SESSION_SECRET)) {
+        return json({ error: 'unauthorized' }, 401, null);
+      }
+      let sid = null;
+      try {
+        sid = (await request.json())?.sid;
+      } catch {
+        sid = null;
+      }
+      if (typeof sid === 'string' && sid) await revokeSessionSid(this.state.storage, sid);
+      return json({ ok: true }, 200, null);
+    }
     if (isComputeApiPath(url.pathname) || isHeadsPath(url.pathname) || isComputeBadgePath(url.pathname)) {
       const origin = request.headers.get('Origin');
       const allowedOrigin = origin && originAllowed(origin, this.env.ALLOWED_ORIGINS || '') ? origin : null;
@@ -10872,7 +10908,7 @@ export class DashaLobby {
       return new Response('origin not allowed', { status: 403, headers: SECURITY });
     }
 
-    const link = await sessionFromRequest(this.env, request);
+    const link = await sessionFromRequest(this.env, request, this.state.storage);
     const holder = Boolean(link?.xId && Number(this.simpProfiles[String(link.xId)]?.holderUntil) > Date.now());
     const limits = linkedLimits(Boolean(link), holder);
     const count = this.liveCount();
@@ -11118,6 +11154,37 @@ export class DashaLobby {
   }
 }
 
+/**
+ * Task-17 rotation from worker-isolate paths (no DO storage there): revoke a
+ * session id via the lobby DO's internal endpoint. Best-effort — the cookie
+ * is always replaced/cleared regardless; a failed RPC only weakens the
+ * server-side kill, never the client-visible flow.
+ */
+async function revokeSessionViaLobbyDO(env, sid) {
+  try {
+    if (!sid || !env?.LOBBY || !env?.LOBBY_SESSION_SECRET) return;
+    const stub = env.LOBBY.get(env.LOBBY.idFromName('public'));
+    await stub.fetch(
+      new Request('https://lobby.getdasha.com/internal/session/revoke', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-dasha-internal': String(env.LOBBY_SESSION_SECRET),
+        },
+        body: JSON.stringify({ sid }),
+      }),
+    );
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Read the current main-cookie session id (if any) so rotation can revoke it. */
+async function currentSessionSid(env, request) {
+  const session = await authSessionFromRequest(env, request);
+  return session?.sid || null;
+}
+
 async function handleOAuth(request, env, allowedOrigin) {
   const url = new URL(request.url);
 
@@ -11144,6 +11211,8 @@ async function handleOAuth(request, env, allowedOrigin) {
   if (url.pathname === '/oauth/x/logout') {
     if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, { credentials: true });
     if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+    // Task 17: unlink kills the token server-side too, not just the cookie.
+    await revokeSessionViaLobbyDO(env, await currentSessionSid(env, request));
     const headers = new Headers({
         ...SECURITY,
         ...corsHeaders(allowedOrigin, { credentials: true }),
@@ -11241,6 +11310,8 @@ async function handleOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', cookieHeader(session));
       headers.append('Set-Cookie', clearLegacyCookieHeader());
       headers.append('Set-Cookie', oauthStateCookie());
+      // Task 17: linking a method rotates the session — the pre-login token dies server-side.
+      await revokeSessionViaLobbyDO(env, await currentSessionSid(env, request));
       return new Response(body, { status: 200, headers });
     } catch (e) {
       return oauthHtmlResponse(
@@ -11336,6 +11407,8 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
       headers.append('Set-Cookie', cookieHeader(session));
       headers.append('Set-Cookie', clearLegacyCookieHeader());
       headers.append('Set-Cookie', googleOauthStateCookie());
+      // Task 17: signing in rotates the session — the pre-login token dies server-side.
+      await revokeSessionViaLobbyDO(env, await currentSessionSid(env, request));
       return new Response(body, { status: 200, headers });
     } catch (error) {
       return googleOauthHtmlResponse(
@@ -11365,6 +11438,8 @@ async function handleGithubOAuth(request, env, allowedOrigin) {
   if (url.pathname === '/oauth/github/logout') {
     if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, { credentials: true });
     if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+    // Task 17: unlink kills the token server-side too, not just the cookie.
+    await revokeSessionViaLobbyDO(env, (await githubSessionFromRequest(env, request))?.sid || null);
     const headers = new Headers({
       ...SECURITY,
       ...corsHeaders(allowedOrigin, { credentials: true }),
@@ -11437,6 +11512,8 @@ async function handleGithubOAuth(request, env, allowedOrigin) {
       const headers = new Headers(privateHtmlHeaders({ 'Content-Type': 'text/html; charset=utf-8' }, scriptNonce));
       headers.append('Set-Cookie', githubCookieHeader(session));
       headers.append('Set-Cookie', githubOauthStateCookie());
+      // Task 17: linking rotates the session — the pre-link token dies server-side.
+      await revokeSessionViaLobbyDO(env, (await githubSessionFromRequest(env, request))?.sid || null);
       return new Response(body, { status: 200, headers });
     } catch (error) {
       return githubOauthHtmlResponse(
@@ -12583,7 +12660,7 @@ export class DashaFaucet {
     }
 
     if (path === '/faucet/me' && (request.method === 'GET' || request.method === 'HEAD')) {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       const xId = session?.xId ? String(session.xId) : '';
       const bind = xId ? this.faucetBinds[xId] : null;
       const cfgMe = faucetConfig(this.env);
@@ -12604,7 +12681,7 @@ export class DashaFaucet {
       const input = await body();
       const err = destShapeError(input.dest, input.last4);
       if (err) return json({ ok: false, error: err }, 200, allowedOrigin, cred);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ ok: false, error: 'link X first' }, 200, allowedOrigin, cred);
       // Shape probe only. Never persist a bind. Never label IS_WALLET.
       return json({ ok: true, dest: String(input.dest).trim() }, 200, allowedOrigin, cred);
@@ -12636,7 +12713,7 @@ export class DashaFaucet {
     if (path === '/faucet/wallet/verify' && request.method === 'POST') {
       if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'not_configured' }, 501, allowedOrigin, cred);
       const input = await body();
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ ok: false, error: 'link X first' }, 401, allowedOrigin, cred);
       const xId = String(session.xId);
 
@@ -12679,7 +12756,7 @@ export class DashaFaucet {
     }
 
     if (path === '/faucet/claim' && request.method === 'POST') {
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ error: 'link X first' }, 401, allowedOrigin, cred);
       const xId = String(session.xId);
       const bind = this.faucetBinds[xId];
@@ -12764,7 +12841,7 @@ export class DashaFaucet {
 
     if (path === '/faucet/burn/preview' && request.method === 'POST') {
       if (!BURN_RECEIPTS_ENABLED) return json({ error: 'burn receipts unavailable' }, 503, allowedOrigin, cred);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ error: 'link X first' }, 401, allowedOrigin, cred);
       const xId = String(session.xId);
       const bind = this.faucetBinds[xId];
@@ -12806,7 +12883,7 @@ export class DashaFaucet {
 
     if (path === '/faucet/burn/confirm' && request.method === 'POST') {
       if (!BURN_RECEIPTS_ENABLED) return json({ error: 'burn receipts unavailable' }, 503, allowedOrigin, cred);
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json({ error: 'link X first' }, 401, allowedOrigin, cred);
       const xId = String(session.xId);
       const bind = this.faucetBinds[xId];
@@ -12928,7 +13005,7 @@ export class DashaFaucet {
         solscan: `https://solscan.io/tx/${sig}`,
         share: `https://www.getdasha.com/faucet/fill/${sig}`,
       };
-      const session = await sessionFromRequest(this.env, request);
+      const session = await sessionFromRequest(this.env, request, this.state.storage);
       if (!session?.xId) return json(landed, 200, allowedOrigin, cred);
       const bind = this.faucetBinds[String(session.xId)];
       if (!bind?.dest || bind.kind !== 'IS_WALLET') {
@@ -13416,6 +13493,8 @@ export default {
     if (url.pathname === '/auth/logout') {
       if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, { credentials: true });
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+      // Task 17: logout kills the token server-side too, not just the cookie.
+      await revokeSessionViaLobbyDO(env, await currentSessionSid(env, request));
       return json({ ok: true, loggedIn: false }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader('', { clear: true }) },

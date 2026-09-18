@@ -68,6 +68,10 @@ const created = await network.fetch(new Request('https://lobby.getdasha.com/comp
   method: 'POST', headers: cookie, body: JSON.stringify({ name: 'Debit', limit_cents: 500, limit_reset: 'monthly' }),
 }), origin);
 assert.equal(created.status, 201, await created.clone().text());
+// task-17 session rotation: key creation revokes the presented sid; follow the fresh cookie.
+const rotated = created.headers.get('set-cookie');
+assert.ok(rotated, 'key create rotates the session cookie');
+cookie.Cookie = rotated.split(';')[0];
 const keyBody = await created.json();
 assert.match(keyBody.note || '', /Non-self chat spends prepaid credits; cap limits runaway/);
 assert.equal(keyBody.limit_cents, 500);
