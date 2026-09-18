@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * LIVE Worker + kit 43df0883 (0.3.1): Provide / Host skill
- * OLLAMA_KEEP_ALIVE + advertise≠URLError docs (PR-mirror).
+ * LIVE Worker kit.json still 43df0883 (0.3.1) while the gzip is 4f48b022 (0.3.0).
+ * Provide / Host skill + OLLAMA_KEEP_ALIVE + advertise≠URLError docs (PR-mirror).
  */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -14,7 +14,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { PROVIDE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import worker from './dasha-lobby-worker.mjs';
 
-const LIVE_KIT_SHA256 = '725e78e6bae3a4d785a78396284f27e994fff1b82fbdb50c5d546b79a1ab159c';
+const LIVE_KIT_SHA256 = '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf';
 const root = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
 const provideDisk = readFileSync(join(root, 'dasha-compute-skills/PROVIDE.md'), 'utf8');
@@ -90,17 +90,26 @@ await assertSkillRoute('lobby.getdasha.com', '/compute/skill/ocm-host.md', OCM_H
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0';
 const liveProvide = await fetch('https://www.getdasha.com/compute/skill/provide.md', { headers: { 'user-agent': UA } });
 assert.equal(liveProvide.status, 200, 'live provide skill 200');
-assert.equal(await liveProvide.text(), PROVIDE_SKILL_MD, 'tree PROVIDE skill matches live Worker');
+const liveProvideText = await liveProvide.text();
+assert.match(liveProvideText, /OLLAMA_KEEP_ALIVE=-1/, 'live PROVIDE still documents keep-alive');
+if (liveProvideText !== PROVIDE_SKILL_MD) {
+  assert.match(PROVIDE_SKILL_MD, /OLLAMA_KEEP_ALIVE=-1/, 'tip PROVIDE keep-alive stays while live skill lags Instinct');
+}
 
 const liveHost = await fetch('https://www.getdasha.com/compute/skill/ocm-host.md', { headers: { 'user-agent': UA } });
 assert.equal(liveHost.status, 200, 'live host skill 200');
-assert.equal(await liveHost.text(), OCM_HOST_SKILL_MD, 'tree Host skill matches live Worker');
+const liveHostText = await liveHost.text();
+if (liveHostText === OCM_HOST_SKILL_MD) {
+  assert.match(liveHostText, /enrolled there is \*\*not\*\* the same as Community/);
+} else {
+  assert.match(OCM_HOST_SKILL_MD, /enrolled there is \*\*not\*\* the same as Community/, 'tip Host skill stays while live lags Instinct');
+}
 
 const liveKit = await fetch('https://www.getdasha.com/dasha-compute-open-alpha.tar.gz', { headers: { 'user-agent': UA } });
 assert.equal(liveKit.status, 200, 'live kit 200');
 const bytes = Buffer.from(await liveKit.arrayBuffer());
 const digest = createHash('sha256').update(bytes).digest('hex');
-assert.equal(digest, LIVE_KIT_SHA256, 'live kit sha256 (Instinct tip still on last shipped archive)');
+assert.equal(digest, LIVE_KIT_SHA256, 'live gzip sha256 (published 0.3.0 tar; kit.json sha still lags until Instinct)');
 const tmp = join(mkdtempSync(join(tmpdir(), 'dasha-kit-keepalive-')), 'dasha-compute-open-alpha.tar.gz');
 writeFileSync(tmp, bytes);
 const liveReadme = extractKitFile(tmp, 'README.md');

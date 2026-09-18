@@ -20,6 +20,7 @@ import {
   residualControlFields,
 } from './dasha-compute-receipt-honesty.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
+import worker from './dasha-lobby-worker.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const note = readFileSync(join(root, 'COMPUTE-ORCA-RESIDUAL-2026-09-18.md'), 'utf8');
@@ -51,6 +52,9 @@ assert.match(note, /DASHA_RESIDUAL_ALPHA/);
 assert.match(note, /α default \*\*0\*\*|default \*\*0\*\*|default `0`/);
 assert.match(note, /Not live until Instinct/);
 assert.match(note, /ternary-bonsai-2-27b/);
+assert.match(note, /4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf/);
+assert.match(note, /43df0883a900058320ceca36bf029b82d2495b2f2f17086495d31219cc3fec24/);
+assert.match(note, /package\.json` \*\*0\.3\.0\*\*/);
 
 assert.match(agentSrc, /DASHA_RESIDUAL_ALPHA/);
 assert.match(agentSrc, /def residual_alpha\(/);
@@ -65,6 +69,19 @@ assert.match(envExample, /DASHA_RESIDUAL_ALPHA=0/);
 assert.match(honestySrc, /residualControlFields/);
 assert.match(networkSrc, /residualControlFields/);
 assert.match(networkSrc, /['"]ternary-bonsai-2-27b['"]/);
+assert.match(networkSrc, /4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf/);
+const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
+assert.match(workerSrc, /4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf/);
+assert.match(workerSrc, /version: '0\.3\.0'/);
+assert.doesNotMatch(workerSrc, /sha256: '725e78e6bae3a4d785a78396284f27e994fff1b82fbdb50c5d546b79a1ab159c'/);
+{
+  const kitRes = await worker.fetch(new Request('https://www.getdasha.com/compute/kit.json'), {});
+  assert.equal(kitRes.status, 200);
+  const manifest = await kitRes.json();
+  assert.equal(manifest.version, '0.3.0', 'tip kit.json version matches published tar package.json');
+  assert.equal(manifest.min_version, '0.3.0');
+  assert.equal(manifest.sha256, '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf');
+}
 
 assert.ok([...COMPUTE_CATALOG_MODELS].includes(BONSAI_MODEL_ID), 'catalog keeps Community bonsai');
 assert.ok([...COMPUTE_CATALOG_MODELS].includes('gemma3-27b'), 'do not demote gemma3-27b');
