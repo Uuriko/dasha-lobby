@@ -25,7 +25,8 @@ export const LOGIN_METHODS = ['grok', 'x', 'google', 'email', 'wallet'];
 
 const DISPLAY = { grok: 'Grok Bot', x: 'X', google: 'Google', email: 'email', wallet: 'a wallet' };
 
-const FULL_LEDE = 'Sign in. Grok Bot, X, Google, email, or a wallet.';
+const EMAIL_FIRST_LEDE = 'Sign in with your email.';
+const EMAIL_FIRST_META = 'Sign in with your email. Grok Bot, X, Google, and wallet sign-in appear next.';
 const FULL_FALLBACK = 'Email sign-in is not available yet. Use Grok Bot, X, Google, or a wallet.';
 
 function hasSecret(v) {
@@ -84,14 +85,21 @@ export function renderLoginPage(env) {
   // Sentinels for methods that stay are scaffolding, not content — drop them
   // so view-source carries no gating machinery.
   html = html.replace(/[ \t]*<!--[ \t]*\/?login-method:[a-z]+[ \t]*-->[ \t]*\r?\n?/g, '');
-  // Lede names only the live methods. Fully configured it is byte-identical
-  // to the long-standing quiet copy.
+  // Progressive disclosure: the "or continue with" divider only reads when the
+  // email stage precedes it. Without email the page is the all-methods wall.
+  if (!avail.email) {
+    html = html.replace(/<p class="methods-or">or continue with<\/p>\r?\n?/, '');
+  }
+  // Lede: email-first when email is live (the other methods disclose after
+  // Continue); otherwise name only the live methods. Fully email-configured
+  // it is byte-identical to the quiet email-first copy.
   const names = LOGIN_METHODS.filter((m) => avail[m]).map((m) => DISPLAY[m]);
-  const lede = names.length === LOGIN_METHODS.length ? FULL_LEDE : `Sign in with ${joinNames(names)}.`;
-  html = html.replace(`<p>${FULL_LEDE}</p>`, `<p>${lede}</p>`);
+  const lede = avail.email ? EMAIL_FIRST_LEDE : `Sign in with ${joinNames(names)}.`;
+  const meta = avail.email ? EMAIL_FIRST_META : lede;
+  html = html.replace(`<p>${EMAIL_FIRST_LEDE}</p>`, `<p>${lede}</p>`);
   html = html.replace(
-    `<meta name="description" content="${FULL_LEDE}">`,
-    `<meta name="description" content="${lede}">`,
+    `<meta name="description" content="${EMAIL_FIRST_META}">`,
+    `<meta name="description" content="${meta}">`,
   );
   // Availability blob consumed by the "last time you signed in with …" hint,
   // so it never advertises a method that is not rendered.

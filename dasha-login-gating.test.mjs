@@ -65,8 +65,8 @@ assert.deepEqual(
   { grok: true, x: true, google: true, wallet: true, email: true },
   'all configured: all five render',
 );
-assert.match(fullHtml, /<p>Sign in\. Grok Bot, X, Google, email, or a wallet\.<\/p>/, 'full lede keeps the quiet copy');
-assert.match(fullHtml, /<meta name="description" content="Sign in\. Grok Bot, X, Google, email, or a wallet\.">/, 'full meta keeps the quiet copy');
+assert.match(fullHtml, /<p>Sign in with your email\.<\/p>/, 'full-env lede is email-first');
+assert.match(fullHtml, /<meta name="description" content="Sign in with your email\. Grok Bot, X, Google, and wallet sign-in appear next\.">/, 'full-env meta is email-first');
 assert.match(
   fullHtml,
   /data-login-methods='\{"grok":true,"x":true,"google":true,"email":true,"wallet":true\}'/,
@@ -98,7 +98,7 @@ assert.deepEqual(
   { grok: true, x: true, google: false, wallet: true, email: true },
   'google unconfigured: Google button hidden, rest live',
 );
-assert.match(noGoogle, /<p>Sign in with Grok Bot, X, email, or a wallet\.<\/p>/, 'lede drops Google');
+assert.match(noGoogle, /<p>Sign in with your email\.<\/p>/, 'email-first lede even when Google is gated off');
 assert.match(noGoogle, /Email sign-in is not available yet\. Use Grok Bot, X, or a wallet\./, 'fallback copy drops Google');
 assert.doesNotMatch(noGoogle, /oauth\/google\/start/, 'no dead Google href');
 
@@ -108,7 +108,7 @@ assert.deepEqual(
   buttons(emailOnly),
   { grok: false, x: false, google: false, wallet: true, email: true },
 );
-assert.match(emailOnly, /<p>Sign in with email or a wallet\.<\/p>/);
+assert.match(emailOnly, /<p>Sign in with your email\.<\/p>/, 'email-first lede when email is live');
 
 // --- served /login on both hosts ---
 {
@@ -138,7 +138,7 @@ assert.match(emailOnly, /<p>Sign in with email or a wallet\.<\/p>/);
   const res = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), FULL_ENV);
   assert.equal(res.status, 200, 'www /login 200');
   const html = await res.text();
-  assert.match(html, /<p>Sign in\. Grok Bot, X, Google, email, or a wallet\.<\/p>/, 'www served full-env keeps quiet copy');
+  assert.match(html, /<p>Sign in with your email\.<\/p>/, 'www served full-env lede is email-first');
 }
 {
   const res = await edgeWorker.fetch(new Request('https://www.getdasha.com/login'), { method: 'HEAD' }, {});

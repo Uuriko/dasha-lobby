@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Quiet /login doors copy for Compute growth.
- * One line near Grok Bot / X / Google / wallet. No email lecture.
+ * Email-first: one quiet line, one email field + Continue; the other four
+ * methods disclose after Continue. No email lecture. No dead buttons.
  * Disk only. No wrangler. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -15,7 +16,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
 const loginSrc = readFileSync(join(root, 'dasha-login-page.html'), 'utf8');
 
-const QUIET = 'Sign in. Grok Bot, X, Google, email, or a wallet.';
+const QUIET = 'Sign in with your email.';
 const QUIET_P = `<p>${QUIET}</p>`;
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
@@ -28,7 +29,7 @@ function visible(html) {
 
 function assertQuietLogin(html, label) {
   const body = visible(html);
-  assert.equal((html.match(/<p>Sign in\. Grok Bot, X, Google, email, or a wallet\.<\/p>/g) || []).length, 1, `${label} one quiet line`);
+  assert.equal((html.match(/<p>Sign in with your email\.<\/p>/g) || []).length, 1, `${label} one quiet email-first line`);
   assert.match(body, /data-login-methods/, `${label} methods`);
   const methodsAt = body.indexOf('data-login-methods');
   const lineAt = body.indexOf(QUIET_P);
@@ -38,6 +39,9 @@ function assertQuietLogin(html, label) {
   assert.match(body, /data-google-login/, `${label} Google door`);
   assert.match(body, /Continue with Google/, `${label} Google button copy`);
   assert.match(body, /data-wallet-login/, `${label} wallet door`);
+  assert.match(body, /data-email-continue/, `${label} email-first Continue button`);
+  assert.match(body, /data-more-methods/, `${label} progressive-disclosure wrapper`);
+  assert.match(body, /or continue with/, `${label} disclosure divider`);
   assert.doesNotMatch(body, /email, or a Solana wallet\. One login at a time/, `${label} no email lecture`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin.jup.ag`);
 }
@@ -87,7 +91,7 @@ const FULL_ENV = {
   assert.doesNotMatch(html, /plugin\.jup\.ag/, 'home no plugin.jup.ag');
 }
 
-console.log('dasha-login-quiet-copy: PASS (quiet doors line once; Grok/X/Google/wallet stay; home first paint intact)');
+console.log('dasha-login-quiet-copy: PASS (email-first quiet line once; Grok/X/Google/wallet disclose after Continue; home first paint intact)');
 
 // Resend + provider-hint + OTP hardening (2026 auth UX): structure present in source, bundle, and served page.
 async function assertLoginUx(html, label) {
@@ -102,6 +106,11 @@ async function assertLoginUx(html, label) {
   assert.match(html, /dasha-x-linked/, `${label} x link listener`);
   assert.match(html, /dasha-google-linked/, `${label} google link listener`);
   assert.match(html, /That code expired\. Get a new one\./, `${label} expiry copy`);
+  // Email-first progressive disclosure wiring.
+  assert.match(html, /dasha_login_revealed/, `${label} reveal persistence key`);
+  assert.match(html, /data-email-continue/, `${label} Continue hook`);
+  assert.match(html, /ev\.key === 'Enter'/, `${label} Enter submits email`);
+  assert.match(html, /<noscript>/, `${label} no-JS disclosure fallback`);
 }
 
 assertLoginUx(loginSrc, 'login source');

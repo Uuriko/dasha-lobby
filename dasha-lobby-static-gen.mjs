@@ -946,12 +946,12 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Log in — $dasha</title>
-  <meta name="description" content="Sign in. Grok Bot, X, Google, email, or a wallet.">
+  <meta name="description" content="Sign in with your email. Grok Bot, X, Google, and wallet sign-in appear next.">
   <meta name="robots" content="noindex,follow">
   <meta name="theme-color" content="#070608">
   <style>
     :root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81;--line:rgba(244,237,219,.24)}
-    *{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 70% 15%,rgba(124,77,255,.3),transparent 25rem),var(--ink);color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif}.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:12px 16px;background:var(--acid);color:var(--ink)!important;font-weight:900;text-decoration:none}.skip-link:focus{left:12px;top:12px;outline:3px solid var(--paper);outline-offset:2px}.login{width:min(28rem,100%);padding:28px;border:1px solid var(--line);background:#120c18;box-shadow:10px 10px 0 var(--hot)}.brand{color:var(--acid);font-size:13px;font-weight:900;letter-spacing:.12em;text-decoration:none;text-transform:uppercase}h1{margin:14px 0 8px;font-size:clamp(2.5rem,12vw,4.5rem);line-height:.9;letter-spacing:-.06em}p{margin:0 0 18px;color:rgba(244,237,219,.78)}.methods{display:grid;gap:12px}.button{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border:1px solid var(--paper);border-radius:999px;background:transparent;color:var(--paper);font:900 14px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em;text-decoration:none;cursor:pointer}.button.primary{border-color:var(--acid);background:var(--acid);color:var(--ink);box-shadow:4px 4px 0 var(--hot)}.button:disabled{opacity:.6;cursor:wait}.siwg{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#22d3ee);color:#fff;font:900 15px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em;text-decoration:none;cursor:pointer;box-shadow:0 0 12px rgba(124,58,237,.35),0 0 14px rgba(34,211,238,.25)}.siwg .siwg-icon{width:28px;height:28px;flex:0 0 28px;display:block;border-radius:6px}.siwg:focus-visible{outline:3px solid var(--paper);outline-offset:3px}.siwg[aria-disabled=true]{opacity:.6;cursor:wait}.status{min-height:1.45em;margin:16px 0 0;font-size:14px}.status[data-kind=ok]{color:var(--acid)}.status[data-kind=bad]{color:var(--hot)}.grok-pair{margin:16px 0 0}.grok-code{margin:0 0 8px;color:#fff;font:900 clamp(1.8rem,8vw,2.6rem)/1.05 Arial,Helvetica,sans-serif;letter-spacing:.12em}.grok-say{margin:0;color:rgba(244,237,219,.86)}.note{margin:14px 0 0;font-size:13px}.note a{display:inline-flex;align-items:center;min-height:44px;color:var(--paper)}.provider-hint{margin:-4px 0 12px;font-size:13px;color:rgba(244,237,219,.6)}.email-form{display:grid;gap:10px}.field{width:100%;min-height:52px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:#0b0710;color:var(--paper);font:16px/1.2 Arial,Helvetica,sans-serif}.field::placeholder{color:rgba(244,237,219,.4)}.resend-attn{border-color:var(--acid);box-shadow:0 0 0 2px rgba(223,255,0,.35)}[hidden]{display:none!important}:focus-visible{outline:3px solid var(--acid);outline-offset:4px}
+    *{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 70% 15%,rgba(124,77,255,.3),transparent 25rem),var(--ink);color:var(--paper);font:16px/1.45 Arial,Helvetica,sans-serif}.skip-link{position:absolute;left:-9999px;top:0;z-index:100;padding:12px 16px;background:var(--acid);color:var(--ink)!important;font-weight:900;text-decoration:none}.skip-link:focus{left:12px;top:12px;outline:3px solid var(--paper);outline-offset:2px}.login{width:min(28rem,100%);padding:28px;border:1px solid var(--line);background:#120c18;box-shadow:10px 10px 0 var(--hot)}.brand{color:var(--acid);font-size:13px;font-weight:900;letter-spacing:.12em;text-decoration:none;text-transform:uppercase}h1{margin:14px 0 8px;font-size:clamp(2.5rem,12vw,4.5rem);line-height:.9;letter-spacing:-.06em}p{margin:0 0 18px;color:rgba(244,237,219,.78)}.methods{display:grid;gap:12px}.button{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border:1px solid var(--paper);border-radius:999px;background:transparent;color:var(--paper);font:900 14px/1 Arial,Helvetica,sans-serif;letter-spacing:.04em;text-decoration:none;cursor:pointer}.button.primary{border-color:var(--acid);background:var(--acid);color:var(--ink);box-shadow:4px 4px 0 var(--hot)}.button:disabled{opacity:.6;cursor:wait}.siwg{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#22d3ee);color:#fff;font:900 15px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em;text-decoration:none;cursor:pointer;box-shadow:0 0 12px rgba(124,58,237,.35),0 0 14px rgba(34,211,238,.25)}.siwg .siwg-icon{width:28px;height:28px;flex:0 0 28px;display:block;border-radius:6px}.siwg:focus-visible{outline:3px solid var(--paper);outline-offset:3px}.siwg[aria-disabled=true]{opacity:.6;cursor:wait}.status{min-height:1.45em;margin:16px 0 0;font-size:14px}.status[data-kind=ok]{color:var(--acid)}.status[data-kind=bad]{color:var(--hot)}.grok-pair{margin:16px 0 0}.grok-code{margin:0 0 8px;color:#fff;font:900 clamp(1.8rem,8vw,2.6rem)/1.05 Arial,Helvetica,sans-serif;letter-spacing:.12em}.grok-say{margin:0;color:rgba(244,237,219,.86)}.note{margin:14px 0 0;font-size:13px}.note a{display:inline-flex;align-items:center;min-height:44px;color:var(--paper)}.provider-hint{margin:-4px 0 12px;font-size:13px;color:rgba(244,237,219,.6)}.email-form{display:grid;gap:10px}.more-methods{display:grid;gap:12px}.methods-or{margin:0;text-align:center;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,237,219,.5)}.field{width:100%;min-height:52px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:#0b0710;color:var(--paper);font:16px/1.2 Arial,Helvetica,sans-serif}.field::placeholder{color:rgba(244,237,219,.4)}.resend-attn{border-color:var(--acid);box-shadow:0 0 0 2px rgba(223,255,0,.35)}[hidden]{display:none!important}:focus-visible{outline:3px solid var(--acid);outline-offset:4px}
   </style>
 </head>
 <body>
@@ -959,32 +959,37 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
   <main class="login" id="dasha-login" data-dasha-login>
     <a class="brand" href="https://www.getdasha.com/">$dasha</a>
     <h1>Log in.</h1>
-    <p>Sign in. Grok Bot, X, Google, email, or a wallet.</p>
+    <p>Sign in with your email.</p>
     <p class="provider-hint" data-provider-hint hidden></p>
     <div class="methods" data-login-methods>
-      <!--login-method:grok-->
-      <a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>
-      <!--/login-method:grok-->
-      <!--login-method:x-->
-      <a class="button primary" href="https://lobby.getdasha.com/oauth/x/start" data-x-login>Continue with X</a>
-      <!--/login-method:x-->
-      <!--login-method:google-->
-      <a class="button" href="https://lobby.getdasha.com/oauth/google/start" data-google-login>Continue with Google</a>
-      <!--/login-method:google-->
-      <!--login-method:wallet-->
-      <button class="button" type="button" data-wallet-login>Connect wallet</button>
-      <!--/login-method:wallet-->
       <!--login-method:email-->
       <div class="email-form" data-email-form>
         <input class="field" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" aria-label="Email address" data-email-input>
-        <button class="button" type="button" data-email-send>Email me a sign-in code</button>
+        <button class="button primary" type="button" data-email-continue>Continue</button>
+        <button class="button" type="button" data-email-send hidden>Email me a sign-in code</button>
         <button class="button" type="button" data-email-resend hidden>Resend code</button>
         <input class="field" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" aria-label="Sign-in code" aria-describedby="dasha-email-status" data-email-code hidden>
         <button class="button primary" type="button" data-email-verify hidden>Sign in</button>
         <p class="status" id="dasha-email-status" data-email-status role="status" aria-live="polite"></p>
       </div>
       <!--/login-method:email-->
+      <div class="more-methods" data-more-methods hidden>
+        <p class="methods-or">or continue with</p>
+        <!--login-method:grok-->
+        <a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>
+        <!--/login-method:grok-->
+        <!--login-method:x-->
+        <a class="button primary" href="https://lobby.getdasha.com/oauth/x/start" data-x-login>Continue with X</a>
+        <!--/login-method:x-->
+        <!--login-method:google-->
+        <a class="button" href="https://lobby.getdasha.com/oauth/google/start" data-google-login>Continue with Google</a>
+        <!--/login-method:google-->
+        <!--login-method:wallet-->
+        <button class="button" type="button" data-wallet-login>Connect wallet</button>
+        <!--/login-method:wallet-->
+      </div>
     </div>
+    <noscript><style>[data-more-methods]{display:grid!important}</style></noscript>
     <div class="grok-pair" data-grok-pair hidden>
       <p class="grok-code" data-grok-code></p>
       <p class="grok-say" data-grok-say></p>
@@ -1037,8 +1042,14 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
       var methodsAvail = loginMethodsAvailable();
       if (lastP && hint && (methodsAvail === null || methodsAvail[lastP] !== false)) { hint.textContent = 'Last time you signed in with ' + providerName(lastP) + '.'; hint.hidden = false; }
     } catch (e) {}
+    var more = document.querySelector('[data-more-methods]');
     var form = document.querySelector('[data-email-form]');
-    if (!form) return;
+    if (!form) {
+      // Email sign-in is not configured: the page is the legacy all-methods
+      // wall. Reveal it, and drop the now-meaningless "or continue with".
+      if (more) { more.hidden = false; var orLine = more.querySelector('.methods-or'); if (orLine) orLine.hidden = true; }
+      return;
+    }
     window.addEventListener('message', function (ev) {
       if (ev.origin !== API || !ev.data || typeof ev.data.type !== 'string') return;
       var p = ev.data.type === 'dasha-x-linked' ? 'x'
@@ -1051,6 +1062,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     var sendBtn = form.querySelector('[data-email-send]');
     var resendBtn = form.querySelector('[data-email-resend]');
     var verifyBtn = form.querySelector('[data-email-verify]');
+    var continueBtn = form.querySelector('[data-email-continue]');
     var status = form.querySelector('[data-email-status]');
     var codeSentAt = 0;
     var cooldownTimer = null;
@@ -1101,17 +1113,39 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
             say('ok', isResend ? 'New code sent - check your inbox. It expires in 10 minutes.' : 'Code sent - check your inbox. It expires in 10 minutes.');
           } else if (r.status === 503) {
             fail('Email sign-in is not available yet. Use Grok Bot, X, Google, or a wallet.');
+            sendBtn.hidden = true; resendBtn.hidden = false;
             resetResendBtn();
           } else if (r.status === 429) {
             fail('Too many tries. Wait a bit, then try again.');
+            sendBtn.hidden = true; resendBtn.hidden = false;
             resetResendBtn();
           } else {
             fail(r.body && r.body.error ? r.body.error : 'Could not send the code.');
+            sendBtn.hidden = true; resendBtn.hidden = false;
             resetResendBtn();
           }
         })
-        .catch(function () { sendBtn.disabled = false; resetResendBtn(); fail('Network error - try again.'); });
+        .catch(function () { sendBtn.disabled = false; sendBtn.hidden = true; resendBtn.hidden = false; resetResendBtn(); fail('Network error - try again.'); });
     }
+    // Email-first progressive disclosure: the other methods stay hidden until
+    // Continue taps through (or this device already revealed them once).
+    function revealMethods() {
+      if (more) more.hidden = false;
+      if (continueBtn) continueBtn.hidden = true;
+      try { localStorage.setItem('dasha_login_revealed', '1'); } catch (e) {}
+    }
+    try {
+      if (localStorage.getItem('dasha_login_revealed') === '1') revealMethods();
+    } catch (e) {}
+    if (continueBtn) continueBtn.addEventListener('click', function () {
+      var email = emailInput.value.trim();
+      if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) { fail('Enter a valid email address.'); emailInput.focus(); return; }
+      revealMethods();
+      requestCode(false);
+    });
+    emailInput.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); if (continueBtn) continueBtn.click(); }
+    });
     sendBtn.addEventListener('click', function () { requestCode(false); });
     resendBtn.addEventListener('click', function () { requestCode(true); });
     verifyBtn.addEventListener('click', function () {
