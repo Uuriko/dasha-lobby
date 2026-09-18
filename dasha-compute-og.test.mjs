@@ -50,6 +50,6 @@ assert.equal(res.status, 200);
 assert.equal(res.headers.get('x-dasha-edge'), 'compute');
 const served = await res.text();
 assertShare(served, 'served /compute');
-assert.match(served, /name="description" content="Start\. Do\. Provide\. Pay\. Credits\."/, 'page meta stays doors line');
+assert.match(served, /name="description" content="Run open-weight AI models on real Macs — or put your own Mac to work and earn\. OpenAI-compatible API, \$0\.05 per job\."/, 'page meta is the value-prop line');
 
 console.log('dasha-compute-og: PASS (Dasha Compute / Use a Mac. OpenAI-compatible. API v1)');
