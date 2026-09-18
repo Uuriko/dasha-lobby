@@ -158,6 +158,7 @@ import { computeGuestKeyResponse } from './dasha-compute-guest-key.mjs';
 import { CREW_PAGE_HTML } from './dasha-crew-page.mjs';
 import { applyCrewShareOg, crewApi, isCrewPagePath } from './dasha-crew.mjs';
 import { isMuseProductPath, museProductKind, museProductPageHtml, MUSE_FACES } from './dasha-muse-product.mjs';
+import { qrSvg } from './dasha-qr.mjs';
 import { bagRecordApi, isBagRecordPath, lookupRecord, normalizeMint, renderBagShareHtml } from './dasha-bag-record.mjs';
 import { bagExitApi, isBagExitPath } from './dasha-bag-exit.mjs';
 import { appendFill, collectInboundFills, FAUCET_TAPE_SCAN_CAP, fillShareApi, isBareFaucetFillPath, isFaucetFillPath, isFaucetTapePath, shouldScanTape, tapeApi } from './dasha-faucet-tape.mjs';
@@ -6842,6 +6843,71 @@ const emptyQuizMetrics = since => ({ since, starts: 0, completions: 0, replays: 
 const emptyStudioMetrics = since => ({ since, completionSince: since, opens: 0, firstEdits: 0, completions: 0, exports: 0, shareIntents: 0, shareSuccesses: 0, copyEditableLinks: 0, handoffMints: 0, handoffOpens: 0, sources: { home: 0, quiz: 0, direct: 0, 'transmission-001': 0, other: 0 } });
 const HANDOFF_TTL_MS = 90 * 24 * 60 * 60_000;
 const HANDOFF_MAX = 4000;
+
+/* ---- QR cross-device handoff (approve on old device) ---- */
+const QR_HANDOFF_TTL_MS = 120_000;
+const QR_HANDOFF_COOKIE = '__Host-dasha_qr_handoff';
+
+function qrHandoffCode() {
+  // Short human-readable code shown on both devices so the user can match them.
+  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  let s = '';
+  for (const b of bytes) s += alphabet[b % alphabet.length];
+  return s.slice(0, 3) + '-' + s.slice(3);
+}
+
+function qrHandoffCookieHeader(token, { clear = false } = {}) {
+  if (clear) return `${QR_HANDOFF_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
+  return `${QR_HANDOFF_COOKIE}=${token}; Path=/; Max-Age=${Math.round(QR_HANDOFF_TTL_MS / 1000)}; HttpOnly; Secure; SameSite=Lax`;
+}
+
+/** Mint a fresh session for the approved identity (never reuses the old token). */
+async function mintQrHandoffSession(env, identity) {
+  switch (identity?.provider) {
+    case 'x': return createSessionToken(env, identity);
+    case 'google': return createGoogleSessionToken(env, identity);
+    case 'email': return createEmailSessionToken(env, identity.email);
+    case 'wallet': return createWalletSessionToken(env, identity.wallet);
+    case 'grok': return createGrokSessionToken(env, identity.displayName);
+    default: throw new Error('unknown handoff provider');
+  }
+}
+
+function qrHandoffPage(state, opts) {
+  const { token, code } = opts || {};
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const body = state === 'prompt' ? `
+      <p class="code">Code: <strong>${esc(code)}</strong></p>
+      <p>Check that this code matches the one on your new device. Approving signs the new device in as you.</p>
+      <div class="row">
+        <button id="approve">Approve sign-in</button>
+        <button id="deny" class="ghost">Deny</button>
+      </div>
+      <p id="msg" class="msg"></p>
+      <script>
+        const token = ${JSON.stringify(token)};
+        async function decide(decision) {
+          const r = await fetch('/auth/handoff/decision', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, decision }),
+          });
+          const j = await r.json().catch(() => ({}));
+          document.getElementById('msg').textContent = j.ok
+            ? (decision === 'approve' ? 'Approved. Your new device can finish signing in.' : 'Denied. The new device was not signed in.')
+            : ('Error: ' + (j.error || r.status));
+        }
+        document.getElementById('approve').onclick = () => decide('approve');
+        document.getElementById('deny').onclick = () => decide('deny');
+      </script>`
+    : state === 'expired' ? `<p>This sign-in request expired or is invalid. Start over on your new device.</p>`
+    : `<p>This sign-in request was already decided.</p>`;
+  const title = state === 'prompt' ? 'Approve new device sign-in' : 'Sign-in request';
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · Dasha</title>
+<style>body{font-family:system-ui,sans-serif;background:#0b0b0d;color:#f2f2f2;display:flex;min-height:100vh;margin:0;align-items:center;justify-content:center;padding:24px}.card{max-width:420px;background:#151518;border:1px solid #2a2a2e;border-radius:16px;padding:28px}.code{font-size:20px}.row{display:flex;gap:12px;margin-top:16px}button{flex:1;padding:12px;border-radius:10px;border:0;background:#7c5cff;color:#fff;font-size:16px;cursor:pointer}button.ghost{background:transparent;border:1px solid #3a3a40;color:#f2f2f2}.msg{margin-top:12px;min-height:20px;color:#b9b9c2}</style>
+</head><body><div class="card"><h1>${esc(title)}</h1>${body}</div></body></html>`;
+}
 const HANDOFF_LOOKS = new Set(['photo', 'poster', 'ticket', 'print', 'marquee', 'signal', 'face']);
 const HANDOFF_FORMATS = new Set(['square', 'story', 'banner']);
 const HANDOFF_EFFECTS = new Set(['clean', 'fry', 'xerox', 'angel', 'cursed', 'surveillance']);
@@ -9289,6 +9355,151 @@ export class DashaLobby {
       return json({ ok: true }, 200, '*');
     }
 
+    /* ---- QR handoff: new device shows QR + one-time code, old device approves. ----
+     * The QR carries only an approval URL + opaque grant token (never a session
+     * or credential). The new device gets a fresh session only after the old
+     * device explicitly approves, and only by presenting the signed starter
+     * cookie bound to the initiating origin + nonce. Single-use, 120s TTL. */
+    if (path === '/auth/handoff/start') {
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+      if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'handoff unavailable' }, 503, allowedOrigin, cred);
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const ipAllowed = simpRate(this.simpRates, `qr-handoff-ip:${ip}`, 12);
+      if (!ipAllowed.ok) return json({ error: 'handoff rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      const now = Date.now();
+      const token = randomUrlToken(24);
+      const nonce = randomUrlToken(16);
+      const code = qrHandoffCode();
+      const exp = now + QR_HANDOFF_TTL_MS;
+      const saved = await this.state.storage.get('qrHandoffs');
+      const live = Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {})
+        .filter(([, row]) => Number(row?.exp) > now));
+      live[token] = { nonce, origin: allowedOrigin, code, status: 'pending', exp };
+      const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 100));
+      await this.state.storage.put('qrHandoffs', bounded);
+      const startHandle = await signPayload(this.env.LOBBY_SESSION_SECRET, {
+        kind: 'qr_handoff_start',
+        token,
+        nonce,
+        origin: allowedOrigin,
+        exp,
+      });
+      const approveUrl = `https://lobby.getdasha.com/auth/handoff/approve?h=${token}`;
+      return json({
+        token,
+        code,
+        approveUrl,
+        qrSvg: qrSvg(approveUrl, { module: 4 }),
+        expiresIn: Math.round(QR_HANDOFF_TTL_MS / 1000),
+        poll: '/auth/handoff/status',
+      }, 200, allowedOrigin, {
+        credentials: true,
+        headers: { 'Set-Cookie': qrHandoffCookieHeader(startHandle) },
+      });
+    }
+
+    if (path === '/auth/handoff/status') {
+      if (request.method !== 'GET' && request.method !== 'HEAD') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      const token = String(url.searchParams.get('token') || '');
+      if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return json({ state: 'expired' }, 200, allowedOrigin, cred);
+      const handoffs = await this.state.storage.get('qrHandoffs');
+      const row = handoffs && typeof handoffs === 'object' ? handoffs[token] : null;
+      const now = Date.now();
+      if (!row || Number(row.exp) <= now) {
+        if (row && handoffs) {
+          delete handoffs[token];
+          if (Object.keys(handoffs).length) await this.state.storage.put('qrHandoffs', handoffs);
+          else await this.state.storage.delete('qrHandoffs');
+        }
+        return json({ state: 'expired' }, 200, allowedOrigin, cred);
+      }
+      if (row.status === 'pending') return json({ state: 'pending' }, 200, allowedOrigin, cred);
+      if (row.status === 'denied') {
+        delete handoffs[token];
+        if (Object.keys(handoffs).length) await this.state.storage.put('qrHandoffs', handoffs);
+        else await this.state.storage.delete('qrHandoffs');
+        return json({ state: 'denied' }, 200, allowedOrigin, cred);
+      }
+      if (row.status !== 'approved' || !row.identity) return json({ state: 'expired' }, 200, allowedOrigin, cred);
+      // Approved: only the device holding the signed starter cookie (same token,
+      // nonce, and initiating origin) may redeem, exactly once.
+      const startRaw = readCookie(request.headers.get('Cookie') || '', QR_HANDOFF_COOKIE);
+      const start = startRaw ? await verifyPayload(this.env.LOBBY_SESSION_SECRET, startRaw) : null;
+      const starter = Boolean(start && start.kind === 'qr_handoff_start'
+        && start.token === token && start.nonce === row.nonce && start.origin === row.origin);
+      if (!starter) return json({ state: 'ok' }, 200, allowedOrigin, cred);
+      delete handoffs[token];
+      if (Object.keys(handoffs).length) await this.state.storage.put('qrHandoffs', handoffs);
+      else await this.state.storage.delete('qrHandoffs');
+      let sessionToken;
+      try {
+        sessionToken = await mintQrHandoffSession(this.env, row.identity);
+      } catch {
+        return json({ error: 'handoff failed' }, 500, allowedOrigin, cred);
+      }
+      await bumpLobbyMetric(this.state.storage, 'signin:success:qr_handoff');
+      return json({ state: 'ok', provider: row.identity.provider }, 200, allowedOrigin, {
+        credentials: true,
+        headers: { 'Set-Cookie': cookieHeader(sessionToken) },
+      });
+    }
+
+    if (path === '/auth/handoff/approve') {
+      // Old device: must hold a valid Dasha session to see the approval page.
+      const session = await authSessionFromRequest(this.env, request);
+      if (!session) {
+        return new Response('Sign in on this device first, then scan the QR code again.', {
+          status: 401, headers: { ...SECURITY, 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      }
+      const token = String(url.searchParams.get('h') || '');
+      const handoffs = await this.state.storage.get('qrHandoffs');
+      const row = handoffs && typeof handoffs === 'object' ? handoffs[token] : null;
+      const now = Date.now();
+      if (!token || !row || Number(row.exp) <= now) {
+        return new Response(qrHandoffPage('expired', null), {
+          status: 410, headers: { ...SECURITY, 'Content-Type': 'text/html; charset=utf-8' },
+        });
+      }
+      if (row.status !== 'pending') {
+        return new Response(qrHandoffPage('decided', null), {
+          status: 200, headers: { ...SECURITY, 'Content-Type': 'text/html; charset=utf-8' },
+        });
+      }
+      return new Response(qrHandoffPage('prompt', { token, code: row.code }), {
+        status: 200, headers: { ...SECURITY, 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    }
+
+    if (path === '/auth/handoff/decision') {
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      // Old device: explicit approval requires an authenticated session here.
+      const session = await authSessionFromRequest(this.env, request);
+      if (!session) return json({ error: 'sign in required' }, 401, allowedOrigin, cred);
+      const body = await requestJson(request);
+      const token = String(body?.token || '');
+      const decision = String(body?.decision || '');
+      if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return json({ error: 'bad token' }, 400, allowedOrigin, cred);
+      if (decision !== 'approve' && decision !== 'deny') return json({ error: 'bad decision' }, 400, allowedOrigin, cred);
+      const handoffs = await this.state.storage.get('qrHandoffs');
+      const row = handoffs && typeof handoffs === 'object' ? handoffs[token] : null;
+      const now = Date.now();
+      if (!row || Number(row.exp) <= now) return json({ error: 'handoff expired' }, 410, allowedOrigin, cred);
+      if (row.status !== 'pending') return json({ error: 'handoff already decided' }, 409, allowedOrigin, cred);
+      if (decision === 'deny') {
+        row.status = 'denied';
+        delete row.identity;
+      } else {
+        row.status = 'approved';
+        // Record only the normalized identity needed to mint a fresh session.
+        row.identity = session;
+      }
+      handoffs[token] = row;
+      await this.state.storage.put('qrHandoffs', handoffs);
+      return json({ ok: true, decision }, 200, allowedOrigin, cred);
+    }
+
     if (path === '/studio/event' && request.method === 'POST') {
       if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
       const input = await requestJson(request);
@@ -10873,6 +11084,7 @@ export class DashaLobby {
       url.pathname.startsWith('/simp/') ||
       url.pathname.startsWith('/auth/wallet/') ||
       url.pathname.startsWith('/auth/grok/') ||
+      url.pathname.startsWith('/auth/handoff/') ||
       url.pathname.startsWith('/auth/email/') ||
       url.pathname.startsWith('/studio/') ||
       url.pathname.startsWith('/chess/') ||
@@ -13508,6 +13720,7 @@ export default {
       url.pathname.startsWith('/simp/') ||
       url.pathname.startsWith('/auth/wallet/') ||
       url.pathname.startsWith('/auth/grok/') ||
+      url.pathname.startsWith('/auth/handoff/') ||
       url.pathname.startsWith('/auth/email/') ||
       url.pathname.startsWith('/studio/') ||
       url.pathname.startsWith('/h/') ||
