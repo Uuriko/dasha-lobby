@@ -32,11 +32,6 @@ assert.match(
   'nested leftover comment lists Motley stems',
 );
 assert.match(workerSrc, /Must win over the \/compute\/api\/ casefold/, 'map beats casefold catch-all');
-assert.doesNotMatch(
-  workerSrc,
-  /POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map\(\[[\s\S]*?['"]\/compute\/api\/openapi\.json['"]/,
-  'do not invent /compute/api/openapi.json leftover',
-);
 
 const discoveryMap = workerSrc.match(/const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map\(\[[\s\S]*?\]\);/)[0];
 for (const path of [
@@ -62,7 +57,7 @@ for (const path of [
   assert.match(discoveryMap, new RegExp(`['"]${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`), `map lists ${path}`);
 }
 assert.doesNotMatch(discoveryMap, /['"]\/api\/forum['"]/, 'do not invent apex /api/forum');
-assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/openapi\.json['"]/, 'do not invent nested openapi leftover');
+assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/openapi\.json['"]/, 'openapi.json leftover lives in its Set, not Motley map');
 assert.doesNotMatch(discoveryMap, /['"]\/benchmarks\.json['"]/, 'do not invent apex /benchmarks.json leftover');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/digest['"]/, 'do not retarget apex /api/digest');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/models['"]/, 'do not invent /api/models leftover');
@@ -207,7 +202,6 @@ const STAY_OUT = [
   '/api/forum',
   '/api/forum/',
   '/compute/api/foo',
-  '/compute/api/openapi.json',
   '/benchmarks.json',
   '/api/models',
   '/api/providers',
