@@ -9,9 +9,10 @@
  * 2. Worker-owned /robots.txt Allowlist for /llms.txt (already),
  *    /agents.json, /.well-known/mcp.json, /.well-known/agent.json,
  *    /compute/skill.md. Disk dasha-robots.txt stays in sync. Not Webflow.
- * Stay-outs: /compute/api/openapi.json (do not invent), Muse #225 faces,
- * Ask UX, Quill #247, #216 proof body, Phase 0, Designer.
- * Never plugin.jup.ag.
+ * Nested /compute/api/openapi.json leftover lives in
+ * POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS, not this apex set.
+ * Stay-outs: Muse #225 faces, Ask UX, Quill #247, #216 proof body,
+ * Phase 0, Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -38,7 +39,7 @@ for (const path of ['/openapi.json', '/openapi.json/', '/api/openapi.json', '/ap
 }
 assert.doesNotMatch(jsonSet, /['"]\/openapi['"]/, '/openapi stays gateway leftover');
 assert.doesNotMatch(jsonSet, /['"]\/api\/openapi['"]/, '/api/openapi stays gateway leftover');
-assert.doesNotMatch(jsonSet, /['"]\/compute\/api\/openapi\.json['"]/, 'do not invent /compute/api/openapi.json');
+assert.doesNotMatch(jsonSet, /['"]\/compute\/api\/openapi\.json['"]/, 'nested leftover lives in its Set');
 assert.doesNotMatch(jsonSet, /['"]\/compute\/openapi\.json['"]/, 'exact /compute/openapi.json stays 200');
 assert.doesNotMatch(jsonSet, /dasha-muse-product/, 'openapi leftover set does not import Muse HTML');
 
@@ -112,6 +113,7 @@ const ROBOTS_ALLOWS = [
   '/.well-known/mcp.json',
   '/.well-known/agent.json',
   '/compute/skill.md',
+  '/compute/openapi.json',
 ];
 for (const path of ROBOTS_ALLOWS) {
   const line = new RegExp(`^Allow: ${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm');
@@ -122,6 +124,7 @@ assert.match(robotsConst, /\/agents\.json/, 'identity/allowlist mentions /agents
 assert.match(robotsConst, /\/\.well-known\/mcp\.json/, 'identity/allowlist mentions /.well-known/mcp.json');
 assert.match(robotsConst, /\/\.well-known\/agent\.json/, 'identity/allowlist mentions /.well-known/agent.json');
 assert.match(robotsConst, /\/compute\/skill\.md/, 'identity/allowlist mentions /compute/skill.md');
+assert.match(robotsConst, /\/compute\/openapi\.json/, 'identity/allowlist mentions /compute/openapi.json');
 assert.doesNotMatch(robotsConst, /plugin\.jup\.ag/);
 assert.doesNotMatch(diskRobots, /plugin\.jup\.ag/);
 assert.doesNotMatch(robotsConst, new RegExp(MINT), 'robots stays rules, not a mint page');
@@ -184,4 +187,4 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 const sitemapXml = workerSrc.match(/const SITEMAP_XML = `([\s\S]*?)`;/)[1];
 assert.ok(!sitemapXml.includes(`${WWW}/openapi.json</loc>`), 'sitemap omits leftover /openapi.json');
 
-console.log('dasha-motley-openapi-json-robots-aeo-leftover: PASS (/openapi.json+/api/openapi.json 308 /compute/openapi.json; /openapi+/api/openapi stay /compute/api; robots Allows /llms.txt /agents.json /.well-known/mcp.json /.well-known/agent.json /compute/skill.md; Title-case+slash; www+lobby GET+HEAD; dests 200 OpenAPI 3.1; stay-out /api/v1|/api/models|/api/providers; no Muse restack; no plugin.jup.ag)');
+console.log('dasha-motley-openapi-json-robots-aeo-leftover: PASS (/openapi.json+/api/openapi.json 308 /compute/openapi.json; /openapi+/api/openapi stay /compute/api; robots Allows /llms.txt /agents.json /.well-known/mcp.json /.well-known/agent.json /compute/skill.md /compute/openapi.json; Title-case+slash; www+lobby GET+HEAD; dests 200 OpenAPI 3.1; stay-out /api/v1|/api/models|/api/providers; no Muse restack; no plugin.jup.ag)');

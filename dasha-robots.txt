@@ -16,6 +16,7 @@ Allow: /agents.json
 Allow: /.well-known/mcp.json
 Allow: /.well-known/agent.json
 Allow: /compute/skill.md
+Allow: /compute/openapi.json
 
 Sitemap: https://www.getdasha.com/sitemap.xml
 Sitemap: https://lobby.getdasha.com/sitemap.xml

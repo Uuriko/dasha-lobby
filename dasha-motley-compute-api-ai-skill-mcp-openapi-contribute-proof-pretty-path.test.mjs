@@ -5,8 +5,9 @@
  * /compute/api/contribute /compute/api/proof (+slash / Title-case via
  * toLowerCase) JSON-404 while faces already 200. Fold to those faces.
  * Must win over the /compute/api/ casefold catch-all.
- * /compute/api/docs stays skill leftover. /compute/api/openapi.json stays
- * uninvented. Bare /compute/agents 308 → /compute/agents.txt.
+ * /compute/api/docs stays skill leftover. /compute/api/openapi.json
+ * leftover lives in POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS.
+ * Bare /compute/agents 308 → /compute/agents.txt.
  * Disk only. No Designer. Never plugin.jup.ag. No Muse HTML. No Room.
  */
 import assert from 'node:assert/strict';
@@ -60,7 +61,7 @@ assert.doesNotMatch(aiSet, /['"]\/api\/ai['"]/, 'do not invent apex /api/ai');
 assert.doesNotMatch(skillSet, /['"]\/api\/skill['"]/, 'do not invent apex /api/skill');
 assert.doesNotMatch(mcpSet, /['"]\/api\/mcp['"]/, 'do not invent apex /api/mcp');
 assert.doesNotMatch(openapiSet, /['"]\/api\/openapi['"]/, 'do not invent apex /api/openapi');
-assert.doesNotMatch(openapiSet, /['"]\/compute\/api\/openapi\.json['"]/, 'do not invent /compute/api/openapi.json');
+assert.doesNotMatch(openapiSet, /['"]\/compute\/api\/openapi\.json['"]/, 'openapi.json leftover lives in its Set');
 assert.doesNotMatch(contributeSet, /['"]\/api\/contribute['"]/, 'apex /api/contribute stays Motley #235');
 assert.doesNotMatch(contributeSet, /['"]\/contribute\.md['"]/, 'contribute.md stays Motley map');
 assert.doesNotMatch(proofSet, /['"]\/api\/proof['"]/, 'do not invent apex /api/proof');
@@ -77,7 +78,7 @@ assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/mcp['"]/, 'mcp leftover l
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/openapi['"]/, 'openapi leftover lives in its Set, not Motley map');
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/contribute['"]/, 'contribute leftover lives in its Set, not Motley map');
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/proof['"]/, 'proof leftover lives in its Set, not Motley map');
-assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/openapi\.json['"]/, 'do not invent nested openapi leftover');
+assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/openapi\.json['"]/, 'openapi.json leftover lives in its Set, not Motley map');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/v1['"]/, 'do not invent /api/v1 leftover');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/models['"]/, 'do not invent /api/models leftover');
 assert.doesNotMatch(discoveryMap, /['"]\/api\/providers['"]/, 'do not invent /api/providers leftover');
@@ -154,7 +155,6 @@ const STAY_OUT = [
   '/api/skill',
   '/api/mcp',
   '/api/proof',
-  '/compute/api/openapi.json',
 ];
 
 for (const path of AI_FOLDS) {
@@ -192,6 +192,8 @@ assert.equal(potterHome308Dest('/ai'), AI, '/ai still /ai.txt leftover');
 assert.equal(potterHome308Dest('/compute/openapi'), SKILL, '/compute/openapi still skill leftover');
 assert.equal(potterHome308Dest('/api/openapi'), `${WWW}/compute/api`, '/api/openapi stays gateway leftover');
 assert.notEqual(potterHome308Dest('/api/openapi'), OPENAPI, '/api/openapi is not nested openapi leftover');
+assert.equal(potterHome308Dest('/compute/api/openapi.json'), OPENAPI, '/compute/api/openapi.json leftover → spec');
+assert.equal(potterHome308Dest('/compute/api/openapi.json/'), OPENAPI, '/compute/api/openapi.json/ leftover → spec');
 
 function expectLoc(host, dest) {
   if (host !== 'lobby.getdasha.com') return dest;

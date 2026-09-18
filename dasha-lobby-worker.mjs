@@ -178,7 +178,7 @@ export { stripDigestLeftoverDupSectionCss };
 
 /* assets-build overwrites static-gen robots/sitemap; live-verify and disk SoR are this set. */
 const ROBOTS_TXT = `# getdasha.com — public crawl rules (also served at lobby.getdasha.com/robots.txt)
-# Machine-readable identity: /ai.txt, /llms.txt (index), /llms-full.txt (full markdown), /agents.json, /.well-known/mcp.json, /.well-known/agent.json, /compute/skill.md.
+# Machine-readable identity: /ai.txt, /llms.txt (index), /llms-full.txt (full markdown), /agents.json, /.well-known/mcp.json, /.well-known/agent.json, /compute/skill.md, /compute/openapi.json.
 
 User-agent: *
 Allow: /
@@ -196,6 +196,7 @@ Allow: /agents.json
 Allow: /.well-known/mcp.json
 Allow: /.well-known/agent.json
 Allow: /compute/skill.md
+Allow: /compute/openapi.json
 
 Sitemap: https://www.getdasha.com/sitemap.xml
 Sitemap: https://lobby.getdasha.com/sitemap.xml
@@ -350,6 +351,7 @@ compute https://www.getdasha.com/compute
 compute packet https://www.getdasha.com/compute/llms.txt
 agent.json https://www.getdasha.com/.well-known/agent.json
 compute skill https://www.getdasha.com/compute/skill.md
+compute openapi https://www.getdasha.com/compute/openapi.json
 Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.
 mcp https://www.getdasha.com/compute/mcp.json
 Use a Mac https://www.getdasha.com/compute#ask
@@ -380,6 +382,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Compute spend caps](https://www.getdasha.com/caps)
 - [Compute agent.json](https://www.getdasha.com/.well-known/agent.json)
 - [Compute skill](https://www.getdasha.com/compute/skill.md)
+- [Compute OpenAPI](https://www.getdasha.com/compute/openapi.json)
 - [Compute MCP](https://www.getdasha.com/compute/mcp.json)
 - [Use a Mac](https://www.getdasha.com/compute#ask)
 - [Join a Mac](https://www.getdasha.com/compute#provide)
@@ -512,6 +515,7 @@ Compute: Start. (Do / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Spo
 Agent packet: https://www.getdasha.com/compute/llms.txt
 Agent JSON: https://www.getdasha.com/.well-known/agent.json
 Agent skill: https://www.getdasha.com/compute/skill.md
+OpenAPI: https://www.getdasha.com/compute/openapi.json
 Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.
 MCP catalog: https://www.getdasha.com/compute/mcp.json
 Use a Mac: https://www.getdasha.com/compute#ask
@@ -537,6 +541,7 @@ Login: Grok Bot first, then X, then wallet. https://www.getdasha.com/login
 - https://www.getdasha.com/llms-full.txt
 - https://www.getdasha.com/compute/llms.txt
 - https://www.getdasha.com/compute/skill.md
+- https://www.getdasha.com/compute/openapi.json
 - https://www.getdasha.com/.well-known/agent.json
 - https://www.getdasha.com/compute/mcp.json
 - https://www.getdasha.com/sitemap.xml
@@ -5261,8 +5266,9 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  AGENTS.md stores as /compute/api/agents.md. Nested swagger.json dest is
  *  /compute/api (same as apex /swagger.json leftover). Exact /compute/api
  *  + product faces stay 200. Must win over the /compute/api/ casefold
- *  catch-all. Do not invent /compute/api/openapi.json leftover (real
- *  OpenAPI face is /compute/openapi.json). No Muse product HTML. No Room
+ *  catch-all. Nested /compute/api/openapi.json leftover lives in
+ *  POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS (real OpenAPI face is
+ *  /compute/openapi.json). No Muse product HTML. No Room
  *  source. Apex /api/benchmarks.json (+/) Title-case 308 → /benchmarks
  *  (face already 200; lobby same-host). Nested /compute/api/benchmarks.json
  *  is already a live leftover 308 — keep it. Do not invent /benchmarks.json
@@ -5371,8 +5377,9 @@ const POTTER_OPENAPI_YAML_308_PATHS = new Set([
 /** Leftover apex /openapi.json + live Motley /api/openapi.json (+slash /
  *  Title-case) → /compute/openapi.json (real OpenAPI 3.1). /openapi and
  *  /api/openapi (no .json) stay gateway leftovers → /compute/api. Exact
- *  /compute/openapi.json stays the 200 spec. Do not invent
- *  /compute/api/openapi.json leftover. */
+ *  /compute/openapi.json stays the 200 spec. Nested
+ *  /compute/api/openapi.json leftover lives in
+ *  POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS. */
 const POTTER_OPENAPI_JSON_308_PATHS = new Set([
   '/openapi.json', '/openapi.json/',
   '/api/openapi.json', '/api/openapi.json/',
@@ -5441,11 +5448,20 @@ const POTTER_COMPUTE_API_MCP_308_PATHS = new Set([
   '/compute/api/mcp', '/compute/api/mcp/',
 ]);
 /** Nested Motley leftover /compute/api/openapi (+slash / Title-case via
- *  toLowerCase) while /compute/openapi.json is already 200. Do not invent
- *  /compute/api/openapi.json leftover. Must win over the /compute/api/
- *  casefold catch-all. Do not invent /api/openapi. */
+ *  toLowerCase) while /compute/openapi.json is already 200. Sibling
+ *  /compute/api/openapi.json leftover lives in
+ *  POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS. Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent /api/openapi. */
 const POTTER_COMPUTE_API_OPENAPI_308_PATHS = new Set([
   '/compute/api/openapi', '/compute/api/openapi/',
+]);
+/** Nested Motley leftover /compute/api/openapi.json (+slash / Title-case
+ *  via toLowerCase) JSON-404 while /compute/openapi.json is already 200
+ *  OpenAPI 3.1. Bare /compute/api/openapi stays its Set. Must win over
+ *  the /compute/api/ casefold catch-all. Do not invent apex leftovers
+ *  here. Lobby same-host, not www cross-host. */
+const POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS = new Set([
+  '/compute/api/openapi.json', '/compute/api/openapi.json/',
 ]);
 /** Nested Motley leftover /compute/api/contribute (+slash / Title-case via
  *  toLowerCase) while /contribute is already 200. Apex /api/contribute
@@ -5807,7 +5823,7 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_MCP_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/mcp.json";
   }
-  if (POTTER_COMPUTE_API_OPENAPI_308_PATHS.has(p)) {
+  if (POTTER_COMPUTE_API_OPENAPI_308_PATHS.has(p) || POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/openapi.json";
   }
   if (POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.has(p) || POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(p)) {
@@ -5942,6 +5958,7 @@ export function potterHome308Response(request, url) {
           (u.pathname === '/compute/proof' && POTTER_PROOF_308_PATHS.has(src)) ||
           (u.pathname === '/digest' && POTTER_COMPUTE_DIGEST_308_PATHS.has(src)) ||
           (u.pathname === '/compute/llms.txt' && POTTER_COMPUTE_API_LLMS_JSON_308_PATHS.has(src)) ||
+          (u.pathname === '/compute/openapi.json' && POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS.has(src)) ||
           (u.pathname === '/contribute' && POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(src)) ||
           (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )

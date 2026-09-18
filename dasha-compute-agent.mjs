@@ -26,6 +26,7 @@ export const COMPUTE_SKILL_CURSOR_URL = 'https://www.getdasha.com/compute/skills
 export const COMPUTE_AGENT_JSON_URL = 'https://www.getdasha.com/.well-known/agent.json';
 export const COMPUTE_AGENT_JSON_ALIAS_URL = 'https://www.getdasha.com/compute/agent.json';
 export const COMPUTE_MCP_JSON_URL = 'https://www.getdasha.com/compute/mcp.json';
+export const COMPUTE_OPENAPI_JSON_URL = 'https://www.getdasha.com/compute/openapi.json';
 export const COMPUTE_MCP_WELLKNOWN_URL = 'https://www.getdasha.com/.well-known/mcp.json';
 export const COMPUTE_MCP_WELLKNOWN_COMPUTE_URL = 'https://www.getdasha.com/compute/.well-known/mcp.json';
 export const COMPUTE_LLMS_FULL_URL = 'https://www.getdasha.com/compute/llms-full.txt';
@@ -195,6 +196,7 @@ ${COMPUTE_PROVIDE_SPEED_TXT}
 packet ${COMPUTE_LLMS_URL}
 agent.json ${COMPUTE_AGENT_JSON_URL}
 MCP: ${COMPUTE_MCP_JSON_URL}
+openapi ${COMPUTE_OPENAPI_JSON_URL}
 key · cap · receipt: /caps · /compute/proof.md · /keys.json
 `;
 
@@ -245,6 +247,7 @@ agent.json ${COMPUTE_AGENT_JSON_URL}
 skill ${COMPUTE_SKILL_URL}
 skills ${COMPUTE_SKILL_CURSOR_URL}
 mcp ${COMPUTE_MCP_JSON_URL}
+openapi ${COMPUTE_OPENAPI_JSON_URL}
 
 site https://www.getdasha.com/llms.txt
 full https://www.getdasha.com/llms-full.txt
@@ -262,6 +265,7 @@ GET ${COMPUTE_LLMS_FULL_URL}
 GET ${COMPUTE_SKILL_URL}
 GET ${COMPUTE_MCP_JSON_URL}
 GET ${COMPUTE_MCP_WELLKNOWN_URL}
+GET ${COMPUTE_OPENAPI_JSON_URL}
 
 ## Skill
 
