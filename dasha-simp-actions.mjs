@@ -320,23 +320,16 @@ export function parseSiwsMessage(text) {
 }
 
 /**
- * Validate a parsed SIWS message against the issued challenge.
- * Throws on the first violation; returns the parsed message when valid.
+ * Step-up re-sign message (task 18; design PR #291). Same shape as the login
+ * message, but the signed body names the sensitive action it approves — the
+ * signature is scope-bound, so a re-sign for one action cannot be replayed
+ * against another. TTLs stay tight (STEP_UP_CHALLENGE_TTL_MS).
  */
-export function validateSiwsSignin(parsed, { domain, uri, nonce, now = Date.now() } = {}) {
-  if (!parsed || typeof parsed !== 'object') throw new Error('invalid sign-in message');
-  if (parsed.domain !== domain) throw new Error('sign-in domain mismatch');
-  if (parsed.uri !== uri) throw new Error('sign-in uri mismatch');
-  if (!parsed.nonce || parsed.nonce !== nonce) throw new Error('sign-in nonce mismatch');
-  if (parsed.chainId !== 'solana:mainnet') throw new Error('sign-in chain mismatch');
-  const issuedAt = Date.parse(parsed.issuedAt);
-  const expirationTime = Date.parse(parsed.expirationTime);
-  if (!Number.isFinite(issuedAt) || !Number.isFinite(expirationTime)) throw new Error('invalid sign-in message');
-  if (issuedAt > now + 60_000) throw new Error('sign-in message from the future');
-  if (expirationTime <= now) throw new Error('sign-in message expired');
-  if (expirationTime - issuedAt > 15 * 60_000) throw new Error('invalid sign-in message');
-  return parsed;
+export function walletStepUpMessage({ publicKey, nonce, scope, issuedAt, expiresAt, domain, uri }) {
+  const safeScope = String(scope || 'sensitive-action').slice(0, 64);
+  return `${domain} wants you to confirm with your Solana account:\n${publicKey}\n\nConfirm it's you to continue — this signature approves "${safeScope}". It sends no transaction and proves address control only.\n\nURI: ${uri}\nVersion: 1\nChain ID: mainnet\nNonce: ${nonce}\nIssued At: ${new Date(issuedAt).toISOString()}\nExpiration Time: ${new Date(expiresAt).toISOString()}\nRequest ID: dasha-stepup:${safeScope}`;
 }
+
 
 export function base58Decode(text) {
   const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';

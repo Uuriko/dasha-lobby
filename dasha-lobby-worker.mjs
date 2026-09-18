@@ -50,6 +50,11 @@ import {
   ANON_SOFT_CAP,
   signPayload,
   verifyPayload,
+  sessionClaims,
+  mintStepUpGrantToken,
+  STEP_UP_SCOPES,
+  STEP_UP_CHALLENGE_TTL_MS,
+  STEP_UP_MAX_ATTEMPTS,
 } from './dasha-lobby-x.mjs';
 import {
   GH_OAUTH_COOKIE,
@@ -116,6 +121,7 @@ import {
   submitClaim,
   verifyEd25519,
   walletLoginMessage,
+  walletStepUpMessage,
   walletMessage,
   parseSiwsMessage,
   validateSiwsSignin,
@@ -9170,6 +9176,98 @@ export class DashaLobby {
       return json({ ok: true, provider: 'wallet' }, 200, allowedOrigin, {
         credentials: true,
         headers: { 'Set-Cookie': cookieHeader(token) },
+      });
+    }
+
+    if (path === '/auth/wallet/stepup/challenge') {
+      // Step-up re-sign challenge for wallet sessions (task 18; design PR #291).
+      // Fresh, single-use, origin-bound, and scope-bound: the signed message
+      // names the sensitive action it approves, so one signature cannot be
+      // replayed against another. Tighter TTL than the login challenge.
+      // A stolen session cookie alone can never mint one — only the keyholder
+      // can sign it.
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+      if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'wallet step-up unavailable' }, 503, allowedOrigin, cred);
+      const stepSession = await authSessionFromRequest(this.env, request);
+      const stepClaims = await sessionClaims(this.env, request);
+      if (!stepSession || stepSession.provider !== 'wallet' || !stepSession.wallet || stepClaims?.auth_method !== 'wallet') {
+        return json({ error: 'wallet step-up requires a wallet session' }, 401, allowedOrigin, cred);
+      }
+      const publicKey = stepSession.wallet;
+      const scope = String((await requestJson(request)).scope || '');
+      if (!STEP_UP_SCOPES.includes(scope)) return json({ error: 'valid step-up scope required' }, 400, allowedOrigin, cred);
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const ipAllowed = simpRate(this.simpRates, `wallet-stepup-ip:${ip}`, 12);
+      if (!ipAllowed.ok) return json({ error: 'wallet step-up rate limited', waitMs: ipAllowed.waitMs }, 429, allowedOrigin, cred);
+      const allowed = simpRate(this.simpRates, `wallet-stepup-challenge:${publicKey}`, 6);
+      if (!allowed.ok) return json({ error: 'wallet step-up rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      const issuedAt = Date.now(), expiresAt = issuedAt + STEP_UP_CHALLENGE_TTL_MS;
+      const nonce = [...crypto.getRandomValues(new Uint8Array(16))].map(byte => byte.toString(16).padStart(2, '0')).join('');
+      const proofOrigin = new URL(allowedOrigin);
+      const message = walletStepUpMessage({ publicKey, nonce, scope, issuedAt, expiresAt, domain: proofOrigin.host, uri: `${proofOrigin.origin}/login` });
+      const challenge = await signPayload(this.env.LOBBY_SESSION_SECRET, {
+        kind: 'wallet_stepup', publicKey, nonce, scope, message, origin: proofOrigin.origin, exp: expiresAt,
+      });
+      const saved = await this.state.storage.get('walletLogins');
+      const live = Object.fromEntries(Object.entries(saved && typeof saved === 'object' ? saved : {})
+        .filter(([, row]) => Number(row?.exp) > issuedAt));
+      live[`stepup:${nonce}`] = { nonce, exp: expiresAt, scope, publicKey, attempts: 0 };
+      const bounded = Object.fromEntries(Object.entries(live).sort((a, b) => b[1].exp - a[1].exp).slice(0, 100));
+      await this.state.storage.put('walletLogins', bounded);
+      return json({ ok: true, scope, message, challenge, expiresAt, ttlSeconds: STEP_UP_CHALLENGE_TTL_MS / 1000 }, 200, allowedOrigin, cred);
+    }
+
+    if (path === '/auth/wallet/stepup/verify') {
+      // Step-up re-sign verify: single-use challenge, scope binding, then a
+      // fresh interactive proof is recorded as `step_up_at` / `step_up_method`
+      // on a re-issued session token — the only event that may write those
+      // claims. Failure never logs the user out; 3 failed attempts invalidate
+      // the challenge and the user simply requests a fresh one.
+      if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, allowedOrigin, cred);
+      if (!allowedOrigin) return json({ error: 'origin required' }, 403, null);
+      if (!this.env.LOBBY_SESSION_SECRET) return json({ error: 'wallet step-up unavailable' }, 503, allowedOrigin, cred);
+      const body = await requestJson(request);
+      const challenge = await verifyPayload(this.env.LOBBY_SESSION_SECRET, body.challenge);
+      const stepSession = await authSessionFromRequest(this.env, request);
+      const stepClaims = await sessionClaims(this.env, request);
+      if (!stepSession || stepSession.provider !== 'wallet' || !stepSession.wallet || stepClaims?.auth_method !== 'wallet') {
+        return json({ error: 'wallet step-up requires a wallet session' }, 401, allowedOrigin, cred);
+      }
+      if (!challenge || challenge.kind !== 'wallet_stepup' || challenge.origin !== allowedOrigin ||
+          challenge.publicKey !== stepSession.wallet || !STEP_UP_SCOPES.includes(challenge.scope) ||
+          challenge.scope !== String(body.scope || '')) {
+        return json({ error: 'invalid step-up challenge' }, 401, allowedOrigin, cred);
+      }
+      const allowed = simpRate(this.simpRates, `wallet-stepup-verify:${challenge.publicKey}`, 4);
+      if (!allowed.ok) return json({ error: 'wallet step-up rate limited', waitMs: allowed.waitMs }, 429, allowedOrigin, cred);
+      const logins = await this.state.storage.get('walletLogins');
+      const pending = logins && typeof logins === 'object' ? logins[`stepup:${challenge.nonce}`] : null;
+      if (!pending || pending.exp < Date.now() || pending.publicKey !== challenge.publicKey || pending.scope !== challenge.scope) {
+        return json({ error: 'step-up challenge already used' }, 409, allowedOrigin, cred);
+      }
+      const signatureOk = await verifyEd25519(challenge.message, challenge.publicKey, body.signature).catch(() => false);
+      if (!signatureOk) {
+        const attempts = Number(pending.attempts || 0) + 1;
+        pending.attempts = attempts;
+        await bumpLobbyMetric(this.state.storage, 'stepup:failure:wallet');
+        if (attempts >= STEP_UP_MAX_ATTEMPTS) {
+          delete logins[`stepup:${challenge.nonce}`];
+          if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
+          else await this.state.storage.delete('walletLogins');
+          return json({ error: 'too many failed attempts — request a fresh step-up challenge' }, 409, allowedOrigin, cred);
+        }
+        await this.state.storage.put('walletLogins', logins);
+        return json({ error: 'invalid wallet signature', attempts_left: STEP_UP_MAX_ATTEMPTS - attempts }, 400, allowedOrigin, cred);
+      }
+      delete logins[`stepup:${challenge.nonce}`];
+      if (Object.keys(logins).length) await this.state.storage.put('walletLogins', logins);
+      else await this.state.storage.delete('walletLogins');
+      const grantToken = await mintStepUpGrantToken(this.env.LOBBY_SESSION_SECRET, stepClaims, 'wallet');
+      await bumpLobbyMetric(this.state.storage, 'stepup:success:wallet');
+      return json({ ok: true, provider: 'wallet', scope: challenge.scope, step_up: true }, 200, allowedOrigin, {
+        credentials: true,
+        headers: { 'Set-Cookie': cookieHeader(grantToken) },
       });
     }
 
