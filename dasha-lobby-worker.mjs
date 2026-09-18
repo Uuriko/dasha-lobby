@@ -10790,7 +10790,7 @@ async function handleGoogleOAuth(request, env, allowedOrigin) {
     if (request.method === 'HEAD') return googleOauthHtmlResponse('', 200, { head: true });
     if (url.searchParams.get('continue') !== '1') {
       return googleOauthHtmlResponse(
-        htmlPage('Sign in with Google', '<h1>Sign in with Google</h1><p>Dasha reads your public Google profile across the site. It does not post for you.</p><p><a href="https://www.getdasha.com/privacy">Privacy</a></p><p><a href="/oauth/google/start?continue=1">Continue with Google</a></p>'),
+        htmlPage('Sign in with Google', '<h1>Sign in with Google</h1><p>Dasha reads your public Google profile across the site. It does not post for you.</p><p><a href="https://www.getdasha.com/privacy">Privacy</a></p><p><a href="/oauth/google/start?continue=1">Continue with Google</a></p><p><a href="/login">\u2190 Back to login</a></p>'),
         200,
       );
     }
