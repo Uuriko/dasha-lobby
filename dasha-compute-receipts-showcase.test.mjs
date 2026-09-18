@@ -49,6 +49,7 @@ assert.match(client, /r\.model/, 'verify index shows model');
 assert.match(client, /latency_ms/, 'verify index shows latency');
 const page = await readFile(join(root, 'dasha-verify-page.mjs'), 'utf8');
 assert.match(page, /latency_ms/, 'generated verify page carries the fields');
-assert.match(page, /export const LAUNCH_PAGE_HTML/, 'generated file keeps the launch page export (worker imports it)');
+assert.match(page, /export const VERIFY_PAGE_HTML/, 'generated file keeps the verify page export (worker imports it)');
+assert.doesNotMatch(page, /export const LAUNCH_PAGE_HTML/, 'retired launch page export removed');
 
 console.log('dasha-compute-receipts-showcase: PASS');

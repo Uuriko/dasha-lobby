@@ -140,7 +140,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { COMPUTE_START_PAGE_HTML } from './dasha-compute-start-page.mjs';
 import { CAPS_PAGE_HTML } from './dasha-compute-caps-page.mjs';
-import { LAUNCH_PAGE_HTML, VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
+import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { DOCS_OPENAPI_JSON, DOCS_OPENAPI_YAML, DOCS_PAGE_HTML } from './dasha-docs-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
@@ -5551,6 +5551,9 @@ export function potterHome308Dest(path) {
   if (POTTER_WHICH_308_PATHS.has(p)) return "https://www.getdasha.com/which";
   if (POTTER_LISTINGS_308_PATHS.has(p)) return "https://www.getdasha.com/listings";
   if (p === "/bounty" || p === "/bounty/") return "https://www.getdasha.com/bounties";
+  // Retired Product Hunt launch door (2026-09-17): launch killed, no date.
+  // /launch → /compute so old links and bookmarks land somewhere useful.
+  if (p === "/launch" || p === "/launch/") return "https://www.getdasha.com/compute";
   if (p === "/play" || p === "/play/" || p === "/game" || p === "/game/") {
     return "https://www.getdasha.com/lobby";
   }
@@ -13230,16 +13233,6 @@ export default {
       const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
       if (!stub) return new Response(JSON.stringify({ error: 'missing lobby' }), { status: 503, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
       return stub.fetch(request);
-    }
-    if ((request.method === 'GET' || request.method === 'HEAD') && ['/launch', '/launch/'].includes(String(url.pathname || '').toLowerCase())) {
-      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LAUNCH_PAGE_HTML), {
-        headers: htmlHeaders({
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
-          'X-Dasha-Edge': 'launch',
-          Link: LLMS_DESCRIBEDBY,
-        }),
-      });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && ['/compute/leaderboard', '/compute/leaderboard/'].includes(String(url.pathname || '').toLowerCase())) {
       return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LEADERBOARD_PAGE_HTML), {
