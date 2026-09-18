@@ -119,8 +119,8 @@ if (puppeteer && existsSync(chrome)) {
       const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
       const run = document.getElementById("run-demo");
       const login = document.getElementById("login");
-      const doors = document.getElementById("ask-doors");
-      const doorBox = doors ? doors.getBoundingClientRect() : null;
+      const nav = document.getElementById("ask-nav");
+      const navBox = nav ? nav.getBoundingClientRect() : null;
       const provide = document.getElementById("ask-provide");
       const ocm = document.getElementById("ask-ocm");
       const host = document.getElementById("ask-host");
@@ -130,7 +130,7 @@ if (puppeteer && existsSync(chrome)) {
       const composer = document.getElementById("ask-composer");
       const composerBox = composer?.getBoundingClientRect();
       const threadBox = document.getElementById("ask-thread")?.getBoundingClientRect();
-      const quietRow = !!(doorBox && provideBox && ocmBox && hostBox &&
+      const quietRow = !!(navBox && provideBox && ocmBox && hostBox &&
         Math.abs(provideBox.top - ocmBox.top) < 36 &&
         Math.abs(ocmBox.top - hostBox.top) < 36);
       const cs = login && vis(login) ? getComputedStyle(login) : (run ? getComputedStyle(run) : null);
@@ -145,8 +145,8 @@ if (puppeteer && existsSync(chrome)) {
         runColor: run ? getComputedStyle(run).color : "",
         runBg: run ? getComputedStyle(run).backgroundColor : "",
         quietRow,
-        wrapDoors: doors ? getComputedStyle(doors).flexWrap : "",
-        displayDoors: doors ? getComputedStyle(doors).display : "",
+        wrapDoors: nav ? getComputedStyle(nav).flexWrap : "",
+        displayDoors: nav ? getComputedStyle(nav).display : "",
         composerBottom: composerBox ? composerBox.bottom : 0,
         threadOrPromptAbove: composerBox && (threadBox?.bottom || document.getElementById("prompt")?.getBoundingClientRect().top || 0) <= composerBox.top + 8,
       };
@@ -156,8 +156,8 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(askPaint.placeholder, "Message Dasha");
     assert.equal(askPaint.prompt, true);
     assert.equal(askPaint.login, true, "guest primary is Sign in");
-    assert.equal(askPaint.displayDoors, "grid", "doors stay a quiet grid");
-    assert.equal(askPaint.quietRow, true, "Provide / Marketplace / Host sit as a quiet row");
+    assert.equal(askPaint.displayDoors, "flex", "quiet Ask nav stays a row");
+    assert.equal(askPaint.quietRow, true, "Provide / Marketplace / Host sit as quiet nav links");
     const loginInk = rgbOf(askPaint.loginColor);
     const loginAcid = rgbOf(askPaint.loginBg);
     assert.ok(isInk(loginInk), "Sign in text is ink");

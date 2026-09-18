@@ -82,7 +82,7 @@ if (puppeteer && existsSync(chrome)) {
     });
     assert.equal(adopted.engine, "community", "Mac online → Community default");
     assert.equal(adopted.model, "gemma3-27b", "prefer advertised gemma3-27b");
-    assert.equal(adopted.change, "Community · gemma3-27b");
+    assert.equal(adopted.change, "Community");
     assert.equal(adopted.howComPrimary, true, "How Community ink-on-acid primary");
     assert.equal(adopted.howHostSecondary, true, "How Hosted quieter secondary");
     assert.equal(adopted.askHosted, true, "Ask Hosted quieter door");
