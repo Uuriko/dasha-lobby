@@ -41,7 +41,7 @@ assert.equal(
   'https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump',
 );
 assert.match(museSrc, /href="\/how-to-buy"/, 'Buy goes through /how-to-buy');
-assert.equal(MUSE_FACES.developers.cta.href, '/compute');
+assert.equal(MUSE_FACES.developers.cta.href, '/compute#build');
 assert.match(museSrc, /MUSE_START_HREF = '\/compute'/, 'Start CTA → /compute');
 assert.match(museSrc, /MUSE_PROVIDE_HREF = '\/compute#provide'/, 'Connect a Mac → /compute#provide');
 
@@ -54,7 +54,7 @@ assert.equal(isMuseProductPath('/privacy'), false);
 const COPY = {
   start: [/Macs,/, /working together/, /Share capacity\. Run AI workloads\./],
   providers: [/Your Mac\./, /On your terms\./, /Connect a Mac/],
-  developers: [/Send work\./, /Get results\./, /Run a job/],
+  developers: [/Send work\./, /Get results\./, /Get an API key/],
   network: [/Capacity/, /meets demand\./, /Macs join\. Requests route\. Results return\./],
 };
 

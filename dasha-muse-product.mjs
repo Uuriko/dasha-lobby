@@ -39,7 +39,7 @@ export const MUSE_FACES = {
     h1a: 'Send work.',
     h1b: 'Get results.',
     lede: 'One path from request to response.',
-    cta: { href: MUSE_START_HREF, label: 'Run a job ↓' },
+    cta: { href: '/compute#build', label: 'Get an API key ↓' },
   },
   network: {
     path: '/network',
