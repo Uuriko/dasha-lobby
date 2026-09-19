@@ -337,7 +337,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
 .compute-grid-val{color:var(--paper);font:800 15px/1.15 Arial,Helvetica,sans-serif}
 .compute-grid-lbl{color:var(--muted);font:400 11px/1.2 Arial,Helvetica,sans-serif}
 /* Cinematic Start depth — CSS only. No dancer mesh. */
-#step-gate.gate-cinematic{position:relative;isolation:isolate}
+#step-gate.gate-cinematic{position:relative;isolation:isolate;overflow-x:clip}
 #step-gate.gate-cinematic::before{content:'';position:absolute;left:50%;top:-3rem;width:min(46rem,148%);height:22rem;transform:translateX(-50%);pointer-events:none;z-index:0;background:radial-gradient(ellipse 52% 48% at 50% 40%,color-mix(in srgb,var(--acid) 16%,transparent) 0%,transparent 64%),radial-gradient(ellipse 82% 72% at 50% 18%,color-mix(in srgb,var(--violet) 26%,#2a1730) 0%,transparent 72%);filter:blur(10px)}
 #step-gate.gate-cinematic::after{content:'';position:absolute;inset:-5rem -22% auto;height:30rem;pointer-events:none;z-index:0;background:radial-gradient(ellipse 68% 58% at 50% 8%,transparent 36%,color-mix(in srgb,var(--ink) 78%,transparent) 100%)}
 #step-gate.gate-cinematic>*{position:relative;z-index:1}
