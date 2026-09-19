@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * T047 — Ask empty canvas: starters only; Provide / Host / Marketplace
+ * T047 — Ask empty canvas: starters only; Provide / Host / OCM console
  * stay off the empty thread. Soft T048 (Sign-in top dropdown) + T049
  * (guest soft-model honesty) when cheap in the same PR.
  *
@@ -84,19 +84,19 @@ function assertEmptyCanvasDoorsOff(html, label) {
 
   assert.doesNotMatch(canvas, /id=["']ask-provide["']/, `${label} T047 Provide off empty canvas`);
   assert.doesNotMatch(canvas, /id=["']ask-host["']/, `${label} T047 Host off empty canvas`);
-  assert.doesNotMatch(canvas, /id=["']ask-ocm["']/, `${label} T047 Marketplace off empty canvas`);
+  assert.doesNotMatch(canvas, /id=["']ask-ocm["']/, `${label} T047 OCM console off empty canvas`);
   assert.doesNotMatch(canvas, />Provide</, `${label} T047 no Provide ink on canvas`);
-  assert.doesNotMatch(canvas, />Marketplace</, `${label} T047 no Marketplace ink on canvas`);
+  assert.doesNotMatch(canvas, />OCM console</, `${label} T047 no OCM console ink on canvas`);
   assert.doesNotMatch(canvas, />Host</, `${label} T047 no Host ink on canvas`);
   assert.doesNotMatch(canvas, /id=["']copy-skill-use["']/, `${label} T047 Copy AI skill not on empty canvas`);
 
   assert.doesNotMatch(thread, /id=["']ask-provide["']/, `${label} T047 Provide off empty thread`);
   assert.doesNotMatch(thread, /id=["']ask-host["']/, `${label} T047 Host off empty thread`);
-  assert.doesNotMatch(thread, /id=["']ask-ocm["']/, `${label} T047 Marketplace off empty thread`);
+  assert.doesNotMatch(thread, /id=["']ask-ocm["']/, `${label} T047 OCM console off empty thread`);
   assert.match(thread, /id=["']ask-thread["'][^>]*\bhidden\b><\/div>/, `${label} T047 empty thread has no door children`);
 
   assert.match(nav, /id=["']ask-provide["'][^>]*>Provide</, `${label} T047 Provide lives in composer nav`);
-  assert.match(nav, /id=["']ask-ocm["'][^>]*>Marketplace</, `${label} T047 Marketplace lives in composer nav`);
+  assert.match(nav, /id=["']ask-ocm["'][^>]*>OCM console</, `${label} T047 OCM console lives in composer nav`);
   assert.match(nav, /id=["']ask-host["'][^>]*>Host</, `${label} T047 Host lives in composer nav`);
   assert.match(
     html,

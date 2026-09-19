@@ -157,7 +157,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(askPaint.prompt, true);
     assert.equal(askPaint.login, true, "guest primary is Sign in");
     assert.equal(askPaint.displayDoors, "flex", "quiet Ask nav stays a row");
-    assert.equal(askPaint.quietRow, true, "Provide / Marketplace / Host sit as quiet nav links");
+    assert.equal(askPaint.quietRow, true, "Provide / OCM console / Host sit as quiet nav links");
     const loginInk = rgbOf(askPaint.loginColor);
     const loginAcid = rgbOf(askPaint.loginBg);
     assert.ok(isInk(loginInk), "Sign in text is ink");

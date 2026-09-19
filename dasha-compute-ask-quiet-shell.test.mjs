@@ -41,7 +41,7 @@ function assertAskQuietShell(html, label) {
   assert.doesNotMatch(html, /id=["']ask-starter-6["']/, `${label} no 6th chip`);
   assert.match(html, /id=["']ask-nav["']/, `${label} quiet nav`);
   assert.match(html, /id=["']ask-provide["'][^>]*>Provide</, `${label} Provide nav`);
-  assert.match(html, /id=["']ask-ocm["'][^>]*>Marketplace</, `${label} Marketplace nav`);
+  assert.match(html, /id=["']ask-ocm["'][^>]*>OCM console</, `${label} OCM console nav`);
   assert.match(html, /id=["']ask-host["'][^>]*>Host</, `${label} Host nav`);
   assert.match(html, /<details class=["']ask-more["'] id=["']ask-more["']>/, `${label} More starts closed`);
   assert.match(html, /id=["']ask-top["']|#step-ask \.ask-top|#clear-chat/, `${label} New top control`);
@@ -115,7 +115,7 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(cold.chipCount, 4, "≤4 starter chips");
     assert.deepEqual(cold.chips, ["Write code", "Fix a bug", "Do the thing", "Explain this"]);
     assert.equal(cold.provide, true, "Provide quiet nav");
-    assert.equal(cold.market, true, "Marketplace quiet nav");
+    assert.equal(cold.market, true, "OCM console quiet nav");
     assert.equal(cold.host, true, "Host quiet nav");
     assert.equal(cold.skill, false, "Copy AI skill not on empty canvas");
     assert.equal(cold.moreOpen, false);

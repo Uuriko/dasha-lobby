@@ -12,7 +12,7 @@ assert.match(body, /Dasha Compute/);
 assert.match(body, /Start\./);
 assert.match(body, /<h1 class="tf-q">Do\.<\/h1>/);
 assert.match(body, /Mixture · sub-24GB/);
-assert.match(body, />Marketplace</);
+assert.match(body, />OCM console</);
 assert.match(body, /hashchange/);
 assert.doesNotMatch(body, /not an investment/);
 assert.doesNotMatch(body, /id=[\"']tab-sponsor[\"']/);

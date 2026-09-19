@@ -148,7 +148,7 @@ assert.match(skinned, /dasha-ocm-gate/);
 assert.match(skinned, /dasha-ocm-primary/);
 assert.match(skinned, /dasha-ocm-secondary/);
 assert.match(skinned, /#dcff00/);
-assert.match(skinned, /<h1>Marketplace\.<\/h1>/);
+assert.match(skinned, /<h1>OCM console\.<\/h1>/);
 assert.match(skinned, /Paste a developer key/);
 assert.match(skinned, /href="\/compute"/);
 assert.match(skinned, /action="\/compute\/ocm\/signin"/);
@@ -165,7 +165,7 @@ const root = await proxyComputeOcm(new Request('https://www.getdasha.com/compute
 assert.equal(root.status, 200);
 assert.equal(root.headers.get('x-dasha-edge'), 'compute-ocm');
 const rootBody = await root.text();
-assert.match(rootBody, /Marketplace\./);
+assert.match(rootBody, /OCM console\./);
 assert.match(rootBody, /id="dasha-ocm-login-skin"/);
 assert.match(rootBody, /dasha-ocm-primary/);
 assert.match(rootBody, /action="\/compute\/ocm\/signin"/);
@@ -242,7 +242,7 @@ try {
   const viaBody = await viaWorker.text();
   assert.match(viaBody, /action="\/compute\/ocm\/signin"/);
   assert.match(viaBody, /dasha-ocm-login-skin/);
-  assert.match(viaBody, /<h1>Marketplace\.<\/h1>/);
+  assert.match(viaBody, /<h1>OCM console\.<\/h1>/);
 
   const viaLobby = await worker.fetch(new Request('https://lobby.getdasha.com/compute/ocm/healthz'), {});
   assert.equal(viaLobby.status, 200);
@@ -296,7 +296,7 @@ try {
   assert.doesNotMatch(pageHtml, /id=["']ocm-door["']/);
   assert.match(pageHtml, /id=["']ask-ocm["']/);
   assert.match(pageHtml, /href=["']\/compute\/ocm["']/);
-  assert.match(pageHtml, />Marketplace</);
+  assert.match(pageHtml, />OCM console</);
   assert.match(pageHtml, /id=["']ask-host["']/);
   assert.match(pageHtml, /href=["']\/compute\/ocm\/provider["']/);
   assert.match(pageHtml, />Host</);

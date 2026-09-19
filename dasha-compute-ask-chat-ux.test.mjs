@@ -46,7 +46,7 @@ function assertAskChatUx(html, label) {
   assert.match(html, /id=["']ask-free-fine["']/, `${label} ask-free-fine`);
   assert.match(html, /id=["']buyer-live-line["']/, `${label} buyer-live-line`);
   assert.match(html, /id=["']ask-provide["'][^>]*>Provide</, `${label} Provide`);
-  assert.match(html, /id=["']ask-ocm["'][^>]*>Marketplace</, `${label} Marketplace`);
+  assert.match(html, /id=["']ask-ocm["'][^>]*>OCM console</, `${label} OCM console`);
   assert.match(html, /id=["']ask-host["'][^>]*>Host</, `${label} Host`);
   assert.match(html, /function sizeAskPrompt\(/, `${label} sizeAskPrompt`);
   assert.match(html, /function paintAskThread\(/, `${label} paintAskThread`);

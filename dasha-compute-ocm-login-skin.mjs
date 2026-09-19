@@ -83,7 +83,7 @@ function insertBrand(html) {
 }
 
 function clarifyCopy(html) {
-  let out = html.replace(/<h1>Open-Compute Marketplace<\/h1>/, '<h1>Marketplace.</h1>');
+  let out = html.replace(/<h1>Open-Compute Marketplace<\/h1>/, '<h1>OCM console.</h1>');
   out = out.replace(/<p class="sub">Alpha\.<\/p>/, '<p class="sub">Paste a developer key.</p>');
   return out;
 }

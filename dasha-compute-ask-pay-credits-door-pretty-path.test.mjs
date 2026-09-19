@@ -3,7 +3,7 @@
  * Leftover 2026-09-04 keep-swarm: live /compute/ask|/pay|/credits|/host|/you
  * (+ Title-case) html-404 while /compute/night|/sponsor already 308→/compute.
  * /compute/provide folds via POTTER_COMPUTE_DOCTOR_PROVIDE_308_PATHS → /compute#provide.
- * Marketplace leftover pretty-paths 308→/compute/ocm.
+ * /marketplace leftover pretty-paths 308→/compute/ocm.
  * Typeform doors are Start. Ask. Provide. Pay. Credits.
  * Disk only. No Designer. Never plugin.jup.ag.
  */

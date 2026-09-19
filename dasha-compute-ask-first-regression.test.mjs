@@ -2,7 +2,7 @@
 /**
  * Consolidated gate-first regression — intent form first paint + honesty Hosted label.
  * Source (disk + embed + worker.fetch) + cheap live Mozilla curls.
- * Live assertGateFirstCore only (pre-deploy may lag); honesty Hosted + quiet Marketplace locked on disk/worker.
+ * Live assertGateFirstCore only (pre-deploy may lag); honesty Hosted + quiet OCM console locked on disk/worker.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -89,17 +89,17 @@ function assertAskFirstCore(html, label) {
   assert.doesNotMatch(html, /Stripe|\$0\.00|card number/i, `${label} no fake pay chrome`);
   assert.match(html, /option value=["']hosted["'] selected/, `${label} hosted selected`);
 
-  // Quiet doors Provide · Marketplace · Host
+  // Quiet doors Provide · OCM console · Host
   assert.match(html, /id=["']ask-provide["'][^>]*>Provide</, `${label} ask-provide`);
-  assert.match(html, /id=["']ask-ocm["'][^>]*>Marketplace</, `${label} ask-ocm Marketplace`);
+  assert.match(html, /id=["']ask-ocm["'][^>]*>OCM console</, `${label} ask-ocm OCM console`);
   assert.match(html, /id=["']ask-host["'][^>]*>Host</, `${label} ask-host Host`);
   assert.match(html, /class=["']ask-door-sep["']/, `${label} door separators`);
 
-  // Quiet Marketplace never paints · N on #ask-ocm
-  assert.match(html, /askOcm\.textContent=['"]Marketplace['"]/, `${label} askOcm plain Marketplace`);
+  // Quiet OCM console never paints · N on #ask-ocm
+  assert.match(html, /askOcm\.textContent=['"]OCM console['"]/, `${label} askOcm plain OCM console`);
   assert.doesNotMatch(
     html,
-    /askOcm\.textContent=\(ocmHosts|askOcm\.textContent=`Marketplace ·/,
+    /askOcm\.textContent=\(ocmHosts|askOcm\.textContent=`OCM console ·/,
     `${label} askOcm never · N template`
   );
   assert.doesNotMatch(html, /\['ocm-door','ask-ocm'\]/, `${label} no joint ocm label loop`);
@@ -173,12 +173,12 @@ function assertAskFirstHonesty(html, label) {
   assert.match(html, /aria-label=["']Change engine["']/, `${label} change-engine aria`);
   assert.match(html, /btn\.textContent=['"]Hosted['"]/, `${label} paintAskEngine Hosted branch`);
   assert.match(html, /paintAskEngine\(\)/, `${label} paintAskEngine called`);
-  // Quiet Marketplace — no · N on ask-ocm; count on peek Open only
-  assert.doesNotMatch(html, /id=["']ocm-door["']/, `${label} no gate Marketplace primary`);
+  // Quiet OCM console — no · N on ask-ocm; count on peek Open only
+  assert.doesNotMatch(html, /id=["']ocm-door["']/, `${label} no gate OCM console primary`);
   assert.doesNotMatch(
     html,
-    /askOcm\.textContent=\(ocmHosts|Marketplace · \$\{ocmHosts\}/,
-    `${label} no Marketplace · N template`
+    /askOcm\.textContent=\(ocmHosts|OCM console · \$\{ocmHosts\}/,
+    `${label} no OCM console · N template`
   );
 }
 
@@ -280,7 +280,7 @@ assertGateYou(COMPUTE_PAGE_HTML, "embed");
 
 // USE.md / USE_SKILL Ask-first lockstep
 assert.match(useDisk, /Do → Community|Do → Hosted|Do defaults to Community/, "USE.md Do door");
-assert.match(useDisk, /quiet Provide \/ Marketplace \/ Host/, "USE.md quiet doors");
+assert.match(useDisk, /quiet Provide \/ OCM console \/ Host/, "USE.md quiet doors");
 assert.match(useDisk, /cold boot → Start\./, "USE.md cold boot gate-first");
 assert.match(useDisk, /Do \/ Provide \/ Pay \/ Credits/, "USE.md gate choices");
 assert.match(useDisk, /Pay → Top up|Pay → Pay\./, "USE.md Pay door");
@@ -370,7 +370,7 @@ await live("/compute/skill/use.md", {
   expectEdge: "compute-skill-use",
   expectBody(text) {
     assert.match(text, /Ask \(Hosted\)|Ask → Hosted Ask|Ask → Community|Do → Community|Do → Hosted|Do defaults to Community/);
-    assert.match(text, /quiet Provide \/ Marketplace \/ Host/);
+    assert.match(text, /quiet Provide \/ OCM console \/ Host/);
     if (/Start\./.test(text)) {
       assert.match(text, /Ask \/ Provide \/ Pay \/ Credits|Do \/ Provide \/ Pay \/ Credits/);
       assert.doesNotMatch(text, /say something strange/);
@@ -389,7 +389,7 @@ await live("/llms-full.txt", {
       // pre-deploy lag — prior gate copy still live
       assert.match(text, /Compute: What do you want\? \(Ask \/ Provide \/ Pay \/ Credits\)/);
     } else {
-      assert.match(text, /Compute: Ask\. Provide\. Marketplace\. Build\./);
+      assert.match(text, /Compute: Ask\. Provide\. OCM console\. Build\./);
     }
   },
 });

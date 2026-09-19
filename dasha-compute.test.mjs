@@ -8,7 +8,7 @@ import puppeteer from 'puppeteer-core';
 const html = await readFile(new URL('./dasha-compute.html', import.meta.url), 'utf8');
 const loginHtml = await readFile(new URL('./dasha-login-page.html', import.meta.url), 'utf8');
 const loginClient = await readFile(new URL('./dasha-x-connect-prompt.js', import.meta.url), 'utf8');
-for (const text of ['Start.', 'Ask.', 'Provide', 'Marketplace', 'Run', 'Mixture · sub-24GB', 'Register', 'Download kit', 'v0.3 open alpha', 'Name this Mac.']) assert.ok(html.includes(text), `missing ${text}`);
+for (const text of ['Start.', 'Ask.', 'Provide', 'OCM console', 'Run', 'Mixture · sub-24GB', 'Register', 'Download kit', 'v0.3 open alpha', 'Name this Mac.']) assert.ok(html.includes(text), `missing ${text}`);
 assert.doesNotMatch(html, /role="tablist"[^>]*Dasha Compute sections/);
 assert.doesNotMatch(html, /id="tab-sponsor"/);
 assert.doesNotMatch(html, /Exact claim|Sponsor the fleet|Night Shift/);
@@ -502,4 +502,4 @@ await page.goto('https://www.getdasha.com/login?return=https://evil.example', { 
 await page.waitForSelector('[data-login-next]:not([hidden])');
 assert.equal(await page.$eval('[data-login-next] a', node => node.href), 'https://www.getdasha.com/simp#holder', 'login must reject open redirects');
 await browser.close();
-console.log('dasha compute: unified Ask/Provide/Marketplace/Build + API contract passed');
+console.log('dasha compute: unified Ask/Provide/OCM console/Build + API contract passed');

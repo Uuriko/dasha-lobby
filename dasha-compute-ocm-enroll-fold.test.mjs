@@ -28,10 +28,10 @@ function assertOcmFold(html, label) {
   assert.match(html, /id=["']provide-ocm-status["'][^>]*href=["']\/compute\/ocm\/status["']/, `${label} provide-ocm-status`);
   assert.match(html, /title=["']Cold loads on first request · Ready\/Serving ~1s["']/, `${label} Cold status title`);
   assert.match(html, /id=["']ask-provide["'][^>]*>Provide</, `${label} Ask Provide`);
-  assert.match(html, /id=["']ask-ocm["'][^>]*>Marketplace</, `${label} Ask Marketplace`);
+  assert.match(html, /id=["']ask-ocm["'][^>]*>OCM console</, `${label} Ask OCM console`);
   assert.match(html, /id=["']ask-host["'][^>]*>Host</, `${label} Ask Host`);
   assert.match(html, /id=["']market-open["'][^>]*href=["']\/compute\/ocm["']/, `${label} Console → OCM`);
-  assert.match(html, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} Start Marketplace door`);
+  assert.match(html, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} Start OCM console door`);
   assert.match(html, /id=["']market-enroll-fine["'][^>]*>OCM uses ocm_live_ or email — not your Compute X login\.</, `${label} OCM key honesty`);
   assert.doesNotMatch(html, /New provider token/, `${label} no New provider token`);
   assert.doesNotMatch(html, /OCM_HOST_TOKEN="ocm_host_/, `${label} no argv OCM_HOST_TOKEN`);

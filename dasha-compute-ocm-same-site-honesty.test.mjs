@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Live Worker 770747c3: OCM same-site honesty.
- * Marketplace/Host leave fines that said "Leaves Dasha." are gone —
+ * OCM console/Host leave fines that said "Leaves Dasha." are gone —
  * CTAs already same-site /compute/ocm*. Start. cold paint stays.
  * Never plugin.jup.ag. Never rewrite ocm/ gateway source.
  */
@@ -24,7 +24,7 @@ function assertHonesty(html, label) {
   assert.match(html, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide gate`);
   assert.match(html, /id=["']pick-pay["'][^>]*>Pay</, `${label} Pay gate`);
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits gate`);
-  assert.match(html, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} Start Marketplace → /compute/ocm`);
+  assert.match(html, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} Start OCM console → /compute/ocm`);
   assert.match(html, /id=["']market-enroll-fine["'][^>]*>OCM uses ocm_live_ or email — not your Compute X login\.</, `${label} OCM ≠ Compute X`);
   assert.match(html, /id=["']market-open["'][^>]*href=["']\/compute\/ocm["'][^>]*>Console</, `${label} Console → /compute/ocm`);
   assert.match(html, /id=["']market-host["'][^>]*href=["']\/compute\/ocm\/provider["']/, `${label} Market Host → /compute/ocm/provider`);
@@ -84,7 +84,7 @@ if (puppeteer && existsSync(chrome)) {
       };
     });
     assert.equal(market.step, "market");
-    assert.equal(market.title, "Marketplace.");
+    assert.equal(market.title, "OCM console.");
     assert.equal(market.open, true);
     assert.equal(market.openHref, "/compute/ocm");
     assert.equal(market.hostHref, "/compute/ocm/provider");

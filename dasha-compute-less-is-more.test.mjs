@@ -24,13 +24,13 @@ function assertLess(html, label) {
   assert.match(html, /is-dim/, `${label} dim empty engines`);
   assert.match(html, /engCom\.textContent=providersOnline>=1\?`Community · \$\{providersOnline\}`:'Community'/, `${label} Community · N`);
 
-  // Quiet Ask + gate Marketplace plain; peek Console · N holds the count only
-  assert.match(html, /askOcm\.textContent='Marketplace'/, `${label} quiet ask-ocm plain Marketplace`);
+  // Quiet Ask + gate OCM console plain; peek Console · N holds the count only
+  assert.match(html, /askOcm\.textContent='OCM console'/, `${label} quiet ask-ocm plain OCM console`);
   assert.match(html, /function paintAskEngine\(/, `${label} paintAskEngine`);
   assert.match(html, /id=["']change-engine["'][^>]*>Hosted</, `${label} Ask shows Hosted`);
   assert.match(html, /aria-label=["']Change engine["']/, `${label} change-engine aria`);
-  assert.doesNotMatch(html, /id=["']ocm-door["']/, `${label} no gate Marketplace primary`);
-  assert.doesNotMatch(html, /Marketplace · \$\{ocmHosts\}/, `${label} no Marketplace · N template`);
+  assert.doesNotMatch(html, /id=["']ocm-door["']/, `${label} no gate OCM console primary`);
+  assert.doesNotMatch(html, /OCM console · \$\{ocmHosts\}/, `${label} no OCM console · N template`);
   assert.doesNotMatch(html, /say something strange/, `${label} no strange phrase`);
   assert.match(html, /id=["']ask-starters["']/, `${label} ask-starters row`);
   assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code chip`);

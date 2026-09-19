@@ -30,8 +30,8 @@ function assertGateApi(html, label) {
   assert.match(gate, /class=["']tf-choice primary[^"']*["'][^>]*id=["']pick-ask["'][^>]*>Do</, `${label} Do stays the one primary`);
   assert.match(gate, /id=["']pick-pay["'][^>]*>Pay</, `${label} Pay stays`);
   assert.match(gate, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits stays`);
-  assert.match(gate, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} quiet Marketplace → OCM`);
-  assert.doesNotMatch(gate, /id=["']gate-ocm["'][^>]*class=["'][^"']*tf-choice/, `${label} Marketplace is not a choice primary`);
+  assert.match(gate, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} quiet OCM console → OCM`);
+  assert.doesNotMatch(gate, /id=["']gate-ocm["'][^>]*class=["'][^"']*tf-choice/, `${label} OCM console is not a choice primary`);
   assert.match(gate, /id=["']pick-api["'][^>]*>API</, `${label} quiet API door`);
   assert.match(gate, /id=["']pick-api["'][^>]*class=["']tf-quiet["']|class=["']tf-quiet["'][^>]*id=["']pick-api["']/, `${label} API tf-quiet`);
   assert.match(gate, /title=["']OpenAI-compatible base URL["']/, `${label} API title`);

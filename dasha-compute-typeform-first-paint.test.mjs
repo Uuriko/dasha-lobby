@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Product: /compute Typeform gate-first — cold boot Start. (Ask / Provide / Pay / Credits).
- * Ask hidden until pick; quiet Provide · Marketplace · Host on Ask. No six-tab lab.
+ * Ask hidden until pick; quiet Provide · OCM console · Host on Ask. No six-tab lab.
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -24,7 +24,7 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide gate`);
   assert.match(html, /id=["']pick-pay["'][^>]*>Pay</, `${label} Pay gate`);
   assert.match(html, /id=["']pick-credits["'][^>]*>Credits</, `${label} Credits gate`);
-  assert.doesNotMatch(html, /id=["']ocm-door["']/, `${label} no Marketplace primary on gate`);
+  assert.doesNotMatch(html, /id=["']ocm-door["']/, `${label} no OCM console primary on gate`);
   assert.doesNotMatch(html, /id=["']ask-example["']/, `${label} no ask-example chip`);
   assert.match(html, /id=["']ask-starters["']/, `${label} ask-starters row`);
   assert.match(html, /id=["']ask-starter["'][^>]*>Write code</, `${label} Write code chip`);
@@ -49,16 +49,16 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']pick-credits["'][^>]*title=["']Use prepaid["']/, `${label} Credits title`);
   assert.match(html, /tfStep==='gate'/, `${label} gate honesty top-state`);
   assert.doesNotMatch(html, /say something strange/, `${label} no strange phrase`);
-  assert.match(html, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} Start Marketplace → /compute/ocm`);
+  assert.match(html, /id=["']gate-ocm["'][^>]*href=["']\/compute\/ocm["']/, `${label} Start OCM console → /compute/ocm`);
   assert.match(html, /id=["']market-enroll-fine["'][^>]*>OCM uses ocm_live_ or email — not your Compute X login\.</, `${label} OCM key honesty`);
   assert.match(html, /id=["']market-open["'][^>]*href=["']\/compute\/ocm["']/, `${label} peek Console → /compute/ocm`);
   assert.match(html, /id=["']market-open["'][^>]*>Console</, `${label} market-open Console label`);
   assert.match(html, /id=["']step-market["'][^>]*data-tf=["']market["']/, `${label} market peek step`);
   assert.match(html, /showTf\(['"]market['"]\)/, `${label} showTf market`);
-  assert.match(html, />Marketplace</, `${label} Marketplace label`);
+  assert.match(html, />OCM console</, `${label} OCM console label`);
   assert.match(html, /id=["']ask-provide["']/, `${label} quiet Ask Provide`);
-  assert.match(html, /id=["']ask-ocm["']/, `${label} quiet Ask Marketplace`);
-  assert.match(html, /askOcm\.textContent='Marketplace'/, `${label} quiet ask-ocm plain (no · N)`);
+  assert.match(html, /id=["']ask-ocm["']/, `${label} quiet Ask OCM console`);
+  assert.match(html, /askOcm\.textContent='OCM console'/, `${label} quiet ask-ocm plain (no · N)`);
   assert.match(html, /id=["']ask-host["']/, `${label} quiet Ask Host`);
   assert.doesNotMatch(html, /id=["']ask-host["'][^>]*href=/, `${label} Ask Host no hard leave`);
   assert.match(html, /id=["']ask-credits["']/, `${label} quiet Ask credits meter`);
@@ -288,7 +288,7 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']market-host["'][^>]*href=["']\/compute\/ocm\/provider["']/, `${label} Market Host same-site /compute/ocm/provider`);
   assert.match(html, /id=["']host-run["'][^>]*href=["']\/compute\/ocm\/provider["']/, `${label} Host Open same-site /compute/ocm/provider`);
   assert.match(html, /step===['"]gate['"]\|\|step===['"]credits['"]\|\|step===['"]you['"]\|\|step===['"]earn['"]/, `${label} hide progress gate|credits|you|earn`);
-  assert.match(html, /title=["']OCM console["']/, `${label} Marketplace OCM console title`);
+  assert.match(html, /title=["']OCM console["']/, `${label} OCM console title`);
   assert.doesNotMatch(html, /OCM catalog/, `${label} no OCM catalog`);
   assert.match(html, /title=["']OCM host · enroll["']/, `${label} Host OCM host title`);
   assert.match(html, /3 free \/ 10 min · then credits/, `${label} free floor skill copy`);
@@ -365,9 +365,9 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(paint.provideGate, true, "Provide on gate");
   assert.equal(paint.pay, true, "Pay on gate");
   assert.equal(paint.credits, true, "Credits on gate");
-  assert.equal(paint.marketGate, false, "no Marketplace primary on gate");
+  assert.equal(paint.marketGate, false, "no OCM console primary on gate");
   assert.equal(paint.askProvide, false, "quiet Provide not on gate paint");
-  assert.equal(paint.askOcm, false, "quiet Marketplace not on gate paint");
+  assert.equal(paint.askOcm, false, "quiet OCM console not on gate paint");
   assert.equal(paint.askHost, false, "quiet Host not on gate paint");
   assert.equal(paint.prompt, false, "prompt not on gate first paint");
   assert.equal(paint.run, false, "Run not on gate first paint");
@@ -478,7 +478,7 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(afterAsk.engine, "hosted");
   assert.equal(afterAsk.intent, "ask");
   assert.equal(afterAsk.progressHidden, true, "progress hidden on ask chat");
-  // Usertest: ocmHosts must NOT leak into quiet Ask nav as "Marketplace · 2"
+  // Usertest: ocmHosts must NOT leak into quiet Ask nav as "OCM console · 2"
   const quietNav = await page.evaluate(() => {
     ocmHosts = 2;
     paintSplit();
@@ -490,7 +490,7 @@ if (puppeteer && existsSync(chrome)) {
       host: (document.getElementById("ask-host")?.textContent || "").trim(),
     };
   });
-  assert.equal(quietNav.ask, "Marketplace", "quiet Ask Marketplace no · N");
+  assert.equal(quietNav.ask, "OCM console", "quiet Ask OCM console no · N");
   assert.equal(quietNav.provide, "Provide", "quiet Provide plain");
   assert.equal(quietNav.host, "Host", "quiet Host plain");
   assert.equal(quietNav.open, "Console · 2", "peek Console · N");
@@ -526,7 +526,7 @@ if (puppeteer && existsSync(chrome)) {
   assert.equal(askBack.step, "ask");
   assert.equal(askBack.engine, "hosted");
   assert.equal(askBack.back, true, "Back after Change engine → Hosted");
-  // Marketplace peek stays in Typeform
+  // OCM console peek stays in Typeform
   await page.click("#ask-ocm");
   const market = await page.evaluate(() => {
     const vis = (el) => !!(el && !el.hidden && !el.closest("[hidden]") && el.offsetParent);
@@ -542,15 +542,15 @@ if (puppeteer && existsSync(chrome)) {
       leaveCopy: document.body.innerText.includes("Leaves Dasha."),
     };
   });
-  assert.equal(market.step, "market", "Marketplace peek step");
-  assert.equal(market.title, "Marketplace.");
+  assert.equal(market.step, "market", "OCM console peek step");
+  assert.equal(market.title, "OCM console.");
   assert.equal(market.open, true);
   assert.equal(market.host, true);
   assert.equal(market.askGone, true);
   assert.equal(market.openHref, "/compute/ocm");
   assert.equal(market.hostHref, "/compute/ocm/provider");
   assert.equal(market.leaveFine, null, "no market-leave-fine");
-  assert.equal(market.leaveCopy, false, "Marketplace peek does not say Leaves Dasha.");
+  assert.equal(market.leaveCopy, false, "OCM console peek does not say Leaves Dasha.");
   await page.click("#step-market .tf-back");
   const backAsk = await page.evaluate(() => document.body.dataset.step);
   assert.equal(backAsk, "ask", "market Back → Ask");
