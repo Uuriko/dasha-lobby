@@ -421,9 +421,11 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <button type="button" id="gate-you" class="tf-quiet" hidden>You</button>
 
   <!-- pricing-band:2026-09-19 — one human-readable pricing section -->
+  <!-- dasha-bonus-headline:2026-09-19 — $dasha better both ways -->
   <div class="ux-band" id="ux-cost-band">
     <p class="ux-kicker">Costs.</p>
     <p class="fine" id="ux-cost-line">$0.05 per successful job on community Macs. Hosted: 3 free every 10 min, then credits. Your own Mac: free. Top up from $5 with USDC or $dasha.</p>
+    <p class="fine" id="ux-dasha-line">$dasha wins both ways: the $5 top-up costs $4.75 with $dasha vs $4.85 with USDC, and providers earn +5% when paid in $dasha.</p>
   </div>
 
   <div class="ux-band" id="ux-demo">
@@ -822,6 +824,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
 <section class="tf-step" id="step-earn" data-tf="earn" hidden>
   <button type="button" class="tf-back" data-back="you">← Back</button>
   <h1 class="tf-q">Earn.</h1>
+  <p class="fine" id="earn-dasha-callout">Take payouts in $dasha: +5% on every payout.</p>
   <p class="fine" id="earn-rates">$0.05/job + $0.01/1k completion · min $1 · paid out manually for now, no fixed schedule yet · $dasha payout +5%</p>
   <p class="fine" id="earn-demand">Busy network · more jobs. Stay warm. Same rate.</p>
   <!-- provide-invite-second:2026-09-10 -->
@@ -4135,7 +4138,7 @@ function paintEarn(){
     return;
   }
   const face=Math.max(0,Math.floor(Number(earnTotalUsdc)||0));
-  const dashaCents=Math.floor(face*1.1);
+  const dashaCents=Math.floor(face*1.05);
   if(bal){bal.hidden=false;bal.textContent=formatUsdCents(face)+' owed · USDC face'}
   if(jobs){jobs.hidden=false;const tpsLabel=formatTokPerSec(ownMacTps);jobs.textContent=(earnTotalJobs===1?'1 job':earnTotalJobs+' jobs')+' completed'+(tpsLabel?' · '+tpsLabel+' tok/s':'')}
   if(methods)methods.hidden=false;

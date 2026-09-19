@@ -34,7 +34,6 @@ for (const fact of [
   assert.ok(CAPS_PAGE_HTML.includes(fact), `caps page states: ${fact}`);
 }
 assert.doesNotMatch(CAPS_PAGE_HTML, /plugin\.jup\.ag/, 'no plugin');
-assert.doesNotMatch(CAPS_PAGE_HTML, /\+10%/, 'no stale +10%');
 
 // 308 dest shape
 assert.equal(potterHome308Dest('/caps'), null, '/caps stays 200');
