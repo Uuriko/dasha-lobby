@@ -179,10 +179,11 @@ assert.ok([200, 204].includes(poll.status), `poll status ${poll.status}`);
     body: JSON.stringify({
       provider_id: credentials.provider_id,
       name: 'Fleet Mac',
-      models: ['qwen3-4b', 'qwen3-8b'],
+      models: ['qwen3-4b', 'qwen3-8b', 'qwen3.8-27b'],
       engines: {
-        'qwen3-8b': { engine: 'splash', package: 'incoai/Qwen3.8-27B-Splash', port: 8000 },
+        'qwen3.8-27b': { engine: 'splash', package: 'incoai/Qwen3.8-27B-Splash', port: 8000 },
         'qwen3-4b': { engine: 'mystery-engine', package: 'x/y' },
+        'qwen3-8b': { engine: 'splash', package: 'incoai/Qwen3.8-27B-Splash', port: 8001 },
         'not-listed': { engine: 'splash', package: 'x/y' },
       },
     }),
@@ -191,14 +192,16 @@ assert.ok([200, 204].includes(poll.status), `poll status ${poll.status}`);
   const res = await get();
   const body = await res.json();
   const row = body.providers[0];
-  const m8b = row.models.find(m => m.model === 'qwen3-8b');
+  const mSplash = row.models.find(m => m.model === 'qwen3.8-27b');
   const m4b = row.models.find(m => m.model === 'qwen3-4b');
-  assert.equal(m8b.engine, 'splash');
+  const m8b = row.models.find(m => m.model === 'qwen3-8b');
+  assert.equal(mSplash.engine, 'splash');
   assert.ok(!('engine' in m4b), 'unknown engine must not leak');
+  assert.ok(!('engine' in m8b), 'splash denied where no Splash package exists');
   // Private details (package/port) stay server-side.
-  assert.ok(!('package' in m8b) && !('port' in m8b));
+  assert.ok(!('package' in mSplash) && !('port' in mSplash));
   const stored = await storage.get(`compute:provider:${credentials.provider_id}`);
-  assert.deepEqual(Object.keys(stored.engines || {}), ['qwen3-8b']);
+  assert.deepEqual(Object.keys(stored.engines || {}), ['qwen3.8-27b']);
 }
 
 console.log('fleet endpoint: ok');

@@ -32,7 +32,7 @@ function assertCatalog(html, label) {
   assert.match(html, /\['ternary-bonsai-2-27b','Ternary-Bonsai-2-27B-PQ2_0','Ternary Bonsai 2 27B','PQ2',24,'community'\]/, `${label} bonsai MODELS row`);
   assert.match(html, /\['qwen3-4b','qwen3:4b','Qwen 3 4B','2\.5 GB',8,'fast chat'\]/, `${label} MODELS row`);
   assert.match(html, /\['qwen3-8b','qwen3:8b'/, `${label} 8b MODELS row stays`);
-  assert.match(html, /SUB24=new Set\(\['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b'\]\)/, `${label} SUB24 includes 4b`);
+  assert.match(html, /SUB24=new Set\(\['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b','qwen3\.5-4b','qwen3\.5-9b','gemma4-e2b'\]\)/, `${label} SUB24 includes 4b`);
   assert.doesNotMatch(html, /SUB24=new Set\([^)]*ternary-bonsai-2-27b/, `${label} bonsai stays out of Mixture SUB24`);
   assert.match(html, /sub-24GB specialists · live default qwen3-8b/, `${label} mixture chip still 8b`);
   assert.match(html, /networkModels\.has\(['"]gemma3-27b['"]\)/, `${label} Community still prefers 27b when advertised`);

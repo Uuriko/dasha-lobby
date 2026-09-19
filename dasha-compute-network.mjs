@@ -113,8 +113,10 @@ import {
   residualControlFields,
 } from './dasha-compute-receipt-honesty.mjs';
 import { canAdvertiseModel, filterAdvertisableModels } from './dasha-compute-model-license.mjs';
+import { policyAllowsModel, modelAllowedEngines, ENGINE_SPLASH } from './dasha-compute-model-policy.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
 export { canAdvertiseModel, filterAdvertisableModels };
+export { policyAllowsModel, modelAllowedEngines };
 
 export { HOSTED_ASK_PRICE_CENTS };
 
@@ -157,17 +159,21 @@ export const COMPUTE_CATALOG_MODELS = MODELS;
  * Poll unions catalog models the Mac is advertising into allowedModels.
  * Register-time allow-list stays until the kit actually polls a new catalog id
  * (DASHA_MODEL_MAP add). Unknown / non-catalog ids stay out.
+ * Hardware policy: when the provider's reported unified memory is known, models
+ * above its floor are dropped (fail closed on the model, fail open on missing
+ * hardware so older kits keep working).
  */
-export function growAllowedModels(prior, polled = [], catalog = MODELS) {
+export function growAllowedModels(prior, polled = [], catalog = MODELS, memoryGb = null) {
   const next = new Set();
   for (const model of prior || []) {
     const id = String(model);
     // License gate: catalog membership is not enough — held/unknown stay out.
-    if (catalog.has(id) && canAdvertiseModel(id)) next.add(id);
+    // Policy gate: no policy row, or reported memory below the floor, stays out.
+    if (catalog.has(id) && canAdvertiseModel(id) && policyAllowsModel(id, { memoryGb })) next.add(id);
   }
   for (const model of polled || []) {
     const id = String(model);
-    if (catalog.has(id) && canAdvertiseModel(id)) next.add(id);
+    if (catalog.has(id) && canAdvertiseModel(id) && policyAllowsModel(id, { memoryGb })) next.add(id);
   }
   return [...next];
 }
@@ -884,14 +890,16 @@ function providerHardware(input, allowedModels) {
 /** Splash tier: retain the kit's additive heartbeat `engines` advertisement
  *  (public model -> { engine, package, port }) so the fleet can show an honest
  *  "Splash (beta)" badge. Sanitized like hardware: only whitelisted engine
- *  names survive, only for models the provider is allowed to serve. */
+ *  names survive, only for models the provider is allowed to serve, and only
+ *  for models whose policy row permits that engine. */
 function providerEngines(input, allowedModels) {
   const source = input?.engines;
   if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
   const clean = {};
   for (const [publicName, spec] of Object.entries(source)) {
     if (!allowedModels.includes(publicName)) continue;
-    if (String(spec?.engine || '').toLowerCase() !== 'splash') continue;
+    if (String(spec?.engine || '').toLowerCase() !== ENGINE_SPLASH) continue;
+    if (!modelAllowedEngines(publicName).includes(ENGINE_SPLASH)) continue;
     const port = Number(spec?.port);
     clean[publicName] = {
       engine: 'splash',
@@ -2152,14 +2160,20 @@ export class ComputeNetwork {
       await this.state.storage.put(`compute:provider-hour:${provider.id}:${metricHour(now)}`, 1);
       const kitVersion = String(input.version || '').trim().slice(0, 32);
       if (kitVersion) provider.kitVersion = kitVersion;
+      // Hardware policy enforcement: effective memory = fresh heartbeat report,
+      // else the stored report, else unknown (older kits keep working).
+      const priorAllowed = provider.allowedModels || provider.models || [];
+      const freshHardware = providerHardware(input, priorAllowed);
+      const memoryGb = freshHardware?.memory_gb ?? provider.hardware?.memory_gb ?? null;
       provider.allowedModels = growAllowedModels(
-        provider.allowedModels || provider.models || [],
+        priorAllowed,
         Array.isArray(input.models) ? input.models : [],
+        MODELS,
+        memoryGb,
       );
       if (Array.isArray(input.models)) provider.models = [...new Set(input.models.map(String).filter(model => provider.allowedModels.includes(model)))];
       else provider.models ||= [];
-      const hardware = providerHardware(input, provider.allowedModels);
-      if (hardware) provider.hardware = hardware;
+      if (freshHardware) provider.hardware = freshHardware;
       // Splash tier: retain the heartbeat's engine advertisement; clear it when
       // the kit explicitly stops advertising (undefined = older kit, keep).
       const engines = providerEngines(input, provider.allowedModels);

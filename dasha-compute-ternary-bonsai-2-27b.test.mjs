@@ -34,7 +34,7 @@ function assertCatalog(html, label) {
     /\['ternary-bonsai-2-27b','Ternary-Bonsai-2-27B-PQ2_0','Ternary Bonsai 2 27B','PQ2',24,'community'\]/,
     `${label} MODELS picker row`,
   );
-  assert.match(html, /SUB24=new Set\(\['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b'\]\)/, `${label} SUB24 unchanged`);
+  assert.match(html, /SUB24=new Set\(\['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b','qwen3\.5-4b','qwen3\.5-9b','gemma4-e2b'\]\)/, `${label} SUB24 unchanged`);
   assert.doesNotMatch(html, /SUB24=new Set\([^)]*ternary-bonsai-2-27b/, `${label} bonsai not Mixture`);
   assert.match(html, /value=["']gpt-oss-20b["']/, `${label} Hosted gpt-oss-20b option stays`);
   assert.match(html, /id=["']ask-composer["']/, `${label} Ask composer shell stays`);

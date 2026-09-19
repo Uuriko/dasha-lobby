@@ -38,10 +38,17 @@ const NEEDLE_LABEL_RE = /cactus\s*needle|\bneedle\s*2\b/i;
 const CATALOG_PIN = [
   'gemma3-12b',
   'gemma3-27b',
+  'gemma4-26b-a4b',
+  'gemma4-e2b',
   'gpt-oss-120b',
   'gpt-oss-20b',
+  'muse-glimmer-30b',
   'qwen3-30b-a3b',
   'qwen3-4b',
+  'qwen3.5-4b',
+  'qwen3.5-9b',
+  'qwen3.6-35b',
+  'qwen3.8-27b',
   'qwen3-8b',
   'ternary-bonsai-2-27b',
 ];
@@ -62,6 +69,13 @@ const MODELS_PIN = [
   'qwen3-30b-a3b',
   'gemma3-27b',
   'ternary-bonsai-2-27b',
+  'qwen3.5-4b',
+  'qwen3.5-9b',
+  'gemma4-e2b',
+  'muse-glimmer-30b',
+  'gemma4-26b-a4b',
+  'qwen3.8-27b',
+  'qwen3.6-35b',
 ];
 
 function leftoverSelectIds(html) {
