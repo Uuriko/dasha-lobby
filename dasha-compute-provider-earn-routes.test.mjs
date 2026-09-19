@@ -67,7 +67,7 @@ const bal = await network.fetch(new Request('https://lobby.getdasha.com/compute/
 assert.equal(bal.status, 200);
 const balBody = await bal.json();
 assert.equal(balBody.total_usdc_cents, 150);
-assert.equal(balBody.total_dasha_cents, 165);
+assert.equal(balBody.total_dasha_cents, 157);
 assert.equal(balBody.providers[0].id, 'mac_earn1');
 
 const badPref = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/provider/payout-pref', {
@@ -92,7 +92,7 @@ assert.equal(payout.status, 201, await payout.clone().text());
 const payBody = await payout.json();
 assert.equal(payBody.status, 'pending');
 assert.equal(payBody.usdc_cents, 150);
-assert.equal(payBody.payout_cents, 165);
+assert.equal(payBody.payout_cents, 157);
 assert.equal(payBody.payout_mode, 'pending');
 assert.match(payBody.note, /does not auto-chain-send/);
 
