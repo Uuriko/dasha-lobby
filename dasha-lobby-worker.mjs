@@ -139,6 +139,7 @@ import { ComputeNetwork, computeApi, rewriteComputeV1ChatCompletionsPath } from 
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { COMPUTE_START_PAGE_HTML } from './dasha-compute-start-page.mjs';
+import { COMPUTE_FINETUNE_PAGE_HTML } from './dasha-compute-finetune-page.mjs';
 import { CAPS_PAGE_HTML } from './dasha-compute-caps-page.mjs';
 import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
@@ -240,6 +241,7 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/compute</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/proof</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/start</loc><lastmod>2026-09-16</lastmod></url>
+  <url><loc>https://www.getdasha.com/compute/finetune</loc><lastmod>2026-09-19</lastmod></url>
   <url><loc>https://www.getdasha.com/caps</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/how-to-buy</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/chess</loc><lastmod>2026-09-01</lastmod></url>
@@ -7850,6 +7852,18 @@ function computeStartPageResponse(request) {
   });
 }
 
+/** /compute/finetune - fine-tune job UI (Phase 8). */
+function computeFinetunePageResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(COMPUTE_FINETUNE_PAGE_HTML), {
+    status: 200,
+    headers: htmlHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'compute-finetune',
+    }),
+  });
+}
+
 function capsPageResponse(request) {
   return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(CAPS_PAGE_HTML), {
     status: 200,
@@ -11855,6 +11869,12 @@ async function productEdge(request, url, env) {
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/start' || url.pathname === '/compute/start/')) {
       return computeStartPageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/finetune' || url.pathname === '/compute/finetune/')) {
+      return computeFinetunePageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/finetune' || url.pathname === '/compute/finetune/')) {
+      return computeFinetunePageResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/caps' || url.pathname === '/caps/')) {
       return capsPageResponse(request);

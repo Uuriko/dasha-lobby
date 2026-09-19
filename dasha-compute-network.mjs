@@ -113,7 +113,7 @@ import {
   honestLoopFields,
   residualControlFields,
 } from './dasha-compute-receipt-honesty.mjs';
-import { canAdvertiseModel, filterAdvertisableModels } from './dasha-compute-model-license.mjs';
+import { canAdvertiseModel, filterAdvertisableModels, MODEL_LICENSE } from './dasha-compute-model-license.mjs';
 import {
   base64EncodeBytes,
   buildAdapterRecord,
@@ -123,6 +123,7 @@ import {
   gateVerdict,
   mintDatasetRef,
   parseMultipart,
+  resolveAdapterForEngine,
 } from './dasha-compute-finetune-data.mjs';
 import { getEval } from './dasha-compute-finetune-evals/index.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
@@ -480,6 +481,64 @@ export function publicFinetuneTask(task) {
   };
 }
 
+/**
+ * Static fine-tune base-model catalog for the UI picker. Only models that
+ * pass the submit-time allowlist (MODELS + license gate + determinable
+ * size). Public — catalog ids are public anyway.
+ */
+export function finetuneBaseModels() {
+  return [...MODELS]
+    .filter((id) => canAdvertiseModel(id) && finetuneModelSizeGb(id) != null)
+    .map((id) => {
+      const size_b = finetuneModelSizeGb(id);
+      const floors = {};
+      for (const engine of FINETUNE_ENGINES) {
+        const floor = finetuneMemoryFloorGb(id, engine);
+        if (floor != null) floors[engine] = floor;
+      }
+      return {
+        id,
+        size_b,
+        license: MODEL_LICENSE[id]?.license || null,
+        engines: Object.keys(floors),
+        memory_floors_gb: floors,
+      };
+    })
+    // Only models with a defined memory floor on at least one engine are
+    // submittable (validateFinetuneSpec fails closed otherwise).
+    .filter((m) => m.engines.length > 0)
+    .sort((a, b) => a.size_b - b.size_b);
+}
+
+/**
+ * Full owner-scoped task detail: the public task + eval gate artifacts +
+ * training progress + lease/attempt state. tune_result is included whole
+ * (train_loss series for the sparkline, eval_report for the eval view).
+ */
+export function publicFinetuneTaskDetail(task, job) {
+  const base = publicFinetuneTask(task);
+  if (!base) return null;
+  const attempts = Array.isArray(task?.attempts) ? task.attempts : (Array.isArray(job?.attempts) ? job.attempts : []);
+  const leasedJob = job && job.status === 'leased' ? job : null;
+  return {
+    ...base,
+    gate_reasons: Array.isArray(task?.gate_reasons) ? task.gate_reasons : [],
+    eval_delta: task?.eval_delta && typeof task.eval_delta === 'object' ? task.eval_delta : null,
+    tune_result: task?.tune_result && typeof task.tune_result === 'object' ? task.tune_result : null,
+    engine_preference: task?.spec?.engine_preference || job?.spec?.engine_preference || 'any',
+    spec: task?.spec && typeof task.spec === 'object' ? task.spec : null,
+    attempts: attempts.map((a) => ({
+      provider_id: a?.provider_id ?? a?.providerId ?? null,
+      outcome: a?.outcome ?? null,
+      leased_at: a?.leased_at ?? a?.leasedAt ?? null,
+    })),
+    lease: leasedJob ? {
+      provider_id: leasedJob.providerId || null,
+      expires_at: Number(leasedJob.leaseExpiresAt) || null,
+      iters: task?.spec?.iters ?? null,
+    } : null,
+  };
+}
 /** Public, owner-scoped view of an adapter registry record. Never exposes blobs. */
 export function publicAdapterRecord(adapter) {
   if (!adapter || typeof adapter !== 'object') return null;
@@ -1914,6 +1973,29 @@ export class ComputeNetwork {
       return json({ task: publicFinetuneTask(task), job_id: tuneJob.id }, 201, allowedOrigin, true);
     }
 
+    // ---- Fine-tune base-model catalog (Phase 8 UI picker) ----
+    // Static allowlist mirror of validateFinetuneSpec's base_model gate.
+    // Public: catalog ids are public.
+    if ((path === '/compute/api/finetune/models' || path === '/compute/api/finetune/models/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      if (!allowedOrigin) return maybeHead(request, originRequired());
+      return maybeHead(request, json({ models: finetuneBaseModels(), engines: [...FINETUNE_ENGINES] }, 200, allowedOrigin, true));
+    }
+
+    // ---- Fine-tune task detail (Phase 8 UI) ----
+    // Owner-scoped full view: eval gate artifacts, train-loss series,
+    // lease/attempt state. Read-only.
+    const tuneDetailMatch = path.match(/^\/compute\/api\/finetune\/(tune_[A-Za-z0-9_-]{6,64})\/?$/);
+    if (tuneDetailMatch && (request.method === 'GET' || request.method === 'HEAD')) {
+      if (!allowedOrigin) return maybeHead(request, originRequired());
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
+      const task = await this.state.storage.get(`compute:finetune:${tuneDetailMatch[1]}`);
+      if (!task || task.owner !== owner) return maybeHead(request, json({ error: 'fine-tune task not found' }, 404, allowedOrigin, true));
+      const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()];
+      const job = jobs.find((j) => j && j.kind === 'finetune' && j.finetuneId === task.id) || null;
+      return maybeHead(request, json({ task: publicFinetuneTaskDetail(task, job) }, 200, allowedOrigin, true));
+    }
+
     // ---- Fine-tune datasets (Phase 4) ----
     if ((path === '/compute/api/finetune/datasets' || path === '/compute/api/finetune/datasets/') && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'POST')) {
       if (!allowedOrigin) return maybeHead(request, originRequired());
@@ -2047,6 +2129,36 @@ export class ComputeNetwork {
         .sort((a, b) => Number(b.created_at || 0) - Number(a.created_at || 0))
         .map((a) => publicAdapterRecord(a));
       return maybeHead(request, json({ adapters }, 200, allowedOrigin, true));
+    }
+
+    // ---- Adapter serve readiness + owner download (Phase 8 UI deploy) ----
+    // Read-only: per-engine serving seam + the private blob for the owner's
+    // own (local-lane) provider. Private by default — owner only.
+    const adapterServeMatch = path.match(/^\/compute\/api\/finetune\/adapters\/(adapter_[A-Za-z0-9_-]{1,64})\/(serve|download)$/);
+    if (adapterServeMatch && (request.method === 'GET' || request.method === 'HEAD')) {
+      if (!allowedOrigin) return maybeHead(request, originRequired());
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
+      const adapter = await this.state.storage.get(`compute:adapter:${adapterServeMatch[1]}`);
+      if (!adapter || String(adapter.ref || '').includes(':')) return maybeHead(request, json({ error: 'adapter not found' }, 404, allowedOrigin, true));
+      if (adapter.owner !== owner) return maybeHead(request, json({ error: 'not your adapter' }, 403, allowedOrigin, true));
+      if (adapterServeMatch[2] === 'serve') {
+        const serve = {};
+        for (const engine of ['mlx', 'cuda']) serve[engine] = resolveAdapterForEngine(adapter, engine);
+        return maybeHead(request, json({ adapter: publicAdapterRecord(adapter), serve }, 200, allowedOrigin, true));
+      }
+      const blob = await this.state.storage.get(`compute:adapter-blob:${adapter.ref}`);
+      if (!blob) return maybeHead(request, json({ error: 'adapter blob missing' }, 500, allowedOrigin, true));
+      const bytes = blob instanceof Uint8Array ? blob : new Uint8Array(blob);
+      return new Response(request.method === 'HEAD' ? null : bytes, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/gzip',
+          'Content-Disposition': `attachment; filename="${adapter.ref}.tar.gz"`,
+          'Content-Length': String(bytes.length),
+          ...SECURITY,
+        },
+      });
     }
 
     const publishMatch = path.match(/^\/compute\/api\/finetune\/adapters\/(adapter_[A-Za-z0-9_-]{1,64})\/publish$/);
