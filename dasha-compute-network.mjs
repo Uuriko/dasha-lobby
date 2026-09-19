@@ -115,14 +115,14 @@ import {
 } from './dasha-compute-receipt-honesty.mjs';
 import { canAdvertiseModel, filterAdvertisableModels } from './dasha-compute-model-license.mjs';
 import {
+  base64EncodeBytes,
   buildAdapterRecord,
   buildDataset,
-  canAccessAdapter,
   DatasetError,
   DATASET_LIMITS,
   gateVerdict,
   mintDatasetRef,
-  resolveAdapterForEngine,
+  parseMultipart,
 } from './dasha-compute-finetune-data.mjs';
 import { getEval } from './dasha-compute-finetune-evals/index.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
@@ -1617,6 +1617,20 @@ export class ComputeNetwork {
     return provider && sameSecret(await sha256(token), provider.tokenHash) ? provider : null;
   }
 
+  /** Bearer-only provider auth for the kit's GET endpoints (fetch_dataset /
+   *  fetch_resume_adapter send no body and no provider_id — just the token).
+   *  Scans provider records comparing token hashes with a constant-time
+   *  compare. Provider counts are small; fine-tune endpoints only. */
+  async providerByBearer(request) {
+    const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+    if (!token) return null;
+    const digest = await sha256(token);
+    for (const provider of (await this.state.storage.list({ prefix: 'compute:provider:' })).values()) {
+      if (provider && provider.tokenHash && sameSecret(digest, provider.tokenHash)) return provider;
+    }
+    return null;
+  }
+
 
   async loadFactoryCounters() {
     return normalizeFactoryCounters(await this.state.storage.get(FACTORY_KEY));
@@ -1936,9 +1950,11 @@ export class ComputeNetwork {
     }
 
     // ---- Provider dataset download (what the kit's fetch_dataset calls) ----
+    // Kit shape: GET with Bearer token only (no body). Responds
+    // {train, valid} JSONL — the exact shape fetch_dataset expects.
     const providerDatasetMatch = path.match(/^\/v1\/providers\/finetune\/datasets\/(ds_[A-Za-z0-9_-]{1,100})$/);
     if (providerDatasetMatch && request.method === 'GET') {
-      const input = await body(request, 4096), provider = await this.provider(request, input);
+      const provider = await this.providerByBearer(request);
       if (!provider) return computeApiError('invalid provider token', 401);
       const ref = providerDatasetMatch[1];
       const dataset = await this.state.storage.get(`compute:dataset:${ref}`);
@@ -1956,25 +1972,38 @@ export class ComputeNetwork {
       return json({ train, valid, manifest: dataset.manifest }, 200);
     }
 
-    // ---- Provider adapter upload/download (Phase 6 registry blobs) ----
-    if (path === '/v1/providers/finetune/adapters' && request.method === 'POST') {
+    // ---- Provider artifact upload (what the kit's upload_adapter_dir calls) ----
+    // Kit shape: POST multipart/form-data to
+    // /v1/providers/finetune/jobs/{job_id}/artifacts with fields
+    // {kind: "adapter"} + file field "adapter" (adapters.tar.gz).
+    // Bearer token only. Responds {adapter_ref}.
+    const artifactMatch = path.match(/^\/v1\/providers\/finetune\/jobs\/(job_[A-Za-z0-9_-]{6,64})\/artifacts$/);
+    if (artifactMatch && request.method === 'POST') {
+      const provider = await this.providerByBearer(request);
+      if (!provider) return computeApiError('invalid provider token', 401);
+      const contentType = String(request.headers.get('Content-Type') || '');
+      const boundary = contentType.match(/boundary=([^;]+)/)?.[1]?.trim();
+      if (!boundary) return computeApiError('multipart boundary required', 400);
       const len = Number(request.headers.get('Content-Length') || 0);
-      if (len > 256 * 1024 * 1024) return computeApiError('adapter too large (256 MB max)', 413);
+      if (len > 256 * 1024 * 1024) return computeApiError('artifact too large (256 MB max)', 413);
       const raw = await request.arrayBuffer().catch(() => null);
-      if (!raw || raw.byteLength === 0) return computeApiError('empty adapter upload', 400);
-      // Provider auth rides in headers/query here (binary body, no JSON).
-      const providerId = String(new URL(request.url).searchParams.get('provider_id') || '').trim();
-      const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-      const provider = await this.provider(request, { provider_id: providerId });
-      if (!provider || !token) return computeApiError('invalid provider token', 401);
-      const leasedJob = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()]
-        .find((j) => j && j.kind === 'finetune' && j.providerId === provider.id && j.status === 'leased');
-      if (!leasedJob) return computeApiError('no leased fine-tune job for this provider', 403);
+      if (!raw || raw.byteLength === 0 || raw.byteLength > 256 * 1024 * 1024) return computeApiError('empty or oversized artifact', 400);
+      let parts;
+      try { parts = parseMultipart(new Uint8Array(raw), boundary); }
+      catch { return computeApiError('malformed multipart body', 400); }
+      const kind = parts.fields.kind || '';
+      const file = parts.files.adapter;
+      if (kind !== 'adapter' || !file || !file.bytes.length) return computeApiError('expected kind=adapter with an adapter file', 400);
+      if (!/\.tar\.gz$/.test(file.filename || '')) return computeApiError('adapter must be a .tar.gz archive', 400);
+      const job = await this.state.storage.get(`compute:job:${artifactMatch[1]}`);
+      if (!job || (job.kind || 'chat') !== 'finetune' || job.status !== 'leased' || job.providerId !== provider.id) {
+        return computeApiError('no leased fine-tune job for this provider', 403);
+      }
       const adapterRef = `adapter_${randomUrlToken(12)}`;
-      await this.state.storage.put(`compute:adapter-blob:${adapterRef}`, new Uint8Array(raw));
+      await this.state.storage.put(`compute:adapter-blob:${adapterRef}`, file.bytes);
       const record = buildAdapterRecord({
         ref: adapterRef,
-        job: { ...leasedJob, engine: leasedJob.engine || provider.finetune_engines?.[0] || null },
+        job: { ...job, engine: job.engine || (Array.isArray(provider.finetune_engines) ? provider.finetune_engines[0] : null) },
         task: null,
         result: null,
         gate: { verdict: null, reasons: ['uploaded — awaiting training result and eval gate'] },
@@ -1985,22 +2014,27 @@ export class ComputeNetwork {
       return json({ adapter_ref: adapterRef }, 201);
     }
 
+    // ---- Provider adapter download for resume (kit's fetch_resume_adapter) ----
+    // Kit shape: GET with Bearer token only. Responds JSON
+    // {adapter_tar_gz_b64} — the kit base64-decodes and extracts it.
     const providerAdapterMatch = path.match(/^\/v1\/providers\/finetune\/adapters\/(adapter_[A-Za-z0-9_-]{1,64})$/);
     if (providerAdapterMatch && request.method === 'GET') {
-      const input = await body(request, 4096), provider = await this.provider(request, input);
+      const provider = await this.providerByBearer(request);
       if (!provider) return computeApiError('invalid provider token', 401);
       const ref = providerAdapterMatch[1];
       const adapter = await this.state.storage.get(`compute:adapter:${ref}`);
       if (!adapter) return computeApiError('adapter not found', 404);
-      // Resume may land on a different provider: allow any finetune-capable
-      // provider holding a lease on a job for the same dataset.
+      // Resume may land on a different provider: allow any provider holding
+      // a lease on a job for the same dataset, or the original uploader.
       const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()];
       const ok = jobs.some((j) => j && j.kind === 'finetune' && j.providerId === provider.id
         && j.status === 'leased' && j.dataset_ref && j.dataset_ref === adapter.dataset_ref);
       if (!ok && adapter.provider_id !== provider.id) return computeApiError('not authorized for this adapter', 403);
       const blob = await this.state.storage.get(`compute:adapter-blob:${ref}`);
       if (!blob) return computeApiError('adapter blob missing', 500);
-      return new Response(blob, { status: 200, headers: { 'Content-Type': 'application/octet-stream' } });
+      const bytes = blob instanceof Uint8Array ? blob : new Uint8Array(blob);
+      if (bytes.length > 256 * 1024 * 1024) return computeApiError('adapter blob too large', 500);
+      return json({ adapter_tar_gz_b64: base64EncodeBytes(bytes) }, 200);
     }
 
     // ---- Owner adapter registry views (Phase 6) ----

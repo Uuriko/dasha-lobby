@@ -4,6 +4,7 @@
  *  access control, serving seam, and malicious-input rejection. */
 import assert from 'node:assert/strict';
 import {
+  base64EncodeBytes,
   buildAdapterRecord,
   buildDataset,
   canAccessAdapter,
@@ -12,6 +13,7 @@ import {
   dedupeExamples,
   gateVerdict,
   mintDatasetRef,
+  parseMultipart,
   parseSessions,
   qualityFilter,
   replayMix,
@@ -316,6 +318,49 @@ assert.throws(() => validateDatasetParams({ max_examples: 1 }), /max_examples/, 
   assert.notEqual(r1, r2);
   const rng1 = seededRng(5), rng2 = seededRng(5);
   assert.equal(rng1(), rng2(), 'rng deterministic');
+}
+
+
+/* ---------- multipart parser (kit artifact upload wire format) ---------- */
+
+function kitMultipartBody(boundary, fileBytes) {
+  // Replicates the kit's _multipart_post format exactly: text fields then the
+  // binary gzip file, so the server parser is tested against the real shape.
+  const enc = new TextEncoder();
+  const parts = [
+    enc.encode(`--${boundary}\r\nContent-Disposition: form-data; name="kind"\r\n\r\nadapter\r\n`),
+    enc.encode(`--${boundary}\r\nContent-Disposition: form-data; name="adapter"; filename="adapters.tar.gz"\r\nContent-Type: application/gzip\r\n\r\n`),
+    fileBytes,
+    enc.encode('\r\n'),
+    enc.encode(`--${boundary}--\r\n`),
+  ];
+  const total = parts.reduce((a, p) => a + p.length, 0);
+  const body = new Uint8Array(total);
+  let o = 0;
+  for (const p of parts) { body.set(p, o); o += p.length; }
+  return body;
+}
+
+{
+  const boundary = '----dasha0123456789abcdef';
+  const fileBytes = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0x00, 0x0d, 0x0a, 0x0d, 0x0a, 0x2d, 0x2d]);
+  const out = parseMultipart(kitMultipartBody(boundary, fileBytes), boundary);
+  assert.equal(out.fields.kind, 'adapter', 'text field parsed');
+  assert.equal(out.files.adapter.filename, 'adapters.tar.gz');
+  assert.equal(out.files.adapter.contentType, 'application/gzip');
+  assert.deepEqual([...out.files.adapter.bytes], [...fileBytes], 'binary payload byte-identical (CRLF-sensitive bytes preserved)');
+  assert.throws(() => parseMultipart(new Uint8Array([1, 2, 3]), boundary), /no boundary/);
+  assert.throws(() => parseMultipart(new TextEncoder().encode(`--${boundary}\r\nnope\r\n\r\nx\r\n--${boundary}--\r\n`), boundary), /part without name/);
+}
+
+/* ---------- base64 helper ---------- */
+
+{
+  const bytes = new Uint8Array(70000);
+  for (let i = 0; i < bytes.length; i++) bytes[i] = i % 251;
+  const b64 = base64EncodeBytes(bytes);
+  assert.equal(Buffer.from(b64, 'base64').length, bytes.length);
+  assert.ok(Buffer.from(b64, 'base64').every((b, i) => b === bytes[i]), 'base64 round-trips (chunked path exercised)');
 }
 
 console.log('dasha-compute-finetune-data: PASS');

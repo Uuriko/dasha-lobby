@@ -613,3 +613,58 @@ export function resolveAdapterForEngine(adapter, engine) {
   }
   return { status: 'unknown', note: `no serving path defined for engine ${eng}` };
 }
+
+/** Minimal multipart/form-data parser (binary-safe). Returns
+ *  { fields: {name: value}, files: {name: {filename, contentType, bytes}} }.
+ *  Throws on malformed input. Used by the coordinator's provider artifact
+ *  upload endpoint to read the kit's multipart POSTs. */
+export function parseMultipart(bytes, boundary) {
+  const enc = new TextEncoder();
+  const bSep = enc.encode(`--${boundary}`);
+  const fields = {}, files = {};
+  const find = (buf, from) => {
+    outer: for (let i = from; i + bSep.length <= buf.length; i++) {
+      for (let j = 0; j < bSep.length; j++) if (buf[i + j] !== bSep[j]) continue outer;
+      return i;
+    }
+    return -1;
+  };
+  let pos = find(bytes, 0);
+  if (pos < 0) throw new Error('no boundary');
+  while (true) {
+    pos += bSep.length;
+    if (bytes[pos] === 45 && bytes[pos + 1] === 45) break; // closing --
+    if (bytes[pos] === 13 && bytes[pos + 1] === 10) pos += 2; // CRLF
+    // headers end at blank line
+    let headerEnd = -1;
+    for (let i = pos; i + 3 < bytes.length; i++) {
+      if (bytes[i] === 13 && bytes[i + 1] === 10 && bytes[i + 2] === 13 && bytes[i + 3] === 10) { headerEnd = i; break; }
+    }
+    if (headerEnd < 0) throw new Error('bad part headers');
+    const headerText = new TextDecoder().decode(bytes.slice(pos, headerEnd));
+    const name = headerText.match(/name="([^"]{1,128})"/)?.[1];
+    const filename = headerText.match(/filename="([^"]{1,256})"/)?.[1];
+    const contentType = headerText.match(/Content-Type:\s*([^\r\n;]{1,128})/i)?.[1]?.trim();
+    if (!name) throw new Error('part without name');
+    const bodyStart = headerEnd + 4;
+    const next = find(bytes, bodyStart);
+    if (next < 0) throw new Error('unterminated part');
+    let bodyEnd = next;
+    if (bytes[bodyEnd - 2] === 13 && bytes[bodyEnd - 1] === 10) bodyEnd -= 2; // strip CRLF
+    const partBytes = bytes.slice(bodyStart, bodyEnd);
+    if (filename != null) files[name] = { filename, contentType: contentType || 'application/octet-stream', bytes: partBytes };
+    else fields[name] = new TextDecoder().decode(partBytes).slice(0, 4096);
+    pos = next;
+  }
+  return { fields, files };
+}
+
+/** Base64-encode bytes (chunked to avoid call-stack limits). */
+export function base64EncodeBytes(bytes) {
+  let binary = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
