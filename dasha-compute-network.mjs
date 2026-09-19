@@ -173,6 +173,11 @@ export function growAllowedModels(prior, polled = [], catalog = MODELS) {
 }
 const FRESH_MS = 45_000;
 const JOB_TTL_MS = 5 * 60_000;
+/** Fail-loud decision window: a queued v1 chat job whose model no provider
+ *  still advertises is answered with no_mac_online instead of polling to the
+ *  5-minute job TTL. A provider that keeps advertising keeps its job queued —
+ *  slow pickup is a provider-side concern, handled by lease expiry + prune. */
+export const NO_MAC_DECISION_MS = 15_000;
 const LEASE_MS = 5 * 60_000;
 const NIGHT_JOB_TTL_MS = 24 * 60 * 60_000;
 const NIGHT_INTERVALS = { daily: 24 * 60 * 60_000, weekly: 7 * 24 * 60 * 60_000 };
@@ -1037,6 +1042,11 @@ function providerServesModel(provider, model, now) {
   return now - Number(provider.lastSeenAt || 0) < FRESH_MS && Array.isArray(provider.models) && provider.models.includes(model);
 }
 
+/** True when at least one provider is fresh and advertises the model. */
+export function providerAdvertisesModel(providers, model, now = Date.now()) {
+  return (Array.isArray(providers) ? providers : []).some(provider => providerServesModel(provider, model, now));
+}
+
 /** Buyer SSE drop while a Mac is still advertising: keep queued/leased so the client can resume the same job. */
 export function keepBuyerJobOnStreamDrop(job, providers = [], now = Date.now()) {
   if (!job || !['queued', 'leased'].includes(String(job.status || ''))) return false;
@@ -1074,6 +1084,13 @@ function mergeRouteFromHeaders(input, request) {
 
 export class ComputeNetwork {
   constructor(state, env) { this.state = state; this.env = env; this.rates = new Map(); }
+
+  /** Server-side decision window for fail-loud no_mac_online. Env override is
+   *  test/ops tooling only; the default stands in production. */
+  noMacDecisionMs() {
+    const override = Number(this.env?.COMPUTE_NO_MAC_DECISION_MS);
+    return Number.isFinite(override) && override > 0 ? Math.floor(override) : NO_MAC_DECISION_MS;
+  }
 
   /** Expire / requeue jobs. Poll skips night + provider GC — those are not lease-hot. */
   async prune(now = Date.now(), opts = {}) {
@@ -1426,6 +1443,19 @@ export class ComputeNetwork {
           controller.close();
           return;
         }
+        // Fail loud, not silent: no first token by the decision window and no
+        // provider still advertises the model → no_mac_online now, not a
+        // silent hold until the 5-minute job TTL.
+        const decisionMs = Number.isFinite(Number(opts.decisionMs)) && Number(opts.decisionMs) > 0 ? Math.floor(Number(opts.decisionMs)) : network.noMacDecisionMs();
+        if (sent === 0 && Date.now() - started >= decisionMs && !providerAdvertisesModel(await listProviders(), job.model, Date.now())) {
+          const ax = openaiErrorAx('No Mac is online.', 503, 'server_error');
+          await network.refundJobDebit(current, Date.now(), 'No Mac is online.');
+          await storage.delete(key);
+          emit({ error: { message: 'No Mac is online.', type: 'server_error', code: 'no_mac_online' }, ...ax });
+          emit('[DONE]');
+          controller.close();
+          return;
+        }
         // No first token by ~35s and Mac still fresh: close SSE, keep job, client resumes same id.
         if (sent === 0 && Date.now() - started >= holdMs && keepBuyerJobOnStreamDrop(current, await listProviders(), Date.now())) {
           emit({ resume: true, id: current.id, status: current.status });
@@ -1762,6 +1792,12 @@ export class ComputeNetwork {
         const honesty = effortHonestyFromJob(queued.job);
         return v1cors(this.streamResponse(queued.job, null, { ...effortResponseHeaders(honesty), ...chatSpend(queued.job) }));
       }
+      // Fail loud, not silent: a queued job whose model no provider still
+      // advertises (provider flapped between queue and pickup) is answered
+      // with no_mac_online at the decision window — not a silent poll until
+      // the 5-minute job TTL. A provider that keeps advertising keeps its job
+      // queued; slow pickup stays on the TTL path.
+      const noMacDecisionAt = Date.now() + this.noMacDecisionMs();
       while (!request.signal.aborted) {
         const job = await this.state.storage.get(`compute:job:${queued.job.id}`);
         if (!job) return v1err('job expired', 410, 'server_error', chatSpend(queued.job));
@@ -1785,6 +1821,14 @@ export class ComputeNetwork {
         if (job.status === 'failed') {
           await this.refundJobDebit(job, Date.now(), job.error || 'provider failed');
           return v1err(job.error || 'provider failed', 502, 'server_error', chatSpend(job));
+        }
+        if (job.status === 'queued' && Date.now() >= noMacDecisionAt) {
+          const fresh = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
+          if (!providerAdvertisesModel(fresh, job.model, Date.now())) {
+            await this.refundJobDebit(job, Date.now(), 'No Mac is online.');
+            await this.state.storage.delete(`compute:job:${queued.job.id}`);
+            return v1err('No Mac is online.', 503, 'server_error', chatSpend(queued.job));
+          }
         }
         await new Promise(resolve => setTimeout(resolve, 250));
       }
