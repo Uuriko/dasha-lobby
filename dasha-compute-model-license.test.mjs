@@ -55,6 +55,25 @@ for (const id of COMPUTE_CATALOG_MODELS) {
   assert.equal(canAdvertiseModel(id), true, `live catalog ${id} stays cleared`);
 }
 
+// Verified 2026-09-19 from primary sources: 7 Apache-2.0 models cleared,
+// Liquid LFM2.5 held until its custom license terms are read.
+for (const id of ['qwen3.5-4b', 'qwen3.5-9b', 'gemma4-e2b', 'muse-glimmer-30b', 'gemma4-26b-a4b', 'qwen3.8-27b', 'qwen3.6-35b']) {
+  assert.equal(modelLicenseStatus(id), LICENSE_CLEARED, `${id} cleared`);
+  assert.equal(canAdvertiseModel(id), true, `${id} advertisable`);
+  assert.ok(COMPUTE_CATALOG_MODELS.has(id), `${id} in worker catalog`);
+}
+assert.equal(modelLicenseStatus('lfm2.5-8b-a1b'), LICENSE_HELD);
+assert.equal(canAdvertiseModel('lfm2.5-8b-a1b'), false, 'LFM2.5 held until terms read');
+assert.ok(!COMPUTE_CATALOG_MODELS.has('lfm2.5-8b-a1b'), 'held id not in worker catalog');
+
+// Page model table carries the new rows; chat-scale ones join the SUB24
+// hardware gate; the 35B MoE keeps the 36GB floor (Splash gate).
+for (const id of ['qwen3.5-4b', 'qwen3.5-9b', 'gemma4-e2b', 'muse-glimmer-30b', 'gemma4-26b-a4b', 'qwen3.8-27b', 'qwen3.6-35b']) {
+  assert.match(html, new RegExp(`\\['${id.replace(/\./g, '\\.')}','`), `page MODELS has ${id}`);
+}
+assert.match(html, /\['qwen3\.6-35b','qwen3\.6:35b-a3b','Qwen 3\.6 35B A3B','21 GB',36,'MoE · Splash-ready'\]/);
+assert.match(html, /const SUB24=new Set\(\['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b-a3b','qwen3\.5-4b','qwen3\.5-9b','gemma4-e2b'\]\)/);
+
 const now = 1_000_000;
 const sneaky = { id: 'mac_held', owner: 'x:9', models: ['qwen3.8-flash', 'qwen3-8b'], lastSeenAt: now };
 const listed = v1ModelsListData([sneaky], now).map((row) => row.id);
@@ -113,6 +132,16 @@ const body = await net.json();
 assert.ok(body.models_available.includes('qwen3-8b'));
 assert.ok(!body.models_available.includes('qwen3.8-flash'), 'network advertise drops held ids');
 assert.ok(!(body.capacity || []).some((row) => row.model === 'qwen3.8-flash'));
+
+// New verified models: a provider heartbeat can advertise them and they flow
+// into models_available; the held LFM2.5 cannot.
+assert.equal((await network.fetch(new Request('https://lobby.getdasha.com/compute/api/providers/poll', {
+  method: 'POST', headers: beat, body: JSON.stringify({ provider_id: mine.provider_id, name: 'Mine', models: ['qwen3-8b', 'qwen3.5-9b', 'qwen3.8-27b', 'lfm2.5-8b-a1b'] }),
+}), origin)).status, 204);
+const net2 = await (await network.fetch(new Request('https://www.getdasha.com/compute/api/network'), origin)).json();
+assert.ok(net2.models_available.includes('qwen3.5-9b'), 'new cleared model advertised');
+assert.ok(net2.models_available.includes('qwen3.8-27b'), 'new cleared model advertised');
+assert.ok(!net2.models_available.includes('lfm2.5-8b-a1b'), 'held LFM2.5 never advertised');
 
 const job = await network.fetch(new Request('https://www.getdasha.com/compute/api/jobs', {
   method: 'POST', headers, body: JSON.stringify({ prompt: 'hi', model: 'qwen3.8-flash', route: 'community' }),
