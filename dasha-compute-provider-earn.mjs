@@ -22,6 +22,20 @@ export function earnCentsForJob(usage) {
   return PROVIDER_JOB_CENTS + tokenCents;
 }
 
+/** Fine-tune pricing: flat per-minute rate tiered by model size (params, GB). */
+export const TUNE_CENTS_PER_MIN_LE_8B = 25;
+export const TUNE_CENTS_PER_MIN_LE_13B = 40;
+export const TUNE_CENTS_PER_MIN_GT_13B = 75;
+
+export function earnCentsForTuneJob({ wall_clock_min = 0, model_gb = 0 } = {}) {
+  const minutes = Math.max(0, Math.floor(Number(wall_clock_min) || 0));
+  const gb = Number(model_gb);
+  // Fail closed: unknown model size accrues nothing.
+  if (!(gb > 0) || minutes <= 0) return 0;
+  const rate = gb <= 8 ? TUNE_CENTS_PER_MIN_LE_8B : gb <= 13 ? TUNE_CENTS_PER_MIN_LE_13B : TUNE_CENTS_PER_MIN_GT_13B;
+  return minutes * rate;
+}
+
 export function dashaPayoutCents(usdcCents) {
   const face = Math.max(0, Math.floor(Number(usdcCents) || 0));
   return Math.floor(face * PROVIDER_DASHA_BONUS);
@@ -103,6 +117,58 @@ export async function accrueProviderEarn(storage, { providerId, jobId, usage, no
   return { ok: true, replay: false, ...accrued, balance: next };
 }
 
+/**
+ * Accrue once per tune job id (same replay-key pattern as chat jobs:
+ * compute:provider-earn-job:{jobId}). Call only on a successful
+ * kind:'finetune' result — failed / preempted / local-privacy jobs never
+ * reach here. Idempotent: a replayed result returns the recorded accrual.
+ */
+export async function accrueTuneEarn(storage, { providerId, jobId, wallClockMin = 0, modelGb = 0, now = Date.now() } = {}) {
+  const pid = String(providerId || '').trim();
+  const jid = String(jobId || '').trim();
+  if (!pid || !jid) return { ok: false, error: 'providerId and jobId required' };
+
+  const replayKey = `compute:provider-earn-job:${jid}`;
+  const prior = await storage.get(replayKey);
+  if (prior && typeof prior === 'object') {
+    return {
+      ok: true,
+      replay: true,
+      usdc_cents: Math.floor(Number(prior.usdc_cents) || 0),
+      jobs: Math.floor(Number(prior.jobs) || 1),
+      tune: prior.tune === true,
+      wall_clock_min: Math.floor(Number(prior.wall_clock_min) || 0),
+      providerId: prior.providerId || pid,
+      jobId: prior.jobId || jid,
+      at: prior.at || prior.updatedAt || now,
+    };
+  }
+
+  const minutes = Math.max(0, Math.floor(Number(wallClockMin) || 0));
+  const cents = earnCentsForTuneJob({ wall_clock_min: minutes, model_gb: modelGb });
+  const earnKey = `compute:provider-earn:${pid}`;
+  const row = normalizeEarnRow(await storage.get(earnKey));
+  const next = {
+    usdc_cents: row.usdc_cents + cents,
+    jobs: row.jobs + 1,
+    completion_tokens: row.completion_tokens,
+    updatedAt: now,
+  };
+  const accrued = {
+    usdc_cents: cents,
+    jobs: 1,
+    completion_tokens: 0,
+    tune: true,
+    wall_clock_min: minutes,
+    providerId: pid,
+    jobId: jid,
+    at: now,
+  };
+  await storage.put(earnKey, next);
+  await storage.put(replayKey, accrued);
+  return { ok: true, replay: false, ...accrued, balance: next };
+}
+
 export function earningsCatalog({ providers = [], pref = null, pending = [] } = {}) {
   const list = (providers || []).map((p) => {
     const usdc = Math.max(0, Math.floor(Number(p.usdc_cents) || 0));
@@ -144,6 +210,9 @@ export function earningsCatalog({ providers = [], pref = null, pending = [] } = 
     rates: {
       job_cents: PROVIDER_JOB_CENTS,
       token_cents_per_1k: PROVIDER_TOKEN_CENTS_PER_1K,
+      tune_cents_per_min_le_8b: TUNE_CENTS_PER_MIN_LE_8B,
+      tune_cents_per_min_le_13b: TUNE_CENTS_PER_MIN_LE_13B,
+      tune_cents_per_min_gt_13b: TUNE_CENTS_PER_MIN_GT_13B,
       dasha_bonus: PROVIDER_DASHA_BONUS_FRAC,
       min_payout_cents: PROVIDER_MIN_PAYOUT_CENTS,
     },

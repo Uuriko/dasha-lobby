@@ -29,6 +29,7 @@ import {
   PROVIDER_PAYOUT_MODE,
   PROVIDER_USDC_MINT,
   accrueProviderEarn,
+  accrueTuneEarn,
   autoSendUsdcEnabled,
   computePayoutKeypair,
   computePayoutSecret,
@@ -171,10 +172,300 @@ export function growAllowedModels(prior, polled = [], catalog = MODELS) {
   }
   return [...next];
 }
+
+/* ---------------- Fine-tune jobs (Phase 1) ---------------- */
+
+/** Parse the params size (in billions) from a catalog model id, e.g. qwen3-8b → 8. */
+export function finetuneModelSizeGb(model) {
+  const match = /(?:^|[-_])(\d+(?:\.\d+)?)[bB](?:\b|[-_]|$)/.exec(String(model || '').trim());
+  const size = match ? Number(match[1]) : NaN;
+  return Number.isFinite(size) && size > 0 ? size : null;
+}
+
+/**
+ * QLoRA memory floors (GB) per (model size, training engine) — validates
+ * eligibility server-side. Memory is what the provider reports as visible to
+ * the training engine (OS/VRAM reserve already subtracted by the provider).
+ * Engine-keyed so a future cuda lane plugs in with no server change.
+ */
+const FINETUNE_MEMORY_FLOORS = {
+  mlx: [[1, 4], [3, 6], [7, 10], [8, 10], [13, 16], [32, 24]],
+  cuda: [[1, 6], [3, 8], [7, 12], [8, 12], [13, 20], [32, 32], [70, 64]],
+};
+
+/** v1: the only training engine the server can place. Future engines plug in here. */
+export const FINETUNE_ENGINES = ['mlx'];
+
+export function finetuneMemoryFloorGb(model, engine = 'mlx') {
+  const size = finetuneModelSizeGb(model);
+  const tiers = FINETUNE_MEMORY_FLOORS[String(engine || '').trim().toLowerCase()];
+  if (size == null || !tiers) return null;
+  for (const [maxB, floorGb] of tiers) if (size <= maxB) return floorGb;
+  return null; // above the largest measured tier for this engine: fail closed
+}
+
+/** Engines a submitter preference can resolve to. 'any' = any server-supported engine. */
+export function finetuneEnginesForPreference(preference) {
+  const p = String(preference ?? 'any').trim().toLowerCase();
+  if (p === 'any') return [...FINETUNE_ENGINES];
+  return FINETUNE_ENGINES.includes(p) ? [p] : [];
+}
+
+/**
+ * The engine this provider would train the job with: the job's
+ * engine_preference intersected with the provider's advertised
+ * finetune_engines, in server-supported order. Null when none can run it.
+ */
+export function resolveTuneEngine(provider, job) {
+  const advertised = Array.isArray(provider?.finetune_engines) ? provider.finetune_engines : [];
+  const preference = job?.engine_preference ?? job?.spec?.engine_preference ?? 'any';
+  for (const engine of finetuneEnginesForPreference(preference)) {
+    if (advertised.includes(engine)) return engine;
+  }
+  return null;
+}
+
+const FINETUNE_SPEC_DEFAULTS = {
+  finetune_type: 'lora', lora_rank: 8, lora_layers: 16, iters: 750,
+  learning_rate: 1e-5, batch_size: 4, max_seq_length: 2048,
+  grad_accumulation_steps: 8, eval_split: 0.1, replay_mix_ratio: 0.2,
+  seed: 0, save_every: 100, privacy: 'network', engine_preference: 'any',
+};
+
+/**
+ * Validate + clamp a fine-tune submission per FINETUNE-JOB-SPEC.md.
+ * Unknown fields are stripped; any out-of-range value → 400 naming the field.
+ */
+export function validateFinetuneSpec(input) {
+  const src = input && typeof input === 'object' ? input : {};
+  const bad = (field, error) => ({ ok: false, field, error });
+  const base_model = String(src.base_model || '').trim();
+  if (!base_model) return bad('base_model', 'required');
+  if (!MODELS.has(base_model) || !canAdvertiseModel(base_model)) return bad('base_model', 'must be a supported catalog model');
+  const dataset_ref = String(src.dataset_ref || '').trim();
+  if (!/^ds_[A-Za-z0-9_-]{1,100}$/.test(dataset_ref)) return bad('dataset_ref', 'must be a coordinator-stored dataset id like ds_<id>');
+  const engine_preference = String(src.engine_preference ?? FINETUNE_SPEC_DEFAULTS.engine_preference).trim().toLowerCase();
+  if (!['any', 'mlx', 'cuda'].includes(engine_preference)) return bad('engine_preference', 'must be any, mlx, or cuda');
+  if (engine_preference === 'cuda') return bad('engine_preference', 'engine not yet supported');
+  if (finetuneModelSizeGb(base_model) == null) return bad('base_model', 'model size could not be determined');
+  const runnableEngines = finetuneEnginesForPreference(engine_preference);
+  if (!runnableEngines.some((engine) => finetuneMemoryFloorGb(base_model, engine) != null)) {
+    return bad('base_model', 'model size exceeds the supported memory tiers for the requested engine');
+  }
+
+  const finetune_type = String(src.finetune_type ?? FINETUNE_SPEC_DEFAULTS.finetune_type);
+  if (!['lora', 'dora'].includes(finetune_type)) return bad('finetune_type', 'must be lora or dora');
+  const lora_rank = Number(src.lora_rank ?? FINETUNE_SPEC_DEFAULTS.lora_rank);
+  if (![4, 8, 16].includes(lora_rank)) return bad('lora_rank', 'must be 4, 8, or 16');
+  const lora_layers = Number(src.lora_layers ?? FINETUNE_SPEC_DEFAULTS.lora_layers);
+  if (![4, 8, 16].includes(lora_layers)) return bad('lora_layers', 'must be 4, 8, or 16');
+  const iters = Number(src.iters ?? FINETUNE_SPEC_DEFAULTS.iters);
+  if (!Number.isInteger(iters) || iters < 50 || iters > 5000) return bad('iters', 'must be an integer 50..5000');
+  const learning_rate = Number(src.learning_rate ?? FINETUNE_SPEC_DEFAULTS.learning_rate);
+  if (!Number.isFinite(learning_rate) || learning_rate < 1e-6 || learning_rate > 1e-4) return bad('learning_rate', 'must be 1e-6..1e-4');
+  const batch_size = Number(src.batch_size ?? FINETUNE_SPEC_DEFAULTS.batch_size);
+  if (![1, 2, 4].includes(batch_size)) return bad('batch_size', 'must be 1, 2, or 4');
+  const max_seq_length = Number(src.max_seq_length ?? FINETUNE_SPEC_DEFAULTS.max_seq_length);
+  if (![512, 1024, 2048, 4096].includes(max_seq_length)) return bad('max_seq_length', 'must be 512, 1024, 2048, or 4096');
+  const grad_accumulation_steps = Number(src.grad_accumulation_steps ?? FINETUNE_SPEC_DEFAULTS.grad_accumulation_steps);
+  if (!Number.isInteger(grad_accumulation_steps) || grad_accumulation_steps < 1 || grad_accumulation_steps > 32) return bad('grad_accumulation_steps', 'must be an integer 1..32');
+  const eval_split = Number(src.eval_split ?? FINETUNE_SPEC_DEFAULTS.eval_split);
+  if (!Number.isFinite(eval_split) || eval_split < 0.05 || eval_split > 0.2) return bad('eval_split', 'must be 0.05..0.2');
+  const replay_mix_ratio = Number(src.replay_mix_ratio ?? FINETUNE_SPEC_DEFAULTS.replay_mix_ratio);
+  if (!Number.isFinite(replay_mix_ratio) || replay_mix_ratio < 0 || replay_mix_ratio > 0.5) return bad('replay_mix_ratio', 'must be 0..0.5');
+  const seed = Number(src.seed ?? FINETUNE_SPEC_DEFAULTS.seed);
+  if (!Number.isInteger(seed) || Math.abs(seed) > 2147483647) return bad('seed', 'must be an integer');
+  const save_every = Number(src.save_every ?? FINETUNE_SPEC_DEFAULTS.save_every);
+  if (!Number.isInteger(save_every) || save_every < 50 || save_every > 1000) return bad('save_every', 'must be an integer 50..1000');
+  const privacy = String(src.privacy ?? FINETUNE_SPEC_DEFAULTS.privacy);
+  if (!['network', 'trusted', 'local'].includes(privacy)) return bad('privacy', 'must be network, trusted, or local');
+
+  return {
+    ok: true,
+    spec: {
+      base_model, dataset_ref, finetune_type, lora_rank, lora_layers, iters,
+      learning_rate, batch_size, max_seq_length, grad_accumulation_steps,
+      eval_split, replay_mix_ratio, seed, save_every, privacy, engine_preference,
+    },
+  };
+}
+
+function sortKeysDeep(value) {
+  if (Array.isArray(value)) return value.map(sortKeysDeep);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const key of Object.keys(value).sort()) out[key] = sortKeysDeep(value[key]);
+    return out;
+  }
+  return value;
+}
+
+/** Canonical spec JSON — the byte-exact input to spec_hash pinning. */
+export function finetuneCanonicalSpecJson(spec) {
+  return JSON.stringify(sortKeysDeep(spec || {}));
+}
+
+export async function finetuneSpecHash(spec) {
+  return sha256(finetuneCanonicalSpecJson(spec));
+}
+
+/**
+ * Sanitize the provider's advertised training engines. Returns the deduped
+ * lowercase engine list (max 8), an explicit empty array when the provider
+ * clears the capability, or null when the field is omitted/invalid — the
+ * omission marker the sticky gate uses to preserve prior state.
+ */
+export function sanitizeFinetuneEngines(raw) {
+  if (raw === undefined || raw === null) return null;
+  if (!Array.isArray(raw)) return null;
+  const seen = [];
+  for (const item of raw) {
+    const id = String(item ?? '').trim().toLowerCase();
+    if (!/^[a-z0-9-]{1,64}$/.test(id)) continue;
+    if (!seen.includes(id)) seen.push(id);
+    if (seen.length >= 8) break;
+  }
+  return seen;
+}
+
+/** Sanitize the provider's fine-tune capability advertisement (poll payload). */
+export function finetuneCapability(input) {
+  const finetune_engines = sanitizeFinetuneEngines(input?.finetune_engines);
+  let finetune_memory_gb = null;
+  const memory = Number(input?.finetune_memory_gb);
+  if (Number.isFinite(memory) && memory > 0 && memory <= 2048) finetune_memory_gb = Math.round(memory * 10) / 10;
+  return { finetune_engines, finetune_memory_gb };
+}
+
+/**
+ * Sticky capability gate: an older kit that omits finetune_engines does not
+ * clear a previously advertised capability; an explicit empty array clears it.
+ */
+export function growFinetuneEligibility(prior = {}, polled = {}) {
+  const priorEngines = sanitizeFinetuneEngines(prior?.finetune_engines) ?? [];
+  const engines = polled.finetune_engines == null ? priorEngines : polled.finetune_engines;
+  const memory = polled.finetune_memory_gb != null
+    ? polled.finetune_memory_gb
+    : (prior?.finetune_memory_gb ?? null);
+  // Memory without any engine is meaningless: drop it when no engine is set.
+  return { finetune_engines: engines, finetune_memory_gb: engines.length ? memory : null };
+}
+
+/**
+ * Type-aware poll predicate. Legacy/unknown kinds behave as 'chat' so night
+ * and chat jobs keep matching exactly as before.
+ */
+export function jobEligibleForProvider(provider, candidate, now = Date.now()) {
+  if (!candidate || candidate.status !== 'queued') return false;
+  const kind = candidate.kind || 'chat';
+  if (kind !== 'finetune') {
+    return provider.models?.includes(candidate.model) && (candidate.route !== 'self' || provider.owner === candidate.owner);
+  }
+  const engine = resolveTuneEngine(provider, candidate);
+  if (!engine) return false;
+  const floor = finetuneMemoryFloorGb(candidate.base_model, engine);
+  const have = Number(provider.finetune_memory_gb);
+  if (floor == null || !(have > 0) || have < floor) return false;
+  const privacy = candidate.privacy || 'network';
+  if (privacy === 'trusted' && provider.trusted !== true) return false;
+  if (privacy === 'local' && provider.owner !== candidate.owner) return false;
+  return true;
+}
+
+/**
+ * Validate a kind:'finetune' result payload (the chat 1–20000-char content
+ * validator does NOT apply). spec_hash must match the leased job.
+ */
+export function validateTuneResult(input, job) {
+  const src = input && typeof input === 'object' ? input : {};
+  const bad = (error) => ({ ok: false, error });
+  const status = String(src.status || '').trim().toLowerCase();
+  if (!['complete', 'failed', 'preempted'].includes(status)) return bad('status must be complete, failed, or preempted');
+  if (String(src.spec_hash || '').trim() !== String(job?.spec_hash || '')) return bad('spec_hash mismatch');
+  const engine = String(src.engine || '').trim().toLowerCase();
+  if (!engine || engine !== String(job?.engine || '')) return bad('engine mismatch: result engine must match the job engine');
+  const maxIters = Math.max(1, Math.floor(Number(job?.spec?.iters) || 5000));
+  const iters_done = Number(src.iters_done);
+  if (!Number.isInteger(iters_done) || iters_done < 0 || iters_done > maxIters) return bad('iters_done must be an integer 0..iters');
+
+  if (status === 'complete') {
+    const adapter_ref = String(src.adapter_ref || '').trim();
+    if (!adapter_ref || adapter_ref.length > 256) return bad('adapter_ref is required (max 256 chars)');
+    const num = (value) => { const n = Number(value); return Number.isFinite(n) ? n : null; };
+    const train_loss = Array.isArray(src.train_loss) ? src.train_loss.slice(0, 5000).map(num).filter((n) => n != null) : [];
+    const val_loss = num(src.val_loss);
+    const test_perplexity = num(src.test_perplexity);
+    const baseline_ppl = num(src.baseline?.test_perplexity);
+    return {
+      ok: true,
+      status,
+      iters_done,
+      adapter_ref,
+      result: {
+        iters_done,
+        train_loss,
+        ...(val_loss != null ? { val_loss } : {}),
+        ...(test_perplexity != null ? { test_perplexity } : {}),
+        ...(baseline_ppl != null ? { baseline: { test_perplexity: baseline_ppl } } : {}),
+        eval_delta: { perplexity_improved: src.eval_delta?.perplexity_improved === true },
+      },
+    };
+  }
+  if (status === 'failed') {
+    const error = String(src.error || '').trim().slice(0, 300);
+    if (!error) return bad('error is required for a failed result');
+    return { ok: true, status, iters_done, error };
+  }
+  const checkpoint_ref = String(src.checkpoint_ref || '').trim();
+  if (!checkpoint_ref || checkpoint_ref.length > 256) return bad('checkpoint_ref is required for a preempted result (max 256 chars)');
+  return { ok: true, status, iters_done, checkpoint_ref };
+}
+
+/** Public, owner-scoped view of a fine-tune task record. */
+export function publicFinetuneTask(task) {
+  if (!task || typeof task !== 'object') return null;
+  return {
+    id: task.id,
+    kind: 'finetune',
+    status: String(task.status || 'queued'),
+    base_model: task.base_model || null,
+    dataset_ref: task.dataset_ref || null,
+    privacy: task.privacy || 'network',
+    engine: task.engine || null,
+    provider: task.providerId || null,
+    adapter_ref: task.adapter_ref || null,
+    error: task.error || null,
+    spec_hash: task.spec_hash || null,
+    created_at: task.createdAt || null,
+    expires_at: task.expiresAt || null,
+  };
+}
+
+/**
+ * Defensive sanitize for the future provider `gpu` advertisement
+ * ({ model, vram_gb, cuda_version }). Stored on the provider record;
+ * nothing gates on it yet.
+ */
+export function sanitizeProviderGpu(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const str = (value) => { const s = String(value ?? '').trim().slice(0, 64); return s || null; };
+  const out = {};
+  const model = str(raw.model);
+  if (model) out.model = model;
+  const vram_gb = Number(raw.vram_gb);
+  if (Number.isFinite(vram_gb) && vram_gb >= 0) out.vram_gb = vram_gb;
+  const cuda_version = str(raw.cuda_version);
+  if (cuda_version) out.cuda_version = cuda_version;
+  return Object.keys(out).length ? out : null;
+}
 const FRESH_MS = 45_000;
 const JOB_TTL_MS = 5 * 60_000;
 const LEASE_MS = 5 * 60_000;
 const NIGHT_JOB_TTL_MS = 24 * 60 * 60_000;
+/** Fine-tune jobs: 24 h queue TTL (night-job precedent), 30 min training lease, 3 attempts. */
+const FINETUNE_JOB_TTL_MS = 24 * 60 * 60_000;
+const FINETUNE_LEASE_MS = 30 * 60_000;
+const FINETUNE_MAX_ATTEMPTS = 3;
 const NIGHT_INTERVALS = { daily: 24 * 60 * 60_000, weekly: 7 * 24 * 60 * 60_000 };
 const NIGHT_TEMPLATES = {
   research: 'Research the request carefully. Return a concise report with findings, evidence, uncertainties, and recommended next actions.',
@@ -1085,6 +1376,10 @@ export class ComputeNetwork {
         if (job && job.status !== 'complete') await this.refundJobDebit(job, now, 'expired');
         await this.state.storage.delete(key);
         if (job?.nightId && ['queued', 'leased'].includes(job.status)) await this.finishNight(job, 'failed', null, 'job expired before completion', now);
+        if (job && (job.kind || 'chat') === 'finetune' && job.finetuneId && ['queued', 'leased'].includes(job.status)) {
+          const tuneTaskKey = `compute:finetune:${job.finetuneId}`, tuneTask = await this.state.storage.get(tuneTaskKey);
+          if (tuneTask && !['complete', 'failed'].includes(tuneTask.status)) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'expired', error: 'job expired before completion' });
+        }
       }
       else if (job.status === 'leased' && Number(job.leaseExpiresAt) <= now) {
         const hadStreamProgress = job.stream === true && (job.chunks || []).some(chunk => String(chunk || '').trim());
@@ -1093,8 +1388,15 @@ export class ComputeNetwork {
           await this.state.storage.put(key, { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, attempts: closeAttempt(job.attempts, 'cut'), messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 });
           await this.finishNight(job, 'failed', null, 'provider cut', now);
           await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: true });
+        } else if ((job.kind || 'chat') === 'finetune' && attemptsCount(job) >= FINETUNE_MAX_ATTEMPTS) {
+          // Lost training lease with no attempts left: stop the loop.
+          await this.state.storage.put(key, { ...job, status: 'failed', error: 'max attempts reached', providerId: null, leaseExpiresAt: null, attempts: closeAttempt(job.attempts, 'failed'), completedAt: now, expiresAt: now + 10 * 60_000 });
+          if (job.finetuneId) {
+            const tuneTaskKey = `compute:finetune:${job.finetuneId}`, tuneTask = await this.state.storage.get(tuneTaskKey);
+            if (tuneTask) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'failed', error: 'max attempts reached' });
+          }
         } else {
-          const next = { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...(job.stream ? { chunks: [] } : {}) };
+          const next = { ...job, status: 'queued', providerId: null, leaseExpiresAt: null, ...((job.kind || 'chat') === 'finetune' ? { engine: null } : {}), ...(job.stream ? { chunks: [] } : {}) };
           await this.state.storage.put(key, next);
           jobs.push(next);
         }
@@ -1120,7 +1422,7 @@ export class ComputeNetwork {
       if (task.status !== 'scheduled' || Number(task.nextRunAt) > now || activeOwners.has(task.owner) || !providers.some(provider => provider.models?.includes(task.model))) continue;
       const nightMessages = [{ role: 'system', content: NIGHT_TEMPLATES[task.template] }, { role: 'user', content: nightStepPrompt(task) }];
       const turns = countConversationTurns(nightMessages);
-      const job = { id: `job_${randomUrlToken(9)}`, nightId: task.id, nightStep: Number(task.stepIndex || 0), owner: task.owner, model: task.model, route: 'community', messages: nightMessages, maxTokens: 2048, temperature: 0.4, stream: false, status: 'queued', providerId: null, createdAt: now, expiresAt: now + NIGHT_JOB_TTL_MS, ...(turns ? { turns } : {}) };
+      const job = { id: `job_${randomUrlToken(9)}`, kind: 'chat', nightId: task.id, nightStep: Number(task.stepIndex || 0), owner: task.owner, model: task.model, route: 'community', messages: nightMessages, maxTokens: 2048, temperature: 0.4, stream: false, status: 'queued', providerId: null, createdAt: now, expiresAt: now + NIGHT_JOB_TTL_MS, ...(turns ? { turns } : {}) };
       await this.state.storage.put(`compute:job:${job.id}`, job);
       await this.state.storage.put(`compute:night:${task.id}`, { ...task, status: 'running', lastJobId: job.id, lastRunAt: now });
       activeOwners.add(task.owner);
@@ -1374,7 +1676,7 @@ export class ComputeNetwork {
     const requestedTemperature = Number(input.temperature);
     const stream = input.stream === true;
     const turns = countConversationTurns(messages);
-    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(input.request_id != null && String(input.request_id).trim() ? { request_id: String(input.request_id).trim().slice(0, 80) } : {}), ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
+    const job = { id: `job_${randomUrlToken(9)}`, kind: 'chat', owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(input.request_id != null && String(input.request_id).trim() ? { request_id: String(input.request_id).trim().slice(0, 80) } : {}), ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
     await this.state.storage.put(`compute:job:${job.id}`, job);
     return { job };
   }
@@ -1503,6 +1805,34 @@ export class ComputeNetwork {
       const tasks = [...(await this.state.storage.list({ prefix: 'compute:night:' })).values()].filter(task => task.owner === owner);
       const artifacts = tasks.flatMap(task => (task.artifacts || []).map(artifact => ({ task_id: task.id, title: task.title, ...artifact }))).sort((a, b) => b.completed_at - a.completed_at).slice(0, 20);
       return maybeHead(request, json({ generated_at: now, artifacts }, 200, allowedOrigin, true));
+    }
+
+    if ((path === '/compute/api/finetune' || path === '/compute/api/finetune/') && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'POST')) {
+      if (!allowedOrigin) return maybeHead(request, originRequired());
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
+      if (request.method === 'GET' || request.method === 'HEAD') {
+        await this.prune(now);
+        const tasks = [...(await this.state.storage.list({ prefix: 'compute:finetune:' })).values()]
+          .filter(task => task && task.owner === owner)
+          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+          .map(publicFinetuneTask);
+        return maybeHead(request, json({ tasks }, 200, allowedOrigin, true));
+      }
+      const input = await body(request, 12 * 1024);
+      const validated = validateFinetuneSpec(input);
+      if (!validated.ok) return json({ error: `${validated.field}: ${validated.error}` }, 400, allowedOrigin, true);
+      const spec = validated.spec;
+      await this.prune(now);
+      const existing = [...(await this.state.storage.list({ prefix: 'compute:finetune:' })).values()].filter(task => task && task.owner === owner && !['complete', 'failed', 'expired'].includes(task.status));
+      if (existing.length >= 20) return json({ error: 'fine-tune task limit reached' }, 409, allowedOrigin, true);
+      const spec_hash = await finetuneSpecHash(spec);
+      const taskId = `tune_${randomUrlToken(9)}`;
+      const task = { id: taskId, owner, base_model: spec.base_model, dataset_ref: spec.dataset_ref, spec, spec_hash, status: 'queued', providerId: null, createdAt: now, expiresAt: now + FINETUNE_JOB_TTL_MS, privacy: spec.privacy };
+      const tuneJob = { id: `job_${randomUrlToken(9)}`, kind: 'finetune', finetuneId: taskId, owner, base_model: spec.base_model, dataset_ref: spec.dataset_ref, spec, spec_hash, status: 'queued', providerId: null, createdAt: now, expiresAt: now + FINETUNE_JOB_TTL_MS, leaseExpiresAt: null, attempts: [], privacy: spec.privacy };
+      await this.state.storage.put(`compute:finetune:${taskId}`, task);
+      await this.state.storage.put(`compute:job:${tuneJob.id}`, tuneJob);
+      return json({ task: publicFinetuneTask(task), job_id: tuneJob.id }, 201, allowedOrigin, true);
     }
 
     const nightRunMatch = path.match(/^\/compute\/api\/night\/(night_[A-Za-z0-9_-]{12})\/run$/);
@@ -2009,16 +2339,36 @@ export class ComputeNetwork {
       else provider.models ||= [];
       const hardware = providerHardware(input, provider.allowedModels);
       if (hardware) provider.hardware = hardware;
+      const tuneCap = growFinetuneEligibility(
+        { finetune_engines: provider.finetune_engines, finetune_memory_gb: provider.finetune_memory_gb ?? null },
+        finetuneCapability(input),
+      );
+      provider.finetune_engines = tuneCap.finetune_engines;
+      provider.finetune_memory_gb = tuneCap.finetune_memory_gb;
+      // Trusted tier is server-managed: preserve a granted flag, never self-assert from poll.
+      provider.trusted = provider.trusted === true;
+      // Future cuda-lane advertisement: sanitized and stored, not gated on yet.
+      if (input && Object.prototype.hasOwnProperty.call(input, 'gpu')) provider.gpu = sanitizeProviderGpu(input.gpu);
       provider.name = String(input.name || '').trim().slice(0, 64) || provider.name;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       if (firstOnline) await this.referralMilestone(provider.owner, 'm1', [{ to: 'referrer', cents: REF_M1_CENTS }], now);
       const jobs = (await this.prune(now, { night: false, providers: false })).sort((a, b) => a.createdAt - b.createdAt);
-      const job = jobs.find(candidate => candidate.status === 'queued' && provider.models.includes(candidate.model) && (candidate.route !== 'self' || provider.owner === candidate.owner));
+      const job = jobs.find(candidate => jobEligibleForProvider(provider, candidate, now));
       if (!job) return new Response(null, { status: 204, headers: SECURITY });
-      job.status = 'leased'; job.providerId = provider.id; job.leasedAt = now; job.leaseExpiresAt = now + LEASE_MS; job.expiresAt = now + LEASE_MS + 60_000;
+      const isTuneJob = (job.kind || 'chat') === 'finetune';
+      const leaseMs = isTuneJob ? FINETUNE_LEASE_MS : LEASE_MS;
+      job.status = 'leased'; job.providerId = provider.id; job.leasedAt = now; job.leaseExpiresAt = now + leaseMs; job.expiresAt = now + leaseMs + 60_000;
       job.attempts = appendAttempt(job.attempts, provider.id, now);
+      if (isTuneJob) job.engine = resolveTuneEngine(provider, job);
       await this.state.storage.put(`compute:job:${job.id}`, job);
-      return json({ job: { id: job.id, model: job.model, messages: job.messages, max_tokens: job.maxTokens, temperature: job.temperature, stream: job.stream === true }, lease_seconds: LEASE_MS / 1000 });
+      if (isTuneJob) {
+        if (job.finetuneId) {
+          const taskKey = `compute:finetune:${job.finetuneId}`, task = await this.state.storage.get(taskKey);
+          if (task) await this.state.storage.put(taskKey, { ...task, status: 'leased', providerId: provider.id, engine: job.engine });
+        }
+        return json({ job: { id: job.id, kind: 'finetune', engine: job.engine, base_model: job.base_model, dataset_ref: job.dataset_ref, spec: job.spec, spec_hash: job.spec_hash, resume_checkpoint_ref: job.resume_checkpoint_ref || null }, lease_seconds: leaseMs / 1000 });
+      }
+      return json({ job: { id: job.id, model: job.model, messages: job.messages, max_tokens: job.maxTokens, temperature: job.temperature, stream: job.stream === true }, lease_seconds: leaseMs / 1000 });
     }
 
     const heartbeatMatch = path.match(/^\/compute\/api\/providers\/jobs\/([A-Za-z0-9_-]{6,64})\/heartbeat\/?$/);
@@ -2031,15 +2381,54 @@ export class ComputeNetwork {
       if (job.status !== 'leased' || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
       provider.lastSeenAt = now;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
-      await this.state.storage.put(key, { ...job, leaseExpiresAt: now + LEASE_MS, expiresAt: now + LEASE_MS + 60_000 });
-      return json({ ok: true, cancelled: false, lease_seconds: LEASE_MS / 1000 });
+      const heartbeatLeaseMs = (job.kind || 'chat') === 'finetune' ? FINETUNE_LEASE_MS : LEASE_MS;
+      await this.state.storage.put(key, { ...job, leaseExpiresAt: now + heartbeatLeaseMs, expiresAt: now + heartbeatLeaseMs + 60_000 });
+      return json({ ok: true, cancelled: false, lease_seconds: heartbeatLeaseMs / 1000 });
     }
 
     const resultMatch = path.match(/^\/compute\/api\/providers\/jobs\/([A-Za-z0-9_-]{6,64})\/result$/);
     if (resultMatch && request.method === 'POST') {
-      const input = await body(request, 24 * 1024), provider = await this.provider(request, input), key = `compute:job:${resultMatch[1]}`, job = await this.state.storage.get(key);
+      const input = await body(request, 64 * 1024), provider = await this.provider(request, input), key = `compute:job:${resultMatch[1]}`, job = await this.state.storage.get(key);
       if (!provider) return computeApiError('invalid provider token', 401);
       if (!job || job.status !== 'leased' || job.providerId !== provider.id || Number(job.leaseExpiresAt) <= now) return json({ error: 'job unavailable or lease expired' }, 409);
+      // Fine-tune result contract (NOT the chat content validator).
+      if ((job.kind || 'chat') === 'finetune') {
+        const tune = validateTuneResult(input, job);
+        if (!tune.ok) return json({ error: tune.error }, 400);
+        provider.lastSeenAt = now;
+        await this.state.storage.put(`compute:provider:${provider.id}`, provider);
+        const tuneTaskKey = job.finetuneId ? `compute:finetune:${job.finetuneId}` : null;
+        const tuneTask = tuneTaskKey ? await this.state.storage.get(tuneTaskKey) : null;
+        if (tune.status === 'complete') {
+          let settlePatch = {};
+          // local-privacy jobs run on the owner's own Mac: no provider payout.
+          if (job.privacy !== 'local') {
+            const wallClockMin = Math.max(0, Math.floor((now - Number(job.leasedAt || now)) / 60_000));
+            const accrued = await accrueTuneEarn(this.state.storage, { providerId: provider.id, jobId: job.id, wallClockMin, modelGb: finetuneModelSizeGb(job.base_model), now });
+            if (accrued?.ok) {
+              const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
+              if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
+            }
+          }
+          await this.state.storage.put(key, { ...job, status: 'complete', tune_result: tune.result, adapter_ref: tune.adapter_ref, error: null, attempts: closeAttempt(job.attempts, 'complete'), completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
+          if (tuneTask) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'complete', tune_result: tune.result, adapter_ref: tune.adapter_ref, providerId: provider.id, completedAt: now });
+          return json({ accepted: true }, 202);
+        }
+        if (tune.status === 'failed') {
+          await this.state.storage.put(key, { ...job, status: 'failed', error: tune.error, attempts: closeAttempt(job.attempts, 'failed'), completedAt: now, expiresAt: now + 10 * 60_000 });
+          if (tuneTask) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'failed', error: tune.error });
+          return json({ accepted: true }, 202);
+        }
+        // Preempted: requeue with the checkpoint for resume; attempt cap stops the loop.
+        if (attemptsCount(job) >= FINETUNE_MAX_ATTEMPTS) {
+          await this.state.storage.put(key, { ...job, status: 'failed', error: 'max attempts reached', attempts: closeAttempt(job.attempts, 'failed'), completedAt: now, expiresAt: now + 10 * 60_000 });
+          if (tuneTask) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'failed', error: 'max attempts reached' });
+        } else {
+          await this.state.storage.put(key, { ...job, status: 'queued', providerId: null, engine: null, leaseExpiresAt: null, resume_checkpoint_ref: tune.checkpoint_ref, attempts: closeAttempt(job.attempts, 'preempted') });
+          if (tuneTask) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'queued', providerId: null });
+        }
+        return json({ accepted: true }, 202);
+      }
       if (job.stream) return json({ error: 'stream jobs must use the chunk endpoint' }, 409);
       const answer = stripThinkTraces(input.content), error = String(input.error || '').trim().slice(0, 300);
       if (!error && (!answer || answer.length > 20_000)) return json({ error: 'result must be 1–20000 characters' }, 400);
@@ -3371,7 +3760,7 @@ export async function computeApi(request, env, allowedOrigin) {
     kitSigUrl.searchParams.set('url', COMPUTE_KIT_MANIFEST.url);
     return kitStub.fetch(new Request(kitSigUrl.href, request));
   }
-  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path === '/compute/api/org-enroll' || path.startsWith('/compute/api/org-enroll/') || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path === '/compute/api/org-enroll' || path.startsWith('/compute/api/org-enroll/') || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path === '/compute/api/finetune' || path === '/compute/api/finetune/' || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
     try {
