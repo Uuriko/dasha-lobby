@@ -114,6 +114,17 @@ import {
   residualControlFields,
 } from './dasha-compute-receipt-honesty.mjs';
 import { canAdvertiseModel, filterAdvertisableModels } from './dasha-compute-model-license.mjs';
+import {
+  buildAdapterRecord,
+  buildDataset,
+  canAccessAdapter,
+  DatasetError,
+  DATASET_LIMITS,
+  gateVerdict,
+  mintDatasetRef,
+  resolveAdapterForEngine,
+} from './dasha-compute-finetune-data.mjs';
+import { getEval } from './dasha-compute-finetune-evals/index.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
 export { canAdvertiseModel, filterAdvertisableModels };
 
@@ -396,6 +407,27 @@ export function validateTuneResult(input, job) {
     const val_loss = num(src.val_loss);
     const test_perplexity = num(src.test_perplexity);
     const baseline_ppl = num(src.baseline?.test_perplexity);
+    // Optional provider-run eval report: ids must be registry-known so the
+    // gate can't be gamed with invented eval names. Scores validated below.
+    let eval_report = null;
+    if (src.eval_report != null) {
+      if (typeof src.eval_report !== 'object' || Array.isArray(src.eval_report)) return bad('eval_report must be an object');
+      const task_evals = Array.isArray(src.eval_report.task_evals) ? src.eval_report.task_evals : [];
+      for (const e of task_evals) {
+        const id = String(e?.id || '');
+        if (!getEval(id)) return bad(`eval_report.task_evals: unknown eval id ${id}`);
+        for (const f of ['base_score', 'adapter_score', 'items']) {
+          if (!Number.isFinite(Number(e?.[f]))) return bad(`eval_report.task_evals: ${f} must be finite for ${id}`);
+        }
+      }
+      const retention = src.eval_report.retention;
+      if (retention != null) {
+        for (const f of ['base_score', 'adapter_score']) {
+          if (!Number.isFinite(Number(retention?.[f]))) return bad(`eval_report.retention: ${f} must be finite`);
+        }
+      }
+      eval_report = src.eval_report;
+    }
     return {
       ok: true,
       status,
@@ -408,6 +440,7 @@ export function validateTuneResult(input, job) {
         ...(test_perplexity != null ? { test_perplexity } : {}),
         ...(baseline_ppl != null ? { baseline: { test_perplexity: baseline_ppl } } : {}),
         eval_delta: { perplexity_improved: src.eval_delta?.perplexity_improved === true },
+        ...(eval_report ? { eval_report } : {}),
       },
     };
   }
@@ -439,8 +472,30 @@ export function publicFinetuneTask(task) {
     adapter_ref: task.adapter_ref || null,
     error: task.error || null,
     spec_hash: task.spec_hash || null,
+    eval_split_hash: task.eval_split_hash || task.spec?.eval_split_hash || null,
+    evaluated: task.evaluated === true,
+    gate_verdict: task.gate_verdict || null,
     created_at: task.createdAt || null,
     expires_at: task.expiresAt || null,
+  };
+}
+
+/** Public, owner-scoped view of an adapter registry record. Never exposes blobs. */
+export function publicAdapterRecord(adapter) {
+  if (!adapter || typeof adapter !== 'object') return null;
+  return {
+    ref: adapter.ref || null,
+    base_model: adapter.base_model || null,
+    quantization: adapter.quantization || null,
+    engine: adapter.engine || null,
+    spec_hash: adapter.spec_hash || null,
+    dataset_ref: adapter.dataset_ref || null,
+    gate_verdict: adapter.gate_verdict || null,
+    gate_reasons: Array.isArray(adapter.gate_reasons) ? adapter.gate_reasons : [],
+    privacy: adapter.privacy || 'network',
+    published: adapter.published === true,
+    status: adapter.status || 'pending_eval',
+    created_at: adapter.created_at || null,
   };
 }
 
@@ -1826,6 +1881,13 @@ export class ComputeNetwork {
       const validated = validateFinetuneSpec(input);
       if (!validated.ok) return json({ error: `${validated.field}: ${validated.error}` }, 400, allowedOrigin, true);
       const spec = validated.spec;
+      // The dataset must be coordinator-built and visible to the submitter.
+      // Its eval-split hash is injected into the spec BEFORE spec_hash, so
+      // the exact held-out set is pinned to the job.
+      const dataset = await this.state.storage.get(`compute:dataset:${spec.dataset_ref}`);
+      if (!dataset) return json({ error: 'dataset_ref: dataset not found — build one via POST /compute/api/finetune/datasets' }, 404, allowedOrigin, true);
+      if (dataset.owner !== owner && dataset.shared !== true) return json({ error: 'dataset_ref: dataset is private to its owner' }, 403, allowedOrigin, true);
+      spec.eval_split_hash = dataset.manifest?.eval_split_hash || null;
       await this.prune(now);
       const existing = [...(await this.state.storage.list({ prefix: 'compute:finetune:' })).values()].filter(task => task && task.owner === owner && !['complete', 'failed', 'expired'].includes(task.status));
       if (existing.length >= 20) return json({ error: 'fine-tune task limit reached' }, 409, allowedOrigin, true);
@@ -1836,6 +1898,135 @@ export class ComputeNetwork {
       await this.state.storage.put(`compute:finetune:${taskId}`, task);
       await this.state.storage.put(`compute:job:${tuneJob.id}`, tuneJob);
       return json({ task: publicFinetuneTask(task), job_id: tuneJob.id }, 201, allowedOrigin, true);
+    }
+
+    // ---- Fine-tune datasets (Phase 4) ----
+    if ((path === '/compute/api/finetune/datasets' || path === '/compute/api/finetune/datasets/') && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'POST')) {
+      if (!allowedOrigin) return maybeHead(request, originRequired());
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
+      if (request.method === 'GET' || request.method === 'HEAD') {
+        const sets = [...(await this.state.storage.list({ prefix: 'compute:dataset:' })).values()]
+          .filter((d) => d && !String(d.ref || '').includes(':') && (d.owner === owner || d.shared === true))
+          .sort((a, b) => Number(b.created_at || 0) - Number(a.created_at || 0))
+          .map((d) => ({ dataset_ref: d.ref, manifest: d.manifest, shared: d.shared === true, created_at: d.created_at }));
+        return maybeHead(request, json({ datasets: sets }, 200, allowedOrigin, true));
+      }
+      const input = await body(request, DATASET_LIMITS.maxInputBytes + 1024 * 1024);
+      const sessionsJsonl = typeof input.sessions_jsonl === 'string' ? input.sessions_jsonl : '';
+      if (!sessionsJsonl) return json({ error: 'sessions_jsonl: required (JSONL sessions)' }, 400, allowedOrigin, true);
+      let built;
+      try {
+        built = buildDataset(sessionsJsonl, input.params);
+      } catch (err) {
+        if (err instanceof DatasetError) return json({ error: `dataset: ${err.message}` }, 400, allowedOrigin, true);
+        throw err;
+      }
+      const ref = mintDatasetRef();
+      built.manifest.dataset_ref = ref;
+      const record = {
+        ref, owner, manifest: built.manifest, shared: input.shared === true,
+        privacy: ['network', 'trusted', 'local'].includes(input.privacy) ? input.privacy : 'network',
+        created_at: Date.now(), expires_at: Date.now() + 30 * 24 * 3600_000,
+      };
+      await this.state.storage.put(`compute:dataset:${ref}`, record);
+      await this.state.storage.put(`compute:dataset:${ref}:train`, built.train);
+      await this.state.storage.put(`compute:dataset:${ref}:valid`, built.valid);
+      return json({ dataset_ref: ref, manifest: built.manifest }, 201, allowedOrigin, true);
+    }
+
+    // ---- Provider dataset download (what the kit's fetch_dataset calls) ----
+    const providerDatasetMatch = path.match(/^\/v1\/providers\/finetune\/datasets\/(ds_[A-Za-z0-9_-]{1,100})$/);
+    if (providerDatasetMatch && request.method === 'GET') {
+      const input = await body(request, 4096), provider = await this.provider(request, input);
+      if (!provider) return computeApiError('invalid provider token', 401);
+      const ref = providerDatasetMatch[1];
+      const dataset = await this.state.storage.get(`compute:dataset:${ref}`);
+      if (!dataset) return computeApiError('dataset not found', 404);
+      // Authorize: the provider must hold a lease on a job using this dataset
+      // (or the dataset is shared and the provider can train).
+      const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()];
+      const leased = jobs.some((j) => j && j.kind === 'finetune' && j.providerId === provider.id
+        && j.status === 'leased' && j.dataset_ref === ref);
+      const capable = Array.isArray(provider.finetune_engines) && provider.finetune_engines.length > 0;
+      if (!leased && !(dataset.shared === true && capable)) return computeApiError('not authorized for this dataset', 403);
+      const train = await this.state.storage.get(`compute:dataset:${ref}:train`);
+      const valid = await this.state.storage.get(`compute:dataset:${ref}:valid`);
+      if (!train || !valid) return computeApiError('dataset content missing', 500);
+      return json({ train, valid, manifest: dataset.manifest }, 200);
+    }
+
+    // ---- Provider adapter upload/download (Phase 6 registry blobs) ----
+    if (path === '/v1/providers/finetune/adapters' && request.method === 'POST') {
+      const len = Number(request.headers.get('Content-Length') || 0);
+      if (len > 256 * 1024 * 1024) return computeApiError('adapter too large (256 MB max)', 413);
+      const raw = await request.arrayBuffer().catch(() => null);
+      if (!raw || raw.byteLength === 0) return computeApiError('empty adapter upload', 400);
+      // Provider auth rides in headers/query here (binary body, no JSON).
+      const providerId = String(new URL(request.url).searchParams.get('provider_id') || '').trim();
+      const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+      const provider = await this.provider(request, { provider_id: providerId });
+      if (!provider || !token) return computeApiError('invalid provider token', 401);
+      const leasedJob = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()]
+        .find((j) => j && j.kind === 'finetune' && j.providerId === provider.id && j.status === 'leased');
+      if (!leasedJob) return computeApiError('no leased fine-tune job for this provider', 403);
+      const adapterRef = `adapter_${randomUrlToken(12)}`;
+      await this.state.storage.put(`compute:adapter-blob:${adapterRef}`, new Uint8Array(raw));
+      const record = buildAdapterRecord({
+        ref: adapterRef,
+        job: { ...leasedJob, engine: leasedJob.engine || provider.finetune_engines?.[0] || null },
+        task: null,
+        result: null,
+        gate: { verdict: null, reasons: ['uploaded — awaiting training result and eval gate'] },
+      });
+      record.status = 'pending_eval';
+      record.provider_id = provider.id;
+      await this.state.storage.put(`compute:adapter:${adapterRef}`, record);
+      return json({ adapter_ref: adapterRef }, 201);
+    }
+
+    const providerAdapterMatch = path.match(/^\/v1\/providers\/finetune\/adapters\/(adapter_[A-Za-z0-9_-]{1,64})$/);
+    if (providerAdapterMatch && request.method === 'GET') {
+      const input = await body(request, 4096), provider = await this.provider(request, input);
+      if (!provider) return computeApiError('invalid provider token', 401);
+      const ref = providerAdapterMatch[1];
+      const adapter = await this.state.storage.get(`compute:adapter:${ref}`);
+      if (!adapter) return computeApiError('adapter not found', 404);
+      // Resume may land on a different provider: allow any finetune-capable
+      // provider holding a lease on a job for the same dataset.
+      const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()];
+      const ok = jobs.some((j) => j && j.kind === 'finetune' && j.providerId === provider.id
+        && j.status === 'leased' && j.dataset_ref && j.dataset_ref === adapter.dataset_ref);
+      if (!ok && adapter.provider_id !== provider.id) return computeApiError('not authorized for this adapter', 403);
+      const blob = await this.state.storage.get(`compute:adapter-blob:${ref}`);
+      if (!blob) return computeApiError('adapter blob missing', 500);
+      return new Response(blob, { status: 200, headers: { 'Content-Type': 'application/octet-stream' } });
+    }
+
+    // ---- Owner adapter registry views (Phase 6) ----
+    if ((path === '/compute/api/finetune/adapters' || path === '/compute/api/finetune/adapters/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      if (!allowedOrigin) return maybeHead(request, originRequired());
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
+      const adapters = [...(await this.state.storage.list({ prefix: 'compute:adapter:' })).values()]
+        .filter((a) => a && !String(a.ref || '').includes(':') && a.owner === owner)
+        .sort((a, b) => Number(b.created_at || 0) - Number(a.created_at || 0))
+        .map((a) => publicAdapterRecord(a));
+      return maybeHead(request, json({ adapters }, 200, allowedOrigin, true));
+    }
+
+    const publishMatch = path.match(/^\/compute\/api\/finetune\/adapters\/(adapter_[A-Za-z0-9_-]{1,64})\/publish$/);
+    if (publishMatch && request.method === 'POST') {
+      if (!allowedOrigin) return originRequired();
+      const owner = identity(await authSessionFromRequest(this.env, request));
+      if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
+      const adapter = await this.state.storage.get(`compute:adapter:${publishMatch[1]}`);
+      if (!adapter || String(adapter.ref || '').includes(':')) return json({ error: 'adapter not found' }, 404, allowedOrigin, true);
+      if (adapter.owner !== owner) return json({ error: 'not your adapter' }, 403, allowedOrigin, true);
+      if (adapter.privacy !== 'network') return json({ error: 'only network-privacy adapters can be published' }, 409, allowedOrigin, true);
+      if (adapter.status !== 'evaluated') return json({ error: 'adapter must pass the eval gate before publishing' }, 409, allowedOrigin, true);
+      await this.state.storage.put(`compute:adapter:${adapter.ref}`, { ...adapter, published: true });
+      return json({ adapter: publicAdapterRecord({ ...adapter, published: true }) }, 200, allowedOrigin, true);
     }
 
     const nightRunMatch = path.match(/^\/compute\/api\/night\/(night_[A-Za-z0-9_-]{12})\/run$/);
@@ -2413,9 +2604,32 @@ export class ComputeNetwork {
               if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
             }
           }
-          await this.state.storage.put(key, { ...job, status: 'complete', tune_result: tune.result, adapter_ref: tune.adapter_ref, error: null, attempts: closeAttempt(job.attempts, 'complete'), completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
-          if (tuneTask) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'complete', tune_result: tune.result, adapter_ref: tune.adapter_ref, providerId: provider.id, completedAt: now });
-          return json({ accepted: true }, 202);
+          // Phase 5 eval gate: verdict with the authority order task A/B >
+          // retention > perplexity (guardrail) > judge (advisory).
+          // Deployment requires this report — completion alone is not enough.
+          const gate = gateVerdict({ result: tune.result });
+          const gatePatch = { evaluated: true, gate_verdict: gate.verdict, gate_reasons: gate.reasons, eval_delta: gate.eval_delta };
+          // Phase 6 registry: upsert the adapter record (upload may have
+          // created it as pending_eval, or the ref arrives here first).
+          const existingAdapter = await this.state.storage.get(`compute:adapter:${tune.adapter_ref}`);
+          const record = buildAdapterRecord({
+            ref: tune.adapter_ref,
+            job: { ...job, engine: job.engine || null },
+            task: tuneTask,
+            result: tune.result,
+            gate,
+          });
+          if (existingAdapter && typeof existingAdapter === 'object') {
+            record.provider_id = existingAdapter.provider_id || provider.id;
+            record.published = existingAdapter.published === true;
+            record.created_at = existingAdapter.created_at || record.created_at;
+          } else {
+            record.provider_id = provider.id;
+          }
+          await this.state.storage.put(`compute:adapter:${tune.adapter_ref}`, record);
+          await this.state.storage.put(key, { ...job, status: 'complete', tune_result: tune.result, adapter_ref: tune.adapter_ref, error: null, attempts: closeAttempt(job.attempts, 'complete'), completedAt: now, expiresAt: now + 10 * 60_000, ...gatePatch, ...settlePatch });
+          if (tuneTask) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'complete', tune_result: tune.result, adapter_ref: tune.adapter_ref, providerId: provider.id, completedAt: now, ...gatePatch });
+          return json({ accepted: true, gate_verdict: gate.verdict }, 202);
         }
         if (tune.status === 'failed') {
           await this.state.storage.put(key, { ...job, status: 'failed', error: tune.error, attempts: closeAttempt(job.attempts, 'failed'), completedAt: now, expiresAt: now + 10 * 60_000 });
