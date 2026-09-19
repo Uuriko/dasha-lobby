@@ -273,6 +273,11 @@ assert.equal(validateTuneResult({ status: 'preempted', spec_hash: 'abc123', engi
 assert.equal(validateTuneResult({ status: 'whatever', spec_hash: 'abc123', engine: 'mlx' }, fakeJob).ok, false, 'unknown status rejected');
 // the chat content validator must not leak in: no content field required
 assert.equal(validateTuneResult({ status: 'complete', spec_hash: 'abc123', engine: 'mlx', iters_done: 0, adapter_ref: 'a://x' }, fakeJob).ok, true);
+// refused: accepted, no checkpoint or adapter needed, engine must still match
+const refused = validateTuneResult({ status: 'refused', spec_hash: 'abc123', engine: 'mlx', iters_done: 0 }, fakeJob);
+assert.equal(refused.ok, true, 'refused accepted');
+assert.equal(refused.status, 'refused');
+assert.equal(validateTuneResult({ status: 'refused', spec_hash: 'abc123', engine: 'cuda', iters_done: 0 }, fakeJob).ok, false, 'refused still needs engine match');
 
 /* ---------- earnings ---------- */
 

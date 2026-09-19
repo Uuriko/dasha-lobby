@@ -380,7 +380,7 @@ export function validateTuneResult(input, job) {
   const src = input && typeof input === 'object' ? input : {};
   const bad = (error) => ({ ok: false, error });
   const status = String(src.status || '').trim().toLowerCase();
-  if (!['complete', 'failed', 'preempted'].includes(status)) return bad('status must be complete, failed, or preempted');
+  if (!['complete', 'failed', 'preempted', 'refused'].includes(status)) return bad('status must be complete, failed, preempted, or refused');
   if (String(src.spec_hash || '').trim() !== String(job?.spec_hash || '')) return bad('spec_hash mismatch');
   const engine = String(src.engine || '').trim().toLowerCase();
   if (!engine || engine !== String(job?.engine || '')) return bad('engine mismatch: result engine must match the job engine');
@@ -416,6 +416,9 @@ export function validateTuneResult(input, job) {
     if (!error) return bad('error is required for a failed result');
     return { ok: true, status, iters_done, error };
   }
+  // Refused: provider can't run this engine — server requeues without
+  // burning an attempt. No checkpoint, nothing trained.
+  if (status === 'refused') return { ok: true, status, iters_done };
   const checkpoint_ref = String(src.checkpoint_ref || '').trim();
   if (!checkpoint_ref || checkpoint_ref.length > 256) return bad('checkpoint_ref is required for a preempted result (max 256 chars)');
   return { ok: true, status, iters_done, checkpoint_ref };
@@ -2417,6 +2420,15 @@ export class ComputeNetwork {
         if (tune.status === 'failed') {
           await this.state.storage.put(key, { ...job, status: 'failed', error: tune.error, attempts: closeAttempt(job.attempts, 'failed'), completedAt: now, expiresAt: now + 10 * 60_000 });
           if (tuneTask) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'failed', error: tune.error });
+          return json({ accepted: true }, 202);
+        }
+        // Refused: provider can't run this engine — requeue WITHOUT burning
+        // an attempt (pop the lease's pending attempt row).
+        if (tune.status === 'refused') {
+          const pending = Array.isArray(job.attempts) ? job.attempts.slice() : [];
+          if (pending.length && pending[pending.length - 1].outcome == null) pending.pop();
+          await this.state.storage.put(key, { ...job, status: 'queued', providerId: null, engine: null, leaseExpiresAt: null, attempts: pending });
+          if (tuneTask) await this.state.storage.put(tuneTaskKey, { ...tuneTask, status: 'queued', providerId: null, engine: null });
           return json({ accepted: true }, 202);
         }
         // Preempted: requeue with the checkpoint for resume; attempt cap stops the loop.
