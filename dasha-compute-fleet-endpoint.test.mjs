@@ -171,4 +171,34 @@ assert.ok([200, 204].includes(poll.status), `poll status ${poll.status}`);
   assert.deepEqual(body.providers, []);
 }
 
+// 7. Splash tier: the heartbeat's engines advertisement is retained and exposed
+// per model; unknown engines and unlisted models are sanitized away.
+{
+  const pollSplash = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/providers/poll', {
+    method: 'POST', headers: providerHeaders,
+    body: JSON.stringify({
+      provider_id: credentials.provider_id,
+      name: 'Fleet Mac',
+      models: ['qwen3-4b', 'qwen3-8b'],
+      engines: {
+        'qwen3-8b': { engine: 'splash', package: 'incoai/Qwen3.8-27B-Splash', port: 8000 },
+        'qwen3-4b': { engine: 'mystery-engine', package: 'x/y' },
+        'not-listed': { engine: 'splash', package: 'x/y' },
+      },
+    }),
+  }), origin);
+  assert.ok([200, 204].includes(pollSplash.status), `splash poll status ${pollSplash.status}`);
+  const res = await get();
+  const body = await res.json();
+  const row = body.providers[0];
+  const m8b = row.models.find(m => m.model === 'qwen3-8b');
+  const m4b = row.models.find(m => m.model === 'qwen3-4b');
+  assert.equal(m8b.engine, 'splash');
+  assert.ok(!('engine' in m4b), 'unknown engine must not leak');
+  // Private details (package/port) stay server-side.
+  assert.ok(!('package' in m8b) && !('port' in m8b));
+  const stored = await storage.get(`compute:provider:${credentials.provider_id}`);
+  assert.deepEqual(Object.keys(stored.engines || {}), ['qwen3-8b']);
+}
+
 console.log('fleet endpoint: ok');

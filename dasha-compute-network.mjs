@@ -881,6 +881,27 @@ function providerHardware(input, allowedModels) {
   return clean;
 }
 
+/** Splash tier: retain the kit's additive heartbeat `engines` advertisement
+ *  (public model -> { engine, package, port }) so the fleet can show an honest
+ *  "Splash (beta)" badge. Sanitized like hardware: only whitelisted engine
+ *  names survive, only for models the provider is allowed to serve. */
+function providerEngines(input, allowedModels) {
+  const source = input?.engines;
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
+  const clean = {};
+  for (const [publicName, spec] of Object.entries(source)) {
+    if (!allowedModels.includes(publicName)) continue;
+    if (String(spec?.engine || '').toLowerCase() !== 'splash') continue;
+    const port = Number(spec?.port);
+    clean[publicName] = {
+      engine: 'splash',
+      package: String(spec?.package || '').slice(0, 96),
+      port: Number.isFinite(port) ? Math.max(1, Math.min(65535, Math.floor(port))) : null,
+    };
+  }
+  return Object.keys(clean).length ? clean : null;
+}
+
 function tokenUsage(input) {
   const source = input?.usage && typeof input.usage === 'object' ? input.usage : {};
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
@@ -2001,10 +2022,15 @@ export class ComputeNetwork {
       const rows = [];
       for (const provider of providers) {
         const benches = Array.isArray(provider.hardware?.benchmarks) ? provider.hardware.benchmarks : [];
+        const engines = provider.engines && typeof provider.engines === 'object' && !Array.isArray(provider.engines) ? provider.engines : {};
         const models = (Array.isArray(provider.models) ? provider.models : []).map(id => {
           const bench = benches.find(row => String(row?.model) === String(id));
           const tps = Number(bench?.tokens_per_second);
-          return { model: String(id), tokens_per_second: Number.isFinite(tps) && tps > 0 ? Math.round(tps * 100) / 100 : null };
+          return {
+            model: String(id),
+            tokens_per_second: Number.isFinite(tps) && tps > 0 ? Math.round(tps * 100) / 100 : null,
+            ...(engines[id]?.engine === 'splash' ? { engine: 'splash' } : {}),
+          };
         });
         rows.push({
           name: String(provider.name || 'Mac').slice(0, 64),
@@ -2134,6 +2160,11 @@ export class ComputeNetwork {
       else provider.models ||= [];
       const hardware = providerHardware(input, provider.allowedModels);
       if (hardware) provider.hardware = hardware;
+      // Splash tier: retain the heartbeat's engine advertisement; clear it when
+      // the kit explicitly stops advertising (undefined = older kit, keep).
+      const engines = providerEngines(input, provider.allowedModels);
+      if (engines) provider.engines = engines;
+      else if (input && typeof input === 'object' && 'engines' in input) provider.engines = null;
       provider.name = String(input.name || '').trim().slice(0, 64) || provider.name;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
       if (firstOnline) await this.referralMilestone(provider.owner, 'm1', [{ to: 'referrer', cents: REF_M1_CENTS }], now);

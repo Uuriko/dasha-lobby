@@ -289,6 +289,8 @@ footer.listed-on img{display:block;height:32px;width:auto}
 .fleet-row strong{color:var(--paper);font-size:15px;white-space:nowrap}
 .fleet-row small{color:var(--muted);font-size:12.5px;line-height:1.5}
 .fleet-row .fleet-up{color:var(--acid)}
+/* steal-3: splash tier — honest beta badge, shown only when the heartbeat says so */
+.splash-badge{font-size:11px;letter-spacing:.06em;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-left:6px}
 @media(max-width:520px){.fleet-row{flex-wrap:wrap}.price-table th:nth-child(3),.price-table td:nth-child(3){display:none}}
 .ux-triad,.ux-tech{display:grid;gap:10px}
 .ux-triad{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -4939,6 +4941,11 @@ function paintFleet(){
       const tps=(Array.isArray(row.models)?row.models:[]).map(m=>m.tokens_per_second!=null?m.model+' '+m.tokens_per_second+' tok/s':m.model).join(' · ');
       const up=row.uptime_pct_7d==null?'uptime warming up':row.uptime_pct_7d+'% uptime · 7d';
       stats.textContent=[tps,up,Number(row.jobs_served_7d||0)+' jobs served · 7d'].filter(Boolean).join(' · ');
+      // Splash tier: honest beta badge — only when the provider's heartbeat advertises a splash engine.
+      if((Array.isArray(row.models)?row.models:[]).some(m=>m.engine==='splash')){
+        const badge=document.createElement('span');badge.className='splash-badge';badge.textContent='Splash · beta';
+        stats.append(' ',badge);
+      }
       card.append(dot,name,stats);wrap.append(card);
     }
   }).catch(()=>{wrap.replaceChildren();const p=document.createElement('p');p.className='fine';p.textContent='Could not read the network.';wrap.append(p)});
