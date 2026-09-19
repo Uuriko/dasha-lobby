@@ -300,7 +300,7 @@ sys.argv = ["agent.py", "--once"]
 try:
     agent.main()
 except SystemExit as exit:
-    assert "Ollama unavailable" in str(exit), exit
+    assert "no configured model ready" in str(exit), exit
 else:
     raise AssertionError("expected SystemExit")
 `;

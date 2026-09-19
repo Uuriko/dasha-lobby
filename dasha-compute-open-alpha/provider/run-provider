@@ -10,4 +10,7 @@ fi
 if [ -n "${DASHA_RESIDUAL_ALPHA:-}" ]; then
   export DASHA_RESIDUAL_ALPHA
 fi
+if [ -n "${DASHA_SPLASH_API_KEY:-}" ]; then
+  export DASHA_SPLASH_API_KEY
+fi
 exec "$DASHA_PYTHON" "$APP_DIR/agent.py"
