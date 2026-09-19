@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /** Fleet scorecard endpoint (steal 3): per-provider rows with measured tok/s,
- *  jobs served (7d, receipt chain), trailing-7d uptime %. Honest empty fleet. */
+ *  jobs served (7d, durable day-bucketed counters), trailing-7d uptime %.
+ *  Honest empty fleet. */
 import assert from 'node:assert/strict';
-import { ComputeNetwork, providerUptimePct7d } from './dasha-compute-network.mjs';
+import { ComputeNetwork, providerJobsServed7d, providerUptimePct7d } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 
 const env = {
@@ -103,7 +104,65 @@ assert.ok([200, 204].includes(poll.status), `poll status ${poll.status}`);
   assert.ok(half >= 49 && half <= 51, `half uptime ${half}`);
 }
 
-// 5. Offline provider drops out of the fleet (stale lastSeenAt).
+// 5. jobs_served_7d comes from durable day-bucketed counters, not live job rows.
+// Complete a real job end to end; the counter increments once. Failed jobs do not count.
+{
+  const keyRes = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/keys', {
+    method: 'POST', headers: userHeaders, body: JSON.stringify({ name: 'Fleet', limit_cents: 500, limit_reset: 'monthly' }),
+  }), origin);
+  assert.equal(keyRes.status, 201, await keyRes.clone().text());
+  const keyBody = await keyRes.json();
+  const apiHeaders = { Authorization: `Bearer ${keyBody.api_key}`, 'Content-Type': 'application/json' };
+  await storage.put('compute:credit-balance:x:7', { owner: 'x:7', cents: 20, updatedAt: Date.now() });
+
+  const heartbeat = { provider_id: credentials.provider_id, name: 'Fleet Mac', models: ['qwen3-4b'] };
+  async function leaseNext() {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const poll = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/providers/poll', {
+        method: 'POST', headers: providerHeaders, body: JSON.stringify(heartbeat),
+      }), origin);
+      if (poll.status === 200) return poll.json();
+      await new Promise((r) => setTimeout(r, 5));
+    }
+    assert.fail('provider poll never leased');
+  }
+
+  const pending = network.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/chat/completions', {
+    method: 'POST', headers: apiHeaders,
+    body: JSON.stringify({ model: 'qwen3-4b', messages: [{ role: 'user', content: 'hello' }] }),
+  }), origin);
+  const leased = await leaseNext();
+  const done = await network.fetch(new Request(`https://lobby.getdasha.com/compute/api/providers/jobs/${leased.job.id}/result`, {
+    method: 'POST', headers: providerHeaders,
+    body: JSON.stringify({ provider_id: credentials.provider_id, content: 'hi there', usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 } }),
+  }), origin);
+  assert.equal(done.status, 202);
+  const res = await pending;
+  assert.equal(res.status, 200, await res.clone().text());
+
+  const dayBucket = new Date().toISOString().slice(0, 10);
+  assert.equal(await storage.get(`compute:provider-jobs:${credentials.provider_id}:${dayBucket}`), 1);
+  assert.equal(await providerJobsServed7d(storage, credentials.provider_id), 1);
+  const fleetRes = await get();
+  const fleetBody = await fleetRes.json();
+  assert.equal(fleetBody.providers[0].jobs_served_7d, 1);
+
+  // A failed job is not "served": the counter stays at 1.
+  const pending2 = network.fetch(new Request('https://lobby.getdasha.com/compute/api/v1/chat/completions', {
+    method: 'POST', headers: apiHeaders,
+    body: JSON.stringify({ model: 'qwen3-4b', messages: [{ role: 'user', content: 'boom' }] }),
+  }), origin);
+  const leased2 = await leaseNext();
+  const failed = await network.fetch(new Request(`https://lobby.getdasha.com/compute/api/providers/jobs/${leased2.job.id}/result`, {
+    method: 'POST', headers: providerHeaders,
+    body: JSON.stringify({ provider_id: credentials.provider_id, error: 'provider inference failed' }),
+  }), origin);
+  assert.equal(failed.status, 202);
+  await pending2;
+  assert.equal(await providerJobsServed7d(storage, credentials.provider_id), 1);
+}
+
+// 6. Offline provider drops out of the fleet (stale lastSeenAt).
 {
   const provider = await storage.get(`compute:provider:${credentials.provider_id}`);
   await storage.put(`compute:provider:${credentials.provider_id}`, { ...provider, lastSeenAt: now - 3600_000 });

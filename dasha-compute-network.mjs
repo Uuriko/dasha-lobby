@@ -1066,6 +1066,27 @@ export async function providerUptimePct7d(storage, provider, now = Date.now()) {
   return Math.round((Math.min(present, elapsedHours) / elapsedHours) * 1000) / 10;
 }
 
+/** Fleet scorecard: durable per-provider served-job counters, day-bucketed
+ *  (`compute:provider-jobs:<id>:<YYYY-MM-DD>`). Live `compute:job:` rows expire
+ *  10 minutes after completion, so a 7d window on them would read ~0 — these
+ *  buckets are the honest source for jobs_served_7d. Counts jobs a provider
+ *  completed ("served"); failed attempts are not service. Pruned after 8 days. */
+export async function providerJobsServed7d(storage, providerId, now = Date.now()) {
+  if (!providerId) return 0;
+  let total = 0;
+  for (let day = 0; day < 7; day++) {
+    const bucket = new Date(now - day * 24 * 60 * 60_000).toISOString().slice(0, 10);
+    total += Number(await storage.get(`compute:provider-jobs:${providerId}:${bucket}`)) || 0;
+  }
+  return total;
+}
+
+async function bumpProviderJobsServed(storage, providerId, now = Date.now()) {
+  if (!providerId) return;
+  const key = `compute:provider-jobs:${providerId}:${new Date(now).toISOString().slice(0, 10)}`;
+  await storage.put(key, (Number(await storage.get(key)) || 0) + 1);
+}
+
 /** Buyer SSE drop while a Mac is still advertising: keep queued/leased so the client can resume the same job. */
 export function keepBuyerJobOnStreamDrop(job, providers = [], now = Date.now()) {
   if (!job || !['queued', 'leased'].includes(String(job.status || ''))) return false;
@@ -1146,6 +1167,11 @@ export class ComputeNetwork {
       const hourCutoff = new Date(now - 8 * 24 * 60 * 60_000).toISOString().slice(0, 13);
       for (const [key] of await this.state.storage.list({ prefix: 'compute:provider-hour:' })) {
         if (key.slice(-13) < hourCutoff) await this.state.storage.delete(key);
+      }
+      // Fleet scorecard hygiene: drop per-provider served-job day buckets older than 8 days.
+      const jobsDayCutoff = new Date(now - 8 * 24 * 60 * 60_000).toISOString().slice(0, 10);
+      for (const [key] of await this.state.storage.list({ prefix: 'compute:provider-jobs:' })) {
+        if (key.slice(-10) < jobsDayCutoff) await this.state.storage.delete(key);
       }
     }
     if (runNight) await this.runNightTasks(now);
@@ -1964,15 +1990,14 @@ export class ComputeNetwork {
 
     // Fleet scorecard (Vast.ai-style per-provider rows): public, aggregate-safe.
     // One row per online Mac: display name, measured tok/s per model, jobs served
-    // (7d, from the receipt chain), trailing-7d uptime %. Never a spinner — an
-    // empty fleet returns an empty array and the UI says so honestly.
+    // (7d, from durable per-provider day-bucketed counters — completed jobs only),
+    // trailing-7d uptime %. Never a spinner — an empty fleet returns an empty
+    // array and the UI says so honestly.
     if ((path === '/compute/api/v1/fleet' || path === '/compute/api/v1/fleet/') && (request.method === 'GET' || request.method === 'HEAD')) {
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()]
         .filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS)
         .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
-      const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()];
-      const weekAgo = now - 7 * 24 * 60 * 60_000;
       const rows = [];
       for (const provider of providers) {
         const benches = Array.isArray(provider.hardware?.benchmarks) ? provider.hardware.benchmarks : [];
@@ -1981,16 +2006,11 @@ export class ComputeNetwork {
           const tps = Number(bench?.tokens_per_second);
           return { model: String(id), tokens_per_second: Number.isFinite(tps) && tps > 0 ? Math.round(tps * 100) / 100 : null };
         });
-        const jobsServed = jobs.filter(job =>
-          job.providerId === provider.id
-          && (job.status === 'complete' || job.status === 'failed')
-          && Number(job.completedAt || 0) >= weekAgo,
-        ).length;
         rows.push({
           name: String(provider.name || 'Mac').slice(0, 64),
           online: true,
           models,
-          jobs_served_7d: jobsServed,
+          jobs_served_7d: await providerJobsServed7d(this.state.storage, provider.id, now),
           uptime_pct_7d: await providerUptimePct7d(this.state.storage, provider, now),
         });
       }
@@ -2176,6 +2196,8 @@ export class ComputeNetwork {
       if (error) await this.refundJobDebit(job, now, error);
       const residual = residualControlFields(input, job.model);
       await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, usage_gateway: usageGateway, ...(usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), attempts: closeAttempt(job.attempts, error ? 'failed' : 'complete'), messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch, ...residual });
+      // Fleet scorecard: a completed job is one served by this provider.
+      if (!error) await bumpProviderJobsServed(this.state.storage, provider.id, now);
       await this.finishNight(job, error ? 'failed' : 'complete', error ? null : answer, error || null, now);
       await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
       return json({ accepted: true }, 202);
@@ -2229,6 +2251,8 @@ export class ComputeNetwork {
       const residual = finished ? residualControlFields(input, job.model) : {};
       await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, ...(usageGateway ? { usage_gateway: usageGateway } : {}), ...(finishedEarly && usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), ...(finishedEarly ? { attempts: closeAttempt(job.attempts, failed ? 'failed' : 'complete') } : {}), messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch, ...residual });
       if (finished) {
+        // Fleet scorecard: a completed stream is one served by this provider.
+        if (!failed) await bumpProviderJobsServed(this.state.storage, provider.id, now);
         await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : joinedStripped, streamError || null, now);
         await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
       }
