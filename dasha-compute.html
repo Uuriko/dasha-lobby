@@ -261,6 +261,35 @@ footer.listed-on[hidden]{display:none!important}
 footer.listed-on img{display:block;height:32px;width:auto}
 .ux-band{margin-top:20px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
 .ux-kicker{margin:0 0 8px;color:var(--muted);font:800 11px/1 Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+/* steal-1: try-it-now band */
+#ux-tryit .tryit-box{border:1px solid var(--line);border-radius:12px;padding:14px;background:color-mix(in srgb,var(--panel) 80%,transparent)}
+#tryit-prompt{display:block;width:100%;min-height:56px;resize:vertical;background:var(--ink);color:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:400 15px/1.45 Arial,Helvetica,sans-serif}
+#tryit-prompt:focus{border-color:var(--acid);outline:none}
+.tryit-row{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}
+#tryit-run{width:auto;min-height:48px;padding:0 22px;font-size:16px}
+.tryit-status{margin:10px 0 0;font:700 13px/1.45 Arial,Helvetica,sans-serif;color:var(--paper-muted)}
+.tryit-status a{color:var(--acid)}
+.tryit-out{margin:10px 0 0;padding:10px 12px;border-left:2px solid var(--acid);color:var(--paper);font:400 15px/1.55 Arial,Helvetica,sans-serif;white-space:pre-wrap;word-break:break-word}
+.tryit-out[hidden]{display:none}
+/* steal-2: price-on-the-card table */
+.price-line{margin:0 0 10px;color:var(--paper);font:800 15px/1.4 Arial,Helvetica,sans-serif}
+.price-line s{color:var(--muted)}
+.price-line .acid{color:var(--acid)}
+.price-table{width:100%;border-collapse:collapse;font:400 13px/1.4 Arial,Helvetica,sans-serif}
+.price-table th{text-align:left;color:var(--muted);font:800 11px/1 Arial,Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:8px 8px 8px 0;border-bottom:1px solid var(--line)}
+.price-table td{padding:9px 8px 9px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);vertical-align:top}
+.price-table tr:last-child td{border-bottom:0}
+.price-table .pm-name{color:var(--paper);font-weight:800}
+.price-table .pm-tps{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.price-table .pm-dasha{color:var(--acid);font-weight:700}
+.price-table .pm-dasha s{color:var(--muted);font-weight:400}
+/* steal-3: fleet scorecards */
+.fleet-row{display:flex;align-items:baseline;gap:10px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:color-mix(in srgb,var(--panel) 80%,transparent)}
+.fleet-row .dot{flex:0 0 auto;align-self:center}
+.fleet-row strong{color:var(--paper);font-size:15px;white-space:nowrap}
+.fleet-row small{color:var(--muted);font-size:12.5px;line-height:1.5}
+.fleet-row .fleet-up{color:var(--acid)}
+@media(max-width:520px){.fleet-row{flex-wrap:wrap}.price-table th:nth-child(3),.price-table td:nth-child(3){display:none}}
 .ux-triad,.ux-tech{display:grid;gap:10px}
 .ux-triad{grid-template-columns:repeat(3,minmax(0,1fr))}
 .ux-tech{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -419,6 +448,37 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <a id="gate-signin" class="tf-quiet" href="/login?return=/compute">Sign in</a>
   <a id="gate-ocm" class="tf-quiet" href="/compute/ocm" title="OCM console · ocm_live_ key">Marketplace</a>
   <button type="button" id="gate-you" class="tf-quiet" hidden>You</button>
+
+  <!-- steal-1: try-it-now (OpenRouter playground pattern) — guest key minted in-browser, live Mac run, no sign in -->
+  <div class="ux-band" id="ux-tryit">
+    <p class="ux-kicker">Try it.</p>
+    <div class="tryit-box">
+      <label class="fine" for="tryit-prompt" style="margin-top:0">No sign in. A guest key is minted in your browser — 3 free runs / 10 min, then it expires.</label>
+      <textarea id="tryit-prompt" rows="2" maxlength="2000" aria-label="Try a prompt" style="margin-top:8px">Explain quantum computing in one sentence.</textarea>
+      <div class="tryit-row">
+        <button type="button" class="primary" id="tryit-run">Run on a Mac</button>
+        <span class="tf-micro" id="tryit-hint">$0.05/job · free for guests</span>
+      </div>
+      <p class="tryit-status" id="tryit-status" role="status" aria-live="polite" hidden></p>
+      <div class="tryit-out" id="tryit-out" hidden></div>
+    </div>
+  </div>
+
+  <!-- steal-2: price-on-the-card (Together pattern) — buyer's number within one scroll -->
+  <div class="ux-band" id="ux-pricing">
+    <p class="ux-kicker">Price.</p>
+    <p class="price-line" id="price-line">Flat <span class="acid">$0.05</span> per successful job · ≈100 jobs per $5 · same price, every model.</p>
+    <table class="price-table" id="price-table" aria-label="Compute pricing">
+      <thead><tr><th scope="col">Model</th><th scope="col">You pay</th><th scope="col">Provider earns</th><th scope="col">$dasha</th></tr></thead>
+      <tbody id="price-rows"><tr><td colspan="4" class="fine">Loading live prices…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- steal-3: fleet scorecards (Vast.ai pattern) — per-Mac measured tok/s + uptime, never a spinner -->
+  <div class="ux-band" id="ux-fleet">
+    <p class="ux-kicker">Fleet.</p>
+    <div id="fleet-rows" aria-live="polite"><p class="fine">Reading the network…</p></div>
+  </div>
 
   <div class="ux-band" id="ux-demo">
     <p class="ux-kicker">See.</p>
@@ -4763,7 +4823,121 @@ bootHash();
   // Stay on Ask with draft; applyAskResumeEngine after auth knows fleet (Community when Mac still up).
   showTf('ask');
 })();
+/* ---- steal-1: try-it-now — mint a guest key in-browser, run one live prompt on the Mac network ---- */
+function tryItStatus(html){const el=$('tryit-status');if(!el)return;el.hidden=false;el.replaceChildren();if(typeof html==='string')el.textContent=html;else if(html)el.append(html)}
+function tryItLink(href,text){const a=document.createElement('a');a.href=href;a.textContent=text;return a}
+async function paintTryIt(){
+  const run=$('tryit-run'),prompt=$('tryit-prompt'),out=$('tryit-out');
+  if(!run||!prompt||run.dataset.wired)return;run.dataset.wired='1';
+  const go=async()=>{
+    const text=prompt.value.trim();
+    if(!text){prompt.focus();return}
+    run.disabled=true;out.hidden=true;out.textContent='';
+    try{
+      // Honest capacity check first: never hang when no Mac is online.
+      let net=null;
+      try{net=await api('/compute/api/v1/network')}catch{net=null}
+      const online=Number(net?.providers_online||0);
+      const models=Array.isArray(net?.models_available)?net.models_available:[];
+      if(!online||!models.length){
+        const frag=document.createDocumentFragment();
+        frag.append(document.createTextNode('No Macs online right now — check back soon. '));
+        frag.append(tryItLink('#provide','Share yours'));
+        frag.append(document.createTextNode(' · or '));
+        frag.append(tryItLink('#ask','try the hosted floor'));
+        tryItStatus(frag);return;
+      }
+      tryItStatus('Minting a guest key…');
+      const key=await api('/compute/api/guest-keys',{method:'POST',body:'{}'});
+      if(!key?.api_key)throw Error('Could not mint a guest key. Try again.');
+      const model=models.includes('qwen3-4b')?'qwen3-4b':models[0];
+      tryItStatus('Running on '+model+'…');
+      const res=await fetch(API+'/compute/api/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+key.api_key},
+        body:JSON.stringify({model,messages:[{role:'user',content:text}],max_tokens:256,stream:false}),
+        signal:AbortSignal.timeout(90000),
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok){
+        const reason=data?.reason||'';
+        if(res.status===503&&(reason==='no_mac_online'||/no mac is online/i.test(String(data?.error?.message||'')))){
+          const frag=document.createDocumentFragment();
+          frag.append(document.createTextNode('The Mac went offline mid-run — no_mac_online. '));
+          frag.append(tryItLink('#ask','Try the hosted floor'));
+          tryItStatus(frag);return;
+        }
+        throw Error((typeof data?.error==='string'?data.error:data?.error?.message)||'Request failed');
+      }
+      const answer=String(data?.choices?.[0]?.message?.content||'').trim();
+      if(!answer)throw Error('Empty reply. Try again.');
+      tryItStatus('Answered by '+model+' · guest run · 3 free / 10 min.');
+      out.textContent=answer;out.hidden=false;
+    }catch(error){tryItStatus(error?.name==='TimeoutError'?'Timed out. The Mac may be slow — try again.':(error?.message||'Something went wrong. Try again.'))}
+    finally{run.disabled=false}
+  };
+  run.addEventListener('click',go);
+  prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();go()}});
+}
+
+/* ---- steal-2: price-on-the-card — buyer's number within one scroll ---- */
+// Buyer price: HOSTED_ASK_PRICE_CENTS=5 ($0.05/job) in dasha-compute-credits.mjs.
+// $dasha top-up discount: CREDIT_DISCOUNTS.dasha=0.05 → $0.0475 effective per job.
+function paintPricing(){
+  const tbody=$('price-rows');if(!tbody||tbody.dataset.wired)return;tbody.dataset.wired='1';
+  const render=capacity=>{
+    const rows=(Array.isArray(capacity)&&capacity.length?capacity.map(c=>({id:String(c.model),tps:Number(c.tokens_per_second)})):MODELS.map(m=>({id:m[0],tps:null})));
+    tbody.replaceChildren();
+    for(const row of rows){
+      const tr=document.createElement('tr');
+      const name=document.createElement('td');
+      const strong=document.createElement('span');strong.className='pm-name';strong.textContent=row.id;
+      name.append(strong);
+      if(Number.isFinite(row.tps)&&row.tps>0){const t=document.createElement('span');t.className='pm-tps';t.textContent=row.tps+' tok/s measured';name.append(t)}
+      const pay=document.createElement('td');pay.textContent='$0.05/job';
+      const earn=document.createElement('td');earn.textContent='$0.05/job + $0.01/1k';
+      const dasha=document.createElement('td');dasha.className='pm-dasha';
+      const s=document.createElement('s');s.textContent='$0.05';
+      dasha.append(s,document.createTextNode(' $0.0475 eff.'));
+      tr.append(name,pay,earn,dasha);tbody.append(tr);
+    }
+    const foot=document.createElement('tr');
+    const note=document.createElement('td');note.colSpan=4;note.className='fine';
+    note.textContent='Flat per successful job. Pay with $dasha for the 5% top-up discount · providers earn +5% taking $dasha.';
+    foot.append(note);tbody.append(foot);
+  };
+  api('/compute/api/v1/network').then(net=>render(net?.capacity)).catch(()=>render(null));
+}
+
+/* ---- steal-3: fleet scorecards — per-Mac measured tok/s + uptime, honest when empty ---- */
+function paintFleet(){
+  const wrap=$('fleet-rows');if(!wrap||wrap.dataset.wired)return;wrap.dataset.wired='1';
+  const empty=()=>{
+    wrap.replaceChildren();
+    const p=document.createElement('p');p.className='fine';
+    p.append(document.createTextNode('No Macs online right now. '));
+    const a=document.createElement('a');a.href='#provide';a.className='tf-quiet';a.textContent='Share yours and be the fleet.';
+    p.append(a);wrap.append(p);
+  };
+  api('/compute/api/v1/fleet').then(data=>{
+    const rows=Array.isArray(data?.providers)?data.providers:[];
+    if(!rows.length){empty();return}
+    wrap.replaceChildren();
+    for(const row of rows){
+      const card=document.createElement('div');card.className='fleet-row';
+      const dot=document.createElement('span');dot.className='dot live';dot.setAttribute('aria-hidden','true');
+      const name=document.createElement('strong');name.textContent=String(row.name||'Mac');
+      const stats=document.createElement('small');
+      const tps=(Array.isArray(row.models)?row.models:[]).map(m=>m.tokens_per_second!=null?m.model+' '+m.tokens_per_second+' tok/s':m.model).join(' · ');
+      const up=row.uptime_pct_7d==null?'uptime warming up':row.uptime_pct_7d+'% uptime · 7d';
+      stats.textContent=[tps,up,Number(row.jobs_served_7d||0)+' jobs served · 7d'].filter(Boolean).join(' · ');
+      card.append(dot,name,stats);wrap.append(card);
+    }
+  }).catch(()=>{wrap.replaceChildren();const p=document.createElement('p');p.className='fine';p.textContent='Could not read the network.';wrap.append(p)});
+}
+
 paintRequest();paintCode();updateRun();auth();resumeCardCheckout();beacon('page','view');
+paintTryIt();paintPricing();paintFleet();
 </script>
 </body>
 </html>

@@ -173,6 +173,11 @@ export function growAllowedModels(prior, polled = [], catalog = MODELS) {
 }
 const FRESH_MS = 45_000;
 const JOB_TTL_MS = 5 * 60_000;
+/** Fail-loud decision window: a queued v1 chat job whose model no provider
+ *  still advertises is answered with no_mac_online instead of polling to the
+ *  5-minute job TTL. A provider that keeps advertising keeps its job queued —
+ *  slow pickup is a provider-side concern, handled by lease expiry + prune. */
+export const NO_MAC_DECISION_MS = 15_000;
 const LEASE_MS = 5 * 60_000;
 const NIGHT_JOB_TTL_MS = 24 * 60 * 60_000;
 const NIGHT_INTERVALS = { daily: 24 * 60 * 60_000, weekly: 7 * 24 * 60 * 60_000 };
@@ -1037,6 +1042,30 @@ function providerServesModel(provider, model, now) {
   return now - Number(provider.lastSeenAt || 0) < FRESH_MS && Array.isArray(provider.models) && provider.models.includes(model);
 }
 
+/** True when at least one provider is fresh and advertises the model. */
+export function providerAdvertisesModel(providers, model, now = Date.now()) {
+  return (Array.isArray(providers) ? providers : []).some(provider => providerServesModel(provider, model, now));
+}
+
+/** Trailing-7d uptime % for the fleet scorecard, from per-provider heartbeat hour
+ *  markers (`compute:provider-hour:<id>:<UTC-hour>`). Returns null until the provider
+ *  has a full day of history — a single fresh bucket must not read as "100%". */
+export async function providerUptimePct7d(storage, provider, now = Date.now()) {
+  const created = Number(provider?.createdAt || 0);
+  if (!Number.isFinite(created) || created <= 0) return null;
+  const weekMs = 7 * 24 * 60 * 60_000;
+  const start = Math.max(now - weekMs, created);
+  if (now - start < 24 * 60 * 60_000) return null;
+  const elapsedHours = Math.max(1, Math.ceil((now - start) / 3_600_000));
+  const prefix = `compute:provider-hour:${provider.id}:`;
+  const startHour = new Date(start).toISOString().slice(0, 13);
+  let present = 0;
+  for (const [key] of await storage.list({ prefix })) {
+    if (key.slice(prefix.length) >= startHour) present++;
+  }
+  return Math.round((Math.min(present, elapsedHours) / elapsedHours) * 1000) / 10;
+}
+
 /** Buyer SSE drop while a Mac is still advertising: keep queued/leased so the client can resume the same job. */
 export function keepBuyerJobOnStreamDrop(job, providers = [], now = Date.now()) {
   if (!job || !['queued', 'leased'].includes(String(job.status || ''))) return false;
@@ -1075,6 +1104,13 @@ function mergeRouteFromHeaders(input, request) {
 export class ComputeNetwork {
   constructor(state, env) { this.state = state; this.env = env; this.rates = new Map(); }
 
+  /** Server-side decision window for fail-loud no_mac_online. Env override is
+   *  test/ops tooling only; the default stands in production. */
+  noMacDecisionMs() {
+    const override = Number(this.env?.COMPUTE_NO_MAC_DECISION_MS);
+    return Number.isFinite(override) && override > 0 ? Math.floor(override) : NO_MAC_DECISION_MS;
+  }
+
   /** Expire / requeue jobs. Poll skips night + provider GC — those are not lease-hot. */
   async prune(now = Date.now(), opts = {}) {
     const runNight = opts.night !== false;
@@ -1105,6 +1141,11 @@ export class ComputeNetwork {
     if (sweepProviders) {
       for (const [key, provider] of await this.state.storage.list({ prefix: 'compute:provider:' })) {
         if (!provider || (now - Number(provider.createdAt || 0) > 30 * 24 * 60 * 60_000 && !provider.lastSeenAt)) await this.state.storage.delete(key);
+      }
+      // Fleet scorecard hygiene: drop per-provider hour markers older than 8 days.
+      const hourCutoff = new Date(now - 8 * 24 * 60 * 60_000).toISOString().slice(0, 13);
+      for (const [key] of await this.state.storage.list({ prefix: 'compute:provider-hour:' })) {
+        if (key.slice(-13) < hourCutoff) await this.state.storage.delete(key);
       }
     }
     if (runNight) await this.runNightTasks(now);
@@ -1422,6 +1463,19 @@ export class ComputeNetwork {
         if (sent > 0 && current.status === 'queued') {
           await network.refundJobDebit(current, Date.now(), 'provider cut');
           emit({ error: { message: 'provider cut', type: 'server_error', code: 'provider_cut' } });
+          emit('[DONE]');
+          controller.close();
+          return;
+        }
+        // Fail loud, not silent: no first token by the decision window and no
+        // provider still advertises the model → no_mac_online now, not a
+        // silent hold until the 5-minute job TTL.
+        const decisionMs = Number.isFinite(Number(opts.decisionMs)) && Number(opts.decisionMs) > 0 ? Math.floor(Number(opts.decisionMs)) : network.noMacDecisionMs();
+        if (sent === 0 && Date.now() - started >= decisionMs && !providerAdvertisesModel(await listProviders(), job.model, Date.now())) {
+          const ax = openaiErrorAx('No Mac is online.', 503, 'server_error');
+          await network.refundJobDebit(current, Date.now(), 'No Mac is online.');
+          await storage.delete(key);
+          emit({ error: { message: 'No Mac is online.', type: 'server_error', code: 'no_mac_online' }, ...ax });
           emit('[DONE]');
           controller.close();
           return;
@@ -1762,6 +1816,12 @@ export class ComputeNetwork {
         const honesty = effortHonestyFromJob(queued.job);
         return v1cors(this.streamResponse(queued.job, null, { ...effortResponseHeaders(honesty), ...chatSpend(queued.job) }));
       }
+      // Fail loud, not silent: a queued job whose model no provider still
+      // advertises (provider flapped between queue and pickup) is answered
+      // with no_mac_online at the decision window — not a silent poll until
+      // the 5-minute job TTL. A provider that keeps advertising keeps its job
+      // queued; slow pickup stays on the TTL path.
+      const noMacDecisionAt = Date.now() + this.noMacDecisionMs();
       while (!request.signal.aborted) {
         const job = await this.state.storage.get(`compute:job:${queued.job.id}`);
         if (!job) return v1err('job expired', 410, 'server_error', chatSpend(queued.job));
@@ -1785,6 +1845,14 @@ export class ComputeNetwork {
         if (job.status === 'failed') {
           await this.refundJobDebit(job, Date.now(), job.error || 'provider failed');
           return v1err(job.error || 'provider failed', 502, 'server_error', chatSpend(job));
+        }
+        if (job.status === 'queued' && Date.now() >= noMacDecisionAt) {
+          const fresh = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()];
+          if (!providerAdvertisesModel(fresh, job.model, Date.now())) {
+            await this.refundJobDebit(job, Date.now(), 'No Mac is online.');
+            await this.state.storage.delete(`compute:job:${queued.job.id}`);
+            return v1err('No Mac is online.', 503, 'server_error', chatSpend(queued.job));
+          }
         }
         await new Promise(resolve => setTimeout(resolve, 250));
       }
@@ -1894,6 +1962,41 @@ export class ComputeNetwork {
       return maybeHead(request, json({ providers_online: providers.length, models_available: models, capacity, kit_versions, jobs_queued: jobs.filter(job => job.status === 'queued').length, card_available: stripeConfigured(this.env) }, 200, allowedOrigin || '*', credentials));
     }
 
+    // Fleet scorecard (Vast.ai-style per-provider rows): public, aggregate-safe.
+    // One row per online Mac: display name, measured tok/s per model, jobs served
+    // (7d, from the receipt chain), trailing-7d uptime %. Never a spinner — an
+    // empty fleet returns an empty array and the UI says so honestly.
+    if ((path === '/compute/api/v1/fleet' || path === '/compute/api/v1/fleet/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      await this.prune(now);
+      const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()]
+        .filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS)
+        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+      const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()];
+      const weekAgo = now - 7 * 24 * 60 * 60_000;
+      const rows = [];
+      for (const provider of providers) {
+        const benches = Array.isArray(provider.hardware?.benchmarks) ? provider.hardware.benchmarks : [];
+        const models = (Array.isArray(provider.models) ? provider.models : []).map(id => {
+          const bench = benches.find(row => String(row?.model) === String(id));
+          const tps = Number(bench?.tokens_per_second);
+          return { model: String(id), tokens_per_second: Number.isFinite(tps) && tps > 0 ? Math.round(tps * 100) / 100 : null };
+        });
+        const jobsServed = jobs.filter(job =>
+          job.providerId === provider.id
+          && (job.status === 'complete' || job.status === 'failed')
+          && Number(job.completedAt || 0) >= weekAgo,
+        ).length;
+        rows.push({
+          name: String(provider.name || 'Mac').slice(0, 64),
+          online: true,
+          models,
+          jobs_served_7d: jobsServed,
+          uptime_pct_7d: await providerUptimePct7d(this.state.storage, provider, now),
+        });
+      }
+      return maybeHead(request, json({ object: 'fleet.compute.v0', providers: rows, checked_at: new Date(now).toISOString() }, 200, allowedOrigin || '*', false, { 'Cache-Control': 'public, max-age=30' }));
+    }
+
     if ((path === '/compute/api/providers' || path === '/compute/api/providers/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, credentials));
@@ -1999,6 +2102,8 @@ export class ComputeNetwork {
       if (!provider) return computeApiError('invalid provider token', 401);
       const firstOnline = !Number(provider.lastSeenAt || 0);
       provider.lastSeenAt = now;
+      // Fleet scorecard: one marker per provider per UTC hour, feeding trailing-7d uptime %.
+      await this.state.storage.put(`compute:provider-hour:${provider.id}:${metricHour(now)}`, 1);
       const kitVersion = String(input.version || '').trim().slice(0, 32);
       if (kitVersion) provider.kitVersion = kitVersion;
       provider.allowedModels = growAllowedModels(
