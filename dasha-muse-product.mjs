@@ -6,6 +6,7 @@ export const MUSE_MINT = '53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';
 export const MUSE_WSOL = 'So11111111111111111111111111111111111111112';
 export const MUSE_JUP = `https://jup.ag/swap?sell=${MUSE_WSOL}&buy=${MUSE_MINT}`;
 export const MUSE_START_HREF = '/compute';
+export const MUSE_ASK_HREF = '/compute#ask';
 export const MUSE_PROVIDE_HREF = '/compute#provide';
 
 export const MUSE_FACES = {
@@ -50,6 +51,7 @@ export const MUSE_FACES = {
     h1a: 'Capacity',
     h1b: 'meets demand.',
     lede: 'Macs join. Requests route. Results return.',
+    cta: { href: '/benchmarks', label: 'See live numbers ↓' },
   },
 };
 
@@ -117,7 +119,7 @@ function homeExtra() {
   <p class="muse-kicker">Two ways in</p>
   <div class="muse-pair">
     <a class="muse-cta" href="${MUSE_PROVIDE_HREF}">Connect a Mac</a>
-    <a class="muse-cta" href="${MUSE_START_HREF}">Run a job</a>
+    <a class="muse-cta" href="${MUSE_ASK_HREF}">Run a job</a>
   </div>
 </section>
 <section class="muse-sides" aria-label="Choose a side">

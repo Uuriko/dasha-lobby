@@ -16,7 +16,7 @@ assert.match(body, />OCM console</);
 assert.match(body, /hashchange/);
 assert.doesNotMatch(body, /not an investment/);
 assert.doesNotMatch(body, /id=[\"']tab-sponsor[\"']/);
-assert.match(body, /Start\. Do\. Provide\. Pay\. Credits\./);
+assert.match(body, /Run AI prompts on real community Macs/);
 assert.doesNotMatch(body, /Night Shift/);
 assert.match(body, /<title>Dasha Compute/);
 assert.match(body, /property="og:title" content="Dasha Compute"/);

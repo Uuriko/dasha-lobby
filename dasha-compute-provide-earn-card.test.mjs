@@ -15,7 +15,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const disk = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
 assert.equal(disk, COMPUTE_PAGE_HTML, 'embed matches dasha-compute.html');
 
-const CARD = '$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +5%';
+const CARD = '$0.05/job + $0.01/1k completion · min $1 · paid out manually for now, no fixed schedule yet · $dasha payout +5%';
 
 function gateBlock(html) {
   const m = html.match(/<section[^>]*id=["']step-gate["'][^>]*>[\s\S]*?<\/section>/);
@@ -49,16 +49,19 @@ function assertEarnCard(html, label) {
   const host = hostBlock(html);
 
   assert.match(html, /<h1 class=["']tf-q["']>Start\.<\/h1>/, `${label} first paint Start.`);
-  assert.match(gate, /class=["']tf-choice primary["'][^>]*id=["']pick-ask["'][^>]*>Do</, `${label} Do stays the one Start primary`);
+  assert.match(gate, /class=["']tf-choice primary[^"']*["'][^>]*id=["']pick-ask["'][^>]*>Do</, `${label} Do stays the one Start primary`);
   assert.match(gate, /id=["']pick-provide["'][^>]*>Provide</, `${label} Provide stays`);
-  assert.doesNotMatch(gate, /\$0\.05\/job/, `${label} no earn rate on Start`);
+  // Earn-rate ban is about Start first paint (above the fold); the Provide FAQ
+  // below legitimately answers "When do I earn?" with the rate.
+  const gateTop = gate.slice(0, gate.indexOf('id="compute-faq"') >= 0 ? gate.indexOf('id="compute-faq"') : gate.length);
+  assert.doesNotMatch(gateTop, /\$0\.05\/job/, `${label} no earn rate on Start`);
   assert.doesNotMatch(gate, /\$dasha payout/, `${label} no payout lecture on Start`);
 
-  assert.match(name, /id=["']provide-name-earn["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} Provide name card`);
-  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} Setup card`);
-  assert.match(html, /id=["']earn-rates["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%</, `${label} Earn card`);
+  assert.match(name, /id=["']provide-name-earn["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · paid out manually for now, no fixed schedule yet · \$dasha payout \+5%</, `${label} Provide name card`);
+  assert.match(done, /id=["']provide-earn-fine["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · paid out manually for now, no fixed schedule yet · \$dasha payout \+5%</, `${label} Setup card`);
+  assert.match(html, /id=["']earn-rates["'][^>]*>\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · paid out manually for now, no fixed schedule yet · \$dasha payout \+5%</, `${label} Earn card`);
 
-  assert.match(html, /pending operator settle · \$dasha payout \+5%/, `${label} formatEarnRatesLine dasha +5%`);
+  assert.match(html, /paid out manually for now, no fixed schedule yet · \$dasha payout \+5%/, `${label} formatEarnRatesLine dasha +5%`);
   assert.match(html, /const pn=\$\(['"]provide-name-earn['"]\);/, `${label} paintEarnRates name`);
   assert.match(html, /if\(step==='provide-name'\)[\s\S]*?paintEarnRates\(earnRates\)/, `${label} name paints rates`);
   assert.match(html, /if\(step==='provide-done'\)[\s\S]*?paintEarnRates\(earnRates\)/, `${label} Setup paints rates`);

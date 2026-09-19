@@ -43,6 +43,8 @@ assert.equal(
 assert.match(museSrc, /href="\/how-to-buy"/, 'Buy goes through /how-to-buy');
 assert.equal(MUSE_FACES.developers.cta.href, '/compute#build');
 assert.match(museSrc, /MUSE_START_HREF = '\/compute'/, 'Start CTA → /compute');
+assert.match(museSrc, /MUSE_ASK_HREF = '\/compute#ask'/, 'Run a job → /compute#ask');
+assert.equal(MUSE_FACES.network.cta.href, '/benchmarks');
 assert.match(museSrc, /MUSE_PROVIDE_HREF = '\/compute#provide'/, 'Connect a Mac → /compute#provide');
 
 assert.equal(isMuseProductPath('/start'), true);

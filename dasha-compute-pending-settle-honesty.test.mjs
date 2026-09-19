@@ -20,10 +20,10 @@ assert.equal(disk, COMPUTE_PAGE_HTML, "embed matches dasha-compute.html");
 assert.equal(PROVIDE_SKILL_MD, provideDisk, "PROVIDE skill embed matches disk");
 
 function assertSettle(html, label) {
-  assert.match(html, /id="earn-rates">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%/, `${label} earn-rates`);
-  assert.match(html, /id="provide-earn-fine">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%/, `${label} provide-earn-fine`);
-  assert.match(html, /id="provide-name-earn">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · pending operator settle · \$dasha payout \+5%/, `${label} provide-name-earn`);
-  assert.match(html, /pending operator settle/, `${label} formatEarnRatesLine`);
+  assert.match(html, /id="earn-rates">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · paid out manually for now, no fixed schedule yet · \$dasha payout \+5%/, `${label} earn-rates`);
+  assert.match(html, /id="provide-earn-fine">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · paid out manually for now, no fixed schedule yet · \$dasha payout \+5%/, `${label} provide-earn-fine`);
+  assert.match(html, /id="provide-name-earn">\$0\.05\/job \+ \$0\.01\/1k completion · min \$1 · paid out manually for now, no fixed schedule yet · \$dasha payout \+5%/, `${label} provide-name-earn`);
+  assert.match(html, /paid out manually for now, no fixed schedule yet/, `${label} formatEarnRatesLine`);
   assert.match(html, /title="Queues for operator settle · not auto"/, `${label} Request payout title`);
   assert.match(html, /aria-label="Request payout · operator settles · not auto"/, `${label} Request payout aria`);
   assert.match(html, /btn\.title='Queues for operator settle · not auto'/, `${label} paintEarn payout title`);
@@ -36,7 +36,7 @@ function assertSettle(html, label) {
 
 assertSettle(disk, "disk");
 assertSettle(COMPUTE_PAGE_HTML, "embed");
-assert.match(PROVIDE_SKILL_MD, /pending operator settle · not auto/);
+assert.match(PROVIDE_SKILL_MD, /paid out manually for now, no fixed schedule yet · not auto/);
 assert.doesNotMatch(PROVIDE_SKILL_MD, /operator\/treasury/);
 assert.doesNotMatch(PROVIDE_SKILL_MD, /auto treasury/i);
 assert.doesNotMatch(PROVIDE_SKILL_MD, /plugin\.jup\.ag/);
@@ -78,9 +78,9 @@ if (puppeteer && existsSync(chrome)) {
         btnText: (btn?.textContent || "").trim(),
       };
     });
-    assert.equal(painted.rates, "$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +5%");
-    assert.equal(painted.provide, "$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +5%");
-    assert.equal(painted.nameEarn, "$0.05/job + $0.01/1k completion · min $1 · pending operator settle · $dasha payout +5%");
+    assert.equal(painted.rates, "$0.05/job + $0.01/1k completion · min $1 · paid out manually for now, no fixed schedule yet · $dasha payout +5%");
+    assert.equal(painted.provide, "$0.05/job + $0.01/1k completion · min $1 · paid out manually for now, no fixed schedule yet · $dasha payout +5%");
+    assert.equal(painted.nameEarn, "$0.05/job + $0.01/1k completion · min $1 · paid out manually for now, no fixed schedule yet · $dasha payout +5%");
     assert.match(painted.pending, /Pending · operator settles/);
     assert.match(painted.pending, /\$2\.50/);
     assert.doesNotMatch(painted.pending, /auto treasury/i);

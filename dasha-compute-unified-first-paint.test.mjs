@@ -33,7 +33,7 @@ assert.doesNotMatch(html, /id=["']tab-night["']|id=["']pick-night["']|Schedule N
 assert.match(html, /id=["']night-offer["'] hidden/);
 assert.match(html, /id=["']queue-night["'][^>]*>Queue</);
 assert.doesNotMatch(html, /Queue for when a Mac is up/);
-assert.match(html, /Start\. Do\. Provide\. Pay\. Credits\./);
+assert.match(html, /Run AI prompts on real community Macs/);
 assert.match(html, /value=["']qwen3-8b["'] selected/);
 assert.match(html, /route=['"]mixture['"]|route:"mixture"/);
 assert.doesNotMatch(html, /Hosted when idle/);

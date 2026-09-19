@@ -56,6 +56,7 @@ function assertMarkup(html, label) {
   assert.match(html, /id=["']step-market["'][^>]*data-tf=["']market["']/, `${label} market peek step`);
   assert.match(html, /showTf\(['"]market['"]\)/, `${label} showTf market`);
   assert.match(html, />OCM console</, `${label} OCM console label`);
+  assert.match(html, /id=["']ux-cost-line["'][^>]*>\$0\.05 per successful job/, `${label} pricing band on gate`);
   assert.match(html, /id=["']ask-provide["']/, `${label} quiet Ask Provide`);
   assert.match(html, /id=["']ask-ocm["']/, `${label} quiet Ask OCM console`);
   assert.match(html, /askOcm\.textContent='OCM console'/, `${label} quiet ask-ocm plain (no · N)`);

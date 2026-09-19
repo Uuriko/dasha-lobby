@@ -14,9 +14,9 @@ import {
 const html = readFileSync(new URL('./dasha-compute.html', import.meta.url), 'utf8');
 assert.equal(html, COMPUTE_PAGE_HTML, 'html \u2194 page.mjs sync');
 
-assert.match(html, /id="earn-rates">\$0\.05\/job \+ \$0\.01\/1k completion \u00b7 min \$1 \u00b7 pending operator settle \u00b7 \$dasha payout \+5%/);
-assert.match(html, /id="provide-earn-fine">\$0\.05\/job \+ \$0\.01\/1k completion \u00b7 min \$1 \u00b7 pending operator settle \u00b7 \$dasha payout \+5%/);
-assert.match(html, /id="provide-name-earn">\$0\.05\/job \+ \$0\.01\/1k completion \u00b7 min \$1 \u00b7 pending operator settle \u00b7 \$dasha payout \+5%/);
+assert.match(html, /id="earn-rates">\$0\.05\/job \+ \$0\.01\/1k completion \u00b7 min \$1 \u00b7 paid out manually for now, no fixed schedule yet \u00b7 \$dasha payout \+5%/);
+assert.match(html, /id="provide-earn-fine">\$0\.05\/job \+ \$0\.01\/1k completion \u00b7 min \$1 \u00b7 paid out manually for now, no fixed schedule yet \u00b7 \$dasha payout \+5%/);
+assert.match(html, /id="provide-name-earn">\$0\.05\/job \+ \$0\.01\/1k completion \u00b7 min \$1 \u00b7 paid out manually for now, no fixed schedule yet \u00b7 \$dasha payout \+5%/);
 assert.match(html, /function formatEarnRatesLine/);
 assert.match(html, /paintEarnRates\(earnRates\)/);
 assert.match(html, /\$dasha payout \+5%/);
@@ -34,7 +34,7 @@ assert.equal(cat.payout_mode, 'pending');
 assert.equal(cat.total_usdc_cents, 0);
 
 assert.match(PROVIDE_SKILL_MD, /\$0\.05\/job \+ \$0\.01\/1k completion tokens/);
-assert.match(PROVIDE_SKILL_MD, /pending operator settle · not auto/);
+assert.match(PROVIDE_SKILL_MD, /paid out manually for now, no fixed schedule yet · not auto/);
 assert.match(PROVIDE_SKILL_MD, /never invent balances/);
 assert.match(html, /Pay \(community jobs\): \$0\.05\/job/);
 
