@@ -30,6 +30,9 @@ case "$DASHA_MODEL_MAP" in (*[!A-Za-z0-9_./:,=-]*|'') echo "Invalid model map." 
 if [ -n "${DASHA_RESIDUAL_ALPHA:-}" ]; then
   case "$DASHA_RESIDUAL_ALPHA" in (*[!0-9.+-]*|'') echo "Invalid DASHA_RESIDUAL_ALPHA." >&2; exit 1;; esac
 fi
+if [ -n "${DASHA_SPLASH_API_KEY:-}" ]; then
+  case "$DASHA_SPLASH_API_KEY" in (*[!A-Za-z0-9_.-]*|'') echo "Invalid DASHA_SPLASH_API_KEY." >&2; exit 1;; esac
+fi
 case "$DASHA_COORDINATOR_URL" in (https://*|http://127.0.0.1:*|http://localhost:*) ;; (*) echo "Coordinator must use HTTPS or local HTTP." >&2; exit 1;; esac
 
 PYTHON=$(command -v python3) || { echo "Python 3 is required." >&2; exit 1; }
@@ -53,6 +56,9 @@ install -m 600 "$KEY_FILE" "$STORED_KEY"
   printf "DASHA_PROVIDER_KEY_FILE='%s'\n" "$STORED_KEY"
   if [ -n "${DASHA_RESIDUAL_ALPHA:-}" ]; then
     printf "DASHA_RESIDUAL_ALPHA='%s'\n" "$DASHA_RESIDUAL_ALPHA"
+  fi
+  if [ -n "${DASHA_SPLASH_API_KEY:-}" ]; then
+    printf "DASHA_SPLASH_API_KEY='%s'\n" "$DASHA_SPLASH_API_KEY"
   fi
 } > "$APP_DIR/provider.env"
 if command -v security >/dev/null; then

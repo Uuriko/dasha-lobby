@@ -153,7 +153,7 @@ BONSAI_RESIDUAL_SITES = 129
 
 
 def backend_spec(local):
-    """Parse DASHA_MODEL_MAP locals. Ollama tag, or openai:<base>:<model>."""
+    """Parse DASHA_MODEL_MAP locals. Ollama tag, openai:<base>:<model>, or splash:<package>[:port]."""
     raw = str(local or "").strip()
     if raw.startswith("openai:"):
         rest = raw[len("openai:"):]
@@ -167,6 +167,28 @@ def backend_spec(local):
         if not (base.startswith("http://") or base.startswith("https://")):
             return None
         return {"kind": "openai", "base": base.rstrip("/"), "model": model.strip()}
+    if raw.startswith("splash:"):
+        rest = raw[len("splash:"):]
+        package, colon, port_raw = rest.partition(":")
+        package = package.strip()
+        if not package or "/" not in package:
+            return None
+        port = SPLASH_DEFAULT_PORT
+        if colon:
+            try:
+                port = int(port_raw.strip())
+            except (TypeError, ValueError):
+                return None
+            if not 1 <= port <= 65535:
+                return None
+        return {
+            "kind": "splash",
+            "package": package,
+            "port": port,
+            "base": f"http://127.0.0.1:{port}",
+            "model": package,
+            "token": splash_api_key(),
+        }
     return {"kind": "ollama", "model": raw}
 
 
@@ -205,6 +227,257 @@ def result_residual_fields(job):
     return {"residual_alpha": extras["residual_alpha"], "residual_site_count": BONSAI_RESIDUAL_SITES}
 
 
+# ---------------------------------------------------------------------------
+# Splash engine (beta, opt-in). Inco's macOS inference server, OpenAI-compatible.
+# Map syntax:  qwen3.8-27b=splash:incoai/Qwen3.8-27B-Splash
+# Optional explicit port: splash:incoai/Qwen3.8-27B-Splash:8001
+# Floor: Apple M3+, 36 GB unified memory, macOS 26.4+. Never fails doctor.
+# No vendor speed claims in copy — the engine is "beta" until our own
+# benchmark confirms the vendor numbers.
+# ---------------------------------------------------------------------------
+
+SPLASH_DEFAULT_PORT = 8000
+_SPLASH_PROCS = {}
+_SPLASH_READY_ONCE = set()
+_SPLASH_FAILED = {}
+
+
+def splash_api_key():
+    for name in ("DASHA_SPLASH_API_KEY", "SPLASH_API_KEY"):
+        value = os.getenv(name)
+        if value and value.strip():
+            return value.strip()
+    return None
+
+
+def splash_chip_m(brand=None):
+    """Apple Silicon M-number from a brand string like 'Apple M4'. None when unknown."""
+    if brand is None:
+        if platform.system() != "Darwin":
+            return None
+        try:
+            probe = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True, timeout=5, check=False)
+            brand = (probe.stdout or "").strip()
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+    match = re.search(r"\bM(\d+)\b", str(brand or ""))
+    return int(match.group(1)) if match else None
+
+
+def splash_mem_gb(mem_gb=None):
+    if mem_gb is not None:
+        try:
+            return float(mem_gb)
+        except (TypeError, ValueError):
+            return None
+    try:
+        return round(os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1024 ** 3, 1)
+    except (ValueError, OSError, AttributeError):
+        return None
+
+
+def splash_macos(release=None):
+    """(major, minor) macOS version. None when unknown or not Darwin."""
+    if release is None:
+        if platform.system() != "Darwin":
+            return None
+        release = platform.mac_ver()[0]
+    match = re.search(r"(\d+)\.(\d+)", str(release or ""))
+    return (int(match.group(1)), int(match.group(2))) if match else None
+
+
+def splash_on_path(found=None):
+    if found is not None:
+        return bool(found)
+    try:
+        probe = subprocess.run(["sh", "-c", "command -v splash"], capture_output=True, text=True, timeout=5, check=False)
+        return probe.returncode == 0 and bool(probe.stdout.strip())
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def splash_gate(package, *, darwin=None, brand=None, mem_gb=None, macos=None, on_path=None):
+    """Capability gate for serving `package` via Splash. Returns (ok, [reasons]). Never raises."""
+    if darwin is None:
+        darwin = platform.system() == "Darwin" and platform.machine() == "arm64"
+    if not darwin:
+        return False, ["host is not macOS on Apple Silicon"]
+    ok, reasons = True, []
+    chip = splash_chip_m(brand=brand)
+    if chip is None:
+        ok = False
+        reasons.append("could not detect Apple Silicon chip (Splash needs M3 or newer)")
+    elif chip < 3:
+        ok = False
+        reasons.append(f"Apple M{chip} detected — Splash needs M3 or newer")
+    mem = splash_mem_gb(mem_gb=mem_gb)
+    if mem is None:
+        ok = False
+        reasons.append("could not detect unified memory (Splash needs 36 GB+)")
+    elif mem < 36:
+        ok = False
+        reasons.append(f"{mem:g} GB unified memory — Splash needs 36 GB+")
+    ver = splash_macos(release=macos)
+    if ver is None:
+        ok = False
+        reasons.append("could not detect macOS version (Splash needs 26.4+)")
+    elif ver < (26, 4):
+        ok = False
+        reasons.append(f"macOS {ver[0]}.{ver[1]} — Splash needs macOS 26.4+")
+    if not splash_on_path(found=on_path):
+        ok = False
+        reasons.append("`splash` not on PATH — install: brew install incoai/tap/splash")
+    if "/" not in str(package or ""):
+        ok = False
+        reasons.append(f"'{package}' is not a Splash package id (owner/repo, e.g. incoai/Qwen3.8-27B-Splash)")
+    return ok, reasons
+
+
+def _splash_port_explicit(local):
+    rest = str(local or "").strip()[len("splash:"):]
+    return rest.count(":") >= 1
+
+
+def splash_mapped():
+    """[(public, spec)] for splash-kind mappings; auto-assigns successive ports."""
+    rows, used = [], set()
+    for public in sorted(MODELS):
+        spec = backend_spec(MODELS[public])
+        if not spec or spec.get("kind") != "splash":
+            continue
+        if spec["port"] == SPLASH_DEFAULT_PORT and not _splash_port_explicit(MODELS[public]):
+            port = SPLASH_DEFAULT_PORT
+            while port in used:
+                port += 1
+            spec = {**spec, "port": port, "base": f"http://127.0.0.1:{port}"}
+        used.add(spec["port"])
+        rows.append((public, spec))
+    return rows
+
+
+def splash_ready(spec, timeout=5):
+    """True when the Splash server answers /v1/models. Never raises."""
+    try:
+        data = request_json(f"{spec['base']}/v1/models", timeout=timeout, token=spec.get("token"))
+    except Exception:
+        return False
+    rows = data.get("data") if isinstance(data, dict) else None
+    return isinstance(rows, list)
+
+
+def splash_ensure(public, spec, timeout=None):
+    """Launch `splash serve` for one mapping and wait for readiness. Returns (ok, detail)."""
+    proc = _SPLASH_PROCS.get(public)
+    if proc is not None and proc.poll() is None and splash_ready(spec, timeout=5):
+        return True, f"already serving on {spec['base']}"
+    ok, reasons = splash_gate(spec["package"])
+    if not ok:
+        return False, "; ".join(reasons)
+    argv = ["splash", "serve", "--model", spec["package"], "--port", str(spec["port"]), "--no-webui"]
+    key = splash_api_key()
+    if key:
+        argv += ["--api-key", key]
+    try:
+        proc = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError as error:
+        return False, f"could not launch `splash serve`: {error}"
+    _SPLASH_PROCS[public] = proc
+    try:
+        ready_timeout = int(os.getenv("DASHA_SPLASH_READY_TIMEOUT", "900") or 900)
+    except ValueError:
+        ready_timeout = 900
+    if timeout is not None:
+        ready_timeout = timeout
+    deadline = time.monotonic() + max(5, ready_timeout)
+    while time.monotonic() < deadline:
+        if proc.poll() is not None:
+            _SPLASH_PROCS.pop(public, None)
+            return False, "splash serve exited during startup — first run downloads the ~17-21 GB package; try `splash serve` manually"
+        if splash_ready(spec, timeout=5):
+            _SPLASH_READY_ONCE.add(public)
+            return True, f"ready on {spec['base']}"
+        time.sleep(2)
+    try:
+        proc.terminate()
+    except OSError:
+        pass
+    _SPLASH_PROCS.pop(public, None)
+    return False, f"not ready after {ready_timeout}s — first run downloads the package; re-run to resume"
+
+
+def splash_ensure_all():
+    for public, spec in splash_mapped():
+        thread = threading.Thread(target=_splash_supervise, args=(public, spec), daemon=True, name=f"splash-{public}")
+        thread.start()
+
+
+def _splash_supervise(public, spec):
+    ok, detail = splash_ensure(public, spec)
+    if ok:
+        print(f"splash    ready · {public}→{spec['package']} on {spec['base']}")
+    else:
+        _SPLASH_FAILED[public] = detail
+        print(f"splash    unavailable · {public}: {detail}", file=sys.stderr)
+
+
+def splash_watchdog(stop):
+    """Restart Splash servers that die after having served once. Daemon thread."""
+    while not stop.wait(60):
+        for public, spec in splash_mapped():
+            if public not in _SPLASH_READY_ONCE or public in _SPLASH_FAILED:
+                continue
+            proc = _SPLASH_PROCS.get(public)
+            if proc is None or proc.poll() is not None:
+                print(f"splash    restarting · {public} died — relaunching", file=sys.stderr)
+                ok, detail = splash_ensure(public, spec, timeout=300)
+                if not ok:
+                    print(f"splash    restart failed · {public}: {detail}", file=sys.stderr)
+
+
+def splash_shutdown():
+    for public, proc in list(_SPLASH_PROCS.items()):
+        try:
+            if proc.poll() is None:
+                proc.terminate()
+        except OSError:
+            pass
+    _SPLASH_PROCS.clear()
+
+
+def splash_teardown(stop):
+    try:
+        stop.set()
+    except Exception:
+        pass
+    splash_shutdown()
+
+
+def splash_engine_report(available):
+    """Heartbeat advertise: public -> engine capability. Additive; unknown fields ignored downstream."""
+    report = {}
+    for public, spec in splash_mapped():
+        if public in available:
+            report[public] = {"engine": "splash", "package": spec["package"], "port": spec["port"]}
+    return report
+
+
+def splash_soft_report():
+    """Doctor lines for Splash. Never fails doctor; no speed claims (beta)."""
+    rows = splash_mapped()
+    if not rows:
+        print("splash    hint · Splash engine (beta) is opt-in for M3+ / 36GB+ / macOS 26.4+ — map e.g. qwen3.8-27b=splash:incoai/Qwen3.8-27B-Splash")
+        return
+    for public, spec in rows:
+        ok, reasons = splash_gate(spec["package"])
+        if ok:
+            state = "running" if splash_ready(spec, timeout=3) else "not running"
+            print(f"splash    ok · {public}→{spec['package']} · beta · {state} · port {spec['port']}")
+        else:
+            print("splash    soft · " + public + ": " + "; ".join(reasons) + " · never fails doctor")
+    if not splash_api_key():
+        print("splash    hint · no DASHA_SPLASH_API_KEY set — Splash serves without auth on 127.0.0.1 only")
+
+
 def openai_installed_ids(base):
     data = request_json(f"{base}/models", timeout=5)
     rows = data.get("data") if isinstance(data, dict) else None
@@ -231,6 +504,10 @@ def openai_chat_payload(job, stream, spec):
         "temperature": job.get("temperature", 0.7),
         "max_tokens": job.get("max_tokens", 1024),
     }
+    if spec.get("kind") == "splash":
+        # Splash reasons by default; the kit defaults think off (parity with Ollama path).
+        effort = os.getenv("DASHA_SPLASH_REASONING_EFFORT", "none").strip().lower() or "none"
+        payload["reasoning_effort"] = effort if effort in ("none", "low", "medium", "xhigh") else "none"
     payload.update(openai_chat_extras(job["model"], MODELS[job["model"]]))
     return payload
 
@@ -413,6 +690,7 @@ def run_openai(job, spec):
         method="POST",
         payload=openai_chat_payload(job, False, spec),
         timeout=600,
+        token=spec.get("token"),
     )
     choice = (result.get("choices") or [{}])[0]
     message = choice.get("message") or {}
@@ -424,7 +702,7 @@ def run_openai(job, spec):
 
 def run_inference(job):
     spec = backend_spec(MODELS[job["model"]])
-    if spec and spec.get("kind") == "openai":
+    if spec and spec.get("kind") in ("openai", "splash"):
         return run_openai(job, spec)
     return run_ollama(job)
 
@@ -497,6 +775,7 @@ def stream_openai(job, spec, cancelled):
         f"{spec['base']}/chat/completions",
         method="POST",
         payload=openai_chat_payload(job, True, spec),
+        token=spec.get("token"),
     )
     sent = False
     usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -535,7 +814,7 @@ def stream_openai(job, spec, cancelled):
 
 def stream_inference(job, cancelled):
     spec = backend_spec(MODELS[job["model"]])
-    if spec and spec.get("kind") == "openai":
+    if spec and spec.get("kind") in ("openai", "splash"):
         return stream_openai(job, spec, cancelled)
     return stream_ollama(job, cancelled)
 
@@ -913,6 +1192,7 @@ def doctor():
             print(f"openai    failed · {error}", file=sys.stderr)
     residual_soft_report()
     prefer_mlx_report()
+    splash_soft_report()
     size_soft_report()
     keepalive_soft_report(ready_locals)
     power_soft_report()
@@ -968,6 +1248,11 @@ def collect_available():
             except Exception:
                 continue
             continue
+        if spec and spec.get("kind") == "splash":
+            # Splash servers are supervised by splash_ensure_all; advertise only when ready.
+            if splash_ready(spec):
+                available[public] = local
+            continue
         if ollama_names is None:
             ollama_names = installed_models()
         if local in ollama_names:
@@ -981,24 +1266,31 @@ def benchmark():
     ollama_names = None
     for public, local in MODELS.items():
         spec = backend_spec(local)
-        if spec and spec.get("kind") == "openai":
+        if spec and spec.get("kind") in ("openai", "splash"):
             started = time.monotonic()
+            bench_payload = {
+                "model": spec["model"],
+                "messages": [{"role": "user", "content": "In one paragraph, explain why local AI compute is useful."}],
+                "stream": False,
+                "temperature": 0,
+                "max_tokens": tokens,
+                **openai_chat_extras(public, local),
+            }
+            if spec["kind"] == "splash":
+                bench_payload["reasoning_effort"] = "none"
             result = request_json(
                 f"{spec['base']}/chat/completions",
                 method="POST",
-                payload={
-                    "model": spec["model"],
-                    "messages": [{"role": "user", "content": "In one paragraph, explain why local AI compute is useful."}],
-                    "stream": False,
-                    "temperature": 0,
-                    "max_tokens": tokens,
-                    **openai_chat_extras(public, local),
-                },
+                payload=bench_payload,
                 timeout=600,
+                token=spec.get("token"),
             )
             elapsed = time.monotonic() - started
             generated = openai_usage(result)["completion_tokens"]
-            rows.append({"model": public, "openai_model": spec["model"], "tokens": generated, "seconds": round(elapsed, 3), "tokens_per_second": round(generated / elapsed, 2) if elapsed else 0})
+            row = {"model": public, "engine": spec["kind"], "openai_model": spec["model"], "tokens": generated, "seconds": round(elapsed, 3), "tokens_per_second": round(generated / elapsed, 2) if elapsed else 0}
+            if spec["kind"] == "splash":
+                row["splash_package"] = spec["package"]
+            rows.append(row)
             continue
         if ollama_names is None:
             ollama_names = installed_models()
@@ -1132,6 +1424,11 @@ def main():
         raise SystemExit(benchmark())
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
+    splash_stop = threading.Event()
+    if splash_mapped():
+        splash_ensure_all()
+        watchdog = threading.Thread(target=splash_watchdog, args=(splash_stop,), daemon=True, name="splash-watchdog")
+        watchdog.start()
     available = {}
     ollama_wait = 1
     while RUNNING and not available:
@@ -1146,9 +1443,10 @@ def main():
         time.sleep(ollama_wait)
         ollama_wait = min(ollama_wait * 2, 60)
     if not available:
+        splash_teardown(splash_stop)
         if args.once:
-            raise SystemExit("Ollama unavailable: no configured model ready. Run with --doctor for pull commands.")
-        raise SystemExit("provider stopped before Ollama became ready")
+            raise SystemExit("no configured model ready. Run with --doctor for setup commands.")
+        raise SystemExit("provider stopped before any backend became ready")
     hold_sleep_assertions()
     kit_state, kit_info = ("current", None) if not COORDINATOR.endswith("/compute/api") else check_kit_version()
     kit_checked_at = time.time()
@@ -1169,7 +1467,7 @@ def main():
             response = request_json(
                 coordinator_path("/v1/providers/poll", "/providers/poll"),
                 method="POST",
-                payload={"provider_id": PROVIDER_ID, "name": PROVIDER_NAME, "models": list(available), "hardware": hardware(), "version": KIT_VERSION},
+                payload={"provider_id": PROVIDER_ID, "name": PROVIDER_NAME, "models": list(available), "engines": splash_engine_report(available), "hardware": hardware(), "version": KIT_VERSION},
                 token=PROVIDER_KEY,
                 timeout=35,
             )
@@ -1224,6 +1522,7 @@ def main():
                 break
             time.sleep(backoff)
             backoff = min(backoff * 2, 30)
+    splash_teardown(splash_stop)
     print("provider stopped")
 
 

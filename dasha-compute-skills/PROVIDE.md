@@ -57,6 +57,20 @@ dasha-compute status
 - After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks — never invent.
 - Stay on sub-24GB chat (qwen3:4b / qwen3:8b / gemma3:12b). Do not require a 36GB bar.
 
+## Splash engine (beta, opt-in)
+
+- Splash (github.com/incoai/splash, Apache-2.0) is an opt-in high-performance engine for high-end Macs. It does **not** replace Ollama/MLX — map it only for the models it serves.
+- **Hardware floor:** Apple M3 or newer, **36 GB+** unified memory, **macOS 26.4+**. Doctor soft-reports the gate; never fails solely for missing Splash.
+- **Supported packages (Splash-format only — plain GGUF/MLX checkpoints do not work):**
+  - `incoai/Qwen3.8-27B-Splash` (~17.4 GB) → map `qwen3.8-27b=splash:incoai/Qwen3.8-27B-Splash`
+  - `incoai/Qwen3.6-35B-A3B-Splash` (~20.9 GB) → map `qwen3.6-35b=splash:incoai/Qwen3.6-35B-A3B-Splash`
+- Install: `brew install incoai/tap/splash`. The agent launches and supervises `splash serve` (one process per model, ports 8000+), waits for readiness, and shuts it down on exit. First run downloads the package (~17–21 GB).
+- Map syntax: `public=splash:owner/repo` or `public=splash:owner/repo:8001` for an explicit port. The heartbeat advertises `engine: splash` so the network can badge Splash-accelerated providers.
+- Optional auth: set `DASHA_SPLASH_API_KEY` (also accepted: `SPLASH_API_KEY`) — passed as `--api-key` to `splash serve`. Without it, Splash serves without auth on 127.0.0.1 only.
+- Reasoning is off by default for parity with the Ollama path (`reasoning_effort=none`); override with `DASHA_SPLASH_REASONING_EFFORT=none|low|medium|xhigh`.
+- **Beta — no speed claims yet:** do not quote vendor tok/s figures. Run `provider/bench-splash.sh` on your Mac to measure Splash vs Ollama on the same prompt; it writes a JSON result.
+- Graceful fallback: if the gate fails or Splash won't start, the mapping is simply not advertised — existing Ollama/MLX mappings keep working.
+
 ## Host power / thermal / SIP (soft)
 - `dasha-compute doctor` soft-warns when on battery, Low Power Mode, elevated thermal pressure, or SIP disabled/unreadable (Darwin best-effort).
 - Never fails solely for battery / AC / Low Power / thermal / SIP.
