@@ -50,6 +50,7 @@ th{color:#8a8a96;font-weight:600}
 </head>
 <body>
 <main>
+<noscript><p class="fine" style="color:#ff3b81">This page reads live endpoints with JavaScript, which is off here. Raw data: <a href="/compute/api/network">network</a> &middot; <a href="/compute/api/verify">verify</a> &middot; <a href="/compute/api/chain">chain</a> &middot; <a href="/compute/api/metrics">metrics</a>.</p></noscript>
 <p class="fine"><a href="/compute">&larr; Dasha Compute</a> &middot; <a href="/compute/start">Run it yourself in 10 minutes</a></p>
 <h1>Proof, not promises.</h1>
 <p class="lede">This page has no marketing numbers. Every figure below is fetched live from a public endpoint when you load it, and each section links the exact endpoint it reads. Machine-readable twin: <a href="/compute/proof.json">/compute/proof.json</a>.</p>
@@ -57,7 +58,7 @@ th{color:#8a8a96;font-weight:600}
 <h2>1. Right now</h2>
 <p class="fine">Source: <a href="/compute/api/network">/compute/api/network</a> &middot; <a href="/compute/api/readyz">/compute/api/readyz</a></p>
 <div class="card">
-<div class="big" id="p-online">&hellip;</div>
+<div class="big" id="p-online">reading live endpoints</div>
 <div class="fine" id="p-online-label">community providers online</div>
 <div id="p-models"></div>
 <div class="fine" id="p-readyz"></div>
@@ -66,9 +67,9 @@ th{color:#8a8a96;font-weight:600}
 <h2>2. Every job, signed</h2>
 <p class="fine">Sources: <a href="/compute/api/verify">/compute/api/verify</a> &middot; <a href="/compute/api/chain">/compute/api/chain</a> &middot; <a href="/keys.json">/keys.json</a> &middot; format: <a href="/compute/llms.txt">/compute/llms.txt</a></p>
 <div class="card">
-<div class="big" id="c-len">&hellip;</div>
-<div class="fine">receipts on the public ed25519 chain &middot; verdict: <span id="c-verdict">&hellip;</span></div>
-<div class="fine">tip <code id="c-tip">&hellip;</code></div>
+<div class="big" id="c-len">reading live endpoints</div>
+<div class="fine">receipts on the public ed25519 chain &middot; verdict: <span id="c-verdict">reading live endpoints</span></div>
+<div class="fine">tip <code id="c-tip">reading live endpoints</code></div>
 </div>
 <table id="c-rows"><thead><tr><th>receipt</th><th>job</th><th>tokens</th><th>cents</th><th>when (UTC)</th></tr></thead><tbody></tbody></table>
 <p class="fine">Recompute a receipt hash yourself - copy, paste, run:</p>
@@ -82,7 +83,7 @@ print("recomputed:",h); print("chain has :",r["hash"]); print("match:",h==r["has
 
 <h2>3. Ask the network</h2>
 <p class="fine">No signup, no key: the chain verdict is a public JSON endpoint. This is what it answered when you loaded the page:</p>
-<pre id="v-raw">&hellip;</pre>
+<pre id="v-raw">reading live endpoints</pre>
 <pre>curl -s https://www.getdasha.com/compute/api/verify</pre>
 
 <h2>4. Fail loud, not silent</h2>
@@ -95,12 +96,12 @@ print("recomputed:",h); print("chain has :",r["hash"]); print("match:",h==r["has
 }</pre>
 <p class="fine">Uptime history, including the dark windows - hourly presence samples from <a href="/compute/api/metrics">/compute/api/metrics</a> (<code>providers_online_hourly</code>). Red means zero Macs online that hour:</p>
 <div class="strip" id="u-strip"></div>
-<p class="fine" id="u-note">&hellip;</p>
+<p class="fine" id="u-note">reading live endpoints</p>
 
 <h2>5. What it costs</h2>
 <p class="fine">Source: <a href="/compute/api/pricing">/compute/api/pricing</a> (live) vs <a href="https://api-docs.deepseek.com/quick_start/pricing">DeepSeek's published pricing</a> (checked Sep 12, 2026).</p>
 <div class="card">
-<div class="big" id="price-usd">&hellip;</div>
+<div class="big" id="price-usd">reading live endpoints</div>
 <div class="fine">flat per successful chat completion, prepaid guest credits. <span id="price-note"></span></div>
 </div>
 <table>
@@ -117,14 +118,20 @@ print("recomputed:",h); print("chain has :",r["hash"]); print("match:",h==r["has
 <h2>6. The provider wall, honestly</h2>
 <p class="fine">Source: <a href="/compute/api/network">/compute/api/network</a></p>
 <div class="card">
-<p id="w-line" style="font-size:18px;margin:4px 0">&hellip;</p>
+<p id="w-line" style="font-size:18px;margin:4px 0">reading live endpoints</p>
 <p class="fine">Community side runs on spare Macs people plug in. Provider terms as published on the Provide door: $0.05/job + $0.01/1k completion tokens, $1 minimum payout, pending operator settle, +5% if you take $dasha. One more always-on Mac changes the reliability story more than any ad - <a href="/compute#provide">become a founding provider</a>.</p>
 </div>
 
-<p class="src">Page rendered from live endpoints at <span id="rendered-at">&hellip;</span>. If an endpoint is unreachable its section says so instead of guessing.</p>
+<p class="src">Page rendered from live endpoints at <span id="rendered-at">reading live endpoints</span>. If an endpoint is unreachable its section says so instead of guessing.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
+// Slow-load honesty: if endpoints still haven't answered after 12s, say so
+// instead of leaving the loading copy up forever.
+setTimeout(()=>{
+  document.querySelectorAll('#p-online,#c-len,#c-verdict,#c-tip,#v-raw,#u-note,#price-usd,#w-line,#rendered-at')
+    .forEach(el=>{if(/reading live endpoints/.test(el.textContent))el.textContent='still reading - an endpoint may be unreachable; raw links sit next to each section.';});
+},12000);
 const J=async u=>{const r=await fetch(u);if(!r.ok)throw new Error(u+' -> '+r.status);return r.json();};
 const ago=t=>new Date(t).toISOString().replace('T',' ').slice(0,16)+'Z';
 (async()=>{

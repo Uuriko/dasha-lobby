@@ -26,6 +26,7 @@
 </head>
 <body>
 <main>
+  <noscript><p class="note" style="color:#ff3b81">Live numbers need JavaScript, which is off here. Raw API: <a href="/compute/api/network">/compute/api/network</a>.</p></noscript>
   <div class="kicker">Dasha Compute · benchmarks</div>
   <h1>Measured on a real Mac.</h1>
   <p class="lede">Live tokens/second from community provider Macs, read straight from the network API. No lab rigs, no invented numbers - what the fleet is actually doing, right now.</p>
@@ -38,6 +39,8 @@
 </main>
 <script>(()=>{var state=document.getElementById('state'),table=document.getElementById('bench'),rows=document.getElementById('rows');
 function cell(td,text){td.textContent=text;return td}
+// Slow-load honesty: never leave "reading the network…" up forever.
+setTimeout(function(){if(state.textContent==='reading the network…')state.textContent='still reading the network - the API may be slow or unreachable; raw data at /compute/api/network.';},12000);
 fetch('/compute/api/network',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('network api '+r.status);return r.json()}).then(function(data){
 var cap=Array.isArray(data.capacity)?data.capacity:[];
 var measured=cap.filter(function(row){return row.measured_providers>0&&row.tokens_per_second>0});
