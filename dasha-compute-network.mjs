@@ -1047,6 +1047,25 @@ export function providerAdvertisesModel(providers, model, now = Date.now()) {
   return (Array.isArray(providers) ? providers : []).some(provider => providerServesModel(provider, model, now));
 }
 
+/** Trailing-7d uptime % for the fleet scorecard, from per-provider heartbeat hour
+ *  markers (`compute:provider-hour:<id>:<UTC-hour>`). Returns null until the provider
+ *  has a full day of history — a single fresh bucket must not read as "100%". */
+export async function providerUptimePct7d(storage, provider, now = Date.now()) {
+  const created = Number(provider?.createdAt || 0);
+  if (!Number.isFinite(created) || created <= 0) return null;
+  const weekMs = 7 * 24 * 60 * 60_000;
+  const start = Math.max(now - weekMs, created);
+  if (now - start < 24 * 60 * 60_000) return null;
+  const elapsedHours = Math.max(1, Math.ceil((now - start) / 3_600_000));
+  const prefix = `compute:provider-hour:${provider.id}:`;
+  const startHour = new Date(start).toISOString().slice(0, 13);
+  let present = 0;
+  for (const [key] of await storage.list({ prefix })) {
+    if (key.slice(prefix.length) >= startHour) present++;
+  }
+  return Math.round((Math.min(present, elapsedHours) / elapsedHours) * 1000) / 10;
+}
+
 /** Buyer SSE drop while a Mac is still advertising: keep queued/leased so the client can resume the same job. */
 export function keepBuyerJobOnStreamDrop(job, providers = [], now = Date.now()) {
   if (!job || !['queued', 'leased'].includes(String(job.status || ''))) return false;
@@ -1122,6 +1141,11 @@ export class ComputeNetwork {
     if (sweepProviders) {
       for (const [key, provider] of await this.state.storage.list({ prefix: 'compute:provider:' })) {
         if (!provider || (now - Number(provider.createdAt || 0) > 30 * 24 * 60 * 60_000 && !provider.lastSeenAt)) await this.state.storage.delete(key);
+      }
+      // Fleet scorecard hygiene: drop per-provider hour markers older than 8 days.
+      const hourCutoff = new Date(now - 8 * 24 * 60 * 60_000).toISOString().slice(0, 13);
+      for (const [key] of await this.state.storage.list({ prefix: 'compute:provider-hour:' })) {
+        if (key.slice(-13) < hourCutoff) await this.state.storage.delete(key);
       }
     }
     if (runNight) await this.runNightTasks(now);
@@ -1938,6 +1962,41 @@ export class ComputeNetwork {
       return maybeHead(request, json({ providers_online: providers.length, models_available: models, capacity, kit_versions, jobs_queued: jobs.filter(job => job.status === 'queued').length, card_available: stripeConfigured(this.env) }, 200, allowedOrigin || '*', credentials));
     }
 
+    // Fleet scorecard (Vast.ai-style per-provider rows): public, aggregate-safe.
+    // One row per online Mac: display name, measured tok/s per model, jobs served
+    // (7d, from the receipt chain), trailing-7d uptime %. Never a spinner — an
+    // empty fleet returns an empty array and the UI says so honestly.
+    if ((path === '/compute/api/v1/fleet' || path === '/compute/api/v1/fleet/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      await this.prune(now);
+      const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()]
+        .filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS)
+        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+      const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()];
+      const weekAgo = now - 7 * 24 * 60 * 60_000;
+      const rows = [];
+      for (const provider of providers) {
+        const benches = Array.isArray(provider.hardware?.benchmarks) ? provider.hardware.benchmarks : [];
+        const models = (Array.isArray(provider.models) ? provider.models : []).map(id => {
+          const bench = benches.find(row => String(row?.model) === String(id));
+          const tps = Number(bench?.tokens_per_second);
+          return { model: String(id), tokens_per_second: Number.isFinite(tps) && tps > 0 ? Math.round(tps * 100) / 100 : null };
+        });
+        const jobsServed = jobs.filter(job =>
+          job.providerId === provider.id
+          && (job.status === 'complete' || job.status === 'failed')
+          && Number(job.completedAt || 0) >= weekAgo,
+        ).length;
+        rows.push({
+          name: String(provider.name || 'Mac').slice(0, 64),
+          online: true,
+          models,
+          jobs_served_7d: jobsServed,
+          uptime_pct_7d: await providerUptimePct7d(this.state.storage, provider, now),
+        });
+      }
+      return maybeHead(request, json({ object: 'fleet.compute.v0', providers: rows, checked_at: new Date(now).toISOString() }, 200, allowedOrigin || '*', false, { 'Cache-Control': 'public, max-age=30' }));
+    }
+
     if ((path === '/compute/api/providers' || path === '/compute/api/providers/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, credentials));
@@ -2043,6 +2102,8 @@ export class ComputeNetwork {
       if (!provider) return computeApiError('invalid provider token', 401);
       const firstOnline = !Number(provider.lastSeenAt || 0);
       provider.lastSeenAt = now;
+      // Fleet scorecard: one marker per provider per UTC hour, feeding trailing-7d uptime %.
+      await this.state.storage.put(`compute:provider-hour:${provider.id}:${metricHour(now)}`, 1);
       const kitVersion = String(input.version || '').trim().slice(0, 32);
       if (kitVersion) provider.kitVersion = kitVersion;
       provider.allowedModels = growAllowedModels(
