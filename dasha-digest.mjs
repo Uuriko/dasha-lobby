@@ -356,16 +356,54 @@ export async function fetchLiveTick(fetcher = fetch) {
   return null;
 }
 
-const SECTION_CSS = `#dasha-digest{margin:3.25rem 0 0;padding:2.2rem 0 0;border-top:1px solid rgba(244,237,219,.18)}#dasha-digest h2{margin:0 0 1.15rem;font:900 clamp(1.35rem,3vw,2rem)/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.03em;text-transform:uppercase}#dasha-digest h2 a{margin-left:.7rem;color:var(--muted,#c8bea8);font:700 .82rem/1 Arial,Helvetica,sans-serif;letter-spacing:0;text-transform:none;text-decoration:none}#dasha-digest ol{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}#dasha-digest li{margin:0;display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:baseline}#dasha-digest .dd-src{color:var(--muted,#c8bea8);font:800 .72rem/1 Arial,Helvetica,sans-serif;letter-spacing:.07em;text-transform:uppercase}#dasha-digest a.dd-row{color:var(--acid,#dfff00);font:700 1.02rem/1.35 Arial,Helvetica,sans-serif;text-decoration:none}#dasha-digest a.dd-row:focus-visible,#dasha-digest h2 a:focus-visible{outline:3px solid var(--acid,#dfff00);outline-offset:3px}`;
+const SECTION_CSS = `#dasha-digest{margin:3.25rem 0 0;padding:2.2rem 0 0;border-top:1px solid rgba(244,237,219,.18)}#dasha-digest h2{margin:0 0 1.15rem;font:900 clamp(1.35rem,3vw,2rem)/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.03em;text-transform:uppercase}#dasha-digest h2 a{margin-left:.7rem;color:var(--muted,#c8bea8);font:700 .82rem/1 Arial,Helvetica,sans-serif;letter-spacing:0;text-transform:none;text-decoration:none}#dasha-digest ol{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}#dasha-digest li{margin:0;display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:baseline}#dasha-digest .dd-src{color:var(--muted,#c8bea8);font:800 .72rem/1 Arial,Helvetica,sans-serif;letter-spacing:.07em;text-transform:uppercase}#dasha-digest a.dd-row{color:var(--acid,#dfff00);font:700 1.02rem/1.35 Arial,Helvetica,sans-serif;text-decoration:none}#dasha-digest a.dd-row:focus-visible,#dasha-digest h2 a:focus-visible{outline:3px solid var(--acid,#dfff00);outline-offset:3px}#dasha-digest .dd-fresh{margin:-.7rem 0 1rem;color:var(--muted,#c8bea8);font:700 .8rem/1.4 Arial,Helvetica,sans-serif}#dasha-digest .dd-when{color:var(--muted,#c8bea8);font:400 .75rem/1.4 Arial,Helvetica,sans-serif;white-space:nowrap}#dasha-digest .dd-when time{text-decoration:underline dotted}#dasha-digest .dd-stale{display:inline-block;margin-left:.45rem;padding:.1rem .45rem;border:1px solid var(--hot,#ff3b81);color:var(--hot,#ff3b81);font:800 .68rem/1.6 Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase;border-radius:999px}`;
+
+/** Staleness: the tape header earns a "stale" badge when the newest item is
+ * older than this. Per-row "observed Xm ago" always renders from item `at`. */
+export const TAPE_STALE_AFTER_MS = 3 * 60 * 60 * 1000;
+
+/** Human relative age ("5m ago") for an ISO timestamp. '' when unparseable. */
+export function relAge(iso, now = Date.now()) {
+  const t = Date.parse(String(iso || ''));
+  if (!Number.isFinite(t)) return '';
+  const s = Math.max(0, Math.floor((now - t) / 1000));
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 48) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+/** Newest item `at` as epoch ms, 0 when none parse. */
+export function newestItemAt(items) {
+  let best = 0;
+  for (const it of items || []) {
+    const t = Date.parse(String(it?.at || ''));
+    if (Number.isFinite(t) && t > best) best = t;
+  }
+  return best;
+}
 
 export function digestSectionHtml(items, { pageHref = '/digest' } = {}) {
   const rows = normalizeItems(items);
   if (!rows.length) return '';
   const permalink = pageHref ? `<a href="${escapeHtml(pageHref)}">/digest</a>` : '';
-  const lis = rows.map((row) => (
-    `<li><span class="dd-src">${escapeHtml(row.source)}</span> · <a class="dd-row" href="${escapeHtml(row.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.title)}</a></li>`
-  )).join('');
-  return `<section id="dasha-digest"><style>${SECTION_CSS}</style><h2>Tape.${permalink}</h2><ol>${lis}</ol></section>`;
+  const now = Date.now();
+  const newest = newestItemAt(rows);
+  const freshRel = newest ? relAge(new Date(newest).toISOString(), now) : '';
+  const isStale = newest > 0 && (now - newest) > TAPE_STALE_AFTER_MS;
+  const freshLine = freshRel
+    ? `<p class="dd-fresh">last refresh ${escapeHtml(freshRel)}${isStale ? ' <span class="dd-stale">stale</span>' : ''}</p>`
+    : '';
+  const lis = rows.map((row) => {
+    const age = relAge(row.at, now);
+    const when = age
+      ? ` <span class="dd-when"><time datetime="${escapeHtml(row.at)}">observed ${escapeHtml(age)}</time></span>`
+      : '';
+    return `<li><span class="dd-src">${escapeHtml(row.source)}</span> · <a class="dd-row" href="${escapeHtml(row.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.title)}</a>${when}</li>`;
+  }).join('');
+  return `<section id="dasha-digest"><style>${SECTION_CSS}</style><h2>Tape.${permalink}</h2>${freshLine}<ol>${lis}</ol></section>`;
 }
 
 const PAGE_CSS = `:root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81;--line:rgba(244,237,219,.32)}
@@ -518,9 +556,49 @@ export function digestRemountScript() {
         var key=href.replace(/\\/$/,'').toLowerCase();
         if(seen[key])continue;
         seen[key]=1;
-        out.push({source:src,title:title,href:href});
+        out.push({source:src,title:title,href:href,at:String(it.at||'')});
       }
       return out;
+    }
+    function relAge(iso){
+      var t=Date.parse(String(iso||''));
+      if(!isFinite(t))return '';
+      var s=Math.max(0,Math.floor((Date.now()-t)/1000));
+      if(s<60)return 'just now';
+      var m=Math.floor(s/60);
+      if(m<60)return m+'m ago';
+      var h=Math.floor(m/60);
+      if(h<48)return h+'h ago';
+      return Math.floor(h/24)+'d ago';
+    }
+    function newestAt(list){
+      var best=0;
+      for(var i=0;i<list.length;i++){
+        var t=Date.parse(String((list[i]||{}).at||''));
+        if(isFinite(t)&&t>best)best=t;
+      }
+      return best;
+    }
+    function freshHtml(newest){
+      if(!newest)return '';
+      var age=relAge(new Date(newest).toISOString());
+      if(!age)return '';
+      var stale=(Date.now()-newest)>3*60*60*1000;
+      return 'last refresh '+age+(stale?' <span class="dd-stale">stale</span>':'');
+    }
+    function paintFresh(sec,list){
+      var html=freshHtml(newestAt(list));
+      var p=sec.querySelector('.dd-fresh');
+      if(!html){if(p&&p.parentNode)p.parentNode.removeChild(p);return;}
+      if(!p){
+        p=document.createElement('p');
+        p.className='dd-fresh';
+        var h2=sec.querySelector('h2');
+        if(h2&&h2.nextSibling)h2.parentNode.insertBefore(p,h2.nextSibling);
+        else if(h2)h2.parentNode.appendChild(p);
+        else sec.insertBefore(p,sec.firstChild);
+      }
+      p.innerHTML=html;
     }
     function firstRows(items,tick){
       var list=rows(items);
@@ -548,6 +626,17 @@ export function digestRemountScript() {
         li.appendChild(span);
         li.appendChild(document.createTextNode(' \u00b7 '));
         li.appendChild(a);
+        var ra=relAge(r.at);
+        if(ra){
+          var when=document.createElement('span');
+          when.className='dd-when';
+          var tm=document.createElement('time');
+          tm.setAttribute('datetime',String(r.at||''));
+          tm.appendChild(document.createTextNode('observed '+ra));
+          when.appendChild(tm);
+          li.appendChild(document.createTextNode(' '));
+          li.appendChild(when);
+        }
         ol.appendChild(li);
       }
     }
@@ -572,7 +661,7 @@ export function digestRemountScript() {
       for(var i=0;i<list.length;i++){
         var r=list[i];
         if(r&&/dexscreener\\.com\\/solana\\//i.test(r.href)&&/\\$dasha\\s+\\$/.test(r.title)){
-          list[i]={source:r.source,title:'$dasha',href:r.href};
+          list[i]={source:r.source,title:'$dasha',href:r.href,at:r.at};
         }
       }
       return list;
@@ -600,7 +689,7 @@ export function digestRemountScript() {
       if(!pair)return null;
       var href=cleanHref('https://dexscreener.com/solana/'+pair.toLowerCase());
       if(!href)return null;
-      return {source:'Dexscreener',title:bits.join(' \u00b7 '),href:href};
+      return {source:'Dexscreener',title:bits.join(' \u00b7 '),href:href,at:new Date().toISOString()};
     }
     function paint(items,tick){
       var list=firstRows(items,tick);
@@ -612,6 +701,7 @@ export function digestRemountScript() {
         var ol=sec.querySelector('ol');
         if(!ol){ol=document.createElement('ol');sec.appendChild(ol);}
         fillOl(ol,list);
+        paintFresh(sec,list);
         crewAfter(sec);
         return true;
       }
@@ -631,6 +721,7 @@ export function digestRemountScript() {
       sec.appendChild(style);
       sec.appendChild(h2);
       sec.appendChild(ol);
+      paintFresh(sec,list);
       var grok=document.getElementById('grok-door')||document.querySelector('#grok-door');
       var grwm=document.getElementById('grwm');
       var main=document.querySelector('main');

@@ -557,10 +557,10 @@ footer a{display:inline-flex;align-items:center;min-height:44px;color:var(--mute
     <h2>What you can check yourself</h2>
     <p class="when">Read from the Solana mint account on 18 August 2026 at finalized commitment. Every line is on-chain, so check it against Solscan rather than taking this page’s word.</p>
     <dl>
-      <div style="display:contents"><dt>Supply</dt><dd>999,831,949 · observed 18 Aug 2026</dd></div>
+      <div style="display:contents"><dt>Supply</dt><dd>999,831,949 · <span class="pin-note">pinned 18 Aug 2026 — <a href="https://solscan.io/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" target="_blank" rel="noopener noreferrer">verify live ↗</a></span></dd></div>
       <div style="display:contents"><dt>Mint authority</dt><dd>revoked</dd></div>
       <div style="display:contents"><dt>Freeze authority</dt><dd>revoked</dd></div>
-      <div style="display:contents"><dt>Top 10 wallets</dt><dd>42.5% of supply</dd></div>
+      <div style="display:contents"><dt>Top 10 wallets</dt><dd>42.5% of supply · <span class="pin-note">pinned 18 Aug 2026 — concentrations move as wallets trade; <a href="https://solscan.io/token/53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump#holders" target="_blank" rel="noopener noreferrer">check holders ↗</a></span></dd></div>
     </dl>
     <p class="fine">Revoked authorities mean no new supply can ever be created and no wallet can be frozen. Holders can still burn their own tokens, which lowers total supply. That is what those facts mean and all they mean — they say nothing about price, liquidity, or whether anyone will buy it. The top-ten figure is here because publishing only the reassuring numbers is what makes the reassuring numbers worth doubting.</p>
   </section>
