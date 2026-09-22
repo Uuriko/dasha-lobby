@@ -80,8 +80,8 @@ assert.match(net, /kit_versions/, '/api/network exposes version skew');
 assert.match(net, /kit_version: provider\.kitVersion \|\| null/, 'owner provider list shows kit_version');
 
 const worker = await readFile(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
-assert.match(worker, /const COMPUTE_KIT_JSON = \{[\s\S]*?version: '0\.3\.0'[\s\S]*?min_version: '0\.3\.0'[\s\S]*?4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf/, 'kit.json pins published tar bytes (0.3.0 / 4f48b022)');
-assert.match(worker, /sha256: '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf'/, 'kit.json sha256 pins the published tar');
+assert.match(worker, /const COMPUTE_KIT_JSON = \{[\s\S]*?version: '0\.3\.0'[\s\S]*?min_version: '0\.3\.0'[\s\S]*?7809ccbf5cce9ef14608891719dbd93eec1c2253a875ead5701b39e176134c30/, 'kit.json pins published tar bytes (0.3.0 / 7809ccbf)');
+assert.match(worker, /sha256: '7809ccbf5cce9ef14608891719dbd93eec1c2253a875ead5701b39e176134c30'/, 'kit.json sha256 pins the published tar');
 assert.doesNotMatch(worker, /sha256: '725e78e6bae3a4d785a78396284f27e994fff1b82fbdb50c5d546b79a1ab159c'/, 'do not advertise unpublished 0.3.2 sha');
 assert.doesNotMatch(worker, /sha256: '43df0883a900058320ceca36bf029b82d2495b2f2f17086495d31219cc3fec24'/, 'do not keep the stale live kit.json sha');
 assert.match(worker, /isComputeKitJsonPath/);

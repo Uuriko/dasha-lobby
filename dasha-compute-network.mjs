@@ -3474,12 +3474,12 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 /** Signed kit installer manifest (mirrors COMPUTE_KIT_JSON in dasha-lobby-worker.mjs;
  *  parity asserted in dasha-openapi-contract.test.mjs). The worker injects these values
  *  into the kit-sig DO call so callers can never get an attacker-chosen statement signed.
- *  Pins the published ASSETS tar bytes (4f48b022…, package.json 0.3.0) — not tip 0.3.2. */
+ *  Pins the published ASSETS tar bytes (7809ccbf…, package.json 0.3.0) — not tip 0.3.2. */
 const COMPUTE_KIT_MANIFEST = {
   version: '0.3.0',
   min_version: '0.3.0',
   url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
-  sha256: '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf',
+  sha256: '7809ccbf5cce9ef14608891719dbd93eec1c2253a875ead5701b39e176134c30',
 };
 
 export async function computeApi(request, env, allowedOrigin) {

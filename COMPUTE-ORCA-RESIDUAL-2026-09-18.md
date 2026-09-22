@@ -51,12 +51,12 @@ Measured, no wrangler from this hop:
 | Surface | Live |
 |---|---|
 | `GET /compute/kit.json` (www + lobby) | `version` **0.3.1**, `sha256` **43df0883a900058320ceca36bf029b82d2495b2f2f17086495d31219cc3fec24** |
-| `GET /dasha-compute-open-alpha.tar.gz` | **33433** bytes, sha256 **4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf** |
+| `GET /dasha-compute-open-alpha.tar.gz` | **198182** bytes, sha256 **7809ccbf5cce9ef14608891719dbd93eec1c2253a875ead5701b39e176134c30** (repacked 2026-09-22; was 33433 bytes / 4f48b022… until then) |
 | Inside that tar | `package.json` **0.3.0**, no `VERSION` file, agent has no `openai:` backend / no `DASHA_RESIDUAL_ALPHA` |
 
 Tip `VERSION` is 0.3.2 (residual + openai: map). Advertising 0.3.2 on `kit.json` before ASSETS is packed is why a Mac can soft-warn “kit v0.3.2 available” while live `kit.json` still says 0.3.1 and the gzip is the 0.3.0 tree.
 
-This PR aligns `COMPUTE_KIT_JSON` / `COMPUTE_KIT_MANIFEST` to the **published tar bytes** (`0.3.0` / `4f48b022…`). Residual-α=0 stays in git only until Instinct packs `dasha-worker-assets` and bumps the manifest in the same deploy. `*.tar.gz` is gitignored — this hop does not invent a packed archive.
+This PR aligns `COMPUTE_KIT_JSON` / `COMPUTE_KIT_MANIFEST` to the **published tar bytes** (`0.3.0` / `7809ccbf…`, repacked 2026-09-22). Residual-α=0 stays in git only until Instinct packs `dasha-worker-assets` and bumps the manifest in the same deploy. `*.tar.gz` is gitignored — this hop does not invent a packed archive.
 
 ## Stay-outs
 

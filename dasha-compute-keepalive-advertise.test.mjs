@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * LIVE Worker kit.json still 43df0883 (0.3.1) while the gzip is 4f48b022 (0.3.0).
+ * Published kit tar repacked 2026-09-22 (0.3.0, sha256 7809ccbf…); kit.json hash updated to match.
  * Provide / Host skill + OLLAMA_KEEP_ALIVE + advertise≠URLError docs (PR-mirror).
  */
 import assert from 'node:assert/strict';
@@ -14,7 +14,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { PROVIDE_SKILL_MD, OCM_HOST_SKILL_MD } from './dasha-compute-skills.mjs';
 import worker from './dasha-lobby-worker.mjs';
 
-const LIVE_KIT_SHA256 = '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf';
+const LIVE_KIT_SHA256 = '7809ccbf5cce9ef14608891719dbd93eec1c2253a875ead5701b39e176134c30';
 const root = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
 const provideDisk = readFileSync(join(root, 'dasha-compute-skills/PROVIDE.md'), 'utf8');
@@ -109,7 +109,7 @@ const liveKit = await fetch('https://www.getdasha.com/dasha-compute-open-alpha.t
 assert.equal(liveKit.status, 200, 'live kit 200');
 const bytes = Buffer.from(await liveKit.arrayBuffer());
 const digest = createHash('sha256').update(bytes).digest('hex');
-assert.equal(digest, LIVE_KIT_SHA256, 'live gzip sha256 (published 0.3.0 tar; kit.json sha still lags until Instinct)');
+assert.equal(digest, LIVE_KIT_SHA256, 'live gzip sha256 (published 0.3.0 tar, repacked 2026-09-22)');
 const tmp = join(mkdtempSync(join(tmpdir(), 'dasha-kit-keepalive-')), 'dasha-compute-open-alpha.tar.gz');
 writeFileSync(tmp, bytes);
 const liveReadme = extractKitFile(tmp, 'README.md');

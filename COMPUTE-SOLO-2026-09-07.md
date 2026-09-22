@@ -5,6 +5,7 @@
 **Lane:** hop DOWN (`DASHA_SHIP_SKIP_CLAIMS=1`)  
 **Worker (already live):** `c1749fba-0abb-4f02-989d-6e5c2e31a0dc`  
 **Kit (already live):** sha256 `4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf`  
+*(2026-09-22: tar repacked — live sha256 is now `7809ccbf5cce9ef14608891719dbd93eec1c2253a875ead5701b39e176134c30`, still package.json 0.3.0)*  
 **This repo:** PR-mirror only. Do **not** wrangler deploy. Do **not** merge.
 
 ## What shipped live
