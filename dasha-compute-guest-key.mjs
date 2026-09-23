@@ -158,6 +158,53 @@ export function guestRateInfo(rates, key, max, windowMs = 60_000) {
   return { ok: true, remaining: max - recent.length, resetAtMs: Math.min(...recent) + windowMs, retryAfterSeconds: 0 };
 }
 
+/* #301: durable guest limits. Window counters live in DO storage so an eviction or redeploy
+ * cannot reset them. Storage keys are sha256(salt|name), so client IPs are never stored in
+ * clear. Each row keeps only hit times inside its window plus an expiresAt for pruning. */
+export const GUEST_RATE_PREFIX = 'compute:guest-rate:';
+const guestRateTails = new WeakMap();
+
+/** Serialize fn per storage object: rate check + write (+ key creation) run as one unit. */
+export async function withGuestRateLock(storage, fn) {
+  const prev = guestRateTails.get(storage) || Promise.resolve();
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const tail = prev.then(() => gate);
+  guestRateTails.set(storage, tail);
+  await prev;
+  try { return await fn(); } finally {
+    release();
+    if (guestRateTails.get(storage) === tail) guestRateTails.delete(storage);
+  }
+}
+
+export async function guestRateStorageKey(name, salt = '') {
+  return `${GUEST_RATE_PREFIX}${await sha256Hex(`guest-rate:v1|${salt}|${name}`)}`;
+}
+
+/** Durable sliding-window limiter. Same result shape as guestRateInfo. Caller holds the lock. */
+export async function durableGuestRateInfo(storage, name, max, windowMs = 60_000, { now = Date.now(), salt = '' } = {}) {
+  const key = await guestRateStorageKey(name, salt);
+  const row = await storage.get(key);
+  const recent = (Array.isArray(row?.hits) ? row.hits : []).map(Number).filter((at) => Number.isFinite(at) && now - at < windowMs && at <= now);
+  if (recent.length >= max) {
+    const resetAtMs = Math.min(...recent) + windowMs;
+    return { ok: false, remaining: 0, resetAtMs, retryAfterSeconds: Math.max(1, Math.ceil((resetAtMs - now) / 1000)) };
+  }
+  recent.push(now);
+  const resetAtMs = Math.min(...recent) + windowMs;
+  await storage.put(key, { hits: recent, expiresAt: Math.max(...recent) + windowMs });
+  return { ok: true, remaining: max - recent.length, resetAtMs, retryAfterSeconds: 0 };
+}
+
+/** Drop expired guest-rate rows (bounded retention). */
+export async function pruneGuestRates(storage, now = Date.now()) {
+  const rows = await storage.list({ prefix: GUEST_RATE_PREFIX });
+  const dead = [...rows].filter(([, row]) => !row || !(Number(row.expiresAt) > now)).map(([key]) => key);
+  for (const key of dead) await storage.delete(key);
+  return dead.length;
+}
+
 async function sha256Hex(value) {
   const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value))));
   return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -180,7 +227,11 @@ async function readJsonBody(request, limit = 4096) {
 }
 
 /** Mint a short-lived guest key into compute:api-key: (hash only). */
-export async function mintGuestKey({ storage, rates, ip = 'unknown', pairing = '', name = '', now = Date.now() } = {}) {
+export async function mintGuestKey({ storage, rates, ip = 'unknown', pairing = '', name = '', now = Date.now(), salt = '' } = {}) {
+  return withGuestRateLock(storage, () => mintGuestKeyLocked({ storage, ip, pairing, name, now, salt }));
+}
+
+async function mintGuestKeyLocked({ storage, ip = 'unknown', pairing = '', name = '', now = Date.now(), salt = '' } = {}) {
   const pairingNorm = normalizePairingCode(pairing);
   if (pairing && pairingNorm === null) {
     return {
@@ -193,7 +244,7 @@ export async function mintGuestKey({ storage, rates, ip = 'unknown', pairing = '
     };
   }
   const ipKey = `guest-mint:ip:${ip || 'unknown'}`;
-  const mintRate = guestRateInfo(rates, ipKey, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS);
+  const mintRate = await durableGuestRateInfo(storage, ipKey, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS, { now, salt });
   if (!mintRate.ok) {
     return {
       status: 429,
@@ -212,7 +263,7 @@ export async function mintGuestKey({ storage, rates, ip = 'unknown', pairing = '
     };
   }
   if (pairingNorm) {
-    const pairRate = guestRateInfo(rates, `guest-mint:pair:${pairingNorm}`, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS);
+    const pairRate = await durableGuestRateInfo(storage, `guest-mint:pair:${pairingNorm}`, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS, { now, salt });
     if (!pairRate.ok) {
       return {
         status: 429,
@@ -314,7 +365,7 @@ export async function revokeGuestKey({ storage, token = '', wantId = '' } = {}) 
 }
 
 /** POST/DELETE door. Null when the path is not guest-keys or method is a public probe. */
-export async function handleGuestKeyWrite(request, { storage, rates, now = Date.now() } = {}) {
+export async function handleGuestKeyWrite(request, { storage, rates, now = Date.now(), salt = '' } = {}) {
   const path = new URL(request.url).pathname;
   if (!isComputeGuestKeyPath(path)) return null;
   const method = request.method;
@@ -328,6 +379,7 @@ export async function handleGuestKeyWrite(request, { storage, rates, now = Date.
       pairing,
       name: input.name,
       now,
+      salt,
     });
     return guestKeyResponse(minted.status, minted.body, { headers: minted.headers || {} });
   }
