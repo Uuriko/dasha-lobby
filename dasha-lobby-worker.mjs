@@ -1341,6 +1341,7 @@ export function stripDeadNav(html) {
   out = injectFaucetSlimHeader(out);
   out = hideHomeExtraChrome(out);
   out = unlockHomeMobileScroll(out);
+  out = fitHomeMuseChrome(out);
   /* Leftover home dropped-selector CSS after leftover body class was already DOM-stripped. Keep body + .dasha + .dasha-root + #dasha-home + #top. */
   out = stripHomeLeftoverBodyBodyCss(out);
   /* Leftover home dropped-selector CSS after <h3> was never in the home DOM. Keep .dasha h1,.dasha h2. */
@@ -1561,6 +1562,18 @@ export function unlockHomeMobileScroll(html) {
     return src.replace(/<style\b[^>]*id=["']dasha-mobile-scroll["'][^>]*>[\s\S]*?<\/style>/i, style);
   }
   return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${style}</head>`) : style + src;
+}
+
+/** Muse home pill is nowrap inside overflow-x:hidden, so Start and the orbit label clip at 390. Fit only when that pill is in the page. */
+const HOME_MUSE_FIT = '<style id="dasha-home-muse-fit">@media(max-width:700px){.muse-nav-wrap{padding-left:8px;padding-right:8px}.muse-pill{max-width:100%;flex-wrap:wrap;justify-content:center}.muse-pill a{padding:0 9px;font-size:12px}.muse-diagram{width:min(100%,340px);margin-left:auto;margin-right:auto}.muse-flow.req{right:8px}.muse-node.n2{right:6px}}</style>';
+
+export function fitHomeMuseChrome(html) {
+  const src = String(html || '');
+  if (!/class=(['"])[^'"]*\bmuse-pill\b/.test(src)) return src;
+  if (/id=["']dasha-home-muse-fit["']/.test(src)) {
+    return src.replace(/<style\b[^>]*id=["']dasha-home-muse-fit["'][^>]*>[\s\S]*?<\/style>/i, HOME_MUSE_FIT);
+  }
+  return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${HOME_MUSE_FIT}</head>`) : HOME_MUSE_FIT + src;
 }
 
 export function stripHeroContribute(html) {
@@ -2440,7 +2453,7 @@ const HOME_BAG_LINE = `<p class="dasha-bag-line"><a href="/bag">Bag</a></p>`;
 const HOME_LIST_DOOR = `<section id="list-door" aria-labelledby="list-title"><style id="dasha-list-door">#list-door{margin:0;padding:36px 0 48px;background:#070608}#list-door .door{display:grid;gap:14px;justify-items:start}#list-door .section-kicker{color:#dfff00;font:800 12px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase}#list-door .section-title{margin:0;color:#f4eddb;font:900 clamp(1.6rem,4vw,2.2rem)/1 Arial,Helvetica,sans-serif}#list-door .door-line{margin:0;color:rgba(244,237,219,.78);font:700 1rem/1.4 Arial,Helvetica,sans-serif}#list-door .pill.list{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #dfff00;color:#dfff00;background:transparent;font:800 14px/1 Arial,Helvetica,sans-serif;text-decoration:none}#list-door .pill.list:focus-visible{outline:3px solid #dfff00;outline-offset:3px}</style><div class="wrap door"><div><p class="section-kicker">List</p><h2 class="section-title" id="list-title">List.</h2><p class="door-line">We list $dasha here.</p></div><a class="pill list" href="/listings">Open List →</a></div></section>`;
 const HOME_GRWM_AIR = '<style id="dasha-grwm-air">#grwm{display:block;margin:0;padding:min(18vh,8rem) 0 min(14vh,6rem);box-sizing:border-box}#grwm video,#grwm .grwm-go{touch-action:pan-y}@media(max-width:800px){#grwm{padding:min(10vh,4rem) 0 min(8vh,3rem)}#grwm .grwm-phone{max-height:min(52svh,420px);width:min(100%,calc(52svh * 720 / 1280))}}</style>';
 const HOME_FAUCET_MOUNT = `<section id="dasha-home-faucet" aria-label="Faucet"><div id="dasha-faucet" data-faucet-api="https://lobby.getdasha.com" data-faucet-still="https://lobby.getdasha.com/client/faucet.avif" data-faucet-still-sri="${FAUCET_STILL_SRI}"></div></section>`;
-const HOME_FAUCET_STYLE = '<style id="dasha-home-faucet-css">#dasha-home-faucet,#dasha-faucet{width:min(36rem,calc(100% - 32px));margin:28px auto 64px}#dasha-home-lede{width:min(40rem,calc(100% - 32px));margin:18px auto 8px;color:var(--paper,#f4eddb);font:900 1.05rem/1.35 Arial,Helvetica,sans-serif}.dasha-bag-line{margin:.6rem 0 0;font:800 .95rem/1.3 Arial,Helvetica,sans-serif}.dasha-bag-line a{color:var(--paper,#f4eddb)}</style>';
+const HOME_FAUCET_STYLE = '<style id="dasha-home-faucet-css">#dasha-home-faucet,#dasha-faucet{width:min(36rem,calc(100% - 32px));margin:28px auto 64px}#dasha-home-faucet{background:#070608;color:#f4eddb;padding:32px 22px 28px;border-radius:28px}#dasha-home-faucet .faucet-card{width:100%;max-width:100%}#dasha-home-lede{width:min(40rem,calc(100% - 32px));margin:18px auto 8px;color:var(--paper,#f4eddb);font:900 1.05rem/1.35 Arial,Helvetica,sans-serif}.dasha-bag-line{margin:.6rem 0 0;font:800 .95rem/1.3 Arial,Helvetica,sans-serif}.dasha-bag-line a{color:var(--paper,#f4eddb)}</style>';
 const FAUCET_SCRIPT = `<script src="https://lobby.getdasha.com/client/faucet.js" integrity="${FAUCET_CLIENT_SRI}" crossorigin="anonymous" defer></script>`;
 
 /** Leftover home style id="dasha-home-play" after Play was never on home. Humans see it in view-source. Faucet CSS + HOME_FAUCET_MOUNT stay. GRWM + Watch belt stay. Distinct leftover vs #dasha-chess iframe CSS. */
@@ -3412,6 +3425,7 @@ export function polishServedSlim(html) {
   /* Leftover /chess unused JS if(!tournament)history.replaceState in tournamentAction success after create-only create-if. Keep tournamentAction(action,name) + tournamentAction('create'. Keep other replaceState. */
   out = stripChessLeftoverTournamentActionReplaceStateJs(out);
   if (!isLobbyLeftoverHomeMobileScrollPage(out) && !isChessLeftoverHomeMobileScrollPage(out)) out = unlockHomeMobileScroll(out);
+  out = fitHomeMuseChrome(out);
   /* Leftover home dropped-selector CSS after leftover body class was already DOM-stripped. Home only. Lobby/chess skip. */
   out = stripHomeLeftoverBodyBodyCss(out);
   /* Leftover home dropped-selector CSS after <h3> was never in the home DOM. Home only. */
