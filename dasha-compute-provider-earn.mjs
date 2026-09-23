@@ -80,6 +80,10 @@ export async function accrueProviderEarn(storage, { providerId, jobId, usage, no
     };
   }
 
+  // #300: a job under usage review never earns until an operator accepts it.
+  const review = await storage.get(`compute:usage-review:${jid}`);
+  if (review && review.state !== 'accepted') return { ok: false, error: 'usage review open' };
+
   const completion = Math.max(0, Math.floor(Number(usage?.completion_tokens) || 0));
   const cents = earnCentsForJob(usage);
   const earnKey = `compute:provider-earn:${pid}`;

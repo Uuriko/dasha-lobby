@@ -173,7 +173,7 @@ assert.equal((await network.fetch(new Request(`https://lobby.getdasha.com/comput
   method: "POST", headers: providerHeaders,
   body: JSON.stringify({
     provider_id: credentials.provider_id,
-    content: "accrue then stamp",
+    content: "accrue then stamp ".repeat(223), // #300: 1000 billed tokens need a ~4000-char answer
     usage: { prompt_tokens: 10, completion_tokens: 1000, total_tokens: 1010 },
   }),
 }), origin)).status, 202);

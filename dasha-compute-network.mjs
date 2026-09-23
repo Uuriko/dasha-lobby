@@ -901,9 +901,9 @@ function tokenUsage(input) {
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
 }
 
-/** Gateway-side metering (observe-only): the DO measures tokens from data it
- *  already proxies. Settlement still uses provider-reported usage; divergence
- *  over 25% is flagged for operator review, never auto-settled. */
+/** Gateway-side metering: the DO measures tokens from data it already proxies.
+ *  #300: settlement bills min(provider, gateway) per field; divergence over 25%
+ *  (or a provider over the anomaly threshold) goes to review and never auto-settles. */
 function approxTokenCount(text) {
   return Math.max(0, Math.ceil(String(text || '').length / 4));
 }
@@ -918,6 +918,26 @@ function usageDiverged(reported, measured) {
   const base = Math.max(a, b);
   return base > 0 && Math.abs(a - b) / base > 0.25;
 }
+/** #300: review trigger. Billing already takes min(provider, gateway), so only over-reporting
+ *  matters: provider completion tokens above gateway * 1.25 + 16 (slack for tiny answers and
+ *  tokenizer drift vs the chars/4 estimate). */
+export const USAGE_INFLATION_RATIO = 1.25;
+export const USAGE_INFLATION_SLACK_TOKENS = 16;
+export function usageInflated(reported, measured) {
+  const a = Math.max(0, Number(reported?.completion_tokens) || 0), b = Math.max(0, Number(measured?.completion_tokens) || 0);
+  return a > b * USAGE_INFLATION_RATIO + USAGE_INFLATION_SLACK_TOKENS;
+}
+/** #300: billed usage never exceeds what the gateway measured. Per field: min(provider, gateway). */
+export function billableUsage(reported, measured) {
+  const pick = (name) => Math.max(0, Math.min(Math.floor(Number(reported?.[name]) || 0), Math.floor(Number(measured?.[name]) || 0)));
+  const prompt_tokens = pick('prompt_tokens'), completion_tokens = pick('completion_tokens');
+  return { prompt_tokens, completion_tokens, total_tokens: prompt_tokens + completion_tokens };
+}
+/** #300: repeated divergence holds every settle for that provider until an operator clears it. */
+export const PROVIDER_ANOMALY_THRESHOLD = 3;
+export const PROVIDER_ANOMALY_WINDOW_MS = 24 * 60 * 60_000;
+export const USAGE_REVIEW_PREFIX = 'compute:usage-review:';
+export const PROVIDER_ANOMALY_PREFIX = 'compute:provider-anomaly:';
 /** Failover evidence: bounded attempt log on the job. */
 function appendAttempt(attempts, providerId, now) {
   return [...(Array.isArray(attempts) ? attempts : []), { provider_id: providerId, leased_at: now, outcome: null }].slice(-8);
@@ -1299,6 +1319,80 @@ export class ComputeNetwork {
     counters.updated_at = Date.now();
     await this.state.storage.put(FACTORY_KEY, counters);
     return counters;
+  }
+
+  /** #300: the single settle path for completed community/mixture jobs (result + stream).
+   *  Divergence is checked BEFORE any earning, replay marker or signed settlement is written.
+   *  Divergent jobs (or any job from a provider over the anomaly threshold) go to an idempotent
+   *  review record and settle nothing; the earn replay marker is only written on acceptance. */
+  async settleCompletedJob(job, provider, usage, usageGateway, now = Date.now(), { accepted = false } = {}) {
+    const storage = this.state.storage;
+    const reviewKey = `${USAGE_REVIEW_PREFIX}${job.id}`;
+    const existingReview = await storage.get(reviewKey);
+    if (existingReview && existingReview.state !== 'accepted') return { settle_state: 'review', usage_review: existingReview.reason };
+    if (existingReview && !accepted) return { settle_state: 'review', usage_review: existingReview.reason };
+    const diverged = !accepted && usageInflated(usage, usageGateway);
+    const anomalyKey = `${PROVIDER_ANOMALY_PREFIX}${provider.id}`;
+    let anomaly = await storage.get(anomalyKey);
+    if (anomaly && !(now - Number(anomaly.windowStart || 0) < PROVIDER_ANOMALY_WINDOW_MS) && !anomaly.held) anomaly = null;
+    if (diverged) {
+      anomaly = anomaly || { providerId: provider.id, count: 0, windowStart: now, jobs: [], held: false };
+      anomaly = { ...anomaly, count: Number(anomaly.count || 0) + 1, jobs: [...(anomaly.jobs || []), job.id].slice(-20), updatedAt: now };
+      if (anomaly.count >= PROVIDER_ANOMALY_THRESHOLD) anomaly.held = true;
+      await storage.put(anomalyKey, anomaly);
+    }
+    const held = !accepted && Boolean(anomaly?.held);
+    if (diverged || held) {
+      const review = {
+        jobId: job.id,
+        providerId: provider.id,
+        owner: job.owner || null,
+        route: job.route || null,
+        model: job.model || null,
+        reason: diverged ? 'usage_diverged' : 'provider_anomaly_hold',
+        usage_reported: usage,
+        usage_gateway: usageGateway,
+        state: 'open',
+        createdAt: now,
+        audit: [{ at: now, event: 'opened', reason: diverged ? 'usage_diverged' : 'provider_anomaly_hold' }],
+      };
+      await storage.put(reviewKey, review);
+      return { settle_state: 'review', usage_review: review.reason };
+    }
+    const billed = billableUsage(usage, usageGateway);
+    const accrued = await accrueProviderEarn(storage, { providerId: provider.id, jobId: job.id, usage: billed, now });
+    if (!accrued?.ok) return {};
+    const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
+    await this.recordPaidInferenceSettle({
+      owner: job.owner || null,
+      engine: job.route === 'mixture' ? 'mixture' : 'community',
+      usage: billed,
+      cents: settleCents,
+      jobId: job.id,
+      requestId: job.request_id || null,
+      model: job.model,
+      latencyMs: job.leasedAt ? now - job.leasedAt : null,
+      ...honestLoopFields(job),
+      replayKey: `job:${job.id}`,
+      now,
+    });
+    await this.referralCheckM2(job.owner, now);
+    return { usage_billed: billed, ...(settleCents > 0 ? { settle_cents: settleCents, settle_state: 'pending_operator' } : {}) };
+  }
+
+  /** #300 operator path (no public route yet): accept an open review and settle on gateway-capped usage. Idempotent. */
+  async acceptUsageReview(jobId, { now = Date.now(), reviewer = 'operator' } = {}) {
+    const storage = this.state.storage;
+    const reviewKey = `${USAGE_REVIEW_PREFIX}${jobId}`;
+    const review = await storage.get(reviewKey);
+    if (!review) return { ok: false, error: 'no review' };
+    if (review.state === 'accepted') return { ok: true, replay: true };
+    const job = await storage.get(`compute:job:${jobId}`);
+    if (!job) return { ok: false, error: 'job expired' };
+    await storage.put(reviewKey, { ...review, state: 'accepted', audit: [...(review.audit || []), { at: now, event: 'accepted', by: String(reviewer).slice(0, 64) }] });
+    const patch = await this.settleCompletedJob(job, { id: review.providerId }, review.usage_reported, review.usage_gateway, now, { accepted: true });
+    await storage.put(`compute:job:${jobId}`, { ...job, ...patch, usage_review: 'accepted' });
+    return { ok: true, replay: false, ...patch };
   }
 
   /** Paid-inference settle only (credits or community earn). Replay-safe.
@@ -2106,25 +2200,7 @@ export class ComputeNetwork {
       const usageGateway = gatewayUsage(job, answer);
       let settlePatch = {};
       if (!error && job.route !== 'self') {
-        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-        if (accrued?.ok) {
-          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
-          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
-          await this.recordPaidInferenceSettle({
-            owner: job.owner || null,
-            engine: job.route === 'mixture' ? 'mixture' : 'community',
-            usage,
-            cents: settleCents,
-            jobId: job.id,
-            requestId: job.request_id || null,
-            model: job.model,
-            latencyMs: job.leasedAt ? now - job.leasedAt : null,
-            ...honestLoopFields(job),
-            replayKey: `job:${job.id}`,
-            now,
-          });
-          await this.referralCheckM2(job.owner, now);
-        }
+        settlePatch = await this.settleCompletedJob(job, provider, usage, usageGateway, now);
       }
       if (error) await this.refundJobDebit(job, now, error);
       const residual = residualControlFields(input, job.model);
@@ -2156,25 +2232,7 @@ export class ComputeNetwork {
       const usageGateway = finishedEarly ? gatewayUsage(job, joinedStripped) : job.usage_gateway || null;
       let settlePatch = {};
       if (!streamError && input.done && job.route !== 'self') {
-        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-        if (accrued?.ok) {
-          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
-          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
-          await this.recordPaidInferenceSettle({
-            owner: job.owner || null,
-            engine: job.route === 'mixture' ? 'mixture' : 'community',
-            usage,
-            cents: settleCents,
-            jobId: job.id,
-            requestId: job.request_id || null,
-            model: job.model,
-            latencyMs: job.leasedAt ? now - job.leasedAt : null,
-            ...honestLoopFields(job),
-            replayKey: `job:${job.id}`,
-            now,
-          });
-          await this.referralCheckM2(job.owner, now);
-        }
+        settlePatch = await this.settleCompletedJob(job, provider, usage, usageGateway, now);
       }
       const failed = Boolean(streamError);
       const finished = failed || Boolean(input.done);

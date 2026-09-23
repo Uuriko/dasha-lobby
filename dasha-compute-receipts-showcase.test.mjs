@@ -41,7 +41,8 @@ assert.equal(v.ok, true, 'chain still verifies with display fields present');
 
 const net = await readFile(join(root, 'dasha-compute-network.mjs'), 'utf8');
 assert.match(net, /job\.leasedAt = now;/, 'lease timestamp recorded');
-assert.equal((net.match(/model: job\.model,\s*\n\s*latencyMs: job\.leasedAt \? now - job\.leasedAt : null,/g) || []).length, 2, 'both job settle paths pass model + latency');
+assert.equal((net.match(/settlePatch = await this\.settleCompletedJob\(job, provider, usage, usageGateway, now\);/g) || []).length, 2, 'result + chunk both settle through settleCompletedJob');
+assert.equal((net.match(/model: job\.model,\s*\n\s*latencyMs: job\.leasedAt \? now - job\.leasedAt : null,/g) || []).length, 1, 'the shared job settle path (#300 settleCompletedJob, used by result + chunk) passes model + latency');
 assert.match(net, /model: 'gpt-oss-20b',/, 'hosted settle names its model');
 
 const client = await readFile(join(root, 'verify-page-src/client.mjs'), 'utf8');
