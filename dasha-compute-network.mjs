@@ -50,6 +50,7 @@ import {
   listReceiptsForOwner,
   publicSettled24h,
   recordSettledInference,
+  SETTLED_REPLAY_PREFIX,
   sumSettled24h,
 } from './dasha-compute-settled.mjs';
 import {
@@ -354,6 +355,22 @@ function withV1Cors(res, origin) {
 
 
 const FACTORY_KEY = 'compute:factory:v0';
+/** #299: internal-only DO path for the hosted-chat factory bump. Never listed in computeApi(). */
+export const HOSTED_FACTORY_BUMP_PATH = '/compute/api/internal/hosted-factory-bump';
+const HOSTED_SPEND_ID_RE = /^hosted_[A-Za-z0-9_-]{12,32}$/;
+/** Hosted Ask caps: <=6,000 input chars (~1,500 tokens + system) and max_tokens 256. */
+const HOSTED_MAX_TOKENS = 4096;
+
+/** Tokens for a hosted settle from worker-computed usage; null when absent or out of bounds. */
+function hostedAssertedTokens(usage) {
+  if (!usage || typeof usage !== 'object') return null;
+  const total = Number(usage.total_tokens);
+  const prompt = Number(usage.prompt_tokens);
+  const completion = Number(usage.completion_tokens);
+  const n = Number.isFinite(total) ? total : (Number.isFinite(prompt) && Number.isFinite(completion) ? prompt + completion : NaN);
+  if (!Number.isFinite(n) || n < 0 || n > HOSTED_MAX_TOKENS || Math.floor(n) !== n) return null;
+  return n;
+}
 
 function emptyFactoryCounters() {
   return { jobs: { hosted: 0, community: 0, mixture: 0, failed: 0 }, models: {} };
@@ -1291,6 +1308,50 @@ export class ComputeNetwork {
     }
     return res;
   }
+  /** #299: hosted-chat factory bump + optional paid settle. Only reachable from the worker's own
+   *  bumpHostedFactory(). The settlement is derived from the server-side charged record
+   *  (compute:credit-spend:<owner>:<request_id>, written by debitCredits). Caller cents/usage/request
+   *  facts are checked against that record, never trusted. Validation happens before any write:
+   *  mismatch or missing record -> 409 with no write; replay -> 200 with no write. */
+  async recordHostedFactoryBump(input = {}, now = Date.now()) {
+    const failed = input?.failed === true;
+    const settle = !failed && input?.settle && typeof input.settle === 'object' ? input.settle : null;
+    if (!settle) {
+      await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed });
+      await this.bumpMetric('ask:hosted:complete');
+      return json({ ok: true, settled: false }, 202, null, false);
+    }
+    const reject = (reason) => json({ error: 'settle rejected', reason }, 409, null, false);
+    const owner = String(settle.owner || '').trim();
+    const requestId = String(settle.request_id || '');
+    if (!owner || !HOSTED_SPEND_ID_RE.test(requestId)) return reject('bad assertion');
+    const charged = await this.state.storage.get(`compute:credit-spend:${owner}:${requestId}`);
+    const chargedCents = Math.max(0, Math.floor(Number(charged?.cents) || 0));
+    if (!charged || chargedCents <= 0) return reject('no charged record');
+    if (charged.reason !== 'hosted-ask') return reject('charged record reason mismatch');
+    if (charged.refundedAt) return reject('charged record refunded');
+    if (settle.cents != null && Math.floor(Number(settle.cents)) !== chargedCents) return reject('cents mismatch');
+    const tokens = hostedAssertedTokens(settle.usage);
+    if (tokens == null) return reject('usage mismatch');
+    const replayKey = `hosted:${requestId}`;
+    if (await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}${replayKey}`)) {
+      return json({ ok: true, replay: true, settled: false }, 200, null, false);
+    }
+    await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed: false });
+    const res = await this.recordPaidInferenceSettle({
+      owner,
+      engine: 'hosted',
+      usage: { total_tokens: tokens },
+      cents: chargedCents,
+      model: 'gpt-oss-20b',
+      requestId,
+      replayKey,
+      now,
+    });
+    await this.bumpMetric('ask:hosted:complete');
+    return json({ ok: true, settled: Boolean(res?.ok && !res.replay), receipt_id: res?.receipt?.id || null }, 202, null, false);
+  }
+
   async factoryPayload(now = Date.now()) {
     await this.prune(now);
     const counters = await this.loadFactoryCounters();
@@ -1803,29 +1864,15 @@ export class ComputeNetwork {
     if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && (request.method === 'GET' || request.method === 'HEAD')) {
       return maybeHead(request, json(await this.factoryPayload(now), 200, allowedOrigin || '*', credentials));
     }
-    if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && request.method === 'POST') {
-      // Internal hosted bump from computeApi via DO stub. Low-sensitivity counters; rate-limited.
-      const input = await body(request);
-      if (String(input?.source || '') !== 'hosted-chat') return json({ error: 'not found' }, 404, allowedOrigin, credentials);
+    if (path === HOSTED_FACTORY_BUMP_PATH && request.method === 'POST') {
+      // #299: internal-only. computeApi() never forwards this path (public callers get 404 there),
+      // and a request that arrived through Cloudflare's edge carries CF-Connecting-IP, which the
+      // worker-built bumpHostedFactory() request never does. Settlement facts come from the
+      // server-side charged record, never from the body.
+      if (request.headers.get('cf-connecting-ip')) return json({ error: 'not found' }, 404, allowedOrigin, credentials);
       if (!takeRate(this.rates, 'factory:hosted-bump', 120, 60_000)) return json({ error: 'rate limited' }, 429, allowedOrigin, credentials);
-      const failed = input.failed === true;
-      await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed });
-      const settle = input?.settled && typeof input.settled === 'object' ? input.settled : null;
-      if (!failed && settle && settle.paid === true) {
-        await this.recordPaidInferenceSettle({
-          owner: settle.owner || null,
-          engine: 'hosted',
-          usage: settle.usage || null,
-          tokens: settle.tokens,
-          cents: settle.cents != null ? settle.cents : HOSTED_ASK_PRICE_CENTS,
-          model: 'gpt-oss-20b',
-          requestId: settle.request_id || null,
-          replayKey: settle.replay_key || (settle.request_id ? `hosted:${settle.request_id}` : null),
-          now: Date.now()
-        });
-      }
-      await this.bumpMetric('ask:hosted:complete');
-      return json({ ok: true }, 202, allowedOrigin, credentials);
+      const input = await body(request);
+      return this.recordHostedFactoryBump(input);
     }
 
     // Funnel telemetry (task 22): client beacon intake. anon_id is a client-local UUID used ONLY
@@ -3261,14 +3308,16 @@ async function bumpHostedFactory(env, { failed = false, settled = null } = {}) {
   try {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return;
-    await stub.fetch(new Request('https://lobby.getdasha.com/compute/api/factory', {
+    const settle = !failed && settled && typeof settled === 'object' && settled.request_id ? {
+      owner: settled.owner || null,
+      request_id: settled.request_id,
+      cents: settled.cents,
+      usage: settled.usage || null,
+    } : null;
+    await stub.fetch(new Request(`https://lobby.getdasha.com${HOSTED_FACTORY_BUMP_PATH}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        source: 'hosted-chat',
-        failed: failed === true,
-        ...(settled && typeof settled === 'object' ? { settled } : {})
-      })
+      body: JSON.stringify({ failed: failed === true, ...(settle ? { settle } : {}) }),
     }));
   } catch {}
 }
@@ -3346,6 +3395,8 @@ export async function computeApi(request, env, allowedOrigin) {
       note: 'counters count every attempted job by route, incl. failures and free guest calls; the receipt chain records settled paid jobs only; prompts not included; settled_24h = paid-inference only',
     }, 200, allowedOrigin || '*', credentials));
   }
+  // #299: the public factory route is read-only. Any other method stops here, before the DO.
+  if (path === '/compute/api/factory' || path === '/compute/api/factory/') return computeApiError('not found', 404, allowedOrigin, credentials);
   if ((path === '/compute/api/v1' || path === '/compute/api/v1/') && (request.method === 'GET' || request.method === 'HEAD')) {
     return computeV1Gateway(request, allowedOrigin, credentials);
   }
@@ -3371,7 +3422,7 @@ export async function computeApi(request, env, allowedOrigin) {
     kitSigUrl.searchParams.set('url', COMPUTE_KIT_MANIFEST.url);
     return kitStub.fetch(new Request(kitSigUrl.href, request));
   }
-  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path === '/compute/api/org-enroll' || path.startsWith('/compute/api/org-enroll/') || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path === '/compute/api/org-enroll' || path.startsWith('/compute/api/org-enroll/') || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
     try {
