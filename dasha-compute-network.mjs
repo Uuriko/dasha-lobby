@@ -93,6 +93,9 @@ import {
   parseGuestApiToken,
   takeGuestRate,
   guestRateInfo,
+  durableGuestRateInfo,
+  withGuestRateLock,
+  pruneGuestRates,
   COMPUTE_GUEST_KEYS_PATH,
   GUEST_KEY_CHAT_MAX,
   GUEST_KEY_CHAT_WINDOW_MS,
@@ -1093,7 +1096,14 @@ export class ComputeNetwork {
   constructor(state, env) { this.state = state; this.env = env; this.rates = new Map(); }
 
   /** Expire / requeue jobs. Poll skips night + provider GC — those are not lease-hot. */
+  guestRateSalt() { return String(this.env?.GUEST_RATE_SALT || this.env?.LOBBY_SESSION_SECRET || ''); }
+
   async prune(now = Date.now(), opts = {}) {
+    // #301: bounded retention for durable guest-rate rows (at most one sweep per 10 min per instance).
+    if (!(this.guestRatePrunedAt > now - 10 * 60_000)) {
+      this.guestRatePrunedAt = now;
+      try { await pruneGuestRates(this.state.storage, now); } catch {}
+    }
     const runNight = opts.night !== false;
     const sweepProviders = opts.providers !== false;
     const jobs = [];
@@ -1526,7 +1536,7 @@ export class ComputeNetwork {
     if (isComputeGuestKeyPath(path)) {
       const guestProbe = computeGuestKeyResponse(request);
       if (guestProbe) return guestProbe;
-      return handleGuestKeyWrite(request, { storage: this.state.storage, rates: this.rates });
+      return handleGuestKeyWrite(request, { storage: this.state.storage, rates: this.rates, salt: this.guestRateSalt() });
     }
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const res = json(computeApiRootBody(this.env), 200, allowedOrigin || '*', credentials);
@@ -1732,7 +1742,8 @@ export class ComputeNetwork {
       if (!key) return v1err(invalidApiKeyMessage(request), 401, 'authentication_error');
       if (!guestKeyAllows(key, 'chat')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
       if (isGuestApiKey(key)) {
-        const guestRate = guestRateInfo(this.rates, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS);
+        // #301: durable, serialized - survives DO eviction and redeploy.
+        const guestRate = await withGuestRateLock(this.state.storage, () => durableGuestRateInfo(this.state.storage, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS, { now: Date.now(), salt: this.guestRateSalt() }));
         if (!guestRate.ok) {
           return v1err('guest key rate limited; try again shortly', 429, 'invalid_request_error', {
             'Retry-After': String(guestRate.retryAfterSeconds),
