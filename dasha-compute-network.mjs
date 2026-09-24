@@ -453,7 +453,9 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
       method: 'POST',
       note: '24h dgk_ chat+models. Copy once.',
     },
-    errors: 'openai + status/reason/hint/next',
+    // #320: two envelopes by design - v1 is the API-consumer contract (OpenAI-style);
+    // site routes feed the first-party UI which reads body.error as a string.
+    errors: "v1 routes: openai + status/reason/hint/next; site routes: flat {error}; statuses: 401 = no credentials, 403 = origin required or authenticated-but-not-allowed",
     // Brain / Hands / Files. Counts are not invented here — Hands points at network.providers_online.
     layers: {
       brain: {
