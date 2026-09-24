@@ -1,4 +1,4 @@
-{
+export default {
   "commit": "06792c184460ae0032048b20a6a60b3b1549b52b",
   "manifest": {
     "artifact": "dasha-compute-open-alpha.tar.gz",
@@ -7,4 +7,4 @@
     "sourceFileCount": 38,
     "version": "0.3.0"
   }
-}
+};

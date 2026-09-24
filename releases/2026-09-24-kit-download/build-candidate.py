@@ -6,11 +6,11 @@ root=Path(__file__).resolve().parents[2]
 baseline=root/'releases/2026-09-24-dasha-reconciliation/worker.mjs'
 raw=baseline.read_bytes()
 assert hashlib.sha256(raw).hexdigest()=='8f6c266daa36fb8476710cd13bc434756719cd8feee1721c1accef02587648fe'
-config=json.loads((root/'dasha-compute-download-release.json').read_text())
+config=json.loads((root/'dasha-compute-download-release.mjs').read_text().removeprefix('export default ').strip().removesuffix(';'))
 assert len(config['commit'])==40 and int(config['commit'],16)>=0
 assert len(config['manifest']['sha256'])==64
 helper=(root/'dasha-compute-download.mjs').read_text()
-helper=helper.replace("import release from './dasha-compute-download-release.json' with { type: 'json' };",'const release = '+json.dumps(config)+';').replace('export async function','async function')
+helper=helper.replace("import release from './dasha-compute-download-release.mjs';",'const release = '+json.dumps(config)+';').replace('export async function','async function')
 needle='    {\n      const room = await roomDiscoveryResponse(request, { fetch: env?.fetch || globalThis.fetch });'
 s=raw.decode();assert s.count(needle)==1
 s=helper+'\n'+s.replace(needle,'    const kitRelease = await computeDownloadResponse(request);\n    if (kitRelease) return kitRelease;\n'+needle)

@@ -1,4 +1,4 @@
-import release from './dasha-compute-download-release.json' with { type: 'json' };
+import release from './dasha-compute-download-release.mjs';
 
 /** Four immutable release surfaces; unrelated assets retain their existing owner. */
 export async function computeDownloadResponse(request, fetcher = globalThis.fetch, config = release) {
