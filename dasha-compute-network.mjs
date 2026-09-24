@@ -1,4 +1,4 @@
-import { authSessionFromRequest, randomUrlToken } from './dasha-lobby-x.mjs';
+import { authSessionFromRequest, sessionClaims, requireStepUp, stepUpRequiredBody, randomUrlToken } from './dasha-lobby-x.mjs';
 import {
   CREDIT_DEST,
   CREDIT_DISCOUNTS,
@@ -1723,6 +1723,12 @@ export class ComputeNetwork {
       if (request.method === 'GET' || request.method === 'HEAD') {
         return maybeHead(request, json({ keys: keys.map(key => apiKeyPublicView(key, now)) }, 200, allowedOrigin, true));
       }
+      // Step-up auth (task 18; design PR #291): creating a key mints a spend
+      // credential the attacker can take off-device — demand a fresh proof.
+      // DELETE (revocation) intentionally needs no step-up: the owner's
+      // recovery path from a stolen key must stay one click.
+      const keyClaims = await sessionClaims(this.env, request);
+      if (!requireStepUp(keyClaims).ok) return json(stepUpRequiredBody(keyClaims), 403, allowedOrigin, true);
       if (keys.length >= 10) return json({ error: 'API key limit reached' }, 409, allowedOrigin, true);
       const input = await body(request), slug = randomUrlToken(9), id = `key_${slug}`, token = `dsk_${slug}.${randomUrlToken(24)}`, name = String(input.name || '').trim().slice(0, 64) || 'Developer key';
       const limitCents = Object.prototype.hasOwnProperty.call(input, 'limit_cents') ? parseApiKeyLimitCents(input.limit_cents) : API_KEY_LIMIT_DEFAULT_CENTS;
@@ -2653,6 +2659,10 @@ export class ComputeNetwork {
       if (!allowedOrigin) return originRequired();
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
+      // Step-up auth (task 18; design PR #291): changing where earnings land
+      // is the #1 session-hijack payout — demand a fresh interactive proof.
+      const prefClaims = await sessionClaims(this.env, request);
+      if (!requireStepUp(prefClaims).ok) return json(stepUpRequiredBody(prefClaims), 403, allowedOrigin, true);
       const input = await body(request);
       const norm = normalizePayoutPref(input);
       if (!norm.ok) return json({ error: norm.error }, 400, allowedOrigin, true);
@@ -2665,6 +2675,10 @@ export class ComputeNetwork {
       if (!allowedOrigin) return originRequired();
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
+      // Step-up auth (task 18; design PR #291): requesting a payout initiates
+      // money movement — demand a fresh interactive proof.
+      const payoutClaims = await sessionClaims(this.env, request);
+      if (!requireStepUp(payoutClaims).ok) return json(stepUpRequiredBody(payoutClaims), 403, allowedOrigin, true);
       if (!takeRate(this.rates, `provider-payout:${owner}`, 5)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
       const input = await body(request);
       const prefStored = await this.state.storage.get(`compute:provider-payout-pref:${owner}`);
