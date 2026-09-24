@@ -170,12 +170,19 @@ export function buildLedgerFailedRow({ jobId, failureReason, durationMs, created
   };
 }
 
-export function buildLedgerRefundRow({ receiptId, jobId, refundCents } = {}) {
+export function buildLedgerRefundRow({ receiptId, jobId, refundCents, requestId = null, chargeBasis = null, hostedInferenceCostCents = null, hostedInferenceCostBasis = null } = {}) {
+  const basis = chargeBasis && LEDGER_CHARGE_BASES.includes(chargeBasis) ? chargeBasis : null;
+  const cost = hostedInferenceCostCents == null || !Number.isFinite(Number(hostedInferenceCostCents)) ? null : usdMicrosFromCents(hostedInferenceCostCents);
+  const costBasis = cost != null && LEDGER_HOSTED_COST_BASES.includes(hostedInferenceCostBasis) ? hostedInferenceCostBasis : null;
   return {
     receipt_id: receiptId || null,
     job_id: jobId || null,
+    request_id: typeof requestId === 'string' && requestId ? requestId : null,
     status: 'refunded',
     refund_usd_micros: usdMicrosFromCents(refundCents),
+    charge_basis: basis,
+    hosted_inference_cost_usd_micros: cost,
+    hosted_inference_cost_basis: costBasis,
   };
 }
 
