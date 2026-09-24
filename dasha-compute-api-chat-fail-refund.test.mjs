@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { HOSTED_ASK_PRICE_CENTS } from './dasha-compute-credits.mjs';
 import { ComputeNetwork } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
+import { LEDGER_EVENT_PREFIX } from './dasha-compute-ledger.mjs';
 
 assert.equal(HOSTED_ASK_PRICE_CENTS, 5);
 
@@ -23,6 +24,10 @@ const storage = {
   async list({ prefix = '' } = {}) { return new Map([...rows].filter(([k]) => k.startsWith(prefix))); },
 };
 const network = new ComputeNetwork({ storage }, env);
+const refundRowFor = (jobId) => [...rows.entries()]
+  .filter(([key]) => key.startsWith(LEDGER_EVENT_PREFIX))
+  .map(([, row]) => row)
+  .find((row) => row.kind === 'job_event' && row.status === 'refunded' && row.job_id === jobId);
 const origin = 'https://www.getdasha.com';
 const session = await createSessionToken(env, { xId: 'refund-user', handle: 'refund_user' });
 const cookie = { Cookie: `${COOKIE}=${session}`, Origin: origin, 'Content-Type': 'application/json' };
@@ -90,6 +95,13 @@ async function leaseNext() {
   assert.equal(await keySpend(), 0, 'fail refunds key spend cap');
   const spend = rows.get(`compute:credit-spend:x:refund-user:api:${leased.job.id}`);
   assert.ok(spend?.refundedAt, 'spend row marked refunded');
+  const refundRow = refundRowFor(leased.job.id);
+  assert.ok(refundRow, 'refund ledger row written');
+  assert.equal(refundRow.refund_usd_micros, 50_000);
+  assert.equal(refundRow.buyer_charge_usd_micros, 50_000, 'never-settled refund nets to zero on its own row');
+  assert.equal(refundRow.refund_of, 'unsettled_debit');
+  assert.equal(refundRow.charge_basis, 'debited');
+  assert.equal(refundRow.request_id, `api:${leased.job.id}`);
 }
 
 {
@@ -162,3 +174,19 @@ async function leaseNext() {
 
 assert.equal([...rows.keys()].some((k) => /email|phone|ssn/i.test(k)), false, 'no people-data keys');
 console.log('dasha-compute-api-chat-fail-refund: PASS');
+
+{
+  // settled receipt already exists -> refund row keeps buyer_charge 0 (no double-count), no refund_of
+  const settleId = 'job_settledrace01';
+  await storage.put(`compute:settled-replay:job:${settleId}`, { id: 'rcpt_settledrace' });
+  await storage.put(`compute:credit-spend:x:refund-user:api:${settleId}`, { cents: 5, at: now, reason: 'api-chat' });
+  const res = await network.refundJobDebit({ id: settleId, owner: 'x:refund-user', debitRequestId: `api:${settleId}`, debitCents: 5, status: 'failed' });
+  assert.equal(res.ok, true);
+  assert.equal(res.replay, false);
+  const rr = refundRowFor(settleId);
+  assert.ok(rr, 'refund row written for settled-race job');
+  assert.equal(rr.buyer_charge_usd_micros, 0);
+  assert.equal(rr.refund_of, null);
+  assert.equal(rr.receipt_id, 'rcpt_settledrace');
+  assert.equal(rr.refund_usd_micros, 50_000);
+}

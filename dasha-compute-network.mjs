@@ -3398,8 +3398,18 @@ export class ComputeNetwork {
     if (refunded.ok && !refunded.replay) {
       try {
         const settledReceipt = await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}job:${job.id}`);
+        const debitCents = job.debitCents != null ? Number(job.debitCents) : null;
+        // Net-zero (traction, #324 follow-up): a refund for a job that never settled carries
+        // buyer_charge = refund so the row nets to 0 on its own; a settled receipt means the
+        // charge was already counted, so buyer_charge stays 0. refund_of is a tracing label only.
         await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerRefundRow({
-          receiptId: settledReceipt?.id || null, jobId: job.id, refundCents: job.debitCents != null ? Number(job.debitCents) : null,
+          receiptId: settledReceipt?.id || null,
+          jobId: job.id,
+          requestId: job.debitRequestId || null,
+          refundCents: debitCents,
+          chargeBasis: 'debited',
+          buyerChargeCents: settledReceipt ? 0 : debitCents,
+          refundOf: settledReceipt ? null : 'unsettled_debit',
         }), now);
       } catch {}
     }
