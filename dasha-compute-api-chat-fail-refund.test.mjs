@@ -155,6 +155,23 @@ async function leaseNext() {
   }, Date.now(), 'replay');
   assert.equal(again.ok, false);
   assert.equal(balance(), 15, 'complete job cannot refund');
+  // #322 refund/settle race guards
+  const spendRow = rows.get(`compute:credit-spend:x:refund-user:api:${leased.job.id}`);
+  assert.ok(spendRow?.settledAt, 'settle stamps the debit spend row');
+  const settledRefund = await network.refundCredits('x:refund-user', { requestId: `api:${leased.job.id}`, now: Date.now(), reason: 'race' });
+  assert.equal(settledRefund.ok, false);
+  assert.equal(settledRefund.error, 'settled');
+  assert.equal(balance(), 15, 'refundCredits rejects a settled spend row');
+  const stale = await network.refundJobDebit({
+    id: leased.job.id,
+    owner: 'x:refund-user',
+    debitRequestId: `api:${leased.job.id}`,
+    debitKeyId: keyBody.id,
+    debitCents: 5,
+    status: 'leased', // stale caller read: the provider settled between read and refund
+  }, Date.now(), 'cancelled');
+  assert.equal(stale.ok, false);
+  assert.equal(balance(), 15, 'fresh complete status wins over the stale caller read');
 }
 
 {

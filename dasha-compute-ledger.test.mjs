@@ -336,14 +336,14 @@ console.log('dasha-compute-ledger: PASS');
   rows.set(`compute:credit-spend:${srOwner}:hosted_settledref01`, { cents: 5, at: 1000, reason: 'hosted-ask' });
   const settleRes = await network.recordHostedFactoryBump({ failed: false, settle: { owner: srOwner, request_id: 'hosted_settledref01', cents: 5, usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 }, created_at_ms: 1000 } });
   assert.equal(settleRes.status, 202);
+  // #322: settle wins the race. A refund request landing after the settle rejects with
+  // 'settled' and writes no refund row; the buyer keeps the settled receipt.
   const srRefund = await network.recordHostedFactoryBump({ failed: true, refund: { owner: srOwner, request_id: 'hosted_settledref01', reason: 'hosted-cut', usage: null } });
-  assert.equal((await srRefund.json()).refund.ok, true);
+  const srOutcome = (await srRefund.json()).refund;
+  assert.equal(srOutcome.ok, false);
+  assert.equal(srOutcome.error, 'settled');
   const srRow = ledgerRows('job_event').find((r) => r.status === 'refunded' && r.request_id === 'hosted_settledref01');
-  assert.equal(srRow.buyer_charge_usd_micros, 0);
-  assert.equal(srRow.refund_of, null);
-  assert.equal(srRow.receipt_id, null);
-  assert.equal(srRow.charge_basis, 'debited');
-  assert.equal(srRow.refund_usd_micros, 50_000);
+  assert.equal(srRow, undefined);
 
   // economy invariant: per request_id, sum(buyer_charge - refund) is 0 or the charge, never negative
   const byReq = new Map();
