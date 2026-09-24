@@ -244,15 +244,13 @@ assert.equal(undSettled[0].charge_basis, null);
 assert.equal(undSettled[0].buyer_charge_usd_micros, null);
 assert.equal(ledgerRows('anomaly').filter((r) => r.reason === 'charge_basis_undetermined').length, 1);
 
-// refund -> new row pointing at the original receipt; originals untouched
+// #322/#328 (economy + traction): settle wins. This job settled above (replay marker
+// 'job:job_ledgertest'), so the late refund rejects - no refund row, originals untouched.
 rows.set('compute:credit-spend:ledger_owner:api:job_ledgertest', { cents: 5, reason: 'api-chat', createdAt: settleNow });
 const refunded = await network.refundJobDebit({ id: 'job_ledgertest', owner: 'ledger_owner', debitRequestId: 'api:job_ledgertest', debitKeyId: minted.id, debitCents: 5, status: 'failed' }, settleNow + 1000, 'failed');
-assert.equal(refunded.ok, true);
-assert.equal(refunded.replay, false);
-const refundRows = ledgerRows('job_event').filter((r) => r.status === 'refunded');
-assert.equal(refundRows.length, 1);
-assert.equal(refundRows[0].receipt_id, res.receipt.id);
-assert.equal(refundRows[0].refund_usd_micros, 50_000);
+assert.equal(refunded.ok, false);
+assert.equal(refunded.error, 'settled');
+assert.equal(ledgerRows('job_event').filter((r) => r.status === 'refunded').length, 0, 'no refund row once settled');
 
 // export endpoint: 404 without token, 401 wrong token, 200 + pagination with token
 const noTokenNet = new ComputeNetwork({ storage }, { ...env, LEDGER_EXPORT_TOKEN: '' });
@@ -336,14 +334,14 @@ console.log('dasha-compute-ledger: PASS');
   rows.set(`compute:credit-spend:${srOwner}:hosted_settledref01`, { cents: 5, at: 1000, reason: 'hosted-ask' });
   const settleRes = await network.recordHostedFactoryBump({ failed: false, settle: { owner: srOwner, request_id: 'hosted_settledref01', cents: 5, usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 }, created_at_ms: 1000 } });
   assert.equal(settleRes.status, 202);
+  // #322: settle wins the race. A refund request landing after the settle rejects with
+  // 'settled' and writes no refund row; the buyer keeps the settled receipt.
   const srRefund = await network.recordHostedFactoryBump({ failed: true, refund: { owner: srOwner, request_id: 'hosted_settledref01', reason: 'hosted-cut', usage: null } });
-  assert.equal((await srRefund.json()).refund.ok, true);
+  const srOutcome = (await srRefund.json()).refund;
+  assert.equal(srOutcome.ok, false);
+  assert.equal(srOutcome.error, 'settled');
   const srRow = ledgerRows('job_event').find((r) => r.status === 'refunded' && r.request_id === 'hosted_settledref01');
-  assert.equal(srRow.buyer_charge_usd_micros, 0);
-  assert.equal(srRow.refund_of, null);
-  assert.equal(srRow.receipt_id, null);
-  assert.equal(srRow.charge_basis, 'debited');
-  assert.equal(srRow.refund_usd_micros, 50_000);
+  assert.equal(srRow, undefined);
 
   // economy invariant: per request_id, sum(buyer_charge - refund) is 0 or the charge, never negative
   const byReq = new Map();

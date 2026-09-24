@@ -1464,6 +1464,7 @@ export class ComputeNetwork {
       cents: settleCents,
       jobId: job.id,
       requestId: job.request_id || null,
+      debitRequestId: job.debitRequestId || null,
       model: job.model,
       latencyMs: job.leasedAt ? now - job.leasedAt : null,
       ...honestLoopFields(job),
@@ -1513,6 +1514,21 @@ export class ComputeNetwork {
   async recordPaidInferenceSettle(input = {}) {
     const { ledger = null, ...settleInput } = input;
     const res = await recordSettledInference(this.state.storage, settleInput);
+    // #322/#328: mark the debit spend row settled IMMEDIATELY, before receipt chain signing
+    // (crypto awaits) - a refund landing in that window must see the stamp. Hosted passes
+    // requestId = the spend id; the v1 path threads debitRequestId.
+    if (res.ok && !res.replay && input.owner) {
+      const stampId = input.debitRequestId || input.requestId;
+      if (stampId) {
+        try {
+          const spendKey = `compute:credit-spend:${String(input.owner)}:${String(stampId).slice(0, 80)}`;
+          const spend = await this.state.storage.get(spendKey);
+          if (spend && !spend.settledAt && !spend.refundedAt) {
+            await this.state.storage.put(spendKey, { ...spend, settledAt: Number(input.now) || Date.now() });
+          }
+        } catch { /* guard stamp only; the settled receipt is the record */ }
+      }
+    }
     if (res.ok && !res.replay) {
       try {
         const key = await headsSigningKey(this.env);
@@ -3366,6 +3382,13 @@ export class ComputeNetwork {
     const balKey = `compute:credit-balance:${who}`;
     const readBal = async () => Math.max(0, Math.floor(Number((await this.state.storage.get(balKey))?.cents) || 0));
     if (prior.refundedAt) return { ok: true, replay: true, refunded_cents: 0, balance_cents: await readBal() };
+    // #322: a settled debit must never refund (the buyer keeps the settled receipt; settle wins the race).
+    if (prior.settledAt) return { ok: false, error: 'settled', refunded_cents: 0, balance_cents: await readBal() };
+    // Traction #328: the settled replay marker is written inside recordSettledInference, before
+    // any other settle bookkeeping - probe it so no interleave window can slip a refund through.
+    // Hosted replay keys are `hosted:<spendId>`; v1 debit ids are `api:<jobId>` -> `job:<jobId>`.
+    if (await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}hosted:${rid}`)) return { ok: false, error: 'settled', refunded_cents: 0, balance_cents: await readBal() };
+    if (rid.startsWith('api:') && await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}job:${rid.slice(4)}`)) return { ok: false, error: 'settled', refunded_cents: 0, balance_cents: await readBal() };
     const bal = await readBal();
     await this.state.storage.put(balKey, { owner: who, cents: bal + cents, updatedAt: now });
     await this.state.storage.put(spendKey, { ...prior, refundedAt: now, refund_reason: String(reason || 'refund').slice(0, 80) });
@@ -3393,6 +3416,12 @@ export class ComputeNetwork {
 
   async refundJobDebit(job, now = Date.now(), reason = 'failed') {
     if (!job?.debitRequestId || !job.owner || job.status === 'complete') return { ok: false };
+    // #322: the caller's job row can be stale (read before a provider settle landed). Re-read it
+    // so a just-completed job bails here; the settledAt stamp on the spend row backstops the rest.
+    if (job.id) {
+      const fresh = await this.state.storage.get(`compute:job:${job.id}`);
+      if (fresh?.status === 'complete') return { ok: false, settled: true };
+    }
     const refunded = await this.refundCredits(job.owner, { requestId: job.debitRequestId, now, reason });
     if (refunded.ok && !refunded.replay && job.debitKeyId && job.debitCents) {
       await this.refundApiKeySpend(job.debitKeyId, job.debitCents, now);
