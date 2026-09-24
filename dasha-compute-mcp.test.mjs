@@ -41,7 +41,7 @@ const MCP_PATHS = [
   '/compute/.well-known/mcp.json',
 ];
 const LIVE_FLASH = /Hosted Flash is live|Flash is live|now offering Flash|Flash model id/i;
-const TOOL_NAMES = ['healthz', 'models', 'network', 'guest-keys', 'chat.completions'];
+const TOOL_NAMES = ['healthz', 'models', 'network', 'guest-keys', 'chat.completions', 'drives'];
 
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/, 'worker must not mention plugin.jup.ag');
 assert.match(workerSrc, /POTTER_COMPUTE_MCP_JSON_308_PATHS/, 'leftover /mcp.json → catalog');
