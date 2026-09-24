@@ -42,10 +42,8 @@
     "MINT": "53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump",
     "FAUCET_COOLDOWN_DAYS": "1"
   },
-  "ai": { "binding": "AI" },
-  // Files layer. Binding name DRIVES. Create the bucket before deploy:
-  //   npx wrangler@3.114.15 r2 bucket create dasha-compute-drives
-  "r2_buckets": [
-    { "binding": "DRIVES", "bucket_name": "dasha-compute-drives" }
-  ]
+  "ai": { "binding": "AI" }
+  // Files layer stays unbound on this tip. Missing env.DRIVES fails loud (503 drives_unavailable).
+  // After Potter enables R2 and creates bucket dasha-compute-drives, a follow-up PR re-adds:
+  //   "r2_buckets": [{ "binding": "DRIVES", "bucket_name": "dasha-compute-drives" }]
 }

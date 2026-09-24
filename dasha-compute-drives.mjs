@@ -5,7 +5,8 @@
  *
  * Binding: DRIVES
  * Bucket: dasha-compute-drives
- * Wrangler: r2_buckets in dasha-lobby-wrangler.jsonc and dasha-lobby-wrangler.deploy.jsonc
+ * Wrangler: dasha-lobby-wrangler.jsonc still lists r2_buckets DRIVES.
+ * dasha-lobby-wrangler.deploy.jsonc omits that binding until bucket dasha-compute-drives exists.
  *
  * v0: 8 MiB per object, 1 GiB soft quota per key owner. Unbound R2 fails loud drives_unavailable.
  * Chat jobs do not write bytes here. Put bytes on the Drives API. Snapshots are metadata only.

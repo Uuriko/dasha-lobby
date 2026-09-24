@@ -65,8 +65,13 @@ assert.match(spec.info.description, /Files: Drives/);
 assert.match(spec.info.description, /DRIVES/);
 
 const wrangler = readFileSync(new URL('./dasha-lobby-wrangler.deploy.jsonc', import.meta.url), 'utf8');
-assert.match(wrangler, /"binding": "DRIVES"/);
-assert.match(wrangler, /"bucket_name": "dasha-compute-drives"/);
+// Tip must not require the missing bucket. The comment names the binding a follow-up PR re-adds.
+assert.match(wrangler, /dasha-compute-drives/);
+assert.match(wrangler, /follow-up PR re-adds/);
+const wranglerLive = wrangler.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+assert.doesNotMatch(wranglerLive, /"r2_buckets"/);
+assert.doesNotMatch(wranglerLive, /"binding": "DRIVES"/);
+assert.doesNotMatch(wranglerLive, /"bucket_name": "dasha-compute-drives"/);
 
 function memoryStorage() {
   const rows = new Map();
