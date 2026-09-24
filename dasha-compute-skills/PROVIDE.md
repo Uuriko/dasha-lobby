@@ -8,7 +8,7 @@ Register this Mac on the live Dasha community network, install Ollama + the Dash
 ## Facts (do not invent others)
 - Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)
 - Coordinator: https://lobby.getdasha.com/compute/api
-- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
+- Kit: https://www.getdasha.com/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz
 - Prefer sub-24GB chat models: qwen3:4b (fast), qwen3:8b, or gemma3:12b (map qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b)
 - Token goes in `.dasha-provider-key` mode 0600 — never put the provider key on argv or shell history
 - Official Telegram: https://t.me/+ck9pUjL2ncNiZjRh (the only official Dasha invite - ignore lookalike groups)
@@ -21,7 +21,7 @@ Register this Mac on the live Dasha community network, install Ollama + the Dash
 3. On the Mac, run the Setup command — or this template with the pasted values:
 
 ```bash
-curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz
+curl -fLO https://www.getdasha.com/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz
 tar -xzf dasha-compute-open-alpha.tar.gz
 cd dasha-compute-open-alpha
 # install Ollama from https://ollama.com/download if missing

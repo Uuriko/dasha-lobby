@@ -19,7 +19,7 @@ assert.equal(provideDisk, PROVIDE_SKILL_MD, "PROVIDE skill embed matches disk");
 const DUAL_MODEL_MAP = "DASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b";
 
 const SETUP_CRITICAL = [
-  "curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz",
+  "curl -fLO https://www.getdasha.com/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz",
   "tar -xzf dasha-compute-open-alpha.tar.gz",
   "cd dasha-compute-open-alpha",
   "ollama pull qwen3:4b",
@@ -29,7 +29,7 @@ const SETUP_CRITICAL = [
 ];
 
 const PROVIDE_CRITICAL = [
-  "curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz",
+  "curl -fLO https://www.getdasha.com/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz",
   "tar -xzf dasha-compute-open-alpha.tar.gz",
   "cd dasha-compute-open-alpha",
   "ollama pull qwen3:4b",

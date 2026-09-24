@@ -3,8 +3,9 @@ import release from './dasha-compute-download-release.mjs';
 /** Four immutable release surfaces; unrelated assets retain their existing owner. */
 export async function computeDownloadResponse(request, fetcher = globalThis.fetch, config = release) {
   const pathname = new URL(request.url).pathname;
-  const archivePath = '/dasha-compute-open-alpha.tar.gz';
-  if (![archivePath, `${archivePath}.sha256`, '/compute/release.json', '/compute/kit.json', '/compute/kit.json/'].includes(pathname)) return null;
+  const archivePath = '/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz';
+  const releasePath = '/compute/releases/706918197b63/release.json';
+  if (![archivePath, `${archivePath}.sha256`, releasePath, '/compute/kit.json', '/compute/kit.json/'].includes(pathname)) return null;
   if (!['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD' } });
   const { commit, manifest } = config;
   if (!/^[a-f0-9]{40}$/.test(commit) || !/^[a-f0-9]{64}$/.test(manifest.sha256) || !Number.isSafeInteger(manifest.bytes) || manifest.bytes < 1 || manifest.bytes > 2000000) return new Response('Release unavailable', { status: 503 });
@@ -13,7 +14,7 @@ export async function computeDownloadResponse(request, fetcher = globalThis.fetc
   if (pathname === archivePath) {
     try {
       // Never forward cookies, authorization, query strings, or redirects upstream.
-      const response = await fetcher(`https://raw.githubusercontent.com/Uuriko/dasha-desk/${commit}/artifacts/dasha-compute${archivePath}`, { redirect: 'error', signal: AbortSignal.timeout(15000) });
+      const response = await fetcher(`https://raw.githubusercontent.com/Uuriko/dasha-desk/${commit}/artifacts/dasha-compute/${manifest.artifact}`, { redirect: 'error', signal: AbortSignal.timeout(15000) });
       if (!response.ok || !response.body) throw new Error('archive unavailable');
       const reader = response.body.getReader();
       const chunks = []; let bytes = 0;
@@ -40,7 +41,7 @@ export async function computeDownloadResponse(request, fetcher = globalThis.fetc
     body = `${manifest.sha256}  dasha-compute-open-alpha.tar.gz\n`;
     headers['Content-Type'] = 'text/plain; charset=utf-8';
   } else {
-    const data = pathname === '/compute/release.json' ? manifest : { version: manifest.version, min_version: '0.3.0', url: `https://www.getdasha.com${archivePath}`, sha256: manifest.sha256 };
+    const data = pathname === releasePath ? manifest : { version: manifest.version, min_version: '0.3.0', url: `https://www.getdasha.com${archivePath}`, sha256: manifest.sha256 };
     body = JSON.stringify(data, null, 2);
     headers['Content-Type'] = 'application/json; charset=utf-8';
   }
