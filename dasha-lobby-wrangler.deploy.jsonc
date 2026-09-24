@@ -7,6 +7,10 @@
   "routes": [
     { "pattern": "lobby.getdasha.com/*", "zone_name": "getdasha.com" },
     { "pattern": "www.getdasha.com/*", "zone_name": "getdasha.com" },
+    // Room owns www /room/* (more specific than the line above), so the Motley
+    // 308 for /room/kits.json never runs and Room returns JSON not_found.
+    // kits.json* is longer, so this leftover wins. Do not widen to /room*.
+    { "pattern": "www.getdasha.com/room/kits.json*", "zone_name": "getdasha.com" },
     // Path-only SIWG discovery on apex. Webflow owns apex /. Do NOT add getdasha.com/*.
     { "pattern": "getdasha.com/.well-known/grok-bot.json*", "zone_name": "getdasha.com" },
     { "pattern": "getdasha.com/.well-known/*", "zone_name": "getdasha.com" }

@@ -5422,7 +5422,12 @@ const POTTER_COMPUTE_HUMANS_308_PATHS = new Set([
  *  Fold to that face. Exact /room/kits + kits.txt family stay 200 Room
  *  proxy (not this leftover). Do not invent a Room proxy for kits.json.
  *  Apex /kits stays compute-tab leftover → /compute. Do not invent
- *  /compute/digest HTML, doctor.md, or PROVIDE.md. Lobby same-host. */
+ *  /compute/digest HTML, doctor.md, or PROVIDE.md. Lobby same-host.
+ *  www /room/* is the Room worker (more specific than www.getdasha.com/*),
+ *  so this 308 does not run there until deploy route
+ *  www.getdasha.com/room/kits.json* wins. Do not map kits.json in
+ *  ROOM_UPSTREAM (staging workers.dev is 1042; the live catalog is
+ *  Room's /room/kits). */
 const POTTER_KITS_308_PATHS = new Set([
   '/room/kits.json', '/room/kits.json/',
   '/api/kits', '/api/kits/',
@@ -5662,6 +5667,8 @@ export function potterHome308Dest(path) {
   // live GET/HEAD html-404 while /room/kits is the 200 catalog. Same-host
   // 308 like other /room doors. Title-case + trailing slash via toLowerCase.
   // Not the llms.txt set. Not a Room proxy invent. Apex /kits stays tab.
+  // www reaches this only via route www.getdasha.com/room/kits.json*
+  // (Room owns the broader www /room/* route).
   if (POTTER_KITS_308_PATHS.has(p)) {
     return "https://www.getdasha.com/room/kits";
   }
