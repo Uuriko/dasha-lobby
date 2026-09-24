@@ -1468,7 +1468,7 @@ export class ComputeNetwork {
           buyerChargeCents: ledger.buyerChargeCents,
           creditUsedCents: ledger.creditUsedCents ?? null,
           providerPayoutCents: ledger.providerPayoutCents !== undefined ? ledger.providerPayoutCents : res.receipt?.cents,
-          hostedInferenceCostUsdMicros: ledger.hostedInferenceCostUsdMicros ?? null,
+          hostedInferenceCostCents: ledger.hostedInferenceCostCents ?? null,
           pricingVersion: PRICING_VERSION,
           engine: ledger.engine || settleInput.engine || null,
         }), Number(res.receipt?.at || 0) || undefined);
@@ -1545,7 +1545,7 @@ export class ComputeNetwork {
         buyerChargeCents: chargedCents,
         creditUsedCents: null,
         providerPayoutCents: 0, // economy ruling: nobody is owed a payout on hosted jobs
-        hostedInferenceCostUsdMicros: null, // NULL until the Workers AI bill yields a real per-job number
+        hostedInferenceCostCents: null, // NULL until the Workers AI bill yields a real per-job number
         engine: 'hosted',
         sessionId: settle.session_id || null,
       },

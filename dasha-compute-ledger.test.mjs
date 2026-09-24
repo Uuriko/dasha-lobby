@@ -27,7 +27,7 @@ import {
   assert.equal(settled.prompt_tokens, 12);
   assert.equal(settled.completion_tokens, 34);
   // economy ruling: hosted rows payout 0, cost field null until real Workers AI numbers
-  const hosted = buildLedgerSettledRow({ receiptId: 'r2', jobId: null, providerId: null, usage: { total_tokens: 46 }, settledAtMs: 2000, buyerChargeCents: 5, creditUsedCents: null, providerPayoutCents: 0, hostedInferenceCostUsdMicros: null, pricingVersion: '2026-09-alpha-1', engine: 'hosted' });
+  const hosted = buildLedgerSettledRow({ receiptId: 'r2', jobId: null, providerId: null, usage: { total_tokens: 46 }, settledAtMs: 2000, buyerChargeCents: 5, creditUsedCents: null, providerPayoutCents: 0, hostedInferenceCostCents: null, pricingVersion: '2026-09-alpha-1', engine: 'hosted' });
   assert.equal(hosted.provider_payout_usd_micros, 0);
   assert.equal(hosted.hosted_inference_cost_usd_micros, null);
   assert.equal(hosted.engine, 'hosted');

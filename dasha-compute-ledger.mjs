@@ -85,7 +85,7 @@ export function buildLedgerCreatedRow({ jobId, requestId, path, keyType, modelId
   };
 }
 
-export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, hostedInferenceCostUsdMicros, pricingVersion, engine } = {}) {
+export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, hostedInferenceCostCents, pricingVersion, engine } = {}) {
   return {
     receipt_id: receiptId || null,
     engine: engine || null,
@@ -99,7 +99,7 @@ export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, dur
     buyer_charge_usd_micros: usdMicrosFromCents(buyerChargeCents),
     credit_used_usd_micros: usdMicrosFromCents(creditUsedCents),
     provider_payout_usd_micros: usdMicrosFromCents(providerPayoutCents),
-    hosted_inference_cost_usd_micros: hostedInferenceCostUsdMicros == null ? null : usdMicrosFromCents(hostedInferenceCostUsdMicros), // NULL until the Workers AI bill yields a real per-job number - never guessed
+    hosted_inference_cost_usd_micros: hostedInferenceCostCents == null ? null : usdMicrosFromCents(hostedInferenceCostCents), // param in CENTS; NULL until the Workers AI bill yields a real per-job number - never guessed
     payment_fee_usd_micros: null,
     pricing_version: String(pricingVersion || 'unversioned'),
   };
