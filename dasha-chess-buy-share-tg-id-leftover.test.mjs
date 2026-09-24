@@ -114,7 +114,7 @@ assertNoBuyShareTgId(polishServedSlim(chessDisk), "polished disk");
 assertNoBuyShareTgId(polishServedSlim(CHESS_PAGE_HTML), "polished bundled");
 
 {
-  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess"), {});
+  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess?play=1"), {});
   assert.equal(chess.status, 200);
   assert.equal(chess.headers.get("x-dasha-edge"), "chess");
   const html = await chess.text();

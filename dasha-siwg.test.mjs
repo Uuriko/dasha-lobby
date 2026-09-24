@@ -83,13 +83,13 @@ function assertNavDrop(html, label) {
   const drop = (html.match(/<details class="nav-drop">[\s\S]*?<\/details>/) || [''])[0];
   assert.match(drop, /<summary>Menu<\/summary>/, `${label} Menu`);
   const hrefs = [...drop.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(hrefs, ['/login#grok', '/lobby', '/how-to-buy', '/listings', '/bag'], `${label} menu hrefs`);
+  assert.deepEqual(hrefs, ['/login#grok', '/lobby', '/compute', '/how-to-buy', '/bag'], `${label} menu hrefs`);
   assert.match(drop, /Sign in with Grok Bot/, `${label} SIWG`);
   assert.match(drop, />Chat</, `${label} Chat`);
+  assert.match(drop, /href="\/compute">Compute</, `${label} Compute`);
   assert.match(drop, /href="\/how-to-buy">Buy</, `${label} Buy`);
-  assert.match(drop, /href="\/listings">List</, `${label} List`);
   assert.match(drop, /href="\/bag">Bag</, `${label} Bag`);
-  assert.doesNotMatch(drop, /\/simp|\/faucet|\/verse|\/learn|\/desk|\/compute/i, `${label} no retired menu doors`);
+  assert.doesNotMatch(drop, /\/simp|\/faucet|\/verse|\/learn|\/desk|\/listings/i, `${label} no demoted menu doors`);
   assert.ok(/min-height:44px/.test(html), `${label} 44px menu ink`);
 }
 
@@ -104,8 +104,8 @@ assert.doesNotMatch(workerSrc, /Ray Fernando|RayFernando|2092696487637737929/, '
   const grwmAt = html.indexOf('id="grwm"');
   const chatAt = html.indexOf('id="chat-door"');
   const simpAt = html.indexOf('id="simp-door"');
-  assert.ok(chatAt >= 0 && simpAt > chatAt, 'chat then simp');
-  assert.ok(grwmAt > simpAt, 'grwm after first-paint doors');
+  assert.ok(chatAt >= 0 && chatAt < grwmAt, 'chat before grwm');
+  assert.ok(simpAt > grwmAt, 'simp after first paint');
   assert.ok(listAt > grwmAt, 'quiet list-door after grwm');
   assert.doesNotMatch(html, /id=["']grok-door["']/, 'no mid-page grok-door');
   assertNoRayCredit(html, 'orderHomeLongPage');

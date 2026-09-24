@@ -6,7 +6,7 @@
  * potterHome308Dest and 308 via isForumChatAliasPath + forumToLobbyRedirect
  * (keep ?t= → /lobby?t=…#threads). Chess is in-room Play, never a leftover
  * door. /arcade /games stay 404 — Arcade is draft PR #44 only.
- * Exact /chess /lobby stay 200 (null dest). Do not fold /lobby/ /lobby/feed.xml
+ * Bare /chess 308s home. /lobby stays 200. Do not fold /lobby/ /lobby/feed.xml
  * /lobby/tape /lobby/ws /lobby/card/*. Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -87,7 +87,7 @@ for (const path of STAY_404) {
 for (const path of ROOM_HANDLERS) {
   assert.equal(potterHome308Dest(path), null, `do not fold ${path}`);
 }
-assert.equal(potterHome308Dest('/chess'), null, 'bare /chess stays 200');
+assert.equal(potterHome308Dest('/chess'), 'https://www.getdasha.com/', 'bare /chess product door 308s home');
 assert.equal(potterHome308Dest('/play'), LOBBY, 'apex /play still folds');
 assert.equal(potterHome308Dest('/game'), LOBBY, 'apex /game still folds');
 
@@ -162,9 +162,12 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   }
 
   const chess = await edgeWorker.fetch(new Request(`https://${host}/chess`), env);
-  assert.equal(chess.status, 200, `${host} /chess stays 200`);
+  assert.equal(chess.status, 308, `${host} /chess product door 308s home`);
+  assert.equal(chess.headers.get('location'), 'https://www.getdasha.com/');
+  const play = await edgeWorker.fetch(new Request(`https://${host}/chess?play=1`), env);
+  assert.equal(play.status, 200, `${host} /chess?play=1 stays 200`);
   if (host === 'www.getdasha.com') {
-    assert.equal(chess.headers.get('x-dasha-edge'), 'chess');
+    assert.equal(play.headers.get('x-dasha-edge'), 'chess');
   }
 
   const lobby = await edgeWorker.fetch(new Request(`https://${host}/lobby`), env);

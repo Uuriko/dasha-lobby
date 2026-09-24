@@ -113,8 +113,12 @@ const mockLobby = {
 const env = { LOBBY: mockLobby, ALLOWED_ORIGINS: 'https://www.getdasha.com,https://getdasha.com,https://lobby.getdasha.com' };
 
 for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com']) {
-  const page = await edgeWorker.fetch(new Request(`${origin}/chess`), env);
-  assert.equal(page.status, 200, `${origin}/chess`);
+  const door = await edgeWorker.fetch(new Request(`${origin}/chess`), env);
+  assert.equal(door.status, 308, `${origin}/chess product door`);
+  assert.equal(door.headers.get('location'), 'https://www.getdasha.com/');
+
+  const page = await edgeWorker.fetch(new Request(`${origin}/chess?play=1`), env);
+  assert.equal(page.status, 200, `${origin}/chess?play=1`);
   const html = await page.text();
   assert.match(html, /var API='https:\/\/lobby\.getdasha\.com'/);
   assert.doesNotMatch(html, /var API=''/);

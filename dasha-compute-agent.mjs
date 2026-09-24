@@ -171,6 +171,7 @@ You want a Mac to run a prompt. v1 chat/completions is community Macs. Hosted As
 Brain: Workers gateway + Hosted Ask + signed receipt chain.
 Hands: Community Mac at /compute#provide, and the Hosted Workers AI floor. providers_online=0 means no Mac. Never invent capacity.
 Files: Drives. R2 workspaces on the same dsk_ or guest dgk_ key. They work when no Mac is online.
+GET /compute/api/v1 layers.brain / layers.hands / layers.files lists those paths. hands.online_count points at GET /compute/api/v1/network providers_online and does not invent a number. files.unbound.reason is drives_unavailable until R2 DRIVES is bound.
 
 POST /compute/api/v1/drives {"name":"agent-workspace"}
 GET /compute/api/v1/drives
@@ -235,6 +236,7 @@ guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP (scope: ch
 Brain: Workers gateway + Hosted Ask + signed receipt chain.
 Hands: Community Mac (/compute#provide) / Hosted Workers AI floor. providers_online=0 is empty Hands. Never invent a Mac.
 Files: Drives. POST /compute/api/v1/drives · objects at /compute/api/v1/drives/:id/objects/*path. R2 binding DRIVES (bucket dasha-compute-drives). dsk_ and guest dgk_. Works with providers_online=0. Unbound R2 → drives_unavailable. 8 MiB/object. 1 GiB per key owner. POST /compute/api/v1/drives/:id/dream writes memory/dreamed.json via Hosted Ask (memory/dreamed.md when format is md). hosted_offline when Workers AI is down. drive_id on chat/completions is recorded on the job when a Mac runs it. It does not invent a Mac.
+GET /compute/api/v1 layers.brain (chat/completions + Hosted Ask) · layers.hands (providers, network, kit; online_count is network.providers_online, never invented here) · layers.files (drives paths; unbound reason drives_unavailable).
 curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
 
 ${COMPUTE_AGENTS_TXT}

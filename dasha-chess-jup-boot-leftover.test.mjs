@@ -90,7 +90,7 @@ assertNoBoot(polish(CHESS_PAGE_HTML), 'polished bundled');
 assert.match(polish(chessDisk), /function watchPrice/, 'chess buy watchPrice stays (not home Watch belt)');
 
 {
-  const chess = await edgeWorker.fetch(new Request('https://www.getdasha.com/chess'), {});
+  const chess = await edgeWorker.fetch(new Request('https://www.getdasha.com/chess?play=1'), {});
   assert.equal(chess.status, 200);
   assert.equal(chess.headers.get('x-dasha-edge'), 'chess');
   const html = await chess.text();

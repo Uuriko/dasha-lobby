@@ -51,7 +51,7 @@ async function served(path) {
 }
 
 const lobbyLive = await served('/lobby');
-const chessLive = await served('/chess');
+const chessLive = await served('/chess?play=1');
 for (const [label, html] of [
   ['worker /lobby', lobbyLive],
   ['worker /chess', chessLive],

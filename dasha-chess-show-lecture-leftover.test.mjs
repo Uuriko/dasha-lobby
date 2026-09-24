@@ -140,7 +140,7 @@ const HOME = `<!doctype html><html lang="en"><head>
 assert.equal(stripChessLeftoverShowLecture(HOME), HOME, "home is not a chess leftover showLecture page");
 
 {
-  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess"), {});
+  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess?play=1"), {});
   assert.equal(chess.status, 200);
   assert.equal(chess.headers.get("x-dasha-edge"), "chess");
   const html = await chess.text();

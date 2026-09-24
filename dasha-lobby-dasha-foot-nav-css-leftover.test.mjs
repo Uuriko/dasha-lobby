@@ -197,7 +197,7 @@ assert.match(asStandaloneLobbyPage(lobbyDisk), /class=["']forum-play["']/, "stan
 }
 
 {
-  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess"), {});
+  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess?play=1"), {});
   assert.equal(chess.status, 200);
   const html = await chess.text();
   assert.doesNotMatch(html, /footer\.dasha-foot nav\s*\{/, "chess leftover footer.dasha-foot nav CSS is a separate strip");

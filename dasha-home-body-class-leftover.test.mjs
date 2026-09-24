@@ -193,7 +193,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "class drop is per-body-tag, not eat-
 }
 
 {
-  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess"), {});
+  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess?play=1"), {});
   assert.equal(chess.status, 200);
   const html = await chess.text();
   assert.match(html, /function jup\(/, "chess jup() stays");

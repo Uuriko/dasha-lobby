@@ -344,11 +344,23 @@ const gw = await worker.fetch(new Request('https://www.getdasha.com/compute/api/
 assert.equal(gw.status, 200);
 const gwBody = await gw.json();
 assert.equal(gwBody.drives, '/compute/api/v1/drives');
-assert.match(gwBody.layers.brain, /gateway/);
-assert.match(gwBody.layers.hands, /Community Mac/);
-assert.match(gwBody.layers.files, /Drives/);
-assert.match(gwBody.layers.files, /providers_online=0/);
-assert.match(gwBody.layers.files, /Dream via Hosted Ask/);
+assert.equal(gwBody.layers.brain.chat_completions, '/compute/api/v1/chat/completions');
+assert.equal(gwBody.layers.brain.hosted_ask, '/compute/api/chat');
+assert.match(gwBody.layers.brain.summary, /gateway/);
+assert.equal(gwBody.layers.hands.providers, '/compute/api/providers');
+assert.equal(gwBody.layers.hands.network, '/compute/api/v1/network');
+assert.equal(gwBody.layers.hands.provide, '/compute#provide');
+assert.equal(gwBody.layers.hands.kit, '/compute/skill.md');
+assert.equal(gwBody.layers.hands.online_count.path, '/compute/api/v1/network');
+assert.equal(gwBody.layers.hands.online_count.field, 'providers_online');
+assert.equal(gwBody.layers.hands.providers_online, undefined);
+assert.match(gwBody.layers.hands.summary, /Community Mac/);
+assert.equal(gwBody.layers.files.drives, '/compute/api/v1/drives');
+assert.equal(gwBody.layers.files.dream, '/compute/api/v1/drives/:id/dream');
+assert.equal(gwBody.layers.files.unbound.reason, 'drives_unavailable');
+assert.match(gwBody.layers.files.summary, /Drives/);
+assert.match(gwBody.layers.files.summary, /providers_online=0/);
+assert.match(gwBody.layers.files.summary, /Dream via Hosted Ask/);
 assert.equal(gwBody.dream, '/compute/api/v1/drives/:id/dream');
 
 const removed = await network.fetch(new Request(`https://lobby.getdasha.com/compute/api/v1/drives/${drive.id}/objects/other.txt`, {
