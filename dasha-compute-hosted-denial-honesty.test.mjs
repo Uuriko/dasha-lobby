@@ -72,7 +72,7 @@ assert.match(networkSrc, /type: 'server_error', code: 'hosted_cut'/);
 assert.match(networkSrc, /error: 'hosted demo unavailable', code: 'hosted_cut'/);
 assert.match(networkSrc, /error: 'model request failed; try again', code: 'hosted_cut'/);
 assert.match(networkSrc, /settled: failed \? null : hostedSettledPayload/);
-assert.match(networkSrc, /bumpHostedFactory\(env, \{ failed: true \}\)/);
+assert.match(networkSrc, /bumpHostedFactory\(env, \{ failed: true, refund: [^\n]*reason: 'hosted-model-fail'/); // #321: non-stream failure refunds in full
 assert.match(networkSrc, /failed: Boolean\(failed\), settled: failed \? null/);
 assert.doesNotMatch(networkSrc, /plugin\.jup\.ag/);
 

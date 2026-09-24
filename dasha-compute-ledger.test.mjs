@@ -274,3 +274,100 @@ const overlap = new Set([...body1.rows, ...body2.rows].map((r) => r.ledger_key))
 assert.equal(overlap.size, total); // no duplicates across pages
 
 console.log('dasha-compute-ledger: PASS');
+
+// ---------- #321: hosted cut/fail refunds (economy ruling, Sep 24 2026) ----------
+{
+  // full refund on SSE cut: balance restored, spend row marked, refund row carries cost + basis
+  const cutOwner = 'hosted-cut-owner';
+  rows.set(`compute:credit-balance:${cutOwner}`, { cents: 95, updatedAt: 0 });
+  rows.set(`compute:credit-spend:${cutOwner}:hosted_cutcase0001a`, { cents: 5, at: 1000, reason: 'hosted-ask' });
+  const cutRes = await network.recordHostedFactoryBump({
+    failed: true, model: 'gpt-oss-20b',
+    refund: { owner: cutOwner, request_id: 'hosted_cutcase0001a', reason: 'hosted-cut', usage: { prompt_tokens: 500, completion_tokens: 256, total_tokens: 756 } },
+  });
+  assert.equal(cutRes.status, 202);
+  const cutBody = await cutRes.json();
+  assert.deepEqual(cutBody.refund, { ok: true, replay: false, refunded_cents: 5 });
+  assert.equal(rows.get(`compute:credit-balance:${cutOwner}`).cents, 100);
+  assert.ok(rows.get(`compute:credit-spend:${cutOwner}:hosted_cutcase0001a`).refundedAt);
+  const cutRow = ledgerRows('job_event').find((r) => r.status === 'refunded' && r.request_id === 'hosted_cutcase0001a');
+  assert.ok(cutRow, 'refund row written');
+  assert.equal(cutRow.refund_usd_micros, 50_000); // charged cents x 10,000
+  assert.equal(cutRow.charge_basis, 'debited'); // economy correction: ui_session is for free session asks
+  assert.equal(cutRow.receipt_id, null); // join on request_id, nothing fabricated
+  assert.equal(cutRow.job_id, null);
+  assert.equal(cutRow.buyer_charge_usd_micros, 50_000); // net-zero: never-settled refund nets to 0 on its own row
+  assert.equal(cutRow.refund_of, 'unsettled_debit'); // tracing label only, never a sum filter
+  // split-token cost: (500*18182 + 256*27273)/1e6 neurons x $0.011/1k, in micros
+  const expectedCost = Math.round(((500 * 18182 + 256 * 27273) / 1e6) / 1000 * 0.011 * 100 * 10_000);
+  assert.equal(cutRow.hosted_inference_cost_usd_micros, expectedCost);
+  assert.equal(cutRow.hosted_inference_cost_basis, 'split_tokens');
+  // replay-safe: a second bump for the same request does not refund again
+  const replayRes = await network.recordHostedFactoryBump({ failed: true, refund: { owner: cutOwner, request_id: 'hosted_cutcase0001a', reason: 'hosted-cut', usage: null } });
+  const replayBody = await replayRes.json();
+  assert.equal(replayBody.refund.replay, true);
+  assert.equal(rows.get(`compute:credit-balance:${cutOwner}`).cents, 100);
+  assert.equal(ledgerRows('job_event').filter((r) => r.status === 'refunded' && r.request_id === 'hosted_cutcase0001a').length, 1);
+
+  // non-stream model failure refunds too; usage unknown -> cost null, never zero
+  rows.set(`compute:credit-balance:${cutOwner}`, { cents: 95, updatedAt: 0 });
+  rows.set(`compute:credit-spend:${cutOwner}:hosted_failcase002b`, { cents: 5, at: 1000, reason: 'hosted-ask' });
+  await network.recordHostedFactoryBump({ failed: true, refund: { owner: cutOwner, request_id: 'hosted_failcase002b', reason: 'hosted-model-fail', usage: null } });
+  assert.equal(rows.get(`compute:credit-balance:${cutOwner}`).cents, 100);
+  const failRow = ledgerRows('job_event').find((r) => r.status === 'refunded' && r.request_id === 'hosted_failcase002b');
+  assert.equal(failRow.hosted_inference_cost_usd_micros, null);
+  assert.equal(failRow.hosted_inference_cost_basis, null);
+  assert.equal(failRow.charge_basis, 'debited');
+  assert.equal(failRow.buyer_charge_usd_micros, 50_000);
+  assert.equal(failRow.refund_of, 'unsettled_debit');
+
+  // settle after refund is rejected (ordering-safe)
+  const lateSettle = await network.recordHostedFactoryBump({ failed: false, settle: { owner: cutOwner, request_id: 'hosted_failcase002b', cents: 5, usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 } } });
+  assert.equal(lateSettle.status, 409);
+
+  // malformed refund assertions are ignored: no throw, no refund field
+  const badRes = await network.recordHostedFactoryBump({ failed: true, refund: { owner: '', request_id: 'nope', reason: 'hosted-cut' } });
+  assert.equal(badRes.status, 202);
+  assert.equal((await badRes.json()).refund, undefined);
+
+  // settled-then-refund: buyer_charge stays 0 (no double-count), no refund_of label
+  const srOwner = 'hosted-sr-owner';
+  rows.set(`compute:credit-balance:${srOwner}`, { cents: 100, updatedAt: 0 });
+  rows.set(`compute:credit-spend:${srOwner}:hosted_settledref01`, { cents: 5, at: 1000, reason: 'hosted-ask' });
+  const settleRes = await network.recordHostedFactoryBump({ failed: false, settle: { owner: srOwner, request_id: 'hosted_settledref01', cents: 5, usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 }, created_at_ms: 1000 } });
+  assert.equal(settleRes.status, 202);
+  const srRefund = await network.recordHostedFactoryBump({ failed: true, refund: { owner: srOwner, request_id: 'hosted_settledref01', reason: 'hosted-cut', usage: null } });
+  assert.equal((await srRefund.json()).refund.ok, true);
+  const srRow = ledgerRows('job_event').find((r) => r.status === 'refunded' && r.request_id === 'hosted_settledref01');
+  assert.equal(srRow.buyer_charge_usd_micros, 0);
+  assert.equal(srRow.refund_of, null);
+  assert.equal(srRow.receipt_id, null);
+  assert.equal(srRow.charge_basis, 'debited');
+  assert.equal(srRow.refund_usd_micros, 50_000);
+
+  // economy invariant: per request_id, sum(buyer_charge - refund) is 0 or the charge, never negative
+  const byReq = new Map();
+  for (const r of ledgerRows('job_event')) {
+    if (!r.request_id || !r.request_id.startsWith('hosted_')) continue;
+    const cur = byReq.get(r.request_id) || { charge: 0, refund: 0 };
+    cur.charge += Number(r.buyer_charge_usd_micros) || 0;
+    cur.refund += Number(r.refund_usd_micros) || 0;
+    byReq.set(r.request_id, cur);
+  }
+  for (const [rid, sums] of byReq) {
+    assert.ok(sums.charge - sums.refund >= 0, `${rid}: net ${sums.charge - sums.refund} must never be negative`);
+  }
+
+  // abuse guard: 21 hosted-cut refunds in one UTC day -> exactly one anomaly flag; refunds keep flowing
+  const abuseOwner = 'hosted-abuse-owner';
+  rows.set(`compute:credit-balance:${abuseOwner}`, { cents: 0, updatedAt: 0 });
+  for (let i = 0; i < 21; i++) {
+    const rid = `hosted_abuse${String(i).padStart(6, '0')}x`;
+    rows.set(`compute:credit-spend:${abuseOwner}:${rid}`, { cents: 1, at: 1000, reason: 'hosted-ask' });
+    await network.recordHostedFactoryBump({ failed: true, refund: { owner: abuseOwner, request_id: rid, reason: 'hosted-cut', usage: null } });
+  }
+  assert.equal(rows.get(`compute:credit-balance:${abuseOwner}`).cents, 21); // every refund still paid
+  const flags = ledgerRows('anomaly').filter((r) => r.reason === 'hosted_cut_refund_abuse_review');
+  assert.equal(flags.length, 1);
+  assert.equal(flags[0].count, 21);
+}

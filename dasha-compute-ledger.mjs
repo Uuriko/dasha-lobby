@@ -136,11 +136,12 @@ export function buildLedgerCreatedRow({ jobId, requestId, path, keyType, modelId
   };
 }
 
-export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, hostedInferenceCostCents, hostedInferenceCostBasis, pricingVersion, engine, chargeBasis } = {}) {
+export function buildLedgerSettledRow({ receiptId, jobId, requestId = null, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, hostedInferenceCostCents, hostedInferenceCostBasis, pricingVersion, engine, chargeBasis } = {}) {
   return {
     receipt_id: receiptId || null,
     engine: engine || null,
     job_id: jobId || null,
+    request_id: typeof requestId === 'string' && requestId ? requestId : null,
     provider_id: providerId || null,
     status: 'settled',
     prompt_tokens: fin(usage?.prompt_tokens),
@@ -170,12 +171,21 @@ export function buildLedgerFailedRow({ jobId, failureReason, durationMs, created
   };
 }
 
-export function buildLedgerRefundRow({ receiptId, jobId, refundCents } = {}) {
+export function buildLedgerRefundRow({ receiptId, jobId, refundCents, requestId = null, chargeBasis = null, hostedInferenceCostCents = null, hostedInferenceCostBasis = null, buyerChargeCents = null, refundOf = null } = {}) {
+  const basis = chargeBasis && LEDGER_CHARGE_BASES.includes(chargeBasis) ? chargeBasis : null;
+  const cost = hostedInferenceCostCents == null || !Number.isFinite(Number(hostedInferenceCostCents)) ? null : usdMicrosFromCents(hostedInferenceCostCents);
+  const costBasis = cost != null && LEDGER_HOSTED_COST_BASES.includes(hostedInferenceCostBasis) ? hostedInferenceCostBasis : null;
   return {
     receipt_id: receiptId || null,
     job_id: jobId || null,
+    request_id: typeof requestId === 'string' && requestId ? requestId : null,
     status: 'refunded',
     refund_usd_micros: usdMicrosFromCents(refundCents),
+    buyer_charge_usd_micros: buyerChargeCents == null || !Number.isFinite(Number(buyerChargeCents)) ? null : usdMicrosFromCents(buyerChargeCents),
+    refund_of: typeof refundOf === 'string' && refundOf ? refundOf : null,
+    charge_basis: basis,
+    hosted_inference_cost_usd_micros: cost,
+    hosted_inference_cost_basis: costBasis,
   };
 }
 

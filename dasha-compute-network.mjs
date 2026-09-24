@@ -1525,6 +1525,7 @@ export class ComputeNetwork {
         await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerSettledRow({
           receiptId: res.receipt?.id || null,
           jobId: settleInput.jobId || res.receipt?.job_id || null,
+          requestId: settleInput.requestId || res.receipt?.request_id || null,
           providerId: ledger.providerId || null,
           usage: settleInput.usage,
           durationMs: ledger.createdAtMs ? Math.max(0, Number(res.receipt?.at || 0) - ledger.createdAtMs) : settleInput.latencyMs,
@@ -1572,8 +1573,69 @@ export class ComputeNetwork {
           }), now);
         } catch {}
       }
+      // Economy ruling (Sep 24 2026, #321): a hosted charge stands only if the terminal SSE
+      // chunk (finish_reason or [DONE]) was enqueued; anything earlier refunds in full.
+      let refundOutcome = null;
+      const refund = input?.refund && typeof input.refund === 'object' ? input.refund : null;
+      if (failed && refund) {
+        const refundOwner = String(refund.owner || '').trim();
+        const refundRequestId = String(refund.request_id || '');
+        const refundReason = String(refund.reason || '');
+        if (refundOwner && HOSTED_SPEND_ID_RE.test(refundRequestId) && (refundReason === 'hosted-model-fail' || refundReason === 'hosted-cut')) {
+          try {
+            const refunded = await this.refundCredits(refundOwner, { requestId: refundRequestId, now, reason: refundReason });
+            refundOutcome = { ok: refunded.ok === true, replay: refunded.replay === true, refunded_cents: refunded.refunded_cents ?? null, ...(refunded.error ? { error: refunded.error } : {}) };
+            if (refunded.ok && !refunded.replay) {
+              const cost = hostedInferenceCost({
+                model: HOSTED_CF_MODEL,
+                promptTokens: refund.usage?.prompt_tokens,
+                completionTokens: refund.usage?.completion_tokens,
+                totalTokens: refund.usage?.total_tokens,
+              });
+              // Buyer paid nothing but tokens were used: refund row keeps the gross hosted cost (economy #321).
+              // Net-zero (economy, #321 review): a refund of a never-settled charge carries
+              // buyer_charge = refund so the row nets to 0 on its own; refund_of is a tracing
+              // label only, never a sum filter. When a settled row already exists for the
+              // request, buyer_charge stays 0 so the weekly sum does not double-count.
+              // receipt_id stays null (join on request_id); basis is 'debited' ('ui_session'
+              // is reserved for free session asks with charge 0).
+              const alreadySettled = Boolean(await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}hosted:${refundRequestId}`));
+              await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerRefundRow({
+                receiptId: null,
+                jobId: null,
+                requestId: refundRequestId,
+                refundCents: refunded.refunded_cents,
+                chargeBasis: 'debited',
+                buyerChargeCents: alreadySettled ? 0 : refunded.refunded_cents,
+                refundOf: alreadySettled ? null : 'unsettled_debit',
+                hostedInferenceCostCents: cost.costCents,
+                hostedInferenceCostBasis: cost.basis,
+              }), now);
+              if (refundReason === 'hosted-cut') {
+                // Abuse guard (#321): log-only count of hosted-cut refunds per owner per UTC day;
+                // crossing 20 flags one anomaly row for board review. Refunds never stop automatically.
+                const day = new Date(now).toISOString().slice(0, 10);
+                const countKey = `compute:hosted-cut-refunds:${refundOwner}:${day}`;
+                const count = Number(await this.state.storage.get(countKey) || 0) + 1;
+                await this.state.storage.put(countKey, count);
+                await this.bumpMetric('refund:hosted-cut');
+                if (count === 21) {
+                  const flagBuyerId = await resolveBuyerId(this.state.storage, { owner: refundOwner });
+                  await appendLedgerEvent(this.state.storage, 'anomaly', {
+                    ref: flagBuyerId || refundOwner,
+                    reason: 'hosted_cut_refund_abuse_review',
+                    day,
+                    count,
+                  }, now);
+                  await this.bumpMetric('refund:hosted-cut:flagged');
+                }
+              }
+            }
+          } catch { /* refund logging never breaks the bump */ }
+        }
+      }
       await this.bumpMetric('ask:hosted:complete');
-      return json({ ok: true, settled: false }, 202, null, false);
+      return json({ ok: true, settled: false, ...(refundOutcome ? { refund: refundOutcome } : {}) }, 202, null, false);
     }
     const reject = (reason) => json({ error: 'settle rejected', reason }, 409, null, false);
     const owner = String(settle.owner || '').trim();
@@ -3616,7 +3678,7 @@ export class ComputeNetwork {
 }
 
 
-async function bumpHostedFactory(env, { failed = false, settled = null, created_at_ms: bumpCreatedAtMs = null, model: bumpModel = null, session_id: bumpSessionId = null, failure_reason: bumpFailureReason = null } = {}) {
+async function bumpHostedFactory(env, { failed = false, settled = null, refund = null, created_at_ms: bumpCreatedAtMs = null, model: bumpModel = null, session_id: bumpSessionId = null, failure_reason: bumpFailureReason = null } = {}) {
   try {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return;
@@ -3635,6 +3697,7 @@ async function bumpHostedFactory(env, { failed = false, settled = null, created_
       body: JSON.stringify({
         failed: failed === true,
         ...(settle ? { settle } : {}),
+        ...(refund && typeof refund === 'object' && refund.request_id ? { refund: { owner: refund.owner || null, request_id: String(refund.request_id).slice(0, 80), reason: String(refund.reason || '').slice(0, 48), usage: refund.usage && typeof refund.usage === 'object' ? refund.usage : null } } : {}),
         ...(bumpCreatedAtMs ? { created_at_ms: bumpCreatedAtMs } : {}),
         ...(bumpModel ? { model: String(bumpModel).slice(0, 80) } : {}),
         ...(bumpSessionId ? { session_id: String(bumpSessionId).slice(0, 64) } : {}),
@@ -3802,6 +3865,7 @@ export async function computeApi(request, env, allowedOrigin) {
       const headers = { ...SECURITY, ...cors(allowedOrigin, true), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', ...dashaChatSpendHeaders({ route: 'hosted', model: 'gpt-oss-20b', spendCents: hostedChargedCents }), ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) };
       let completionText = '';
       let upstreamUsage = null;
+      let terminalSettlePayload = null;
       const approxTokens = (text) => Math.max(0, Math.ceil(String(text || '').length / 4));
       const hostedUsage = () => {
         if (upstreamUsage) return tokenUsage({ usage: upstreamUsage });
@@ -3814,18 +3878,24 @@ export async function computeApi(request, env, allowedOrigin) {
         completionText += content;
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ index: 0, delta: { content }, finish_reason: null }] })}\n\n`));
       };
-      const emitDone = (controller, failed = false) => {
+      const hostedRefundPayload = (reason) => hostedSpendId && hostedChargedCents > 0
+        ? { owner, request_id: hostedSpendId, reason, usage: (() => { try { return hostedUsage(); } catch { return null; } })() }
+        : null;
+      const emitDone = (controller, failed = false, failureReason = 'hosted-model-fail') => {
         const usage = failed ? null : hostedUsage();
         if (!failed) {
+          const settled = hostedSettledPayload(usage);
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage, ...dashaEffortExtension(hostedHonesty) })}\n\n`));
+          // Economy ruling (#321): the charge stands only once the terminal chunk is enqueued.
+          terminalSettlePayload = settled;
         }
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
-        bumpHostedFactory(env, { failed: Boolean(failed), settled: failed ? null : hostedSettledPayload(usage), created_at_ms: hostedStartedAtMs, model: 'gpt-oss-20b', session_id: session?.id || null });
+        bumpHostedFactory(env, { failed: Boolean(failed), settled: failed ? null : hostedSettledPayload(usage), refund: failed ? hostedRefundPayload(failureReason) : null, created_at_ms: hostedStartedAtMs, model: 'gpt-oss-20b', session_id: session?.id || null });
       };
       const emitError = (controller, message) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: { message, type: 'server_error', code: 'hosted_cut' } })}\n\n`));
-        emitDone(controller, true);
+        emitDone(controller, true, 'hosted-model-fail');
       };
       const stream = new ReadableStream({
         async start(controller) {
@@ -3892,8 +3962,22 @@ export async function computeApi(request, env, allowedOrigin) {
             emitDelta(controller, answer);
             emitDone(controller);
           } catch {
-            try { emitError(controller, 'model request failed; try again'); } catch {}
+            try {
+              if (terminalSettlePayload) {
+                // finish_reason already reached the client; the charge stands and settles (#321).
+                bumpHostedFactory(env, { failed: false, settled: terminalSettlePayload, created_at_ms: hostedStartedAtMs, model: 'gpt-oss-20b', session_id: session?.id || null });
+              } else {
+                emitError(controller, 'model request failed; try again');
+              }
+            } catch {}
           }
+        },
+        async cancel() {
+          // Client disconnected mid-stream: full refund of any hosted charge (#321; replay-safe DO-side).
+          if (terminalSettlePayload || !hostedSpendId || !(hostedChargedCents > 0)) return;
+          try {
+            await bumpHostedFactory(env, { failed: true, refund: hostedRefundPayload('hosted-cut'), created_at_ms: hostedStartedAtMs, model: 'gpt-oss-20b', session_id: session?.id || null });
+          } catch {}
         },
       });
       return new Response(stream, { headers });
@@ -3908,7 +3992,7 @@ export async function computeApi(request, env, allowedOrigin) {
     await bumpHostedFactory(env, { failed: false, settled: hostedSettledPayload(usage), created_at_ms: hostedStartedAtMs, model: 'gpt-oss-20b', session_id: session?.id || null });
     return json({ answer, model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, usage, ...hostedEffortFace(hostedHonesty), ...(creditBalanceHeader != null ? { balance_cents: Number(creditBalanceHeader) } : {}) }, 200, allowedOrigin, true, { ...dashaChatSpendHeaders({ route: 'hosted', model: 'gpt-oss-20b', spendCents: hostedChargedCents }), ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) });
   } catch {
-    await bumpHostedFactory(env, { failed: true });
+    await bumpHostedFactory(env, { failed: true, refund: hostedSpendId && hostedChargedCents > 0 ? { owner, request_id: hostedSpendId, reason: 'hosted-model-fail', usage: null } : null });
     return json({ error: 'model request failed; try again', code: 'hosted_cut' }, 502, allowedOrigin, true, dashaChatSpendHeaders({ route: 'hosted', model: 'gpt-oss-20b', spendCents: hostedChargedCents }));
   }
 }
