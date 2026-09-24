@@ -194,4 +194,41 @@ assert.match(page, /limit_cents/, 'page posts limit_cents');
   assert.equal(rows.get('compute:api-key:key_race').spendCents, 5, 'serialized charge+refund lands exactly');
 }
 
+// #323 (traction #329): the apiKey() auth write (lastUsedAt/window) races a charge -
+// hold the auth's first storage read, charge meanwhile, then let auth finish.
+{
+  const mintedRes = await network.fetch(new Request('https://lobby.getdasha.com/compute/api/keys', {
+    method: 'POST', headers: cookie, body: JSON.stringify({ name: 'AuthRace', limit_cents: 1000, limit_reset: 'monthly' }),
+  }), origin);
+  assert.equal(mintedRes.status, 201);
+  const mintedKey = await mintedRes.json();
+  const keyRowName = `compute:api-key:${mintedKey.id}`;
+  const origGet = storage.get.bind(storage);
+  let release;
+  const gate = new Promise((r) => { release = r; });
+  let held = false;
+  storage.get = async (k) => {
+    if (k === keyRowName && !held) {
+      held = true;
+      const snapshot = rows.get(k); // the pre-charge read the auth would have raced with
+      await gate;
+      return snapshot;
+    }
+    return origGet(k);
+  };
+  const authPromise = network.apiKey(new Request('https://lobby.getdasha.com/compute/api/v1/chat/completions', {
+    headers: { Authorization: `Bearer ${mintedKey.api_key}` },
+  }));
+  await new Promise((r) => setTimeout(r, 20)); // auth is parked on the held read
+  const midCharge = await network.chargeApiKeySpend(rows.get(keyRowName), 5, Date.now());
+  assert.equal(midCharge.ok, true);
+  assert.equal(rows.get(keyRowName).spendCents, 5);
+  release();
+  const authed = await authPromise;
+  storage.get = origGet;
+  assert.ok(authed, 'auth still succeeds');
+  assert.equal(rows.get(keyRowName).spendCents, 5, 'auth write preserves the racing charge');
+  assert.equal(authed.spendCents, 5, 'auth returns the fresh row');
+}
+
 console.log('dasha-compute-api-key-spend-caps: PASS');

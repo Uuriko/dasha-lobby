@@ -1725,19 +1725,32 @@ export class ComputeNetwork {
       if (!key || !isGuestApiKey(key) || !sameSecret(await sha256(token), key.tokenHash)) return null;
       if (guestKeyExpired(key)) return null;
       const now = Date.now();
-      const refreshed = { ...key, lastUsedAt: now };
-      await this.state.storage.put(`compute:api-key:${refreshed.id}`, refreshed);
-      return refreshed;
+      // #323: lastUsedAt write goes through the per-key lock with a fresh re-read -
+      // the sha256 wait above lets a charge land meanwhile, and a stale whole-row
+      // write would undo it.
+      return this.withApiKeySpendLock(key.id, async () => {
+        const fresh = await this.state.storage.get(`compute:api-key:${key.id}`);
+        if (!fresh) return null;
+        const refreshed = { ...fresh, lastUsedAt: now };
+        await this.state.storage.put(`compute:api-key:${refreshed.id}`, refreshed);
+        return refreshed;
+      });
     }
     const match = token.match(/^dsk_([A-Za-z0-9_-]{12})\.([A-Za-z0-9_-]{20,})$/);
     if (!match) return null;
     const key = await this.state.storage.get(`compute:api-key:key_${match[1]}`);
     if (!key || !sameSecret(await sha256(token), key.tokenHash)) return null;
     const now = Date.now();
-    const refreshed = refreshApiKeySpendWindow(key, now);
-    refreshed.lastUsedAt = now;
-    await this.state.storage.put(`compute:api-key:${refreshed.id}`, refreshed);
-    return refreshed;
+    // #323: same lock + fresh re-read as the guest arm; the window refresh applies to
+    // the fresh row so a racing charge survives.
+    return this.withApiKeySpendLock(key.id, async () => {
+      const fresh = await this.state.storage.get(`compute:api-key:${key.id}`);
+      if (!fresh) return null;
+      const refreshed = refreshApiKeySpendWindow(fresh, now);
+      refreshed.lastUsedAt = now;
+      await this.state.storage.put(`compute:api-key:${refreshed.id}`, refreshed);
+      return refreshed;
+    });
   }
 
   /** Per-key serialization for spend mutations: DOs interleave concurrent requests at
