@@ -166,6 +166,20 @@ ${COMPUTE_BUILD_ON_DASHA_TXT}
 
 You want a Mac to run a prompt. v1 chat/completions is community Macs. Hosted Ask is the browser. Not a ledger. Not Room.
 
+## Brain / Hands / Files
+
+Brain: Workers gateway + Hosted Ask + signed receipt chain.
+Hands: Community Mac at /compute#provide, and the Hosted Workers AI floor. providers_online=0 means no Mac. Never invent capacity.
+Files: Drives. R2 workspaces on the same dsk_ or guest dgk_ key. They work when no Mac is online.
+
+POST /compute/api/v1/drives {"name":"agent-workspace"}
+GET /compute/api/v1/drives
+GET /compute/api/v1/drives/:id
+PUT GET DELETE /compute/api/v1/drives/:id/objects/*path
+GET /compute/api/v1/drives/:id/objects?prefix=
+Binding DRIVES. Bucket dasha-compute-drives. 8 MiB per object. 1 GiB per key owner. Unbound R2 fails loud drives_unavailable.
+Chat jobs do not write a drive. Put files on the Drives API. POST .../snapshot is metadata only.
+
 ${COMPUTE_AGENTS_TXT}
 ## Create a key
 
@@ -215,7 +229,10 @@ auth Bearer API key
 no key needed for healthz + network + models; key needed for chat
 live 24h counters GET /compute/api/factory settled_24h — tokens/jobs/cents, no key needed
 models entries carry pricing.request (USD per chat, flat - no per-token metering) + measured tok/s when benchmarked
-guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP (scope: chat + models only; other endpoints 403 guest_key_scope; tools/function calling 400s)
+guest key POST /compute/api/guest-keys — 24h chat+models, 3/hour/IP (scope: chat + models; Drives also take dgk_; other endpoints 403 guest_key_scope; tools/function calling 400s)
+Brain: Workers gateway + Hosted Ask + signed receipt chain.
+Hands: Community Mac (/compute#provide) / Hosted Workers AI floor. providers_online=0 is empty Hands. Never invent a Mac.
+Files: Drives. POST /compute/api/v1/drives · objects at /compute/api/v1/drives/:id/objects/*path. R2 binding DRIVES (bucket dasha-compute-drives). dsk_ and guest dgk_. Works with providers_online=0. Unbound R2 → drives_unavailable. 8 MiB/object. 1 GiB per key owner. Chat does not write drive_id in v0.
 curl -sS -X POST https://lobby.getdasha.com/compute/api/guest-keys -H 'Content-Type: application/json' -d '{}'
 
 ${COMPUTE_AGENTS_TXT}
@@ -299,6 +316,7 @@ export const COMPUTE_AGENT_JSON = {
     healthz: COMPUTE_HEALTHZ,
     network: COMPUTE_NETWORK,
     guest_keys: COMPUTE_GUEST_KEYS_URL,
+    drives: `${COMPUTE_API_BASE}/drives`,
     ocm_v1: OCM_API_BASE,
   },
   ocm: {
@@ -379,6 +397,13 @@ export const COMPUTE_MCP_JSON = {
       url: `${COMPUTE_API_BASE}/chat/completions`,
       auth: 'bearer',
       description: 'OpenAI-compatible chat. Use base_url with the OpenAI SDK. Bearer required.',
+    },
+    {
+      name: 'drives',
+      method: 'POST',
+      url: `${COMPUTE_API_BASE}/drives`,
+      auth: 'bearer',
+      description: 'Files. Get-or-create an R2 drive by name. dsk_ or dgk_. Works with providers_online=0. Binding DRIVES.',
     },
   ],
 };

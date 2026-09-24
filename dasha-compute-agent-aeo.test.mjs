@@ -91,7 +91,7 @@ assert.match(COMPUTE_SKILL_MD, /Which key \/ which base/, 'skill names which key
 assert.equal(COMPUTE_AGENT_JSON.ocm.base_url, OCM_API_BASE);
 assert.equal(COMPUTE_AGENT_JSON.ocm.key, 'ocm_live_');
 assert.equal(COMPUTE_AGENT_JSON.endpoints.ocm_v1, OCM_API_BASE);
-assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — 24h chat\+models, 3\/hour\/IP \(scope: chat \+ models only; other endpoints 403 guest_key_scope; tools\/function calling 400s\)$/m, 'packet guest key mint');
+assert.match(COMPUTE_LLMS_TXT, /^guest key POST \/compute\/api\/guest-keys — 24h chat\+models, 3\/hour\/IP \(scope: chat \+ models; Drives also take dgk_; other endpoints 403 guest_key_scope; tools\/function calling 400s\)$/m, 'packet guest key mint');
 assert.match(COMPUTE_LLMS_TXT, /curl -sS -X POST https:\/\/lobby\.getdasha\.com\/compute\/api\/guest-keys/, 'packet guest mint curl');
 assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_AGENTS_TXT), true, 'packet embeds Agents');
 assert.match(COMPUTE_LLMS_TXT, /^## Agents$/m, 'packet Agents');

@@ -116,6 +116,7 @@ import {
   GUEST_KEY_CHAT_MAX,
   GUEST_KEY_CHAT_WINDOW_MS,
 } from './dasha-compute-guest-key.mjs';
+import { handleComputeDrives } from './dasha-compute-drives.mjs';
 import {
   attachEffortToReceipt,
   dashaEffortExtension,
@@ -311,7 +312,7 @@ function publicSponsorUrl(value) {
 
 
 function cors(origin, credentials = false) {
-  return origin ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Dasha-Route', ...(credentials ? { 'Access-Control-Allow-Credentials': 'true' } : {}), Vary: 'Origin' } : {};
+  return origin ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Dasha-Route', ...(credentials ? { 'Access-Control-Allow-Credentials': 'true' } : {}), Vary: 'Origin' } : {};
 }
 
 function json(body, status = 200, origin = null, credentials = false, extra = {}) {
@@ -364,7 +365,7 @@ function withV1Cors(res, origin) {
   const headers = new Headers(res.headers);
   if (!headers.has('Access-Control-Allow-Origin')) {
     headers.set('Access-Control-Allow-Origin', origin);
-    headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Dasha-Route');
     if (origin !== '*') headers.set('Access-Control-Allow-Credentials', 'true');
     headers.append('Vary', 'Origin');
@@ -448,6 +449,12 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
       note: '24h dgk_ chat+models. Copy once.',
     },
     errors: 'openai + status/reason/hint/next',
+    layers: {
+      brain: 'Workers gateway + Hosted Ask + signed receipt chain',
+      hands: 'Community Mac (#provide) / Hosted Workers AI floor',
+      files: 'Drives (R2 binding DRIVES). Works with providers_online=0.',
+    },
+    drives: '/compute/api/v1/drives',
     // OpenRouter apply bar + Hosted UI parity: usage on stream stop + non-stream JSON.
     usage: {
       chat_completions: 'OpenAI-style usage on non-stream JSON and on the SSE final finish_reason=stop chunk',
@@ -3167,6 +3174,16 @@ export class ComputeNetwork {
     if ((path === '/compute/api/v1' || path === '/compute/api/v1/') && (request.method === 'GET' || request.method === 'HEAD')) {
       return computeV1Gateway(request, allowedOrigin, credentials);
     }
+
+    const driveResponse = await handleComputeDrives(request, {
+      path,
+      storage: this.state.storage,
+      bucket: this.env?.DRIVES,
+      now,
+      apiKey: () => this.apiKey(request),
+      unauthorized: () => v1err(invalidApiKeyMessage(request), 401, 'authentication_error'),
+    });
+    if (driveResponse) return v1cors(driveResponse);
 
     return computeApiError('not found', 404, allowedOrigin, credentials);
   }

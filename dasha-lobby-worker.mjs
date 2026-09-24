@@ -12002,7 +12002,7 @@ async function productEdge(request, url, env) {
           headers: {
             ...SECURITY,
             'Access-Control-Allow-Origin': origin || '*',
-            'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, HEAD',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, HEAD',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Dasha-Route, Idempotency-Key',
             'Access-Control-Max-Age': '86400',
             Vary: 'Origin',
@@ -13430,7 +13430,7 @@ export default {
         headers: {
           ...SECURITY,
           'Access-Control-Allow-Origin': origin || '*',
-          'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, HEAD',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, HEAD',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Dasha-Route, Idempotency-Key',
           'Access-Control-Max-Age': '86400',
           Vary: 'Origin',

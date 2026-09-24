@@ -42,5 +42,10 @@
     "MINT": "53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump",
     "FAUCET_COOLDOWN_DAYS": "1"
   },
-  "ai": { "binding": "AI" }
+  "ai": { "binding": "AI" },
+  // Files layer. Binding name DRIVES. Create the bucket before deploy:
+  //   npx wrangler@3.114.15 r2 bucket create dasha-compute-drives
+  "r2_buckets": [
+    { "binding": "DRIVES", "bucket_name": "dasha-compute-drives" }
+  ]
 }

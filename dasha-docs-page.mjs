@@ -45,7 +45,7 @@ li{margin:3px 0}
 <div class="ep"><div class="ep-head"><span class="m" style="color:#dfff00;border-color:#dfff00">POST</span><code class="p">/compute/api/guest-keys</code></div>
 <p class="s">Mint a 24h guest key (3/hour/IP)</p>
 <div class="rs"><span class="lbl">responses</span><ul>
-<li><code class="c">201</code> Key minted. Response also carries status/reason/hint/next/mint/name/prefix/note fields. Save api_key now; only its hash is stored. Guest keys serve only /v1/chat/completions and /v1/models; all other endpoints 403 guest_key_scope.</li>
+<li><code class="c">201</code> Key minted. Response also carries status/reason/hint/next/mint/name/prefix/note fields. Save api_key now; only its hash is stored. Guest keys serve /v1/chat/completions and /v1/models; other inference endpoints 403 guest_key_scope. Drives accept the same dgk_.</li>
 </ul></div>
 </div>
 <div class="ep"><div class="ep-head"><span class="m" style="color:#39d98a;border-color:#39d98a">GET</span><code class="p">/compute/api/v1/models</code></div>
@@ -73,6 +73,16 @@ li{margin:3px 0}
 <li><code class="c">499</code> client abort</li>
 <li><code class="c">504</code> timeout</li>
 <li><code class="c">503</code> no_mac_online (community down) | hosted_offline (hosted model unavailable) - fail-loud</li>
+</ul></div>
+</div>
+<div class="ep"><div class="ep-head"><span class="m" style="color:#dfff00;border-color:#dfff00">POST</span><code class="p">/compute/api/v1/drives</code></div>
+<p class="s">Files. Get-or-create an R2 drive by name. Works with providers_online=0. Binding DRIVES.</p>
+<p class="auth">auth: bearer dsk_ or guest dgk_</p>
+<div class="rs"><span class="lbl">responses</span><ul>
+<li><code class="c">201</code> created</li>
+<li><code class="c">200</code> existing name for this key owner</li>
+<li><code class="c">401</code> invalid_api_key</li>
+<li><code class="c">503</code> drives_unavailable (R2 binding DRIVES missing)</li>
 </ul></div>
 </div>
 <div class="ep"><div class="ep-head"><span class="m" style="color:#39d98a;border-color:#39d98a">GET</span><code class="p">/compute/api/verify</code></div>
@@ -155,7 +165,7 @@ export const DOCS_OPENAPI_JSON = `{
   "info": {
     "title": "Dasha Compute API",
     "version": "0.1.0",
-    "description": "OpenAI-compatible inference on community Macs; every completed job gets a signed receipt on a public chain. Observed from live traffic Sep 11-12, 2026; adopted and verified by the impl lane Sep 14, 2026."
+    "description": "OpenAI-compatible inference on community Macs; every completed job gets a signed receipt on a public chain. Brain: gateway + Hosted Ask + receipt chain. Hands: Community Macs. Files: Drives (R2 binding DRIVES). Observed from live traffic Sep 11-12, 2026; adopted and verified by the impl lane Sep 14, 2026."
   },
   "servers": [
     {
@@ -173,7 +183,7 @@ export const DOCS_OPENAPI_JSON = `{
         "summary": "Mint a 24h guest key (3/hour/IP)",
         "responses": {
           "201": {
-            "description": "Key minted. Response also carries status/reason/hint/next/mint/name/prefix/note fields. Save api_key now; only its hash is stored. Guest keys serve only /v1/chat/completions and /v1/models; all other endpoints 403 guest_key_scope.",
+            "description": "Key minted. Response also carries status/reason/hint/next/mint/name/prefix/note fields. Save api_key now; only its hash is stored. Guest keys serve /v1/chat/completions and /v1/models; other inference endpoints 403 guest_key_scope. Drives accept the same dgk_.",
             "content": {
               "application/json": {
                 "schema": {
@@ -308,6 +318,124 @@ export const DOCS_OPENAPI_JSON = `{
             "description": "no_mac_online (community down) | hosted_offline (hosted model unavailable) - fail-loud",
             "machine-readable": null
           }
+        }
+      }
+    },
+    "/compute/api/v1/drives": {
+      "post": {
+        "summary": "Files. Get-or-create a Drive by name for this key owner. R2 binding DRIVES. Works with providers_online=0.",
+        "security": [{ "bearer": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "example": "agent-workspace" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "created" },
+          "200": { "description": "existing drive for this name + owner" },
+          "400": { "description": "invalid_drive_name" },
+          "401": { "description": "invalid_api_key" },
+          "503": { "description": "drives_unavailable — R2 binding DRIVES is not bound" }
+        }
+      },
+      "get": {
+        "summary": "List my Drives. Bearer dsk_ or dgk_.",
+        "security": [{ "bearer": [] }],
+        "responses": {
+          "200": { "description": "object list of drives" },
+          "401": { "description": "invalid_api_key" },
+          "503": { "description": "drives_unavailable" }
+        }
+      }
+    },
+    "/compute/api/v1/drives/{id}": {
+      "get": {
+        "summary": "Drive metadata. 8 MiB/object, 1 GiB per key owner.",
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "drive" },
+          "401": { "description": "invalid_api_key" },
+          "404": { "description": "drive_not_found" },
+          "503": { "description": "drives_unavailable" }
+        }
+      }
+    },
+    "/compute/api/v1/drives/{id}/objects": {
+      "get": {
+        "summary": "List objects by prefix. Query prefix=. Object bytes live at .../objects/{path} (PUT, GET, DELETE, 8 MiB cap).",
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "prefix", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "object list" },
+          "401": { "description": "invalid_api_key" },
+          "503": { "description": "drives_unavailable" }
+        }
+      }
+    },
+    "/compute/api/v1/drives/{id}/objects/{path}": {
+      "put": {
+        "summary": "Write object bytes. Cap 8 MiB. Binding DRIVES.",
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "201": { "description": "created" },
+          "200": { "description": "replaced" },
+          "413": { "description": "object_too_large | drive_quota" },
+          "503": { "description": "drives_unavailable" }
+        }
+      },
+      "get": {
+        "summary": "Read object bytes.",
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "raw bytes" },
+          "404": { "description": "object_not_found" }
+        }
+      },
+      "delete": {
+        "summary": "Delete an object.",
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "deleted" },
+          "404": { "description": "object_not_found" }
+        }
+      }
+    },
+    "/compute/api/v1/drives/{id}/snapshot": {
+      "post": {
+        "summary": "Metadata-only snapshot id. Does not copy object bytes.",
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "201": { "description": "drive.snapshot" },
+          "404": { "description": "drive_not_found" }
         }
       }
     },
@@ -627,8 +755,9 @@ info:
   title: Dasha Compute API
   version: 0.1.0
   description: OpenAI-compatible inference on community Macs; every completed job gets
-    a signed receipt on a public chain. Observed from live traffic Sep 11-12, 2026;
-    adopted and verified by the impl lane Sep 14, 2026.
+    a signed receipt on a public chain. Brain is the gateway + Hosted Ask + receipt
+    chain. Hands are Community Macs. Files are Drives (R2 binding DRIVES). Observed
+    from live traffic Sep 11-12, 2026; adopted and verified by the impl lane Sep 14, 2026.
 servers:
 - url: https://lobby.getdasha.com
   description: recommended for interactive (chat, keys); all endpoints answer on both
@@ -643,7 +772,8 @@ paths:
         '201':
           description: Key minted. Response also carries status/reason/hint/next/mint/name/prefix/note
             fields. Save api_key now; only its hash is stored. Guest keys serve only
-            /v1/chat/completions and /v1/models; all other endpoints 403 guest_key_scope.
+            /v1/chat/completions and /v1/models; other inference endpoints 403
+            guest_key_scope. Drives accept the same dgk_.
           content:
             application/json:
               schema:
@@ -739,6 +869,168 @@ paths:
           description: no_mac_online (community down) | hosted_offline (hosted model
             unavailable) - fail-loud
           machine-readable: null
+  /compute/api/v1/drives:
+    post:
+      summary: Files. Get-or-create a Drive by name. R2 binding DRIVES. Works with providers_online=0.
+      security:
+      - bearer: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - name
+              properties:
+                name:
+                  type: string
+                  example: agent-workspace
+      responses:
+        '201':
+          description: created
+        '200':
+          description: existing drive for this name + owner
+        '400':
+          description: invalid_drive_name
+        '401':
+          description: invalid_api_key
+        '503':
+          description: drives_unavailable - R2 binding DRIVES is not bound
+    get:
+      summary: List my Drives. Bearer dsk_ or dgk_.
+      security:
+      - bearer: []
+      responses:
+        '200':
+          description: object list of drives
+        '401':
+          description: invalid_api_key
+        '503':
+          description: drives_unavailable
+  /compute/api/v1/drives/{id}:
+    get:
+      summary: Drive metadata. 8 MiB/object, 1 GiB per key owner.
+      security:
+      - bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: drive
+        '401':
+          description: invalid_api_key
+        '404':
+          description: drive_not_found
+        '503':
+          description: drives_unavailable
+  /compute/api/v1/drives/{id}/objects:
+    get:
+      summary: List objects by prefix. Object bytes live at .../objects/{path}.
+      security:
+      - bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: prefix
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: object list
+        '401':
+          description: invalid_api_key
+        '503':
+          description: drives_unavailable
+  /compute/api/v1/drives/{id}/objects/{path}:
+    put:
+      summary: Write object bytes. Cap 8 MiB. Binding DRIVES.
+      security:
+      - bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '201':
+          description: created
+        '200':
+          description: replaced
+        '413':
+          description: object_too_large | drive_quota
+        '503':
+          description: drives_unavailable
+    get:
+      summary: Read object bytes.
+      security:
+      - bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: raw bytes
+        '404':
+          description: object_not_found
+    delete:
+      summary: Delete an object.
+      security:
+      - bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: deleted
+        '404':
+          description: object_not_found
+  /compute/api/v1/drives/{id}/snapshot:
+    post:
+      summary: Metadata-only snapshot id. Does not copy object bytes.
+      security:
+      - bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '201':
+          description: drive.snapshot
+        '404':
+          description: drive_not_found
   /compute/api/kit-sig:
     get:
       summary: 'Signed kit installer manifest (dasha.kit-sig.v0): ed25519 over dasha-kit:<version>:<sha256>'
