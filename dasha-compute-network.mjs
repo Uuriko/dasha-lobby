@@ -116,7 +116,7 @@ import {
   GUEST_KEY_CHAT_MAX,
   GUEST_KEY_CHAT_WINDOW_MS,
 } from './dasha-compute-guest-key.mjs';
-import { handleComputeDrives } from './dasha-compute-drives.mjs';
+import { handleComputeDrives, readDriveId } from './dasha-compute-drives.mjs';
 import {
   attachEffortToReceipt,
   dashaEffortExtension,
@@ -452,9 +452,10 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
     layers: {
       brain: 'Workers gateway + Hosted Ask + signed receipt chain',
       hands: 'Community Mac (#provide) / Hosted Workers AI floor',
-      files: 'Drives (R2 binding DRIVES). Works with providers_online=0.',
+      files: 'Drives (R2 binding DRIVES). Dream via Hosted Ask writes memory/dreamed.json. Works with providers_online=0.',
     },
     drives: '/compute/api/v1/drives',
+    dream: '/compute/api/v1/drives/:id/dream',
     // OpenRouter apply bar + Hosted UI parity: usage on stream stop + non-stream JSON.
     usage: {
       chat_completions: 'OpenAI-style usage on non-stream JSON and on the SSE final finish_reason=stop chunk',
@@ -644,6 +645,17 @@ export function openaiErrorAx(message, status = 400, type = 'invalid_request_err
       reason: 'invalid_messages',
       hint: 'POST 1–12 user/assistant messages.',
       next: [{ path: '/compute/api/v1/chat/completions' }],
+    };
+  }
+  if (/^drive_id must be drv_/i.test(msg)) {
+    return {
+      status: 'action_required',
+      reason: 'invalid_drive_id',
+      hint: 'Recording a drive_id does not put a Mac online.',
+      next: [
+        { path: '/compute/api/v1/drives' },
+        { path: '/compute/api/v1/chat/completions' },
+      ],
     };
   }
   if (/does not exist/i.test(msg)) {
@@ -1079,7 +1091,14 @@ export function publicPhase0Receipt(job, { tokensPerSecond = null } = {}) {
   const settle = status === 'complete' ? publicJobSettle(job) : null;
   if (settle) receipt.settled = settle;
   if (status === 'failed') receipt.ok = false;
+  const driveId = readDriveId(job.drive_id);
+  if (typeof driveId === 'string') receipt.drive_id = driveId;
   return attachEffortToReceipt(attachReceiptHonesty(receipt, job), effortHonestyFromJob(job));
+}
+
+function publicDriveId(job) {
+  const driveId = readDriveId(job?.drive_id);
+  return typeof driveId === 'string' ? { drive_id: driveId } : {};
 }
 
 async function cancelJob(storage, key, job, now = Date.now()) {
@@ -1633,6 +1652,9 @@ export class ComputeNetwork {
 
 
   async queueJob(owner, input, now, meta = {}) {
+    const rawDriveId = input?.drive_id != null ? input.drive_id : input?.metadata?.drive_id;
+    const driveId = readDriveId(rawDriveId);
+    if (driveId === false) return { error: 'drive_id must be drv_ plus 12 url-safe characters', status: 400 };
     const parsedEffort = parseReasoningEffort(input);
     if (!parsedEffort.ok) return { error: parsedEffort.error, status: 400 };
     const model = String(input.model || '');
@@ -1657,7 +1679,7 @@ export class ComputeNetwork {
     const requestedTemperature = Number(input.temperature);
     const stream = input.stream === true;
     const turns = countConversationTurns(messages);
-    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(meta.path ? { path: String(meta.path) } : {}), ...(meta.keyType ? { keyType: String(meta.keyType) } : {}), ...(meta.keyId ? { keyId: String(meta.keyId) } : {}), ...(input.session_id != null ? { sessionId: String(input.session_id).slice(0, 64) } : {}), request_id: (input.request_id != null && String(input.request_id).trim()) ? String(input.request_id).trim().slice(0, 80) : `req_${randomUrlToken(10)}`, ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
+    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, ...(driveId ? { drive_id: driveId } : {}), messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(meta.path ? { path: String(meta.path) } : {}), ...(meta.keyType ? { keyType: String(meta.keyType) } : {}), ...(meta.keyId ? { keyId: String(meta.keyId) } : {}), ...(input.session_id != null ? { sessionId: String(input.session_id).slice(0, 64) } : {}), request_id: (input.request_id != null && String(input.request_id).trim()) ? String(input.request_id).trim().slice(0, 80) : `req_${randomUrlToken(10)}`, ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
     await this.state.storage.put(`compute:job:${job.id}`, job);
     try {
       const ledgerPath = route === 'self' ? 'self_routed' : (meta.path || null);
@@ -2003,6 +2025,7 @@ export class ComputeNetwork {
               id: `chatcmpl_${priorJob.id.slice(4)}`,
               job_id: priorJob.id,
               ...(priorJob.request_id ? { request_id: priorJob.request_id } : {}),
+              ...publicDriveId(priorJob),
               object: 'chat.completion',
               created: Math.floor(priorJob.createdAt / 1000),
               model: priorJob.model,
@@ -2016,7 +2039,7 @@ export class ComputeNetwork {
           if (priorJob.status === 'failed') {
             return v1err(priorJob.error || 'provider failed', 502, 'server_error');
           }
-          return v1cors(json({ job_id: priorJob.id, status: priorJob.status, deduplicated: true, expires_at: priorJob.expiresAt, hint: `GET /compute/api/jobs/${priorJob.id} for the recorded outcome.` }, 202, null, false, {}));
+          return v1cors(json({ job_id: priorJob.id, ...publicDriveId(priorJob), status: priorJob.status, deduplicated: true, expires_at: priorJob.expiresAt, hint: `GET /compute/api/jobs/${priorJob.id} for the recorded outcome.` }, 202, null, false, {}));
         }
       }
       // v1: prepaid HOSTED_ASK_PRICE_CENTS per non-self API chat (community/mixture). Self-route free. Key limit_cents is runaway-only.
@@ -2081,6 +2104,7 @@ export class ComputeNetwork {
             id: `chatcmpl_${job.id.slice(4)}`,
             job_id: job.id,
             ...(job.request_id ? { request_id: job.request_id } : {}),
+            ...publicDriveId(job),
             object: 'chat.completion',
             created: Math.floor(job.createdAt / 1000),
             model: job.model,
@@ -2423,7 +2447,7 @@ export class ComputeNetwork {
         const expose = ['X-Dasha-Job', ...Object.keys(effortHeaders)].join(', ');
         return this.streamResponse(job, allowedOrigin, { 'X-Dasha-Job': job.id, ...effortHeaders, 'Access-Control-Expose-Headers': expose });
       }
-      return json({ id: job.id, status: job.status, expires_at: job.expiresAt, ...dashaEffortExtension(honesty) }, 202, allowedOrigin, true, effortHeaders);
+      return json({ id: job.id, ...publicDriveId(job), status: job.status, expires_at: job.expiresAt, ...dashaEffortExtension(honesty) }, 202, allowedOrigin, true, effortHeaders);
     }
 
     const jobMatch = path.match(/^\/compute\/api\/jobs\/([A-Za-z0-9_-]{6,64})\/?$/);
@@ -2477,6 +2501,7 @@ export class ComputeNetwork {
         attempts_count: attemptsCount(job),
         ...(attemptsCount(job) > 1 ? { failed_over: true } : {}),
         ...(route ? { route } : {}),
+        ...publicDriveId(job),
         ...(settle ? { settle } : {}),
         ...loop,
         ...(receipt ? { receipt } : {}),
@@ -3179,6 +3204,7 @@ export class ComputeNetwork {
       path,
       storage: this.state.storage,
       bucket: this.env?.DRIVES,
+      ai: this.env?.AI,
       now,
       apiKey: () => this.apiKey(request),
       unauthorized: () => v1err(invalidApiKeyMessage(request), 401, 'authentication_error'),

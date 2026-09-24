@@ -66,7 +66,7 @@ li{margin:3px 0}
 <div class="rs"><span class="lbl">responses</span><ul>
 <li><code class="c">200</code> OpenAI chat completion + job_id + inline receipt record (pending operator settlement)</li>
 <li><code class="c">401</code> invalid_api_key</li>
-<li><code class="c">400</code> invalid_messages | unsupported_model | tools/tool_choice present (tools unsupported - fail-loud)</li>
+<li><code class="c">400</code> invalid_messages | unsupported_model | invalid_drive_id | tools/tool_choice present (tools unsupported - fail-loud)</li>
 <li><code class="c">402</code> spend limit</li>
 <li><code class="c">409</code> one queued job per key</li>
 <li><code class="c">429</code> per-key rate limit</li>
@@ -83,6 +83,16 @@ li{margin:3px 0}
 <li><code class="c">200</code> existing name for this key owner</li>
 <li><code class="c">401</code> invalid_api_key</li>
 <li><code class="c">503</code> drives_unavailable (R2 binding DRIVES missing)</li>
+</ul></div>
+</div>
+<div class="ep"><div class="ep-head"><span class="m" style="color:#dfff00;border-color:#dfff00">POST</span><code class="p">/compute/api/v1/drives/:id/dream</code></div>
+<p class="s">Dream. Hosted Ask reads memory/ (or the whole drive) and writes memory/dreamed.json. format md writes memory/dreamed.md. Works with providers_online=0.</p>
+<p class="auth">auth: bearer dsk_ or guest dgk_</p>
+<div class="rs"><span class="lbl">responses</span><ul>
+<li><code class="c">200</code> drive.dream route hosted</li>
+<li><code class="c">401</code> invalid_api_key</li>
+<li><code class="c">502</code> hosted_failed</li>
+<li><code class="c">503</code> hosted_offline | drives_unavailable</li>
 </ul></div>
 </div>
 <div class="ep"><div class="ep-head"><span class="m" style="color:#39d98a;border-color:#39d98a">GET</span><code class="p">/compute/api/verify</code></div>
@@ -165,7 +175,7 @@ export const DOCS_OPENAPI_JSON = `{
   "info": {
     "title": "Dasha Compute API",
     "version": "0.1.0",
-    "description": "OpenAI-compatible inference on community Macs; every completed job gets a signed receipt on a public chain. Brain: gateway + Hosted Ask + receipt chain. Hands: Community Macs. Files: Drives (R2 binding DRIVES). Observed from live traffic Sep 11-12, 2026; adopted and verified by the impl lane Sep 14, 2026."
+    "description": "OpenAI-compatible inference on community Macs; every completed job gets a signed receipt on a public chain. Brain: gateway + Hosted Ask + receipt chain. Hands: Community Macs. Files: Drives (R2 binding DRIVES). Dream: POST /compute/api/v1/drives/{id}/dream via Hosted Ask. Observed from live traffic Sep 11-12, 2026; adopted and verified by the impl lane Sep 14, 2026."
   },
   "servers": [
     {
@@ -283,6 +293,10 @@ export const DOCS_OPENAPI_JSON = `{
                     "minimum": 0,
                     "maximum": 2,
                     "default": 0.6
+                  },
+                  "drive_id": {
+                    "type": "string",
+                    "description": "Optional drv_ id recorded on the job and receipt when a Mac runs it. Also accepted as metadata.drive_id. Does not put a Mac online. The kit does not pull the drive."
                   }
                 }
               }
@@ -297,7 +311,7 @@ export const DOCS_OPENAPI_JSON = `{
             "description": "invalid_api_key"
           },
           "400": {
-            "description": "invalid_messages | unsupported_model | tools/tool_choice present (tools unsupported - fail-loud)"
+            "description": "invalid_messages | unsupported_model | invalid_drive_id | tools/tool_choice present (tools unsupported - fail-loud)"
           },
           "402": {
             "description": "spend limit"
@@ -436,6 +450,34 @@ export const DOCS_OPENAPI_JSON = `{
         "responses": {
           "201": { "description": "drive.snapshot" },
           "404": { "description": "drive_not_found" }
+        }
+      }
+    },
+    "/compute/api/v1/drives/{id}/dream": {
+      "post": {
+        "summary": "Dream. Hosted Ask reads memory/ or the whole drive and writes memory/dreamed.json. format md writes memory/dreamed.md. Works with providers_online=0. Fails loud when Workers AI is down.",
+        "security": [{ "bearer": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "format": { "type": "string", "enum": ["json", "md"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "drive.dream — route hosted, model gpt-oss-20b" },
+          "401": { "description": "invalid_api_key" },
+          "404": { "description": "drive_not_found" },
+          "502": { "description": "hosted_failed" },
+          "503": { "description": "hosted_offline | drives_unavailable" }
         }
       }
     },
@@ -845,6 +887,9 @@ paths:
                   minimum: 0
                   maximum: 2
                   default: 0.6
+                drive_id:
+                  type: string
+                  description: Optional drv_ id recorded on the job and receipt when a Mac runs it. Also accepted as metadata.drive_id. Does not put a Mac online. The kit does not pull the drive.
       responses:
         '200':
           description: OpenAI chat completion + job_id + inline receipt record (pending
@@ -852,7 +897,7 @@ paths:
         '401':
           description: invalid_api_key
         '400':
-          description: invalid_messages | unsupported_model | tools/tool_choice present
+          description: invalid_messages | unsupported_model | invalid_drive_id | tools/tool_choice present
             (tools unsupported - fail-loud)
         '402':
           description: spend limit
@@ -1031,6 +1076,39 @@ paths:
           description: drive.snapshot
         '404':
           description: drive_not_found
+  /compute/api/v1/drives/{id}/dream:
+    post:
+      summary: Dream. Hosted Ask reads memory/ or the whole drive and writes memory/dreamed.json. format md writes memory/dreamed.md. Works with providers_online=0.
+      security:
+      - bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum:
+                  - json
+                  - md
+      responses:
+        '200':
+          description: drive.dream - route hosted, model gpt-oss-20b
+        '401':
+          description: invalid_api_key
+        '404':
+          description: drive_not_found
+        '502':
+          description: hosted_failed
+        '503':
+          description: hosted_offline | drives_unavailable
   /compute/api/kit-sig:
     get:
       summary: 'Signed kit installer manifest (dasha.kit-sig.v0): ed25519 over dasha-kit:<version>:<sha256>'

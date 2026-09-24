@@ -8,7 +8,9 @@
  * Wrangler: r2_buckets in dasha-lobby-wrangler.jsonc and dasha-lobby-wrangler.deploy.jsonc
  *
  * v0: 8 MiB per object, 1 GiB soft quota per key owner. Unbound R2 fails loud drives_unavailable.
- * Chat jobs do not write here. Put bytes on the Drives API. Snapshots are metadata only.
+ * Chat jobs do not write bytes here. Put bytes on the Drives API. Snapshots are metadata only.
+ * POST .../dream reads memory/ (or the whole drive) through Hosted Ask and writes memory/dreamed.json.
+ * A drive_id on a chat job is a receipt stub. It does not pull the drive onto a Mac.
  */
 
 import { randomUrlToken } from './dasha-lobby-x.mjs';
@@ -18,8 +20,15 @@ export const DRIVES_BUCKET = 'dasha-compute-drives';
 export const DRIVE_OBJECT_MAX_BYTES = 8 * 1024 * 1024;
 export const DRIVE_QUOTA_BYTES = 1024 * 1024 * 1024;
 export const DRIVE_PREFIX = '/compute/api/v1/drives';
+export const DREAM_JSON_PATH = 'memory/dreamed.json';
+export const DREAM_MD_PATH = 'memory/dreamed.md';
+export const DREAM_MODEL = '@cf/openai/gpt-oss-20b';
+export const DREAM_MODEL_ID = 'gpt-oss-20b';
 
 const DRIVE_ID_RE = /^drv_[A-Za-z0-9_-]{12}$/;
+const DREAM_FILE_CAP = 8;
+const DREAM_CHAR_CAP = 4000;
+const DREAM_SKIP = new Set([DREAM_JSON_PATH, DREAM_MD_PATH]);
 const NAME_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const PATH_SEG_RE = /^[A-Za-z0-9._~-]{1,128}$/;
 
@@ -137,6 +146,29 @@ function r2ObjectKey(driveId, objectPath) {
   return `v0/${driveId}/${objectPath}`;
 }
 
+/** null when absent. false when present and not drv_ + 12 url-safe chars. */
+export function readDriveId(raw) {
+  if (raw == null) return null;
+  const id = String(raw).trim();
+  if (!DRIVE_ID_RE.test(id)) return false;
+  return id;
+}
+
+/** Prefer memory/ sources. Skip prior dream output. Cap 8 paths. */
+export function selectDreamSources(paths) {
+  const list = [...new Set((Array.isArray(paths) ? paths : []).map((p) => String(p || '')))]
+    .filter((p) => p && !DREAM_SKIP.has(p))
+    .sort();
+  const memory = list.filter((p) => p.startsWith('memory/'));
+  if (memory.length) return { scope: 'memory', paths: memory.slice(0, DREAM_FILE_CAP) };
+  if (list.length) return { scope: 'drive', paths: list.slice(0, DREAM_FILE_CAP) };
+  return { scope: 'empty', paths: [] };
+}
+
+function hostedDreamText(result) {
+  return String(result?.response || result?.result?.response || result?.choices?.[0]?.message?.content || '').trim();
+}
+
 function parseRoute(pathname) {
   const path = String(pathname || '').replace(/\/+$/, '') || '/';
   if (path === DRIVE_PREFIX) return { kind: 'collection' };
@@ -148,6 +180,7 @@ function parseRoute(pathname) {
   if (!DRIVE_ID_RE.test(id)) return { kind: 'bad-id' };
   if (!tail) return { kind: 'drive', id };
   if (tail === 'snapshot') return { kind: 'snapshot', id };
+  if (tail === 'dream') return { kind: 'dream', id };
   if (tail === 'objects') return { kind: 'list', id };
   if (tail.startsWith('objects/')) return { kind: 'object', id, objectPath: tail.slice('objects/'.length) };
   return { kind: 'bad-tail' };
@@ -198,12 +231,207 @@ function contentTypeOf(request) {
   return contentType;
 }
 
+async function storeObjectBytes(storage, bucket, owner, drive, objectPath, raw, contentType, now) {
+  if (raw.byteLength > DRIVE_OBJECT_MAX_BYTES) {
+    return {
+      error: fail(
+        'Object is over 8 MiB.',
+        413,
+        'object_too_large',
+        'v0 cap is 8 MiB per object.',
+        [{ path: `/compute/api/v1/drives/${drive.id}/objects` }],
+      ),
+    };
+  }
+  const r2Key = r2ObjectKey(drive.id, objectPath);
+  const prior = await objectByteLength(bucket, r2Key);
+  const priorBytes = prior == null ? 0 : prior;
+  const nextDriveBytes = Math.max(0, Math.floor(Number(drive.bytes) || 0) - priorBytes + raw.byteLength);
+  const usage = await ownerBytes(storage, owner, drive.id, nextDriveBytes);
+  if (usage > DRIVE_QUOTA_BYTES) {
+    return {
+      error: fail(
+        'Drive quota exceeded.',
+        413,
+        'drive_quota',
+        'Soft quota is 1 GiB per key owner.',
+        [{ path: `/compute/api/v1/drives/${drive.id}` }],
+      ),
+    };
+  }
+  await bucket.put(r2Key, raw, {
+    httpMetadata: { contentType },
+    customMetadata: { bytes: String(raw.byteLength) },
+  });
+  const updated = { ...drive, bytes: nextDriveBytes, updatedAt: now };
+  await storage.put(`compute:drive:${drive.id}`, updated);
+  return { updated, created: prior == null, bytes: raw.byteLength };
+}
+
+async function listDrivePaths(bucket, driveId) {
+  const listed = await bucket.list({ prefix: `v0/${driveId}/`, limit: 1000 });
+  const base = `v0/${driveId}/`;
+  return (listed?.objects || [])
+    .map((obj) => (String(obj.key || '').startsWith(base) ? String(obj.key).slice(base.length) : ''))
+    .filter(Boolean);
+}
+
+async function readDreamFile(bucket, driveId, objectPath) {
+  const got = await bucket.get(r2ObjectKey(driveId, objectPath));
+  if (!got) return null;
+  const raw = got.body instanceof Uint8Array ? got.body : new Uint8Array(await got.arrayBuffer());
+  if (raw.includes(0)) return null;
+  const text = new TextDecoder().decode(raw);
+  if (!text || text.includes('\0')) return null;
+  return text;
+}
+
+async function loadDreamSources(bucket, driveId, paths) {
+  const read = [];
+  const chunks = [];
+  let budget = DREAM_CHAR_CAP;
+  for (const objectPath of paths) {
+    if (read.length >= DREAM_FILE_CAP || budget <= 0) break;
+    const text = await readDreamFile(bucket, driveId, objectPath);
+    if (!text) continue;
+    const slice = text.slice(0, budget);
+    budget -= slice.length;
+    chunks.push(`# ${objectPath}\n${slice}`);
+    read.push(objectPath);
+  }
+  return { read, packed: chunks.join('\n\n') };
+}
+
+function hostedOffline(driveId) {
+  return fail(
+    'Hosted Ask is offline.',
+    503,
+    'hosted_offline',
+    'Dreaming uses Hosted Workers AI. A Mac is not required.',
+    [
+      { path: `/compute/api/v1/drives/${driveId}/dream` },
+      { path: '/compute/api/chat' },
+    ],
+  );
+}
+
+function hostedFailed(driveId) {
+  return fail(
+    'Hosted Ask returned nothing.',
+    502,
+    'hosted_failed',
+    'Hosted Workers AI returned nothing. A Mac is not required.',
+    [
+      { path: `/compute/api/v1/drives/${driveId}/dream` },
+      { path: '/compute/api/chat' },
+    ],
+  );
+}
+
+async function dreamDrive({ request, storage, bucket, ai, owner, drive, now }) {
+  if (request.method !== 'POST') {
+    return fail(
+      'method not allowed',
+      405,
+      'method_not_allowed',
+      'POST to dream this drive.',
+      [{ path: `/compute/api/v1/drives/${drive.id}/dream` }],
+    );
+  }
+  const input = await readJson(request);
+  if (input?.error) {
+    return fail(
+      'Dream body is invalid.',
+      400,
+      'invalid_dream_body',
+      'POST JSON. format is json or md.',
+      [{ path: `/compute/api/v1/drives/${drive.id}/dream` }],
+    );
+  }
+  const formatRaw = input?.format;
+  if (formatRaw != null && formatRaw !== '' && formatRaw !== 'json' && formatRaw !== 'md') {
+    return fail(
+      'Dream format is json or md.',
+      400,
+      'invalid_dream_format',
+      'Omit format, or send json or md.',
+      [{ path: `/compute/api/v1/drives/${drive.id}/dream` }],
+    );
+  }
+  const format = formatRaw === 'md' ? 'md' : 'json';
+  if (!ai || typeof ai.run !== 'function') return hostedOffline(drive.id);
+
+  const paths = await listDrivePaths(bucket, drive.id);
+  const memorySources = selectDreamSources(paths.filter((p) => p.startsWith('memory/')));
+  let loaded = { read: [], packed: '' };
+  let scope = null;
+  if (memorySources.scope === 'memory') {
+    loaded = await loadDreamSources(bucket, drive.id, memorySources.paths);
+    if (loaded.read.length) scope = 'memory';
+  }
+  if (!scope) {
+    const rest = selectDreamSources(paths.filter((p) => !p.startsWith('memory/')));
+    loaded = await loadDreamSources(bucket, drive.id, rest.paths);
+    scope = loaded.read.length ? 'drive' : 'empty';
+  }
+
+  let text = '';
+  try {
+    const result = await ai.run(DREAM_MODEL, {
+      messages: [
+        {
+          role: 'system',
+          content: 'You are Hosted Workers AI. You are not a community Mac. Never invent Macs, tok/s, or providers_online. Write a short note from the drive files.',
+        },
+        {
+          role: 'user',
+          content: loaded.read.length
+            ? `Scope: ${scope}\n\n${loaded.packed}`
+            : 'Scope: empty. The drive has no files to read. Write a short note.',
+        },
+      ],
+      max_tokens: 256,
+      temperature: 0.6,
+    });
+    text = hostedDreamText(result);
+  } catch {
+    return hostedFailed(drive.id);
+  }
+  if (!text) return hostedFailed(drive.id);
+
+  const pathOut = format === 'md' ? DREAM_MD_PATH : DREAM_JSON_PATH;
+  const record = {
+    object: 'drive.dream',
+    drive_id: drive.id,
+    path: pathOut,
+    route: 'hosted',
+    model: DREAM_MODEL_ID,
+    scope,
+    read: loaded.read,
+    text,
+  };
+  const payload = format === 'md' ? text : JSON.stringify(record);
+  const raw = new TextEncoder().encode(payload);
+  const stored = await storeObjectBytes(
+    storage,
+    bucket,
+    owner,
+    drive,
+    pathOut,
+    raw,
+    format === 'md' ? 'text/markdown' : 'application/json',
+    now,
+  );
+  if (stored.error) return stored.error;
+  return json({ ...record, bytes: stored.bytes }, 200);
+}
+
 /**
  * @returns {Promise<Response|null>} null when the path is not Drives.
  * Auth is the Compute bearer (dsk_ / dgk_). Guest scope stays chat+models for inference;
  * Drives accept dgk_ on purpose — Files work without a Mac.
  */
-export async function handleComputeDrives(request, { path, storage, bucket, apiKey, now = Date.now(), unauthorized }) {
+export async function handleComputeDrives(request, { path, storage, bucket, apiKey, now = Date.now(), unauthorized, ai }) {
   if (!isDriveApiPath(path)) return null;
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: SECURITY });
@@ -317,6 +545,10 @@ export async function handleComputeDrives(request, { path, storage, bucket, apiK
       return json(snap, 201);
     }
 
+    if (route.kind === 'dream') {
+      return dreamDrive({ request, storage, bucket, ai, owner, drive, now });
+    }
+
     if (route.kind === 'list') {
       if (request.method !== 'GET' && request.method !== 'HEAD') {
         return fail(
@@ -395,35 +627,9 @@ export async function handleComputeDrives(request, { path, storage, bucket, apiK
         );
       }
       const raw = new Uint8Array(await request.arrayBuffer());
-      if (raw.byteLength > DRIVE_OBJECT_MAX_BYTES) {
-        return fail(
-          'Object is over 8 MiB.',
-          413,
-          'object_too_large',
-          'v0 cap is 8 MiB per object.',
-          [{ path: `/compute/api/v1/drives/${drive.id}/objects` }],
-        );
-      }
-      const prior = await objectByteLength(bucket, r2Key);
-      const priorBytes = prior == null ? 0 : prior;
-      const nextDriveBytes = Math.max(0, Math.floor(Number(drive.bytes) || 0) - priorBytes + raw.byteLength);
-      const usage = await ownerBytes(storage, owner, drive.id, nextDriveBytes);
-      if (usage > DRIVE_QUOTA_BYTES) {
-        return fail(
-          'Drive quota exceeded.',
-          413,
-          'drive_quota',
-          'Soft quota is 1 GiB per key owner.',
-          [{ path: `/compute/api/v1/drives/${drive.id}` }],
-        );
-      }
       const contentType = contentTypeOf(request);
-      await bucket.put(r2Key, raw, {
-        httpMetadata: { contentType },
-        customMetadata: { bytes: String(raw.byteLength) },
-      });
-      const updated = { ...drive, bytes: nextDriveBytes, updatedAt: now };
-      await storage.put(`compute:drive:${drive.id}`, updated);
+      const stored = await storeObjectBytes(storage, bucket, owner, drive, objectPath, raw, contentType, now);
+      if (stored.error) return stored.error;
       return json({
         object: 'drive.object',
         drive_id: drive.id,
@@ -431,7 +637,7 @@ export async function handleComputeDrives(request, { path, storage, bucket, apiK
         bytes: raw.byteLength,
         content_type: contentType,
         updated_at: now,
-      }, prior == null ? 201 : 200);
+      }, stored.created ? 201 : 200);
     }
 
     if (request.method === 'DELETE') {
