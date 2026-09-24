@@ -7,6 +7,10 @@
  * family stay 200 Room proxy (dest-null). Do not invent a Room proxy
  * for kits.json. Apex /kits stays compute-tab leftover → /compute.
  * Skip /compute/digest. Do not invent doctor.md / PROVIDE.md.
+ * www /room/* is the Room worker, so the 308 does not run on www until
+ * deploy route www.getdasha.com/room/kits.json* (longer than Room's
+ * /room* prefix). Do not widen that route to /room*. Do not add
+ * kits.json to ROOM_UPSTREAM.
  * Disk only. No Designer. Never plugin.jup.ag. No Muse HTML. No Ask
  * UX. No Quill. No Room Phase 0. No people-data.
  */
@@ -36,6 +40,21 @@ assert.match(
   /https:\/\/www\.getdasha\.com\/room\/kits/,
   'leftover dest is live /room/kits face',
 );
+assert.match(
+  workerSrc,
+  /www\.getdasha\.com\/room\/kits\.json\*/,
+  'worker names the www route that beats Room /room/*',
+);
+
+const KITS_JSON_ROUTE = /"pattern": "www\.getdasha\.com\/room\/kits\.json\*"/;
+for (const file of ['dasha-lobby-wrangler.deploy.jsonc', 'dasha-lobby-wrangler.jsonc']) {
+  const wrangler = readFileSync(join(root, file), 'utf8');
+  assert.match(wrangler, KITS_JSON_ROUTE, `${file} routes www /room/kits.json* to this worker`);
+  assert.match(wrangler, /"pattern": "www\.getdasha\.com\/\*"/, `${file} keeps the www catch-all`);
+  assert.doesNotMatch(wrangler, /www\.getdasha\.com\/room\*/, `${file} must not steal the Room door prefix`);
+  assert.doesNotMatch(wrangler, /www\.getdasha\.com\/room\/\*/, `${file} must not steal www /room/*`);
+  assert.doesNotMatch(wrangler, /"pattern": "getdasha\.com\/\*"/, `${file} must not steal apex Webflow`);
+}
 
 const kitsSet = workerSrc.match(/const POTTER_KITS_308_PATHS = new Set\(\[[\s\S]*?\]\);/)[0];
 const discoveryMap = workerSrc.match(/const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map\(\[[\s\S]*?\]\);/)[0];
@@ -166,4 +185,4 @@ for (const path of ['/room/kits.json', '/api/kits', '/api/kits.json']) {
   assert.ok(!sitemapXml.includes(`${WWW}${path}</loc>`), `sitemap omits leftover ${path}`);
 }
 
-console.log('dasha-motley-kits-leftover-pretty-path: PASS (/room/kits.json + /api/kits + /api/kits.json 308 /room/kits same-host; Title-case+slash; www+lobby GET+HEAD; not Room proxy invent; apex /kits stays tab; stay-out doctor.md/PROVIDE.md/digest invent; no Muse restack; no plugin.jup.ag)');
+console.log('dasha-motley-kits-leftover-pretty-path: PASS (/room/kits.json + /api/kits + /api/kits.json 308 /room/kits same-host; Title-case+slash; www+lobby GET+HEAD; www route kits.json* beats Room /room/*; not Room proxy invent; apex /kits stays tab; stay-out doctor.md/PROVIDE.md/digest invent; no Muse restack; no plugin.jup.ag)');
