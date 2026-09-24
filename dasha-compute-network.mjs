@@ -1741,37 +1741,68 @@ export class ComputeNetwork {
       if (!key || !isGuestApiKey(key) || !sameSecret(await sha256(token), key.tokenHash)) return null;
       if (guestKeyExpired(key)) return null;
       const now = Date.now();
-      const refreshed = { ...key, lastUsedAt: now };
-      await this.state.storage.put(`compute:api-key:${refreshed.id}`, refreshed);
-      return refreshed;
+      // #323: lastUsedAt write goes through the per-key lock with a fresh re-read -
+      // the sha256 wait above lets a charge land meanwhile, and a stale whole-row
+      // write would undo it.
+      return this.withApiKeySpendLock(key.id, async () => {
+        const fresh = await this.state.storage.get(`compute:api-key:${key.id}`);
+        if (!fresh) return null;
+        const refreshed = { ...fresh, lastUsedAt: now };
+        await this.state.storage.put(`compute:api-key:${refreshed.id}`, refreshed);
+        return refreshed;
+      });
     }
     const match = token.match(/^dsk_([A-Za-z0-9_-]{12})\.([A-Za-z0-9_-]{20,})$/);
     if (!match) return null;
     const key = await this.state.storage.get(`compute:api-key:key_${match[1]}`);
     if (!key || !sameSecret(await sha256(token), key.tokenHash)) return null;
     const now = Date.now();
-    const refreshed = refreshApiKeySpendWindow(key, now);
-    refreshed.lastUsedAt = now;
-    await this.state.storage.put(`compute:api-key:${refreshed.id}`, refreshed);
-    return refreshed;
+    // #323: same lock + fresh re-read as the guest arm; the window refresh applies to
+    // the fresh row so a racing charge survives.
+    return this.withApiKeySpendLock(key.id, async () => {
+      const fresh = await this.state.storage.get(`compute:api-key:${key.id}`);
+      if (!fresh) return null;
+      const refreshed = refreshApiKeySpendWindow(fresh, now);
+      refreshed.lastUsedAt = now;
+      await this.state.storage.put(`compute:api-key:${refreshed.id}`, refreshed);
+      return refreshed;
+    });
+  }
+
+  /** Per-key serialization for spend mutations: DOs interleave concurrent requests at
+   *  awaits, so the cap check and the spend write must sit inside one queued section. */
+  async withApiKeySpendLock(id, fn) {
+    this._apiKeySpendLocks = this._apiKeySpendLocks || new Map();
+    const prev = this._apiKeySpendLocks.get(id) || Promise.resolve();
+    const run = prev.then(() => fn());
+    const marker = run.catch(() => {});
+    this._apiKeySpendLocks.set(id, marker);
+    marker.then(() => { if (this._apiKeySpendLocks.get(id) === marker) this._apiKeySpendLocks.delete(id); });
+    return run;
   }
 
   /** Hard dollar cap for developer keys. checkOnly skips write. */
   async chargeApiKeySpend(key, cents, now = Date.now(), { checkOnly = false } = {}) {
     const charge = Math.max(0, Math.floor(Number(cents) || 0));
     if (!key?.id || charge <= 0) return { ok: false, error: 'bad spend', status: 400 };
-    let row = refreshApiKeySpendWindow(key, now);
-    const limit = row.limitCents;
-    if (limit != null) {
-      const cap = Math.max(0, Math.floor(Number(limit) || 0));
-      if (row.spendCents + charge > cap) {
-        return { ok: false, error: 'key spend limit reached', status: 402, key: row, limit_cents: cap, spend_cents: row.spendCents };
+    // #323: the caller's key row can be stale (read before another request charged). Re-read
+    // and mutate under the per-key lock so concurrent charges serialize on fresh spendCents.
+    return this.withApiKeySpendLock(key.id, async () => {
+      const stored = await this.state.storage.get(`compute:api-key:${key.id}`);
+      if (!stored) return { ok: false, error: 'unknown key', status: 404 };
+      let row = refreshApiKeySpendWindow(stored, now);
+      const limit = row.limitCents;
+      if (limit != null) {
+        const cap = Math.max(0, Math.floor(Number(limit) || 0));
+        if (row.spendCents + charge > cap) {
+          return { ok: false, error: 'key spend limit reached', status: 402, key: row, limit_cents: cap, spend_cents: row.spendCents };
+        }
       }
-    }
-    if (checkOnly) return { ok: true, key: row, charged_cents: 0 };
-    row = { ...row, spendCents: row.spendCents + charge, lastUsedAt: row.lastUsedAt || now };
-    await this.state.storage.put(`compute:api-key:${row.id}`, row);
-    return { ok: true, key: row, charged_cents: charge };
+      if (checkOnly) return { ok: true, key: row, charged_cents: 0 };
+      row = { ...row, spendCents: row.spendCents + charge, lastUsedAt: row.lastUsedAt || now };
+      await this.state.storage.put(`compute:api-key:${row.id}`, row);
+      return { ok: true, key: row, charged_cents: charge };
+    });
   }
 
 
@@ -3407,11 +3438,14 @@ export class ComputeNetwork {
     const id = String(keyId || '').trim();
     const charge = Math.max(0, Math.floor(Number(cents) || 0));
     if (!id || charge <= 0) return { ok: false };
-    const row = await this.state.storage.get(`compute:api-key:${id}`);
-    if (!row) return { ok: false };
-    const next = { ...row, spendCents: Math.max(0, Math.floor(Number(row.spendCents) || 0) - charge), lastUsedAt: row.lastUsedAt || now };
-    await this.state.storage.put(`compute:api-key:${id}`, next);
-    return { ok: true, key: next };
+    // #323: same per-key lock as chargeApiKeySpend so a refund cannot clobber a racing charge.
+    return this.withApiKeySpendLock(id, async () => {
+      const row = await this.state.storage.get(`compute:api-key:${id}`);
+      if (!row) return { ok: false };
+      const next = { ...row, spendCents: Math.max(0, Math.floor(Number(row.spendCents) || 0) - charge), lastUsedAt: row.lastUsedAt || now };
+      await this.state.storage.put(`compute:api-key:${id}`, next);
+      return { ok: true, key: next };
+    });
   }
 
   async refundJobDebit(job, now = Date.now(), reason = 'failed') {
