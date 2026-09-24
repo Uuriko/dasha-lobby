@@ -1,3 +1,4 @@
+import { computeDownloadResponse } from './dasha-compute-download.mjs';
 /**
  * Dasha public lobby — Cloudflare Worker + single Durable Object room.
  * Optional X account link (OAuth 2 PKCE). Linking is never required.
@@ -13114,6 +13115,8 @@ export default {
         headers: { Location: url.href, 'Cache-Control': 'public, max-age=3600' },
       });
     }
+    const kitRelease = await computeDownloadResponse(request);
+    if (kitRelease) return kitRelease;
     {
       const room = await roomDiscoveryResponse(request, { fetch: env?.fetch || globalThis.fetch });
       if (room) return room;
