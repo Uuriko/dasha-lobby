@@ -1,7 +1,8 @@
+import archiveBase64 from './dasha-compute-download-archive.mjs';
 import release from './dasha-compute-download-release.mjs';
 
 /** Four immutable release surfaces; unrelated assets retain their existing owner. */
-export async function computeDownloadResponse(request, fetcher = globalThis.fetch, config = release) {
+export async function computeDownloadResponse(request, _fetcher = globalThis.fetch, config = release, encodedArchive = archiveBase64) {
   const pathname = new URL(request.url).pathname;
   const archivePath = '/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz';
   const releasePath = '/compute/releases/706918197b63/release.json';
@@ -13,28 +14,14 @@ export async function computeDownloadResponse(request, fetcher = globalThis.fetc
   let body;
   if (pathname === archivePath) {
     try {
-      // Never forward cookies, authorization, query strings, or redirects upstream.
-      const response = await fetcher(`https://raw.githubusercontent.com/Uuriko/dasha-desk/${commit}/artifacts/dasha-compute/${manifest.artifact}`, { redirect: 'error', signal: AbortSignal.timeout(15000) });
-      if (!response.ok || !response.body) throw new Error('archive unavailable');
-      const reader = response.body.getReader();
-      const chunks = []; let bytes = 0;
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          bytes += value.length;
-          if (bytes > manifest.bytes) { await reader.cancel(); throw new Error('archive oversized'); }
-          chunks.push(value);
-        }
-      } finally { reader.releaseLock(); }
-      if (bytes !== manifest.bytes) throw new Error('archive size mismatch');
-      body = new Uint8Array(bytes); let offset = 0;
-      for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.length; }
+      const decoded = atob(encodedArchive);
+      if (decoded.length !== manifest.bytes) throw new Error('archive size mismatch');
+      body = Uint8Array.from(decoded, character => character.charCodeAt(0));
       const digest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', body))].map(n => n.toString(16).padStart(2, '0')).join('');
       if (digest !== manifest.sha256) throw new Error('archive digest mismatch');
       headers['Content-Type'] = 'application/gzip';
       headers['Content-Disposition'] = 'attachment; filename="dasha-compute-open-alpha.tar.gz"';
-      headers['Content-Length'] = String(bytes);
+      headers['Content-Length'] = String(body.byteLength);
       headers.ETag = `"${digest}"`;
     } catch { return new Response('Release download temporarily unavailable', { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '30' } }); }
   } else if (pathname.endsWith('.sha256')) {
