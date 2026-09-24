@@ -5189,7 +5189,7 @@ const POTTER_COMPUTE_API_NETWORK_308_PATHS = new Set([
   '/compute/network', '/compute/network/',
   '/api/network', '/api/network/',
 ]);
-/** /compute/factory /api/factory → /compute/api/factory. Bare /factory folds via POTTER_COMPUTE_TAB → /compute. Exact /compute/api/factory stays handler. */
+/** /compute/factory /api/factory → /compute/api/factory. Bare /factory folds via POTTER_COMPUTE_TAB → /compute. Exact /compute/api/factory stays handler. Nested /compute/api/factory.json lives in POTTER_COMPUTE_API_FACTORY_JSON_308_PATHS. Apex /factory.json stays the 200 catalog. */
 const POTTER_COMPUTE_API_FACTORY_308_PATHS = new Set([
   '/compute/factory', '/compute/factory/',
   '/api/factory', '/api/factory/',
@@ -5287,8 +5287,10 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  /compute/openapi.json). No Muse product HTML. No Room
  *  source. Apex /api/benchmarks.json (+/) Title-case 308 → /benchmarks
  *  (face already 200; lobby same-host). Nested /compute/api/benchmarks.json
- *  is already a live leftover 308 — keep it. Do not invent /benchmarks.json
- *  or /api/models /api/providers /api/v1 /api/v1/status.
+ *  is already a live leftover 308 — keep it. Extensionless
+ *  /compute/api/benchmarks lives in POTTER_COMPUTE_API_BENCHMARKS_308_PATHS.
+ *  Do not invent /benchmarks.json or /api/models /api/providers /api/v1
+ *  /api/v1/status.
  *  Live Motley restore also 308s apex /api/{contribute,bounties,listings,
  *  chess,verify.json,proof.json} + nested /compute/api/{listings,verify.json,
  *  proof.json} → faces. Fold those here so tip deploys do not wipe Motley.
@@ -5438,6 +5440,16 @@ const POTTER_OPENAPI_JSON_308_PATHS = new Set([
 const POTTER_COMPUTE_API_ROBOTS_308_PATHS = new Set([
   '/compute/api/robots', '/compute/api/robots/',
 ]);
+/** Nested Motley leftover /compute/api/benchmarks (+slash / Title-case via
+ *  toLowerCase) JSON-404 while /benchmarks is already 200. Sibling
+ *  /api/benchmarks.json and /compute/api/benchmarks.json already 308
+ *  there — keep them. Must win over the /compute/api/ casefold
+ *  catch-all. Do not invent apex /benchmarks.json. Exact /benchmarks
+ *  stays the 200 face. Lobby same-host, like the .json peers.
+ *  Peer 308s do not copy the request query string. */
+const POTTER_COMPUTE_API_BENCHMARKS_308_PATHS = new Set([
+  '/compute/api/benchmarks', '/compute/api/benchmarks/',
+]);
 /** Nested Motley leftover /compute/api/sitemap (+slash / Title-case via
  *  toLowerCase) while /sitemap.xml is already 200. .xml peers already
  *  308. Must win over the /compute/api/ casefold catch-all. */
@@ -5563,6 +5575,18 @@ const POTTER_COMPUTE_API_RECEIPTS_JSON_308_PATHS = new Set([
  *  /chain.json. Exact /compute/api/chain stays handler. */
 const POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS = new Set([
   '/compute/api/chain.json', '/compute/api/chain.json/',
+]);
+/** Nested Motley leftover /compute/api/factory.json (+slash / Title-case
+ *  via toLowerCase) JSON-404 while /compute/api/factory is already 200
+ *  factory.compute.v0. Must win over the /compute/api/ casefold
+ *  catch-all. Exact /compute/api/factory stays handler. Apex
+ *  /factory.json stays the 200 catalog. Do not invent /api/factory.json.
+ *  /compute/factory and /api/factory already 308 via
+ *  POTTER_COMPUTE_API_FACTORY_308_PATHS. Lobby same-host because the
+ *  dest is under /compute/api/. Peer 308s do not copy the request
+ *  query string. */
+const POTTER_COMPUTE_API_FACTORY_JSON_308_PATHS = new Set([
+  '/compute/api/factory.json', '/compute/api/factory.json/',
 ]);
 /** Bare leftover /proof (+slash / Title-case via toLowerCase) html-404
  *  while /compute/proof is already 200. /proof.json already 308 →
@@ -5859,6 +5883,9 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_ROBOTS_308_PATHS.has(p)) {
     return "https://www.getdasha.com/robots.txt";
   }
+  if (POTTER_COMPUTE_API_BENCHMARKS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/benchmarks";
+  }
   if (POTTER_COMPUTE_API_SITEMAP_308_PATHS.has(p)) {
     return "https://www.getdasha.com/sitemap.xml";
   }
@@ -5900,6 +5927,9 @@ export function potterHome308Dest(path) {
   }
   if (POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/api/chain";
+  }
+  if (POTTER_COMPUTE_API_FACTORY_JSON_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/compute/api/factory";
   }
   if (POTTER_PROOF_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/proof";
@@ -6010,7 +6040,8 @@ export function potterHome308Response(request, url) {
             src === '/api/benchmarks.json' ||
             src === '/api/benchmarks.json/' ||
             src === '/compute/api/benchmarks.json' ||
-            src === '/compute/api/benchmarks.json/'
+            src === '/compute/api/benchmarks.json/' ||
+            POTTER_COMPUTE_API_BENCHMARKS_308_PATHS.has(src)
           )) ||
           (u.pathname === '/compute/proof.json' && POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src)) ||
           (u.pathname === '/compute/proof' && POTTER_PROOF_308_PATHS.has(src)) ||
