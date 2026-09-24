@@ -20,6 +20,8 @@ import {
   cookieHeader,
   clearLegacyCookieHeader,
   SESSION_TTL_MS,
+  sessionClaims,
+  isSessionSidRevoked,
 } from './dasha-lobby-x.mjs';
 
 export const GOOGLE_START_PATH = '/oauth/google/start';
@@ -179,35 +181,50 @@ export function normalizeGoogleUser(claims) {
 }
 
 /** Google sign-in proves control of one Google account. It does not imply an X identity or wallet. */
-export async function createGoogleSessionToken(env, user) {
+export async function createGoogleSessionToken(env, user, opts = {}) {
   if (!GOOGLE_SUB_RE.test(user?.googleSub || '')) throw new Error('bad google subject');
-  const now = Date.now();
   return signPayload(env.LOBBY_SESSION_SECRET, {
-    v: 1,
+    ...sessionClaims('google', opts),
     provider: 'google',
     googleSub: user.googleSub,
     email: user.email || null,
     name: user.name || '',
     avatar: user.avatar || null,
-    iat: now,
-    exp: now + SESSION_TTL_MS,
   });
 }
 
+/** Mint a fresh token for the same Google identity, preserving auth_time (rotation, not re-auth). */
+export async function reissueGoogleSessionToken(env, session) {
+  if (!session || session.provider !== 'google' || !GOOGLE_SUB_RE.test(session.googleSub || '')) {
+    throw new Error('bad google session');
+  }
+  return createGoogleSessionToken(
+    env,
+    { googleSub: session.googleSub, email: session.email, name: session.name, avatar: session.avatar },
+    { authTime: session.authTime },
+  );
+}
+
 /** Read a Google session from the main Dasha session cookie. */
-export async function googleSessionFromRequest(env, request) {
+export async function googleSessionFromRequest(env, request, storage = null) {
   if (!env?.LOBBY_SESSION_SECRET) return null;
   const raw = readCookie(request.headers.get('Cookie'));
   if (!raw) return null;
   const payload = await verifyPayload(env.LOBBY_SESSION_SECRET, raw);
   if (payload?.v !== 1 || payload?.provider !== 'google' || !GOOGLE_SUB_RE.test(payload?.googleSub || '')) return null;
   if (!Number.isFinite(payload.exp)) return null;
+  const sid = typeof payload.sid === 'string' && payload.sid ? payload.sid : null;
+  if (storage && sid && (await isSessionSidRevoked(storage, sid))) return null;
+  const authTime = Number(payload.auth_time);
   return {
     provider: 'google',
     googleSub: payload.googleSub,
     email: typeof payload.email === 'string' ? payload.email : null,
     name: payload.name || '',
     avatar: typeof payload.avatar === 'string' ? payload.avatar.slice(0, 300) : null,
+    authMethod: typeof payload.auth_method === 'string' && payload.auth_method ? payload.auth_method : 'google',
+    authTime: Number.isFinite(authTime) ? authTime : (Number.isFinite(payload.iat) ? payload.iat : null),
+    sid,
   };
 }
 

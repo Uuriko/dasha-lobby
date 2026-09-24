@@ -17,6 +17,8 @@ import {
   verifyPayload,
   readCookie,
   SESSION_TTL_MS,
+  sessionClaims,
+  isSessionSidRevoked,
 } from './dasha-lobby-x.mjs';
 
 export const GH_COOKIE = '__Host-dasha_gh';
@@ -119,23 +121,20 @@ export async function fetchGithubUser(accessToken) {
   };
 }
 
-export async function createGithubSessionToken(env, user) {
+export async function createGithubSessionToken(env, user, opts = {}) {
   const login = normalizeGithubLogin(user.login);
   if (!login) throw new Error('bad github login');
-  const now = Date.now();
   return signPayload(env.LOBBY_SESSION_SECRET, {
-    v: 1,
+    ...sessionClaims('github', opts),
     kind: 'github',
     ghId: String(user.ghId),
     login,
     name: user.name || '',
     avatar: user.avatar || null,
-    iat: now,
-    exp: now + SESSION_TTL_MS,
   });
 }
 
-export async function githubSessionFromRequest(env, request) {
+export async function githubSessionFromRequest(env, request, storage = null) {
   if (!env?.LOBBY_SESSION_SECRET) return null;
   const raw = readCookie(request.headers.get('Cookie'), GH_COOKIE);
   if (!raw) return null;
@@ -144,12 +143,19 @@ export async function githubSessionFromRequest(env, request) {
   if (!Number.isFinite(payload.exp)) return null;
   const login = normalizeGithubLogin(payload.login);
   if (!login) return null;
+  const sid = typeof payload.sid === 'string' && payload.sid ? payload.sid : null;
+  if (storage && sid && (await isSessionSidRevoked(storage, sid))) return null;
+  const authTime = Number(payload.auth_time);
   return {
+    provider: 'github',
     ghId: String(payload.ghId),
     login,
     name: payload.name || '',
     avatar: typeof payload.avatar === 'string' ? payload.avatar.slice(0, 300) : null,
     linked: true,
+    authMethod: typeof payload.auth_method === 'string' && payload.auth_method ? payload.auth_method : 'github',
+    authTime: Number.isFinite(authTime) ? authTime : (Number.isFinite(payload.iat) ? payload.iat : null),
+    sid,
   };
 }
 

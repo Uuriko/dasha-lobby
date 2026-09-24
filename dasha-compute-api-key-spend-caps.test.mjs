@@ -66,6 +66,8 @@ const created = await network.fetch(new Request('https://lobby.getdasha.com/comp
   method: 'POST', headers: cookie, body: JSON.stringify({ name: 'Capped' }),
 }), origin);
 assert.equal(created.status, 201, await created.clone().text());
+// task-17 session rotation: follow the fresh cookie after each key mint.
+cookie.Cookie = created.headers.get('set-cookie').split(';')[0];
 const createdBody = await created.json();
 assert.equal(createdBody.limit_cents, 500);
 assert.equal(createdBody.limit_reset, 'monthly');
@@ -81,6 +83,7 @@ const uncapped = await network.fetch(new Request('https://lobby.getdasha.com/com
   method: 'POST', headers: cookie, body: JSON.stringify({ name: 'Open', limit_cents: null, limit_reset: 'none' }),
 }), origin);
 assert.equal(uncapped.status, 201);
+cookie.Cookie = uncapped.headers.get('set-cookie').split(';')[0];
 const uncappedBody = await uncapped.json();
 assert.equal(uncappedBody.limit_cents, null);
 assert.equal(uncappedBody.limit_reset, 'none');
@@ -90,6 +93,7 @@ const custom = await network.fetch(new Request('https://lobby.getdasha.com/compu
   method: 'POST', headers: cookie, body: JSON.stringify({ name: 'Floor', limit_cents: 100, limit_reset: 'daily' }),
 }), origin);
 assert.equal(custom.status, 201);
+cookie.Cookie = custom.headers.get('set-cookie').split(';')[0];
 const floor = await custom.json();
 assert.equal(floor.limit_cents, 100);
 assert.equal(floor.limit_reset, 'daily');

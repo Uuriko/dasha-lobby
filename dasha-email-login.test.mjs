@@ -80,7 +80,11 @@ assert.equal(replay.status, 409, 'replay rejected');
 
 // 4. session decodes as email provider; /auth/status surfaces it
 const session = await authSessionFromRequest(env, new Request('https://lobby.getdasha.com/auth/status', { headers: { Cookie: cookiePair } }));
-assert.deepEqual(session, { provider: 'email', email: EMAIL });
+assert.equal(session.provider, 'email');
+assert.equal(session.email, EMAIL);
+assert.equal(session.authMethod, 'email', 'auth_method claim');
+assert.ok(Number.isFinite(session.authTime), 'auth_time claim');
+assert.equal(typeof session.sid, 'string', 'sid claim');
 const statusRes = await workerDefault.fetch(new Request('https://lobby.getdasha.com/auth/status', { headers: { Origin: originHeaders.Origin, Cookie: cookiePair } }), env);
 const statusBody = await statusRes.json();
 assert.deepEqual(statusBody.email, { address: EMAIL });

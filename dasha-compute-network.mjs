@@ -1,4 +1,11 @@
-import { authSessionFromRequest, randomUrlToken } from './dasha-lobby-x.mjs';
+import {
+  authSessionFromRequest,
+  randomUrlToken,
+  cookieHeader,
+  reissueSessionToken,
+  rotateSessionForRequest,
+} from './dasha-lobby-x.mjs';
+import { reissueGoogleSessionToken } from './dasha-lobby-google.mjs';
 import {
   CREDIT_DEST,
   CREDIT_DISCOUNTS,
@@ -1111,6 +1118,23 @@ function mergeRouteFromHeaders(input, request) {
   return next;
 }
 
+/**
+ * Task-17 rotation for privilege-sensitive compute endpoints: revoke the
+ * request's session id server-side and mint a fresh token for the same
+ * identity (auth_time preserved). Returns the Set-Cookie value, or null when
+ * there is no session to rotate.
+ */
+async function rotateComputeSession(env, storage, request) {
+  const { token, rotated } = await rotateSessionForRequest(
+    env,
+    storage,
+    request,
+    (e, session) =>
+      session.provider === 'google' ? reissueGoogleSessionToken(e, session) : reissueSessionToken(e, session),
+  );
+  return rotated && token ? cookieHeader(token) : null;
+}
+
 
 export class ComputeNetwork {
   constructor(state, env) { this.state = state; this.env = env; this.rates = new Map(); }
@@ -1641,7 +1665,7 @@ export class ComputeNetwork {
     }
     if ((path === '/compute/api/night' || path === '/compute/api/night/') && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'POST')) {
       if (!allowedOrigin) return maybeHead(request, originRequired());
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
       if (request.method === 'GET' || request.method === 'HEAD') {
         await this.prune(now);
@@ -1663,7 +1687,7 @@ export class ComputeNetwork {
 
     if ((path === '/compute/api/night/summary' || path === '/compute/api/night/summary/') && (request.method === 'GET' || request.method === 'HEAD')) {
       if (!allowedOrigin) return maybeHead(request, originRequired());
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
       const tasks = [...(await this.state.storage.list({ prefix: 'compute:night:' })).values()].filter(task => task.owner === owner);
       const artifacts = tasks.flatMap(task => (task.artifacts || []).map(artifact => ({ task_id: task.id, title: task.title, ...artifact }))).sort((a, b) => b.completed_at - a.completed_at).slice(0, 20);
@@ -1673,7 +1697,7 @@ export class ComputeNetwork {
     const nightRunMatch = path.match(/^\/compute\/api\/night\/(night_[A-Za-z0-9_-]{12})\/run$/);
     if (nightRunMatch && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request)), key = `compute:night:${nightRunMatch[1]}`, task = await this.state.storage.get(key);
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage)), key = `compute:night:${nightRunMatch[1]}`, task = await this.state.storage.get(key);
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!task || task.owner !== owner) return json({ error: 'Night Shift task not found' }, 404, allowedOrigin, true);
       if (task.status === 'running' || task.status === 'awaiting_approval') return json({ error: 'task is already running or awaiting approval' }, 409, allowedOrigin, true);
@@ -1688,7 +1712,7 @@ export class ComputeNetwork {
     const nightApproveMatch = path.match(/^\/compute\/api\/night\/(night_[A-Za-z0-9_-]{12})\/approve$/);
     if (nightApproveMatch && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request)), key = `compute:night:${nightApproveMatch[1]}`, task = await this.state.storage.get(key);
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage)), key = `compute:night:${nightApproveMatch[1]}`, task = await this.state.storage.get(key);
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!task || task.owner !== owner) return json({ error: 'Night Shift task not found' }, 404, allowedOrigin, true);
       if (task.status !== 'awaiting_approval') return json({ error: 'task is not awaiting approval' }, 409, allowedOrigin, true);
@@ -1703,7 +1727,7 @@ export class ComputeNetwork {
     const nightMatch = path.match(/^\/compute\/api\/night\/(night_[A-Za-z0-9_-]{12})$/);
     if (nightMatch && request.method === 'DELETE') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request)), key = `compute:night:${nightMatch[1]}`, task = await this.state.storage.get(key);
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage)), key = `compute:night:${nightMatch[1]}`, task = await this.state.storage.get(key);
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!task || task.owner !== owner) return json({ error: 'Night Shift task not found' }, 404, allowedOrigin, true);
       if (task.lastJobId) {
@@ -1717,7 +1741,7 @@ export class ComputeNetwork {
 
     if ((path === '/compute/api/keys' || path === '/compute/api/keys/') && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'POST')) {
       if (!allowedOrigin) return maybeHead(request, originRequired());
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
       const keys = [...(await this.state.storage.list({ prefix: 'compute:api-key:' })).values()].filter(key => key.owner === owner);
       if (request.method === 'GET' || request.method === 'HEAD') {
@@ -1733,22 +1757,26 @@ export class ComputeNetwork {
       };
       await this.state.storage.put(`compute:api-key:${id}`, record);
       await this.bumpMetric('key:create');
+      // Task 17: creating a spend credential rotates the session.
+      const rotatedCookie = await rotateComputeSession(this.env, this.state.storage, request);
       return json({
         id, name, api_key: token,
         limit_cents: limitCents, limit_reset: limitReset, spend_cents: 0,
         limit_remaining_cents: limitCents == null ? null : limitCents,
         note: 'Copy this key now. Dasha stores only its hash. Non-self chat spends prepaid credits; cap limits runaway.',
-      }, 201, allowedOrigin, true);
+      }, 201, allowedOrigin, true, rotatedCookie ? { 'Set-Cookie': rotatedCookie } : {});
     }
 
     const keyMatch = path.match(/^\/compute\/api\/keys\/(key_[A-Za-z0-9_-]{12})$/);
     if (keyMatch && request.method === 'DELETE') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request)), key = await this.state.storage.get(`compute:api-key:${keyMatch[1]}`);
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage)), key = await this.state.storage.get(`compute:api-key:${keyMatch[1]}`);
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!key || key.owner !== owner) return json({ error: 'API key not found' }, 404, allowedOrigin, true);
       await this.state.storage.delete(`compute:api-key:${key.id}`);
-      return json({ ok: true }, 200, allowedOrigin, true);
+      // Task 17: revoking a spend credential rotates the session.
+      const rotatedCookie = await rotateComputeSession(this.env, this.state.storage, request);
+      return json({ ok: true }, 200, allowedOrigin, true, rotatedCookie ? { 'Set-Cookie': rotatedCookie } : {});
     }
 
     // v1 gateway: every response (errors + successes + stream) carries ACAO (OpenAI convention).
@@ -2047,7 +2075,7 @@ export class ComputeNetwork {
     }
 
     if ((path === '/compute/api/providers' || path === '/compute/api/providers/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, credentials));
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => provider.owner === owner).map(provider => ({ id: provider.id, name: provider.name, models: provider.models || [], allowed_models: provider.allowedModels || provider.models || [], hardware: provider.hardware || null, kit_version: provider.kitVersion || null, created_at: provider.createdAt, last_seen_at: provider.lastSeenAt || null, created_via: provider.createdVia || null, online: now - Number(provider.lastSeenAt || 0) < FRESH_MS }));
       return maybeHead(request, json({ providers }, 200, allowedOrigin, credentials));
@@ -2057,13 +2085,13 @@ export class ComputeNetwork {
     // shares it, each redeem registers one Mac under the owner's account.
     if (path === '/compute/api/org-enroll' || path === '/compute/api/org-enroll/') {
       if (request.method === 'GET' || request.method === 'HEAD') {
-        const owner = identity(await authSessionFromRequest(this.env, request));
+        const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
         if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
         const codes = [...(await this.state.storage.list({ prefix: 'compute:org-enroll:' })).values()].filter(c => c.owner === owner).map(c => ({ code: c.code, label: c.label || null, quota: c.quota, used: c.used, expires_at: c.expiresAt, revoked: Boolean(c.revoked), created_at: c.createdAt }));
         return maybeHead(request, json({ codes }, 200, allowedOrigin, true));
       }
       if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!takeRate(this.rates, `orgenroll:${owner}`, 10)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
       const input = await body(request);
@@ -2077,7 +2105,7 @@ export class ComputeNetwork {
     }
     const orgEnrollMatch = path.match(/^\/compute\/api\/org-enroll\/([A-Za-z0-9_-]{6,64})$/);
     if (orgEnrollMatch && request.method === 'DELETE') {
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       const okey = `compute:org-enroll:${orgEnrollMatch[1]}`, existing = await this.state.storage.get(okey);
       if (!existing || existing.owner !== owner) return json({ error: 'enroll code not found' }, 404, allowedOrigin, true);
@@ -2110,7 +2138,7 @@ export class ComputeNetwork {
     if (path === '/compute/api/providers/register' || path === '/compute/api/providers/register/') {
       if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!takeRate(this.rates, `register:${owner}`, 3)) return json({ error: 'provider registration rate limited' }, 429, allowedOrigin, true);
       const input = await body(request), models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model) && canAdvertiseModel(model)))];
@@ -2125,7 +2153,7 @@ export class ComputeNetwork {
     const providerMatch = path.match(/^\/compute\/api\/providers\/([A-Za-z0-9_-]{6,64})$/);
     if (providerMatch && request.method === 'DELETE') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request)), key = `compute:provider:${providerMatch[1]}`, provider = await this.state.storage.get(key);
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage)), key = `compute:provider:${providerMatch[1]}`, provider = await this.state.storage.get(key);
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!provider || provider.owner !== owner) return json({ error: 'provider not found' }, 404, allowedOrigin, true);
       await this.state.storage.delete(key);
@@ -2247,7 +2275,7 @@ export class ComputeNetwork {
     }
 
     if ((path === '/compute/api/jobs' || path === '/compute/api/jobs/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, credentials));
       await this.prune(now);
       const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()]
@@ -2264,7 +2292,7 @@ export class ComputeNetwork {
 
     if ((path === '/compute/api/jobs' || path === '/compute/api/jobs/') && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       const queued = await this.queueJob(owner, mergeRouteFromHeaders(await body(request, 12 * 1024), request), now);
       if (queued.error) return json({ error: queued.error }, queued.status, allowedOrigin, true);
@@ -2280,7 +2308,7 @@ export class ComputeNetwork {
 
     const jobMatch = path.match(/^\/compute\/api\/jobs\/([A-Za-z0-9_-]{6,64})\/?$/);
     if (jobMatch && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'DELETE')) {
-      const sessionOwner = identity(await authSessionFromRequest(this.env, request)), key = `compute:job:${jobMatch[1]}`, job = await this.state.storage.get(key);
+      const sessionOwner = identity(await authSessionFromRequest(this.env, request, this.state.storage)), key = `compute:job:${jobMatch[1]}`, job = await this.state.storage.get(key);
       // API keys (guest or developer) read their own jobs: a guest whose charge path died still gets one recorded outcome.
       const jobApiKey = sessionOwner ? null : await this.apiKey(request);
       const jobReader = sessionOwner || (jobApiKey && jobApiKey.owner) || null;
@@ -2343,7 +2371,7 @@ export class ComputeNetwork {
     }
     if ((path === '/compute/api/sponsors' || path === '/compute/api/sponsors/') && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const session = await authSessionFromRequest(this.env, request);
+      const session = await authSessionFromRequest(this.env, request, this.state.storage);
       const actor = sponsorActor(session);
       if (!actor) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!takeRate(this.rates, `sponsor:${actor.owner}`, 3)) return json({ error: 'sponsor rate limited' }, 429, allowedOrigin, true);
@@ -2364,7 +2392,7 @@ export class ComputeNetwork {
     // --- Sponsor tip orders (Solana Pay; reuses credit lock/verify helpers; face cents) ---
     if ((path === '/compute/api/sponsors/orders' || path === '/compute/api/sponsors/orders/') && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const session = await authSessionFromRequest(this.env, request);
+      const session = await authSessionFromRequest(this.env, request, this.state.storage);
       const actor = sponsorActor(session);
       const ip = (request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() || 'unknown').slice(0, 64);
       const rateOwner = actor ? actor.owner : `ip:${ip || 'unknown'}`;
@@ -2586,7 +2614,7 @@ export class ComputeNetwork {
 
     // --- referral (tasks 16-17): account-bound code + stats ---
     if ((path === '/compute/api/referral/code' || path === '/compute/api/referral/code/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return maybeHead(request, json({ error: 'login required' }, 401, allowedOrigin, true));
       const code = await this.referralEnsureCode(owner, now);
       if (!code) return maybeHead(request, json({ error: 'code unavailable' }, 503, allowedOrigin, true));
@@ -2610,7 +2638,7 @@ export class ComputeNetwork {
 
     // --- provider earnings + payout preference (pending settle; no auto-chain) ---
     if ((path === '/compute/api/receipts' || path === '/compute/api/receipts/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) {
         return maybeHead(request, json({
           error: 'login required',
@@ -2627,7 +2655,7 @@ export class ComputeNetwork {
       }, 200, allowedOrigin, true));
     }
     if ((path === '/compute/api/provider/earnings' || path === '/compute/api/provider/earnings/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      let owner = identity(await authSessionFromRequest(this.env, request));
+      let owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       let onlyProviderId = null;
       if (!owner) {
         // Kit CLI `dasha-compute earnings` (task 19): Bearer provider token + ?provider_id= scopes the view to that one Mac.
@@ -2651,19 +2679,21 @@ export class ComputeNetwork {
 
     if ((path === '/compute/api/provider/payout-pref' || path === '/compute/api/provider/payout-pref/') && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       const input = await body(request);
       const norm = normalizePayoutPref(input);
       if (!norm.ok) return json({ error: norm.error }, 400, allowedOrigin, true);
       const row = { method: norm.method, wallet: norm.wallet, updatedAt: now };
       await this.state.storage.put(`compute:provider-payout-pref:${owner}`, row);
-      return json({ method: row.method, wallet: row.wallet, updated_at: row.updatedAt, payout_mode: PROVIDER_PAYOUT_MODE }, 200, allowedOrigin, true);
+      // Task 17: changing the payout destination rotates the session.
+      const rotatedCookie = await rotateComputeSession(this.env, this.state.storage, request);
+      return json({ method: row.method, wallet: row.wallet, updated_at: row.updatedAt, payout_mode: PROVIDER_PAYOUT_MODE }, 200, allowedOrigin, true, rotatedCookie ? { 'Set-Cookie': rotatedCookie } : {});
     }
 
     if ((path === '/compute/api/provider/payout' || path === '/compute/api/provider/payout/') && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!takeRate(this.rates, `provider-payout:${owner}`, 5)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
       const input = await body(request);
@@ -2682,6 +2712,8 @@ export class ComputeNetwork {
       if (!result.ok) return json({ error: result.error, min_payout_cents: PROVIDER_MIN_PAYOUT_CENTS, payout_mode: PROVIDER_PAYOUT_MODE }, result.status || 400, allowedOrigin, true);
       const p = result.payout;
       await this.bumpMetric('provider:payout');
+      // Task 17: requesting a payout rotates the session.
+      const rotatedCookie = await rotateComputeSession(this.env, this.state.storage, request);
       return json({
         id: p.id,
         status: p.status,
@@ -2692,7 +2724,7 @@ export class ComputeNetwork {
         created_at: p.createdAt,
         payout_mode: PROVIDER_PAYOUT_MODE,
         note: p.note,
-      }, 201, allowedOrigin, true);
+      }, 201, allowedOrigin, true, rotatedCookie ? { 'Set-Cookie': rotatedCookie } : {});
     }
 
     // --- operator provider payout settle (secret header; not session) ---
@@ -2793,7 +2825,7 @@ export class ComputeNetwork {
 
     // --- prepaid credits (Solana USDC / $dasha; Stripe deferred) ---
     if ((path === '/compute/api/credits' || path === '/compute/api/credits/') && (request.method === 'GET' || request.method === 'HEAD')) {
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return maybeHead(request, json({ error: 'login required', ...creditsCatalog(null) }, 401, allowedOrigin, true));
       const bal = await this.state.storage.get(`compute:credit-balance:${owner}`);
       const balance_cents = Math.max(0, Math.floor(Number(bal?.cents) || 0));
@@ -2802,7 +2834,7 @@ export class ComputeNetwork {
 
     if ((path === '/compute/api/credits/orders' || path === '/compute/api/credits/orders/') && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!takeRate(this.rates, `credit-order:${owner}`, 8)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
       const input = await body(request);
@@ -2860,7 +2892,7 @@ export class ComputeNetwork {
 
     if ((path === '/compute/api/credits/spend' || path === '/compute/api/credits/spend/') && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!takeRate(this.rates, `credit-spend:${owner}`, 30, 60_000)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
       const input = await body(request);
@@ -2893,7 +2925,7 @@ export class ComputeNetwork {
 
     if ((path === '/compute/api/credits/card/checkout' || path === '/compute/api/credits/card/checkout/') && request.method === 'POST') {
       if (!allowedOrigin) return originRequired();
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!takeRate(this.rates, `credit-card:${owner}`, 6)) return json({ error: 'rate limited' }, 429, allowedOrigin, true);
       if (!stripeConfigured(this.env)) return json({ error: 'card payments unavailable' }, 503, allowedOrigin, true);
@@ -2962,7 +2994,7 @@ export class ComputeNetwork {
     if (creditOrderMatch) {
       const orderId = creditOrderMatch[1];
       const isConfirm = creditOrderMatch[2] === 'confirm' || path.endsWith('/confirm') || path.endsWith('/confirm/');
-      const owner = identity(await authSessionFromRequest(this.env, request));
+      const owner = identity(await authSessionFromRequest(this.env, request, this.state.storage));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       const key = `compute:credit-order:${orderId}`;
       let order = await this.state.storage.get(key);
