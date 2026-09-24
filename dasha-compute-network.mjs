@@ -1410,8 +1410,9 @@ export class ComputeNetwork {
         keyType: job.keyType || null,
         providerId: provider?.id || job.providerId || null,
         createdAtMs: Number(job.createdAt || 0) || null,
-        buyerChargeCents: Number(job.debitCents || 0),
-        creditUsedCents: Number(job.debitCents || 0),
+        buyerChargeCents: job.debitCents != null ? Number(job.debitCents) : 0,
+        creditUsedCents: null,
+        engine: job.route === 'mixture' ? 'mixture' : 'community',
         sessionId: job.sessionId || null,
       },
       now,
@@ -1465,9 +1466,11 @@ export class ComputeNetwork {
           durationMs: ledger.createdAtMs ? Math.max(0, Number(res.receipt?.at || 0) - ledger.createdAtMs) : settleInput.latencyMs,
           settledAtMs: res.receipt?.at,
           buyerChargeCents: ledger.buyerChargeCents,
-          creditUsedCents: ledger.creditUsedCents ?? ledger.buyerChargeCents,
-          providerPayoutCents: res.receipt?.cents,
+          creditUsedCents: ledger.creditUsedCents ?? null,
+          providerPayoutCents: ledger.providerPayoutCents !== undefined ? ledger.providerPayoutCents : res.receipt?.cents,
+          hostedInferenceCostUsdMicros: ledger.hostedInferenceCostUsdMicros ?? null,
           pricingVersion: PRICING_VERSION,
+          engine: ledger.engine || settleInput.engine || null,
         }), Number(res.receipt?.at || 0) || undefined);
       } catch { /* ledger logging never breaks settlement */ }
     }
@@ -1540,7 +1543,10 @@ export class ComputeNetwork {
         providerId: null,
         createdAtMs: settle.created_at_ms != null ? Number(settle.created_at_ms) : null,
         buyerChargeCents: chargedCents,
-        creditUsedCents: chargedCents,
+        creditUsedCents: null,
+        providerPayoutCents: 0, // economy ruling: nobody is owed a payout on hosted jobs
+        hostedInferenceCostUsdMicros: null, // NULL until the Workers AI bill yields a real per-job number
+        engine: 'hosted',
         sessionId: settle.session_id || null,
       },
       now,

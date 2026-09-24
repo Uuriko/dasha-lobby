@@ -26,6 +26,19 @@ import {
   assert.equal(settled.payment_fee_usd_micros, null);
   assert.equal(settled.prompt_tokens, 12);
   assert.equal(settled.completion_tokens, 34);
+  // economy ruling: hosted rows payout 0, cost field null until real Workers AI numbers
+  const hosted = buildLedgerSettledRow({ receiptId: 'r2', jobId: null, providerId: null, usage: { total_tokens: 46 }, settledAtMs: 2000, buyerChargeCents: 5, creditUsedCents: null, providerPayoutCents: 0, hostedInferenceCostUsdMicros: null, pricingVersion: '2026-09-alpha-1', engine: 'hosted' });
+  assert.equal(hosted.provider_payout_usd_micros, 0);
+  assert.equal(hosted.hosted_inference_cost_usd_micros, null);
+  assert.equal(hosted.engine, 'hosted');
+  // traction fix 2: missing money inputs stay null, never silently 0
+  const missing = buildLedgerSettledRow({ receiptId: 'r3', jobId: 'j9' });
+  assert.equal(missing.buyer_charge_usd_micros, null);
+  assert.equal(missing.credit_used_usd_micros, null);
+  assert.equal(missing.provider_payout_usd_micros, null);
+  assert.equal(usdMicrosFromCents(undefined), null);
+  assert.equal(usdMicrosFromCents(null), null);
+  assert.equal(usdMicrosFromCents(0), 0);
   assert.equal(mapLedgerFailureReason('provider cut'), 'provider_offline');
   assert.equal(mapLedgerFailureReason('expired'), 'timeout');
   assert.equal(mapLedgerFailureReason('cancelled'), 'client_abort');

@@ -10,7 +10,17 @@
  *   payout_event        one per provider payout request (face + dasha bonus split)
  *   buyer_event         first row per buyer (cohort joins via buyer_id only)
  *   provider_event      lifecycle: registered / first heartbeat
- *   provider_online_hour  one row per provider per UTC hour (put-if-absent)
+ *   provider_online_hour  one row per provider per UTC hour (put-if-absent;
+ *                           online=1 only - offline is recorded by ABSENCE of a row)
+ *
+ * buyer_event.first_job_at_ms stays null: activation is derived from the buyer's
+ * first settled job_event instead. The weekly chain tie-out is scoped to
+ * route in (community, mixture) - the chain holds zero hosted receipts, so
+ * hosted rows never belong in that sum. Hosted rows carry
+ * provider_payout_usd_micros = 0 (nobody is owed a payout on hosted jobs) and
+ * hosted_inference_cost_usd_micros NULL until a real per-job Workers AI cost
+ * exists (economy ruling, Sep 23 2026).
+ * credit_used_usd_micros is null until promo/free-credit draw is measurable.
  *
  * Money is integer micro-dollars with the currency in the field name (usd_micros).
  * Timestamps are UTC epoch ms. History is never rewritten: refunds and corrections
@@ -30,7 +40,8 @@ export const LEDGER_KEY_TYPES = ['dgk_', 'dsk_', 'none'];
 export const LEDGER_FAILURE_REASONS = ['provider_offline', 'timeout', 'model_error', 'client_abort'];
 
 export function usdMicrosFromCents(cents) {
-  return Math.max(0, Math.floor(Number(cents) || 0)) * 10_000;
+  if (cents == null || !Number.isFinite(Number(cents))) return null; // null means unknown - never invent a zero
+  return Math.max(0, Math.floor(Number(cents))) * 10_000;
 }
 
 async function sha256Hex(text) {
@@ -74,9 +85,10 @@ export function buildLedgerCreatedRow({ jobId, requestId, path, keyType, modelId
   };
 }
 
-export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, pricingVersion } = {}) {
+export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, hostedInferenceCostUsdMicros, pricingVersion, engine } = {}) {
   return {
     receipt_id: receiptId || null,
+    engine: engine || null,
     job_id: jobId || null,
     provider_id: providerId || null,
     status: 'settled',
@@ -87,6 +99,7 @@ export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, dur
     buyer_charge_usd_micros: usdMicrosFromCents(buyerChargeCents),
     credit_used_usd_micros: usdMicrosFromCents(creditUsedCents),
     provider_payout_usd_micros: usdMicrosFromCents(providerPayoutCents),
+    hosted_inference_cost_usd_micros: hostedInferenceCostUsdMicros == null ? null : usdMicrosFromCents(hostedInferenceCostUsdMicros), // NULL until the Workers AI bill yields a real per-job number - never guessed
     payment_fee_usd_micros: null,
     pricing_version: String(pricingVersion || 'unversioned'),
   };
@@ -114,17 +127,17 @@ export function buildLedgerRefundRow({ receiptId, jobId, refundCents } = {}) {
 }
 
 export function buildLedgerPayoutRow({ payoutId, providerId, requestedAtMs, method, faceCents, payoutCents } = {}) {
-  const face = Math.max(0, Math.floor(Number(faceCents) || 0));
-  const payout = Math.max(0, Math.floor(Number(payoutCents) || 0));
+  const face = faceCents == null || !Number.isFinite(Number(faceCents)) ? null : Math.max(0, Math.floor(Number(faceCents)));
+  const payout = payoutCents == null || !Number.isFinite(Number(payoutCents)) ? null : Math.max(0, Math.floor(Number(payoutCents)));
   const option = String(method || '').trim() === 'dasha' ? 'dasha' : 'usdc';
   return {
     payout_id: payoutId || null,
     provider_id: providerId || null,
     requested_at_ms: Math.max(0, Math.floor(Number(requestedAtMs) || 0)),
     paid_at_ms: null,
-    payout_face_usd_micros: face * 10_000,
+    payout_face_usd_micros: face == null ? null : face * 10_000,
     payout_option: option,
-    dasha_bonus_usd_micros: option === 'dasha' ? (payout - face) * 10_000 : 0,
+    dasha_bonus_usd_micros: option === 'dasha' ? (face == null || payout == null ? null : (payout - face) * 10_000) : 0,
     dasha_quantity: null,
     dasha_quote: null,
   };
