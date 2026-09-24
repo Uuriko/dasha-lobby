@@ -244,15 +244,13 @@ assert.equal(undSettled[0].charge_basis, null);
 assert.equal(undSettled[0].buyer_charge_usd_micros, null);
 assert.equal(ledgerRows('anomaly').filter((r) => r.reason === 'charge_basis_undetermined').length, 1);
 
-// refund -> new row pointing at the original receipt; originals untouched
+// #322/#328 (economy + traction): settle wins. This job settled above (replay marker
+// 'job:job_ledgertest'), so the late refund rejects - no refund row, originals untouched.
 rows.set('compute:credit-spend:ledger_owner:api:job_ledgertest', { cents: 5, reason: 'api-chat', createdAt: settleNow });
 const refunded = await network.refundJobDebit({ id: 'job_ledgertest', owner: 'ledger_owner', debitRequestId: 'api:job_ledgertest', debitKeyId: minted.id, debitCents: 5, status: 'failed' }, settleNow + 1000, 'failed');
-assert.equal(refunded.ok, true);
-assert.equal(refunded.replay, false);
-const refundRows = ledgerRows('job_event').filter((r) => r.status === 'refunded');
-assert.equal(refundRows.length, 1);
-assert.equal(refundRows[0].receipt_id, res.receipt.id);
-assert.equal(refundRows[0].refund_usd_micros, 50_000);
+assert.equal(refunded.ok, false);
+assert.equal(refunded.error, 'settled');
+assert.equal(ledgerRows('job_event').filter((r) => r.status === 'refunded').length, 0, 'no refund row once settled');
 
 // export endpoint: 404 without token, 401 wrong token, 200 + pagination with token
 const noTokenNet = new ComputeNetwork({ storage }, { ...env, LEDGER_EXPORT_TOKEN: '' });

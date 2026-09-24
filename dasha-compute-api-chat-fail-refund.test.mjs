@@ -190,23 +190,37 @@ async function leaseNext() {
   assert.equal(balance(), 15, 'replay refund does not double-credit');
 }
 
+// Traction #328: the settled replay marker lands inside recordSettledInference, before the
+// spend-row stamp and the chain signing - a refund in that window must still reject.
+{
+  await network.debitCredits('x:refund-user', { cents: 5, reason: 'api-chat', requestId: 'rid-window', now: Date.now() });
+  assert.equal(balance(), 10);
+  rows.set('compute:settled-replay:hosted:rid-window', { id: 'rcp_window' });
+  const windowRefund = await network.refundCredits('x:refund-user', { requestId: 'rid-window', now: Date.now(), reason: 'race' });
+  assert.equal(windowRefund.ok, false);
+  assert.equal(windowRefund.error, 'settled');
+  assert.equal(balance(), 10, 'replay marker rejects the refund inside the signing window');
+  await network.debitCredits('x:refund-user', { cents: 5, reason: 'api-chat', requestId: 'api:jobwindow01', now: Date.now() });
+  assert.equal(balance(), 5);
+  rows.set('compute:settled-replay:job:jobwindow01', { id: 'rcp_window2' });
+  const apiWindowRefund = await network.refundCredits('x:refund-user', { requestId: 'api:jobwindow01', now: Date.now(), reason: 'race' });
+  assert.equal(apiWindowRefund.ok, false);
+  assert.equal(apiWindowRefund.error, 'settled');
+  assert.equal(balance(), 5, 'api: debit ids probe the job: replay marker');
+}
+
 assert.equal([...rows.keys()].some((k) => /email|phone|ssn/i.test(k)), false, 'no people-data keys');
 console.log('dasha-compute-api-chat-fail-refund: PASS');
 
 {
-  // settled receipt already exists -> refund row keeps buyer_charge 0 (no double-count), no refund_of
+  // #322/#328 (economy + traction): settle wins. A settled receipt (replay marker present)
+  // means the late refund REJECTS - the buyer keeps the settled receipt, no refund row.
+  // (Supersedes the old net-zero refund-row semantics for this case.)
   const settleId = 'job_settledrace01';
   await storage.put(`compute:settled-replay:job:${settleId}`, { id: 'rcpt_settledrace' });
   await storage.put(`compute:credit-spend:x:refund-user:api:${settleId}`, { cents: 5, at: now, reason: 'api-chat' });
   const res = await network.refundJobDebit({ id: settleId, owner: 'x:refund-user', debitRequestId: `api:${settleId}`, debitCents: 5, status: 'failed' });
-  assert.equal(res.ok, true);
-  assert.equal(res.replay, false);
-  const rr = refundRowFor(settleId);
-  assert.ok(rr, 'refund row written for settled-race job');
-  assert.equal(rr.buyer_charge_usd_micros, 0);
-  assert.equal(rr.refund_of, null);
-  assert.equal(rr.receipt_id, 'rcpt_settledrace');
-  assert.equal(rr.refund_usd_micros, 50_000);
-  assert.equal(rr.request_id, null);
-  assert.equal(rr.debit_request_id, `api:${settleId}`);
+  assert.equal(res.ok, false);
+  assert.equal(res.error, 'settled');
+  assert.equal(refundRowFor(settleId), undefined, 'no refund row for a settled job');
 }

@@ -1514,17 +1514,9 @@ export class ComputeNetwork {
   async recordPaidInferenceSettle(input = {}) {
     const { ledger = null, ...settleInput } = input;
     const res = await recordSettledInference(this.state.storage, settleInput);
-    if (res.ok && !res.replay) {
-      try {
-        const key = await headsSigningKey(this.env);
-        if (key) {
-          const row = await appendChainedReceipt(this.state.storage, key, res.receipt);
-          await appendHead(this.state.storage, await makeHead(key, row.hash, await headsTip(this.state.storage)));
-        }
-      } catch (e) { /* unsigned settle is better than a failed settle */ }
-    }
-    // #322: mark the debit spend row settled so a racing refund rejects instead of
-    // double-paying. Hosted passes requestId = the spend id; the v1 path threads debitRequestId.
+    // #322/#328: mark the debit spend row settled IMMEDIATELY, before receipt chain signing
+    // (crypto awaits) - a refund landing in that window must see the stamp. Hosted passes
+    // requestId = the spend id; the v1 path threads debitRequestId.
     if (res.ok && !res.replay && input.owner) {
       const stampId = input.debitRequestId || input.requestId;
       if (stampId) {
@@ -1536,6 +1528,15 @@ export class ComputeNetwork {
           }
         } catch { /* guard stamp only; the settled receipt is the record */ }
       }
+    }
+    if (res.ok && !res.replay) {
+      try {
+        const key = await headsSigningKey(this.env);
+        if (key) {
+          const row = await appendChainedReceipt(this.state.storage, key, res.receipt);
+          await appendHead(this.state.storage, await makeHead(key, row.hash, await headsTip(this.state.storage)));
+        }
+      } catch (e) { /* unsigned settle is better than a failed settle */ }
     }
     if (res.ok && !res.replay && ledger) {
       try {
@@ -3383,6 +3384,11 @@ export class ComputeNetwork {
     if (prior.refundedAt) return { ok: true, replay: true, refunded_cents: 0, balance_cents: await readBal() };
     // #322: a settled debit must never refund (the buyer keeps the settled receipt; settle wins the race).
     if (prior.settledAt) return { ok: false, error: 'settled', refunded_cents: 0, balance_cents: await readBal() };
+    // Traction #328: the settled replay marker is written inside recordSettledInference, before
+    // any other settle bookkeeping - probe it so no interleave window can slip a refund through.
+    // Hosted replay keys are `hosted:<spendId>`; v1 debit ids are `api:<jobId>` -> `job:<jobId>`.
+    if (await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}hosted:${rid}`)) return { ok: false, error: 'settled', refunded_cents: 0, balance_cents: await readBal() };
+    if (rid.startsWith('api:') && await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}job:${rid.slice(4)}`)) return { ok: false, error: 'settled', refunded_cents: 0, balance_cents: await readBal() };
     const bal = await readBal();
     await this.state.storage.put(balKey, { owner: who, cents: bal + cents, updatedAt: now });
     await this.state.storage.put(spendKey, { ...prior, refundedAt: now, refund_reason: String(reason || 'refund').slice(0, 80) });
