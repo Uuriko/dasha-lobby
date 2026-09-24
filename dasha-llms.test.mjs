@@ -101,7 +101,7 @@ assert.match(full, /^## Compute buyer FAQ$/m, 'llms-full Compute buyer FAQ');
 assert.match(full, /^How do I start\? Guest dgk_, or Sign in for dsk_\. Change the base URL\. https:\/\/lobby\.getdasha\.com\/compute\/api\/v1$/m, 'llms-full FAQ how');
 assert.match(full, /^What is live\? The Mac that is advertising\. Read \/compute\/api\/network\.$/m, 'llms-full FAQ live');
 assert.match(full, /^What if no Mac is online\? Hosted is still there\.$/m, 'llms-full FAQ hosted');
-assert.match(full, /^What does \$0\.05\/job mean\? Buyer price: \$0\.05 per successful chat completion, USD-denominated, billed from prepaid credits\. Top-ups: \$DASHA at a 5% discount, USDC at 3%; the \$DASHA token amount locks from a live price quote at top-up time\. Provider earn is separate: \$0\.05\/job \+ \$0\.01\/1k completion tokens, paid in USDC or \$DASHA \(\+5% bonus in \$DASHA\)\.$/m, 'llms-full FAQ earn');
+assert.match(full, /^What does \$0\.05\/job mean\? Buyer price: \$0\.05 per successful chat completion, USD-denominated, billed from prepaid credits\. Top-ups: \$DASHA at a 5% discount, USDC at 3%; the \$DASHA token amount locks from a live price quote at top-up time\. Provider earn is separate: \$0\.05\/job \+ \$0\.01\/1k completion tokens, accrued as credits pending operator settlement\. There are no live USDC or \$DASHA payouts yet\.$/m, 'llms-full FAQ earn');
 assert.doesNotMatch(llms, /\$0\.05\/job/, 'llms.txt buyer lines have no provider Earn rate');
 assert.doesNotMatch(llms, /## Compute buyer FAQ/, 'FAQ stays off the short index');
 assert.doesNotMatch(full.split('## Compute buyer FAQ')[0], /\$0\.05\/job/, 'llms-full buyer lines have no provider Earn rate');
@@ -263,7 +263,7 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   }
   assert.doesNotMatch(fullBody, /plugin\.jup\.ag/);
   assert.doesNotMatch(fullBody, /t\.me/);
-  assert.match(fullBody, /^What does \$0\.05\/job mean\? Buyer price: \$0\.05 per successful chat completion, USD-denominated, billed from prepaid credits\. Top-ups: \$DASHA at a 5% discount, USDC at 3%; the \$DASHA token amount locks from a live price quote at top-up time\. Provider earn is separate: \$0\.05\/job \+ \$0\.01\/1k completion tokens, paid in USDC or \$DASHA \(\+5% bonus in \$DASHA\)\.$/m, `${origin}/llms-full.txt FAQ earn`);
+  assert.match(fullBody, /^What does \$0\.05\/job mean\? Buyer price: \$0\.05 per successful chat completion, USD-denominated, billed from prepaid credits\. Top-ups: \$DASHA at a 5% discount, USDC at 3%; the \$DASHA token amount locks from a live price quote at top-up time\. Provider earn is separate: \$0\.05\/job \+ \$0\.01\/1k completion tokens, accrued as credits pending operator settlement\. There are no live USDC or \$DASHA payouts yet\.$/m, `${origin}/llms-full.txt FAQ earn`);
   assert.equal(fullBody.includes(COMPUTE_FIRST_CALL_TXT), true, `${origin}/llms-full.txt First call`);
   assert.match(fullBody, /^## First call$/m, `${origin}/llms-full.txt First call heading`);
   assert.match(fullBody, /Authorization: Bearer \$DASHA_API_KEY/, `${origin}/llms-full.txt keyed curl`);

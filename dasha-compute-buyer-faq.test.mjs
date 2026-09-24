@@ -19,7 +19,7 @@ const FAQ_LINES = [
   'How do I start? Guest dgk_, or Sign in for dsk_. Change the base URL. https://lobby.getdasha.com/compute/api/v1',
   'What is live? The Mac that is advertising. Read /compute/api/network.',
   'What if no Mac is online? Hosted is still there.',
-  'What does $0.05/job mean? Buyer price: $0.05 per successful chat completion, USD-denominated, billed from prepaid credits. Top-ups: $DASHA at a 5% discount, USDC at 3%; the $DASHA token amount locks from a live price quote at top-up time. Provider earn is separate: $0.05/job + $0.01/1k completion tokens, paid in USDC or $DASHA (+5% bonus in $DASHA).',
+  'What does $0.05/job mean? Buyer price: $0.05 per successful chat completion, USD-denominated, billed from prepaid credits. Top-ups: $DASHA at a 5% discount, USDC at 3%; the $DASHA token amount locks from a live price quote at top-up time. Provider earn is separate: $0.05/job + $0.01/1k completion tokens, accrued as credits pending operator settlement. There are no live USDC or $DASHA payouts yet.',
 ];
 const FAQ_BLOCK = FAQ_LINES.join('\n');
 
