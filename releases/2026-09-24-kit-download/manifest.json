@@ -1,0 +1,15 @@
+{
+  "inputs": {
+    "live": {
+      "sha256": "8f6c266daa36fb8476710cd13bc434756719cd8feee1721c1accef02587648fe",
+      "bytes": 1970428
+    },
+    "candidate": {
+      "sha256": "7e7b783bfa9a473cdcfc819b6e3984eef2b0f9c39d1734d99239578a7f6e1ac5",
+      "bytes": 1974055
+    }
+  },
+  "artifactCommit": "06792c184460ae0032048b20a6a60b3b1549b52b",
+  "archiveSha256": "706918197b633929b8963a27978bfab7dec5ed715fd8a83f32f04aa0d2152386",
+  "deployment": "Root only, after kit artifact PR251 merges. Preserve assets, bindings, settings; no migrations/routes."
+}
