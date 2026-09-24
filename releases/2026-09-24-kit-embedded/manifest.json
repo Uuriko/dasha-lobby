@@ -1,0 +1,18 @@
+{
+  "inputs": {
+    "live": {
+      "sha256": "8f6c266daa36fb8476710cd13bc434756719cd8feee1721c1accef02587648fe",
+      "bytes": 1970428
+    },
+    "transformation": {
+      "sha256": "30c56840224b8130b4fbc3a232e08496131d3194166564974a0f2fe98565b9f9",
+      "bytes": 1974497
+    },
+    "candidate": {
+      "sha256": "6f659ec132df1c2f776369f727aab809fdf5fa4e91e623afff6246a230313830",
+      "bytes": 2337680
+    }
+  },
+  "archiveSha256": "706918197b633929b8963a27978bfab7dec5ed715fd8a83f32f04aa0d2152386",
+  "deployment": "Preserve all existing assets, bindings, settings. No runtime GitHub dependency. Root only."
+}
