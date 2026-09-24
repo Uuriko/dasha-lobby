@@ -3440,8 +3440,8 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 const COMPUTE_KIT_MANIFEST = {
   version: '0.3.0',
   min_version: '0.3.0',
-  url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
-  sha256: '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf',
+  url: 'https://www.getdasha.com/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz',
+  sha256: '706918197b633929b8963a27978bfab7dec5ed715fd8a83f32f04aa0d2152386',
 };
 
 export async function computeApi(request, env, allowedOrigin) {

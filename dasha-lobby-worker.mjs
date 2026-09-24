@@ -5827,7 +5827,7 @@ export function potterHome308Dest(path) {
   if (p === "/compute/v1/models" || p === "/compute/v1/models/") {
     return "https://www.getdasha.com/compute/api/v1/models";
   }
-  const KIT_TAR = "https://www.getdasha.com/dasha-compute-open-alpha.tar.gz";
+  const KIT_TAR = "https://www.getdasha.com/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz";
   if (
     POTTER_KIT_NAME_308_PATHS.has(p) ||
     p === "/compute/open-alpha.tar.gz" ||
@@ -7310,8 +7310,8 @@ function isComputeBadgePath(pathname) {
 const COMPUTE_KIT_JSON = {
   version: '0.3.0',
   min_version: '0.3.0',
-  url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
-  sha256: '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf',
+  url: 'https://www.getdasha.com/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz',
+  sha256: '706918197b633929b8963a27978bfab7dec5ed715fd8a83f32f04aa0d2152386',
 };
 
 function isComputeKitJsonPath(pathname) {
@@ -7623,7 +7623,7 @@ function isComputeLeftoverEmptyRecommendSetupPage(html) {
 }
 
 const COMPUTE_PROVIDE_DEFAULT_SETUP = [
-  'curl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
+  'curl -fLO https://www.getdasha.com/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz',
   'tar -xzf dasha-compute-open-alpha.tar.gz',
   'cd dasha-compute-open-alpha',
   'ollama pull gemma3:27b',

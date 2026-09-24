@@ -1,0 +1,15 @@
+{
+  "inputs": {
+    "live": {
+      "sha256": "7e7b783bfa9a473cdcfc819b6e3984eef2b0f9c39d1734d99239578a7f6e1ac5",
+      "bytes": 1974055
+    },
+    "candidate": {
+      "sha256": "30c56840224b8130b4fbc3a232e08496131d3194166564974a0f2fe98565b9f9",
+      "bytes": 1974497
+    }
+  },
+  "archiveSha256": "706918197b633929b8963a27978bfab7dec5ed715fd8a83f32f04aa0d2152386",
+  "publicArchive": "https://www.getdasha.com/compute/releases/706918197b63/dasha-compute-open-alpha.tar.gz",
+  "deployment": "Preserve assets, bindings and settings; root only; no assets.config mutation."
+}
