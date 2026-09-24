@@ -125,4 +125,30 @@ const seq = count('compute:chain:seq:');
 assert.equal((await network.acceptUsageReview('job_div_stream')).replay, true);
 assert.equal(count('compute:chain:seq:'), seq, 'accept replay signs nothing');
 
+// Acceptance may survive a crash before its settlement completion marker.
+// Retry must finish, without duplicating an already written earning or receipt.
+const settleOriginal = network.settleCompletedJob.bind(network);
+let settlementAttempts = 0;
+network.settleCompletedJob = async (...args) => {
+  settlementAttempts += 1;
+  const patch = await settleOriginal(...args);
+  if (settlementAttempts === 1) throw new Error('simulated crash after settlement');
+  return patch;
+};
+await assert.rejects(network.acceptUsageReview('job_div_result'), /simulated crash/);
+const recovering = rows.get(`${USAGE_REVIEW_PREFIX}job_div_result`);
+assert.equal(recovering.state, 'accepted');
+assert.notEqual(recovering.settlementCompleted, true);
+const recoverySeq = count('compute:chain:seq:');
+const recoveryEarn = structuredClone(rows.get('compute:provider-earn-job:job_div_result'));
+assert.equal((await network.acceptUsageReview('job_div_result')).replay, false);
+assert.equal(settlementAttempts, 2);
+assert.equal(rows.get(`${USAGE_REVIEW_PREFIX}job_div_result`).settlementCompleted, true);
+assert.equal(rows.get(`${USAGE_REVIEW_PREFIX}job_div_result`).audit.filter(e => e.event === 'accepted').length, 1);
+assert.equal(count('compute:chain:seq:'), recoverySeq);
+assert.deepEqual(rows.get('compute:provider-earn-job:job_div_result'), recoveryEarn);
+assert.equal((await network.acceptUsageReview('job_div_result')).replay, true);
+assert.equal(settlementAttempts, 2);
+network.settleCompletedJob = settleOriginal;
+
 console.log('dasha-compute-usage-divergence.test.mjs: PASS');

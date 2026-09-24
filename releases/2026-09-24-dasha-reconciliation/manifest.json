@@ -1,0 +1,26 @@
+{
+  "baselineCommit": "10c080d",
+  "mainCommit": "d50fb98",
+  "wranglerVersion": "3.114.15",
+  "inputs": {
+    "live": {
+      "bytes": 1959636,
+      "sha256": "5af12f2dbfc88c5e3a418c8677295561c5584e5d5806aa85c6b85007ffaad995"
+    },
+    "baseline": {
+      "bytes": 1932676,
+      "sha256": "a4696e8fe942e3969699f3aff687ee8f99772770ac491ab9717b4a3538dd2d30"
+    },
+    "main": {
+      "bytes": 1943453,
+      "sha256": "d89b13453d7d31cc786f033db6f2d0ee84bfdd92fb03c2b74a0af30d8f1adf28"
+    },
+    "candidate": {
+      "bytes": 1970428,
+      "sha256": "8f6c266daa36fb8476710cd13bc434756719cd8feee1721c1accef02587648fe"
+    }
+  },
+  "normalization": "Replace source comment // ../dasha-lobby-repo/node_modules/ with // node_modules/ before three-way merge. No runtime changes.",
+  "deployment": "Prepared only; root release owner must verify current live hash, preserve all current Worker bindings/assets/settings, and serialize upload.",
+  "sourcePatch": "dasha-compute-network.mjs acceptUsageReview settlementCompleted retry fix, with regression in dasha-compute-usage-divergence.test.mjs"
+}

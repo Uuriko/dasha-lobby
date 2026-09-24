@@ -1,0 +1,701 @@
+--- live
+
++++ reconciled
+
+@@ -2691,17 +2691,18 @@
+
+   }
+   function hero(){
+     var frame=el('div','faucet-frame');
++    frame.hidden=true;
+     for(var i=0;i<4;i++)frame.appendChild(el('i','faucet-tick'));
+     var img=el('img','faucet-hero');
+-    img.src=stillUrl;
+     img.alt='';
+-    img.width=1024;
+-    img.height=1024;
+     img.fetchPriority='high';
+     if(stillSri){
+       img.setAttribute('integrity',stillSri);
+       img.crossOrigin='anonymous';
+     }
++    img.addEventListener('load',function(){frame.hidden=false;});
++    img.addEventListener('error',function(){frame.hidden=true;});
++    img.src=stillUrl;
+     frame.appendChild(img);
+     return frame;
+   }
+@@ -3370,7 +3371,7 @@
+
+ else boot();
+ })(typeof window!=='undefined'?window:this);
+ `;
+-var FAUCET_CLIENT_SRI = "sha384-LSNvl1mUDLnGLVel61mnmtvL4pk4j8TZf9ZO6fzIgoUw5zJ/SgbRkfYCpkXsw14x";
++var FAUCET_CLIENT_SRI = "sha384-xg36LRHvfO22Q62EsLI6NGGWkm6js7ecdEgzOlC5pxENkEFhB41W9wr6p601iF8n";
+ var X_CONNECT_JS = `/** Site-wide login status + /login controller. No account is required to browse. */
+ (function (global) {
+   'use strict';
+@@ -4047,7 +4048,7 @@
+
+ <h2 id="threads-title">Threads</h2>
+ <div id="dasha-forum"><p class="forum-empty">None yet.</p></div>
+ </section>
+-<section id="dasha-digest"><style>#dasha-digest{margin:3.25rem 0 0;padding:2.2rem 0 0;border-top:1px solid rgba(244,237,219,.18)}#dasha-digest h2{margin:0 0 1.15rem;font:900 clamp(1.35rem,3vw,2rem)/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.03em;text-transform:uppercase}#dasha-digest h2 a{margin-left:.7rem;color:var(--muted,#c8bea8);font:700 .82rem/1 Arial,Helvetica,sans-serif;letter-spacing:0;text-transform:none;text-decoration:none}#dasha-digest ol{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}#dasha-digest li{margin:0;display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:baseline}#dasha-digest .dd-src{color:var(--muted,#c8bea8);font:800 .72rem/1 Arial,Helvetica,sans-serif;letter-spacing:.07em;text-transform:uppercase}#dasha-digest a.dd-row{color:var(--acid,#dfff00);font:700 1.02rem/1.35 Arial,Helvetica,sans-serif;text-decoration:none}#dasha-digest a.dd-row:focus-visible,#dasha-digest h2 a:focus-visible{outline:3px solid var(--acid,#dfff00);outline-offset:3px}</style><h2>Tape.<a href="/digest">/digest</a></h2><ol></ol></section>
++<section id="dasha-digest"><style>#dasha-digest{margin:3.25rem 0 0;padding:2.2rem 1.25rem 0;border-top:1px solid rgba(244,237,219,.18)}#dasha-digest h2{margin:0 0 1.15rem;font:900 clamp(1.35rem,3vw,2rem)/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.03em;text-transform:uppercase}#dasha-digest h2 a{margin-left:.7rem;color:var(--muted,#c8bea8);font:700 .82rem/1 Arial,Helvetica,sans-serif;letter-spacing:0;text-transform:none;text-decoration:none}#dasha-digest ol{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}#dasha-digest li{margin:0;display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:baseline}#dasha-digest .dd-src{color:var(--muted,#c8bea8);font:800 .72rem/1 Arial,Helvetica,sans-serif;letter-spacing:.07em;text-transform:uppercase}#dasha-digest a.dd-row{color:var(--acid,#dfff00);font:700 1.02rem/1.35 Arial,Helvetica,sans-serif;text-decoration:none}#dasha-digest a.dd-row:focus-visible,#dasha-digest h2 a:focus-visible{outline:3px solid var(--acid,#dfff00);outline-offset:3px}</style><h2>Tape.<a href="/digest">/digest</a></h2><ol></ol></section>
+ <footer class="dasha-foot"><p><a href="https://www.getdasha.com/">$dasha</a> \xB7 <a class="buy-dasha" href="https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy=53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump" target="_blank" rel="noopener noreferrer">Buy</a> \xB7 <a href="https://www.getdasha.com/bag">Bag</a> \xB7 <a href="https://t.me/+ck9pUjL2ncNiZjRh" target="_blank" rel="noopener noreferrer">Telegram</a></p></footer>
+ </main>
+ <script>(function(){var mint='53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump';var btn=document.getElementById('forum-copy');var ca=document.querySelector('.forum-ca');if(!btn)return;btn.addEventListener('click',function(){function ok(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1200)}function select(){if(!ca){btn.textContent='Select';return}try{var r=document.createRange();r.selectNodeContents(ca);var s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Select'}catch(e){}}function legacy(){try{var ta=document.createElement('textarea');ta.value=mint;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.select();var copied=false;try{copied=document.execCommand('copy')}catch(e){}document.body.removeChild(ta);return copied}catch(e){return false}}function timed(p){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('copy'))},600)})])}if(navigator.clipboard&&navigator.clipboard.writeText)timed(navigator.clipboard.writeText(mint)).then(ok).catch(function(){legacy()?ok():select()});else if(legacy())ok();else select()});})();<\/script>
+@@ -4335,7 +4336,7 @@
+
+   }).catch(function(){});
+ })();
+ <\/script>
+-<script src="https://lobby.getdasha.com/client/faucet.js" integrity="sha384-LSNvl1mUDLnGLVel61mnmtvL4pk4j8TZf9ZO6fzIgoUw5zJ/SgbRkfYCpkXsw14x" crossorigin="anonymous" defer><\/script>
++<script src="https://lobby.getdasha.com/client/faucet.js" integrity="sha384-xg36LRHvfO22Q62EsLI6NGGWkm6js7ecdEgzOlC5pxENkEFhB41W9wr6p601iF8n" crossorigin="anonymous" defer><\/script>
+ <script src="https://lobby.getdasha.com/client/x-connect.js" integrity="sha384-+61+r6fRzBEaKh9GVlwdDG8lPyQ/j19fwtlzZSeRoIFZStwRfxCEUoan1viTwPzD" crossorigin="anonymous" defer><\/script>
+ </body>
+ </html>`;
+@@ -6778,6 +6779,9 @@
+
+       at: prior.at || prior.updatedAt || now
+     };
+   }
++  const review = await storage.get(`compute:usage-review:${jid}`);
++  if (review && review.state !== "accepted")
++    return { ok: false, error: "usage review open" };
+   const completion = Math.max(0, Math.floor(Number(usage?.completion_tokens) || 0));
+   const cents = earnCentsForJob(usage);
+   const earnKey = `compute:provider-earn:${pid}`;
+@@ -8333,18 +8337,52 @@
+
+   return ip || "unknown";
+ }
+ __name(guestMintClientIp, "guestMintClientIp");
+-function guestRateInfo(rates, key, max, windowMs = 6e4) {
+-  const now = Date.now();
+-  const recent = (rates.get(key) || []).filter((at) => now - at < windowMs);
++var GUEST_RATE_PREFIX = "compute:guest-rate:";
++var guestRateTails = /* @__PURE__ */ new WeakMap();
++async function withGuestRateLock(storage, fn) {
++  const prev = guestRateTails.get(storage) || Promise.resolve();
++  let release;
++  const gate = new Promise((resolve) => {
++    release = resolve;
++  });
++  const tail = prev.then(() => gate);
++  guestRateTails.set(storage, tail);
++  await prev;
++  try {
++    return await fn();
++  } finally {
++    release();
++    if (guestRateTails.get(storage) === tail)
++      guestRateTails.delete(storage);
++  }
++}
++__name(withGuestRateLock, "withGuestRateLock");
++async function guestRateStorageKey(name, salt = "") {
++  return `${GUEST_RATE_PREFIX}${await sha256Hex2(`guest-rate:v1|${salt}|${name}`)}`;
++}
++__name(guestRateStorageKey, "guestRateStorageKey");
++async function durableGuestRateInfo(storage, name, max, windowMs = 6e4, { now = Date.now(), salt = "" } = {}) {
++  const key = await guestRateStorageKey(name, salt);
++  const row2 = await storage.get(key);
++  const recent = (Array.isArray(row2?.hits) ? row2.hits : []).map(Number).filter((at) => Number.isFinite(at) && now - at < windowMs && at <= now);
+   if (recent.length >= max) {
+-    const resetAtMs = Math.min(...recent) + windowMs;
+-    return { ok: false, remaining: 0, resetAtMs, retryAfterSeconds: Math.max(1, Math.ceil((resetAtMs - now) / 1e3)) };
++    const resetAtMs2 = Math.min(...recent) + windowMs;
++    return { ok: false, remaining: 0, resetAtMs: resetAtMs2, retryAfterSeconds: Math.max(1, Math.ceil((resetAtMs2 - now) / 1e3)) };
+   }
+   recent.push(now);
+-  rates.set(key, recent);
+-  return { ok: true, remaining: max - recent.length, resetAtMs: Math.min(...recent) + windowMs, retryAfterSeconds: 0 };
+-}
+-__name(guestRateInfo, "guestRateInfo");
++  const resetAtMs = Math.min(...recent) + windowMs;
++  await storage.put(key, { hits: recent, expiresAt: Math.max(...recent) + windowMs });
++  return { ok: true, remaining: max - recent.length, resetAtMs, retryAfterSeconds: 0 };
++}
++__name(durableGuestRateInfo, "durableGuestRateInfo");
++async function pruneGuestRates(storage, now = Date.now()) {
++  const rows = await storage.list({ prefix: GUEST_RATE_PREFIX });
++  const dead = [...rows].filter(([, row2]) => !row2 || !(Number(row2.expiresAt) > now)).map(([key]) => key);
++  for (const key of dead)
++    await storage.delete(key);
++  return dead.length;
++}
++__name(pruneGuestRates, "pruneGuestRates");
+ async function sha256Hex2(value) {
+   const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value))));
+   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+@@ -8374,7 +8412,11 @@
+
+   }
+ }
+ __name(readJsonBody, "readJsonBody");
+-async function mintGuestKey({ storage, rates, ip = "unknown", pairing = "", name = "", now = Date.now() } = {}) {
++async function mintGuestKey({ storage, rates, ip = "unknown", pairing = "", name = "", now = Date.now(), salt = "" } = {}) {
++  return withGuestRateLock(storage, () => mintGuestKeyLocked({ storage, ip, pairing, name, now, salt }));
++}
++__name(mintGuestKey, "mintGuestKey");
++async function mintGuestKeyLocked({ storage, ip = "unknown", pairing = "", name = "", now = Date.now(), salt = "" } = {}) {
+   const pairingNorm = normalizePairingCode(pairing);
+   if (pairing && pairingNorm === null) {
+     return {
+@@ -8387,7 +8429,7 @@
+
+     };
+   }
+   const ipKey = `guest-mint:ip:${ip || "unknown"}`;
+-  const mintRate = guestRateInfo(rates, ipKey, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS);
++  const mintRate = await durableGuestRateInfo(storage, ipKey, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS, { now, salt });
+   if (!mintRate.ok) {
+     return {
+       status: 429,
+@@ -8406,7 +8448,7 @@
+
+     };
+   }
+   if (pairingNorm) {
+-    const pairRate = guestRateInfo(rates, `guest-mint:pair:${pairingNorm}`, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS);
++    const pairRate = await durableGuestRateInfo(storage, `guest-mint:pair:${pairingNorm}`, GUEST_KEY_MINT_MAX, GUEST_KEY_MINT_WINDOW_MS, { now, salt });
+     if (!pairRate.ok) {
+       return {
+         status: 429,
+@@ -8469,7 +8511,7 @@
+
+     }
+   };
+ }
+-__name(mintGuestKey, "mintGuestKey");
++__name(mintGuestKeyLocked, "mintGuestKeyLocked");
+ async function revokeGuestKey({ storage, token = "", wantId = "" } = {}) {
+   const parsed = parseGuestApiToken(token);
+   if (!parsed) {
+@@ -8507,7 +8549,7 @@
+
+   return { status: 200, body: { ok: true, revoked: true, id: key.id } };
+ }
+ __name(revokeGuestKey, "revokeGuestKey");
+-async function handleGuestKeyWrite(request, { storage, rates, now = Date.now() } = {}) {
++async function handleGuestKeyWrite(request, { storage, rates, now = Date.now(), salt = "" } = {}) {
+   const path = new URL(request.url).pathname;
+   if (!isComputeGuestKeyPath(path))
+     return null;
+@@ -8521,7 +8563,8 @@
+
+       ip: guestMintClientIp(request),
+       pairing,
+       name: input.name,
+-      now
++      now,
++      salt
+     });
+     return guestKeyResponse(minted.status, minted.body, { headers: minted.headers || {} });
+   }
+@@ -8943,6 +8986,21 @@
+
+ }
+ __name(withV1Cors, "withV1Cors");
+ var FACTORY_KEY = "compute:factory:v0";
++var HOSTED_FACTORY_BUMP_PATH = "/compute/api/internal/hosted-factory-bump";
++var HOSTED_SPEND_ID_RE = /^hosted_[A-Za-z0-9_-]{12,32}$/;
++var HOSTED_MAX_TOKENS = 4096;
++function hostedAssertedTokens(usage) {
++  if (!usage || typeof usage !== "object")
++    return null;
++  const total = Number(usage.total_tokens);
++  const prompt = Number(usage.prompt_tokens);
++  const completion = Number(usage.completion_tokens);
++  const n = Number.isFinite(total) ? total : Number.isFinite(prompt) && Number.isFinite(completion) ? prompt + completion : NaN;
++  if (!Number.isFinite(n) || n < 0 || n > HOSTED_MAX_TOKENS || Math.floor(n) !== n)
++    return null;
++  return n;
++}
++__name(hostedAssertedTokens, "hostedAssertedTokens");
+ function emptyFactoryCounters() {
+   return { jobs: { hosted: 0, community: 0, mixture: 0, failed: 0 }, models: {} };
+ }
+@@ -9529,6 +9587,23 @@
+
+   return base > 0 && Math.abs(a - b) / base > 0.25;
+ }
+ __name(usageDiverged, "usageDiverged");
++var USAGE_INFLATION_RATIO = 1.25;
++var USAGE_INFLATION_SLACK_TOKENS = 16;
++function usageInflated(reported, measured) {
++  const a = Math.max(0, Number(reported?.completion_tokens) || 0), b = Math.max(0, Number(measured?.completion_tokens) || 0);
++  return a > b * USAGE_INFLATION_RATIO + USAGE_INFLATION_SLACK_TOKENS;
++}
++__name(usageInflated, "usageInflated");
++function billableUsage(reported, measured) {
++  const pick = /* @__PURE__ */ __name((name) => Math.max(0, Math.min(Math.floor(Number(reported?.[name]) || 0), Math.floor(Number(measured?.[name]) || 0))), "pick");
++  const prompt_tokens = pick("prompt_tokens"), completion_tokens = pick("completion_tokens");
++  return { prompt_tokens, completion_tokens, total_tokens: prompt_tokens + completion_tokens };
++}
++__name(billableUsage, "billableUsage");
++var PROVIDER_ANOMALY_THRESHOLD = 3;
++var PROVIDER_ANOMALY_WINDOW_MS = 24 * 60 * 6e4;
++var USAGE_REVIEW_PREFIX = "compute:usage-review:";
++var PROVIDER_ANOMALY_PREFIX = "compute:provider-anomaly:";
+ function appendAttempt(attempts, providerId, now) {
+   return [...Array.isArray(attempts) ? attempts : [], { provider_id: providerId, leased_at: now, outcome: null }].slice(-8);
+ }
+@@ -9772,7 +9847,17 @@
+
+     return Number.isFinite(override) && override > 0 ? Math.floor(override) : NO_MAC_DECISION_MS;
+   }
+   /** Expire / requeue jobs. Poll skips night + provider GC — those are not lease-hot. */
++  guestRateSalt() {
++    return String(this.env?.GUEST_RATE_SALT || this.env?.LOBBY_SESSION_SECRET || "");
++  }
+   async prune(now = Date.now(), opts = {}) {
++    if (!(this.guestRatePrunedAt > now - 10 * 6e4)) {
++      this.guestRatePrunedAt = now;
++      try {
++        await pruneGuestRates(this.state.storage, now);
++      } catch {
++      }
++    }
+     const runNight = opts.night !== false;
+     const sweepProviders = opts.providers !== false;
+     const jobs = [];
+@@ -9992,6 +10077,89 @@
+
+     await this.state.storage.put(FACTORY_KEY, counters);
+     return counters;
+   }
++  /** #300: the single settle path for completed community/mixture jobs (result + stream).
++   *  Divergence is checked BEFORE any earning, replay marker or signed settlement is written.
++   *  Divergent jobs (or any job from a provider over the anomaly threshold) go to an idempotent
++   *  review record and settle nothing; the earn replay marker is only written on acceptance. */
++  async settleCompletedJob(job, provider, usage, usageGateway, now = Date.now(), { accepted = false } = {}) {
++    const storage = this.state.storage;
++    const reviewKey = `${USAGE_REVIEW_PREFIX}${job.id}`;
++    const existingReview = await storage.get(reviewKey);
++    if (existingReview && existingReview.state !== "accepted")
++      return { settle_state: "review", usage_review: existingReview.reason };
++    if (existingReview && !accepted)
++      return { settle_state: "review", usage_review: existingReview.reason };
++    const diverged = !accepted && usageInflated(usage, usageGateway);
++    const anomalyKey = `${PROVIDER_ANOMALY_PREFIX}${provider.id}`;
++    let anomaly = await storage.get(anomalyKey);
++    if (anomaly && !(now - Number(anomaly.windowStart || 0) < PROVIDER_ANOMALY_WINDOW_MS) && !anomaly.held)
++      anomaly = null;
++    if (diverged) {
++      anomaly = anomaly || { providerId: provider.id, count: 0, windowStart: now, jobs: [], held: false };
++      anomaly = { ...anomaly, count: Number(anomaly.count || 0) + 1, jobs: [...anomaly.jobs || [], job.id].slice(-20), updatedAt: now };
++      if (anomaly.count >= PROVIDER_ANOMALY_THRESHOLD)
++        anomaly.held = true;
++      await storage.put(anomalyKey, anomaly);
++    }
++    const held = !accepted && Boolean(anomaly?.held);
++    if (diverged || held) {
++      const review = {
++        jobId: job.id,
++        providerId: provider.id,
++        owner: job.owner || null,
++        route: job.route || null,
++        model: job.model || null,
++        reason: diverged ? "usage_diverged" : "provider_anomaly_hold",
++        usage_reported: usage,
++        usage_gateway: usageGateway,
++        state: "open",
++        createdAt: now,
++        audit: [{ at: now, event: "opened", reason: diverged ? "usage_diverged" : "provider_anomaly_hold" }]
++      };
++      await storage.put(reviewKey, review);
++      return { settle_state: "review", usage_review: review.reason };
++    }
++    const billed = billableUsage(usage, usageGateway);
++    const accrued = await accrueProviderEarn(storage, { providerId: provider.id, jobId: job.id, usage: billed, now });
++    if (!accrued?.ok)
++      return {};
++    const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
++    await this.recordPaidInferenceSettle({
++      owner: job.owner || null,
++      engine: job.route === "mixture" ? "mixture" : "community",
++      usage: billed,
++      cents: settleCents,
++      jobId: job.id,
++      requestId: job.request_id || null,
++      model: job.model,
++      latencyMs: job.leasedAt ? now - job.leasedAt : null,
++      ...honestLoopFields(job),
++      replayKey: `job:${job.id}`,
++      now
++    });
++    await this.referralCheckM2(job.owner, now);
++    return { usage_billed: billed, ...settleCents > 0 ? { settle_cents: settleCents, settle_state: "pending_operator" } : {} };
++  }
++  /** #300 operator path (no public route yet): accept an open review and settle on gateway-capped usage. Idempotent. */
++  async acceptUsageReview(jobId, { now = Date.now(), reviewer = "operator" } = {}) {
++    const storage = this.state.storage;
++    const reviewKey = `${USAGE_REVIEW_PREFIX}${jobId}`;
++    const review = await storage.get(reviewKey);
++    if (!review)
++      return { ok: false, error: "no review" };
++    if (review.state === "accepted" && review.settlementCompleted === true)
++      return { ok: true, replay: true };
++    const job = await storage.get(`compute:job:${jobId}`);
++    if (!job)
++      return { ok: false, error: "job expired" };
++    const acceptedReview = review.state === "accepted" ? review : { ...review, state: "accepted", audit: [...review.audit || [], { at: now, event: "accepted", by: String(reviewer).slice(0, 64) }] };
++    if (review.state !== "accepted")
++      await storage.put(reviewKey, acceptedReview);
++    const patch = await this.settleCompletedJob(job, { id: review.providerId }, review.usage_reported, review.usage_gateway, now, { accepted: true });
++    await storage.put(`compute:job:${jobId}`, { ...job, ...patch, usage_review: "accepted" });
++    await storage.put(reviewKey, { ...acceptedReview, settlementCompleted: true, settledAt: now });
++    return { ok: true, replay: false, ...patch };
++  }
+   /** Paid-inference settle only (credits or community earn). Replay-safe.
+    *  When the heads signing key is configured, every fresh settle also joins the
+    *  signed receipt chain and gets covered by a fresh head. Signing failure never
+@@ -10009,6 +10177,55 @@
+
+       }
+     }
+     return res;
++  }
++  /** #299: hosted-chat factory bump + optional paid settle. Only reachable from the worker's own
++   *  bumpHostedFactory(). The settlement is derived from the server-side charged record
++   *  (compute:credit-spend:<owner>:<request_id>, written by debitCredits). Caller cents/usage/request
++   *  facts are checked against that record, never trusted. Validation happens before any write:
++   *  mismatch or missing record -> 409 with no write; replay -> 200 with no write. */
++  async recordHostedFactoryBump(input = {}, now = Date.now()) {
++    const failed = input?.failed === true;
++    const settle = !failed && input?.settle && typeof input.settle === "object" ? input.settle : null;
++    if (!settle) {
++      await this.recordFactoryOutcome({ engine: "hosted", model: "gpt-oss-20b", failed });
++      await this.bumpMetric("ask:hosted:complete");
++      return json({ ok: true, settled: false }, 202, null, false);
++    }
++    const reject = /* @__PURE__ */ __name((reason) => json({ error: "settle rejected", reason }, 409, null, false), "reject");
++    const owner = String(settle.owner || "").trim();
++    const requestId = String(settle.request_id || "");
++    if (!owner || !HOSTED_SPEND_ID_RE.test(requestId))
++      return reject("bad assertion");
++    const charged = await this.state.storage.get(`compute:credit-spend:${owner}:${requestId}`);
++    const chargedCents = Math.max(0, Math.floor(Number(charged?.cents) || 0));
++    if (!charged || chargedCents <= 0)
++      return reject("no charged record");
++    if (charged.reason !== "hosted-ask")
++      return reject("charged record reason mismatch");
++    if (charged.refundedAt)
++      return reject("charged record refunded");
++    if (settle.cents != null && Math.floor(Number(settle.cents)) !== chargedCents)
++      return reject("cents mismatch");
++    const tokens = hostedAssertedTokens(settle.usage);
++    if (tokens == null)
++      return reject("usage mismatch");
++    const replayKey = `hosted:${requestId}`;
++    if (await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}${replayKey}`)) {
++      return json({ ok: true, replay: true, settled: false }, 200, null, false);
++    }
++    await this.recordFactoryOutcome({ engine: "hosted", model: "gpt-oss-20b", failed: false });
++    const res = await this.recordPaidInferenceSettle({
++      owner,
++      engine: "hosted",
++      usage: { total_tokens: tokens },
++      cents: chargedCents,
++      model: "gpt-oss-20b",
++      requestId,
++      replayKey,
++      now
++    });
++    await this.bumpMetric("ask:hosted:complete");
++    return json({ ok: true, settled: Boolean(res?.ok && !res.replay), receipt_id: res?.receipt?.id || null }, 202, null, false);
+   }
+   async factoryPayload(now = Date.now()) {
+     await this.prune(now);
+@@ -10219,7 +10436,7 @@
+
+       const guestProbe = computeGuestKeyResponse(request);
+       if (guestProbe)
+         return guestProbe;
+-      return handleGuestKeyWrite(request, { storage: this.state.storage, rates: this.rates });
++      return handleGuestKeyWrite(request, { storage: this.state.storage, rates: this.rates, salt: this.guestRateSalt() });
+     }
+     if ((path === "/compute/api" || path === "/compute/api/" || path === "/compute/api/status" || path === "/compute/api/status/") && (request.method === "GET" || request.method === "HEAD")) {
+       const res = json(computeApiRootBody(this.env), 200, allowedOrigin || "*", credentials);
+@@ -10459,7 +10676,7 @@
+
+       if (!guestKeyAllows(key, "chat"))
+         return v1err("guest key cannot use this endpoint", 403, "invalid_request_error");
+       if (isGuestApiKey(key)) {
+-        const guestRate = guestRateInfo(this.rates, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS);
++        const guestRate = await withGuestRateLock(this.state.storage, () => durableGuestRateInfo(this.state.storage, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS, { now: Date.now(), salt: this.guestRateSalt() }));
+         if (!guestRate.ok) {
+           return v1err("guest key rate limited; try again shortly", 429, "invalid_request_error", {
+             "Retry-After": String(guestRate.retryAfterSeconds),
+@@ -10599,30 +10816,13 @@
+
+     if ((path === "/compute/api/factory" || path === "/compute/api/factory/") && (request.method === "GET" || request.method === "HEAD")) {
+       return maybeHead(request, json(await this.factoryPayload(now), 200, allowedOrigin || "*", credentials));
+     }
+-    if ((path === "/compute/api/factory" || path === "/compute/api/factory/") && request.method === "POST") {
+-      const input = await body(request);
+-      if (String(input?.source || "") !== "hosted-chat")
++    if (path === HOSTED_FACTORY_BUMP_PATH && request.method === "POST") {
++      if (request.headers.get("cf-connecting-ip"))
+         return json({ error: "not found" }, 404, allowedOrigin, credentials);
+       if (!takeRate(this.rates, "factory:hosted-bump", 120, 6e4))
+         return json({ error: "rate limited" }, 429, allowedOrigin, credentials);
+-      const failed = input.failed === true;
+-      await this.recordFactoryOutcome({ engine: "hosted", model: "gpt-oss-20b", failed });
+-      const settle = input?.settled && typeof input.settled === "object" ? input.settled : null;
+-      if (!failed && settle && settle.paid === true) {
+-        await this.recordPaidInferenceSettle({
+-          owner: settle.owner || null,
+-          engine: "hosted",
+-          usage: settle.usage || null,
+-          tokens: settle.tokens,
+-          cents: settle.cents != null ? settle.cents : HOSTED_ASK_PRICE_CENTS,
+-          model: "gpt-oss-20b",
+-          requestId: settle.request_id || null,
+-          replayKey: settle.replay_key || (settle.request_id ? `hosted:${settle.request_id}` : null),
+-          now: Date.now()
+-        });
+-      }
+-      await this.bumpMetric("ask:hosted:complete");
+-      return json({ ok: true }, 202, allowedOrigin, credentials);
++      const input = await body(request);
++      return this.recordHostedFactoryBump(input);
+     }
+     if (path === "/compute/api/event" || path === "/compute/api/event/") {
+       if (request.method !== "POST")
+@@ -10923,26 +11123,7 @@
+
+       const usageGateway = gatewayUsage(job, answer);
+       let settlePatch = {};
+       if (!error && job.route !== "self") {
+-        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+-        if (accrued?.ok) {
+-          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
+-          if (settleCents > 0)
+-            settlePatch = { settle_cents: settleCents, settle_state: "pending_operator" };
+-          await this.recordPaidInferenceSettle({
+-            owner: job.owner || null,
+-            engine: job.route === "mixture" ? "mixture" : "community",
+-            usage,
+-            cents: settleCents,
+-            jobId: job.id,
+-            requestId: job.request_id || null,
+-            model: job.model,
+-            latencyMs: job.leasedAt ? now - job.leasedAt : null,
+-            ...honestLoopFields(job),
+-            replayKey: `job:${job.id}`,
+-            now
+-          });
+-          await this.referralCheckM2(job.owner, now);
+-        }
++        settlePatch = await this.settleCompletedJob(job, provider, usage, usageGateway, now);
+       }
+       if (error)
+         await this.refundJobDebit(job, now, error);
+@@ -10980,26 +11161,7 @@
+
+       const usageGateway = finishedEarly ? gatewayUsage(job, joinedStripped) : job.usage_gateway || null;
+       let settlePatch = {};
+       if (!streamError && input.done && job.route !== "self") {
+-        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
+-        if (accrued?.ok) {
+-          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
+-          if (settleCents > 0)
+-            settlePatch = { settle_cents: settleCents, settle_state: "pending_operator" };
+-          await this.recordPaidInferenceSettle({
+-            owner: job.owner || null,
+-            engine: job.route === "mixture" ? "mixture" : "community",
+-            usage,
+-            cents: settleCents,
+-            jobId: job.id,
+-            requestId: job.request_id || null,
+-            model: job.model,
+-            latencyMs: job.leasedAt ? now - job.leasedAt : null,
+-            ...honestLoopFields(job),
+-            replayKey: `job:${job.id}`,
+-            now
+-          });
+-          await this.referralCheckM2(job.owner, now);
+-        }
++        settlePatch = await this.settleCompletedJob(job, provider, usage, usageGateway, now);
+       }
+       const failed = Boolean(streamError);
+       const finished = failed || Boolean(input.done);
+@@ -12160,14 +12322,16 @@
+
+     const stub = env?.LOBBY?.get(env.LOBBY.idFromName("public"));
+     if (!stub)
+       return;
+-    await stub.fetch(new Request("https://lobby.getdasha.com/compute/api/factory", {
++    const settle = !failed && settled && typeof settled === "object" && settled.request_id ? {
++      owner: settled.owner || null,
++      request_id: settled.request_id,
++      cents: settled.cents,
++      usage: settled.usage || null
++    } : null;
++    await stub.fetch(new Request(`https://lobby.getdasha.com${HOSTED_FACTORY_BUMP_PATH}`, {
+       method: "POST",
+       headers: { "content-type": "application/json" },
+-      body: JSON.stringify({
+-        source: "hosted-chat",
+-        failed: failed === true,
+-        ...settled && typeof settled === "object" ? { settled } : {}
+-      })
++      body: JSON.stringify({ failed: failed === true, ...settle ? { settle } : {} })
+     }));
+   } catch {
+   }
+@@ -12244,6 +12408,8 @@
+
+       note: "counters count every attempted job by route, incl. failures and free guest calls; the receipt chain records settled paid jobs only; prompts not included; settled_24h = paid-inference only"
+     }, 200, allowedOrigin || "*", credentials));
+   }
++  if (path === "/compute/api/factory" || path === "/compute/api/factory/")
++    return computeApiError("not found", 404, allowedOrigin, credentials);
+   if ((path === "/compute/api/v1" || path === "/compute/api/v1/") && (request.method === "GET" || request.method === "HEAD")) {
+     return computeV1Gateway(request, allowedOrigin, credentials);
+   }
+@@ -12270,7 +12436,7 @@
+
+     kitSigUrl.searchParams.set("url", COMPUTE_KIT_MANIFEST.url);
+     return kitStub.fetch(new Request(kitSigUrl.href, request));
+   }
+-  if (path === "/compute/api/event" || path === "/compute/api/event/" || path === "/compute/api/metrics" || path === "/compute/api/metrics/" || path === "/compute/api/chain" || path === "/compute/api/chain/" || path === "/compute/api/verify" || path === "/compute/api/verify/" || path === "/compute/api/factory" || path === "/compute/api/factory/" || path === "/compute/api/network" || path === "/compute/api/network/" || path === "/compute/api/pricing" || path === "/compute/api/pricing/" || path === "/compute/api/models" || path === "/compute/api/models/" || path.startsWith("/compute/api/sponsors") || path.startsWith("/compute/api/providers/") || path === "/compute/api/providers" || path === "/compute/api/org-enroll" || path.startsWith("/compute/api/org-enroll/") || path.startsWith("/compute/api/keys") || path.startsWith("/compute/api/guest-keys") || path.startsWith("/compute/api/night") || path.startsWith("/compute/api/credits") || path.startsWith("/compute/api/provider/") || path.startsWith("/compute/api/receipts") || path.startsWith("/compute/api/referral") || path === "/compute/api/v1" || path === "/compute/api/v1/" || path.startsWith("/compute/api/v1/") || path === "/compute/api/jobs" || path === "/compute/api/jobs/" || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
++  if (path === "/compute/api/event" || path === "/compute/api/event/" || path === "/compute/api/metrics" || path === "/compute/api/metrics/" || path === "/compute/api/chain" || path === "/compute/api/chain/" || path === "/compute/api/verify" || path === "/compute/api/verify/" || path === "/compute/api/network" || path === "/compute/api/network/" || path === "/compute/api/pricing" || path === "/compute/api/pricing/" || path === "/compute/api/models" || path === "/compute/api/models/" || path.startsWith("/compute/api/sponsors") || path.startsWith("/compute/api/providers/") || path === "/compute/api/providers" || path === "/compute/api/org-enroll" || path.startsWith("/compute/api/org-enroll/") || path.startsWith("/compute/api/keys") || path.startsWith("/compute/api/guest-keys") || path.startsWith("/compute/api/night") || path.startsWith("/compute/api/credits") || path.startsWith("/compute/api/provider/") || path.startsWith("/compute/api/receipts") || path.startsWith("/compute/api/referral") || path === "/compute/api/v1" || path === "/compute/api/v1/" || path.startsWith("/compute/api/v1/") || path === "/compute/api/jobs" || path === "/compute/api/jobs/" || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+     const stub = env?.LOBBY?.get(env.LOBBY.idFromName("public"));
+     if (!stub)
+       return json({ error: "community network unavailable" }, 503, allowedOrigin, credentials);
+@@ -21272,7 +21438,7 @@
+
+   return null;
+ }
+ __name(fetchLiveTick, "fetchLiveTick");
+-var SECTION_CSS = `#dasha-digest{margin:3.25rem 0 0;padding:2.2rem 0 0;border-top:1px solid rgba(244,237,219,.18)}#dasha-digest h2{margin:0 0 1.15rem;font:900 clamp(1.35rem,3vw,2rem)/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.03em;text-transform:uppercase}#dasha-digest h2 a{margin-left:.7rem;color:var(--muted,#c8bea8);font:700 .82rem/1 Arial,Helvetica,sans-serif;letter-spacing:0;text-transform:none;text-decoration:none}#dasha-digest ol{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}#dasha-digest li{margin:0;display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:baseline}#dasha-digest .dd-src{color:var(--muted,#c8bea8);font:800 .72rem/1 Arial,Helvetica,sans-serif;letter-spacing:.07em;text-transform:uppercase}#dasha-digest a.dd-row{color:var(--acid,#dfff00);font:700 1.02rem/1.35 Arial,Helvetica,sans-serif;text-decoration:none}#dasha-digest a.dd-row:focus-visible,#dasha-digest h2 a:focus-visible{outline:3px solid var(--acid,#dfff00);outline-offset:3px}`;
++var SECTION_CSS = `#dasha-digest{margin:3.25rem 0 0;padding:2.2rem 1.25rem 0;border-top:1px solid rgba(244,237,219,.18)}#dasha-digest h2{margin:0 0 1.15rem;font:900 clamp(1.35rem,3vw,2rem)/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.03em;text-transform:uppercase}#dasha-digest h2 a{margin-left:.7rem;color:var(--muted,#c8bea8);font:700 .82rem/1 Arial,Helvetica,sans-serif;letter-spacing:0;text-transform:none;text-decoration:none}#dasha-digest ol{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}#dasha-digest li{margin:0;display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:baseline}#dasha-digest .dd-src{color:var(--muted,#c8bea8);font:800 .72rem/1 Arial,Helvetica,sans-serif;letter-spacing:.07em;text-transform:uppercase}#dasha-digest a.dd-row{color:var(--acid,#dfff00);font:700 1.02rem/1.35 Arial,Helvetica,sans-serif;text-decoration:none}#dasha-digest a.dd-row:focus-visible,#dasha-digest h2 a:focus-visible{outline:3px solid var(--acid,#dfff00);outline-offset:3px}`;
+ function digestSectionHtml(items, { pageHref = "/digest" } = {}) {
+   const rows = normalizeItems(items);
+   if (!rows.length)
+@@ -23295,7 +23461,7 @@
+
+ How do I start? Guest dgk_, or Sign in for dsk_. Change the base URL. https://lobby.getdasha.com/compute/api/v1
+ What is live? The Mac that is advertising. Read /compute/api/network.
+ What if no Mac is online? Hosted is still there.
+-What does $0.05/job mean? Buyer price: $0.05 per successful chat completion, USD-denominated, billed from prepaid credits. Top-ups: $DASHA at a 5% discount, USDC at 3%; the $DASHA token amount locks from a live price quote at top-up time. Provider earn is separate: $0.05/job + $0.01/1k completion tokens, paid in USDC or $DASHA (+5% bonus in $DASHA).
++What does $0.05/job mean? Buyer price: $0.05 per successful chat completion, USD-denominated, billed from prepaid credits. Top-ups: $DASHA at a 5% discount, USDC at 3%; the $DASHA token amount locks from a live price quote at top-up time. Provider earn is separate: $0.05/job + $0.01/1k completion tokens, accrued as credits pending operator settlement. There are no live USDC or $DASHA payouts yet.
+ 
+ Login: Grok Bot first, then X, then wallet. https://www.getdasha.com/login
+ 
+@@ -24103,6 +24269,7 @@
+
+   out = injectFaucetSlimHeader(out);
+   out = hideHomeExtraChrome(out);
+   out = unlockHomeMobileScroll(out);
++  out = fitHomeMuseChrome(out);
+   out = stripHomeLeftoverBodyBodyCss(out);
+   out = stripHomeLeftoverDashaH3Css(out);
+   out = stripHomeLeftoverSparkLineCss(out);
+@@ -24289,6 +24456,17 @@
+
+   return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${style}</head>`) : style + src;
+ }
+ __name(unlockHomeMobileScroll, "unlockHomeMobileScroll");
++var HOME_MUSE_FIT = '<style id="dasha-home-muse-fit">@media(max-width:700px){.muse-nav-wrap{padding-left:8px;padding-right:8px}.muse-pill{max-width:100%;flex-wrap:wrap;justify-content:center}.muse-pill a{padding:0 9px;font-size:12px}.muse-diagram{width:min(100%,340px);margin-left:auto;margin-right:auto}.muse-flow.req{right:8px}.muse-node.n2{right:6px}}</style>';
++function fitHomeMuseChrome(html) {
++  const src = String(html || "");
++  if (!/class=(['"])[^'"]*\bmuse-pill\b/.test(src))
++    return src;
++  if (/id=["']dasha-home-muse-fit["']/.test(src)) {
++    return src.replace(/<style\b[^>]*id=["']dasha-home-muse-fit["'][^>]*>[\s\S]*?<\/style>/i, HOME_MUSE_FIT);
++  }
++  return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${HOME_MUSE_FIT}</head>`) : HOME_MUSE_FIT + src;
++}
++__name(fitHomeMuseChrome, "fitHomeMuseChrome");
+ function stripHeroContribute(html) {
+   return String(html || "").replace(
+     /<a\b(?=[^>]*\bhref=(['"])\/contribute\1)[^>]*>[\s\S]*?<\/a>/gi,
+@@ -25021,7 +25199,7 @@
+
+ var HOME_LIST_DOOR = `<section id="list-door" aria-labelledby="list-title"><style id="dasha-list-door">#list-door{margin:0;padding:36px 0 48px;background:#070608}#list-door .door{display:grid;gap:14px;justify-items:start}#list-door .section-kicker{color:#dfff00;font:800 12px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase}#list-door .section-title{margin:0;color:#f4eddb;font:900 clamp(1.6rem,4vw,2.2rem)/1 Arial,Helvetica,sans-serif}#list-door .door-line{margin:0;color:rgba(244,237,219,.78);font:700 1rem/1.4 Arial,Helvetica,sans-serif}#list-door .pill.list{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #dfff00;color:#dfff00;background:transparent;font:800 14px/1 Arial,Helvetica,sans-serif;text-decoration:none}#list-door .pill.list:focus-visible{outline:3px solid #dfff00;outline-offset:3px}</style><div class="wrap door"><div><p class="section-kicker">List</p><h2 class="section-title" id="list-title">List.</h2><p class="door-line">We list $dasha here.</p></div><a class="pill list" href="/listings">Open List \u2192</a></div></section>`;
+ var HOME_GRWM_AIR = '<style id="dasha-grwm-air">#grwm{display:block;margin:0;padding:min(18vh,8rem) 0 min(14vh,6rem);box-sizing:border-box}#grwm video,#grwm .grwm-go{touch-action:pan-y}@media(max-width:800px){#grwm{padding:min(10vh,4rem) 0 min(8vh,3rem)}#grwm .grwm-phone{max-height:min(52svh,420px);width:min(100%,calc(52svh * 720 / 1280))}}</style>';
+ var HOME_FAUCET_MOUNT = `<section id="dasha-home-faucet" aria-label="Faucet"><div id="dasha-faucet" data-faucet-api="https://lobby.getdasha.com" data-faucet-still="https://lobby.getdasha.com/client/faucet.avif" data-faucet-still-sri="${FAUCET_STILL_SRI}"></div></section>`;
+-var HOME_FAUCET_STYLE = '<style id="dasha-home-faucet-css">#dasha-home-faucet,#dasha-faucet{width:min(36rem,calc(100% - 32px));margin:28px auto 64px}#dasha-home-lede{width:min(40rem,calc(100% - 32px));margin:18px auto 8px;color:var(--paper,#f4eddb);font:900 1.05rem/1.35 Arial,Helvetica,sans-serif}.dasha-bag-line{margin:.6rem 0 0;font:800 .95rem/1.3 Arial,Helvetica,sans-serif}.dasha-bag-line a{color:var(--paper,#f4eddb)}</style>';
++var HOME_FAUCET_STYLE = '<style id="dasha-home-faucet-css">#dasha-home-faucet,#dasha-faucet{width:min(36rem,calc(100% - 32px));margin:28px auto 64px}#dasha-home-faucet{background:#070608;color:#f4eddb;padding:32px 22px 28px;border-radius:28px}#dasha-home-faucet .faucet-card{width:100%;max-width:100%}#dasha-home-lede{width:min(40rem,calc(100% - 32px));margin:18px auto 8px;color:var(--paper,#f4eddb);font:900 1.05rem/1.35 Arial,Helvetica,sans-serif}.dasha-bag-line{margin:.6rem 0 0;font:800 .95rem/1.3 Arial,Helvetica,sans-serif}.dasha-bag-line a{color:var(--paper,#f4eddb)}</style>';
+ var FAUCET_SCRIPT = `<script src="https://lobby.getdasha.com/client/faucet.js" integrity="${FAUCET_CLIENT_SRI}" crossorigin="anonymous" defer><\/script>`;
+ function stripHomePlayStyleId(html) {
+   let out = String(html || "");
+@@ -25815,6 +25993,7 @@
+
+   out = stripChessLeftoverTournamentActionReplaceStateJs(out);
+   if (!isLobbyLeftoverHomeMobileScrollPage(out) && !isChessLeftoverHomeMobileScrollPage(out))
+     out = unlockHomeMobileScroll(out);
++  out = fitHomeMuseChrome(out);
+   out = stripHomeLeftoverBodyBodyCss(out);
+   out = stripHomeLeftoverDashaH3Css(out);
+   out = stripHomeLeftoverSparkLineCss(out);
+@@ -27567,6 +27746,10 @@
+
+   "/compute/api/robots",
+   "/compute/api/robots/"
+ ]);
++var POTTER_COMPUTE_API_BENCHMARKS_308_PATHS = /* @__PURE__ */ new Set([
++  "/compute/api/benchmarks",
++  "/compute/api/benchmarks/"
++]);
+ var POTTER_COMPUTE_API_SITEMAP_308_PATHS = /* @__PURE__ */ new Set([
+   "/compute/api/sitemap",
+   "/compute/api/sitemap/"
+@@ -27635,6 +27818,10 @@
+
+   "/compute/api/chain.json",
+   "/compute/api/chain.json/"
+ ]);
++var POTTER_COMPUTE_API_FACTORY_JSON_308_PATHS = /* @__PURE__ */ new Set([
++  "/compute/api/factory.json",
++  "/compute/api/factory.json/"
++]);
+ var POTTER_PROOF_308_PATHS = /* @__PURE__ */ new Set([
+   "/proof",
+   "/proof/"
+@@ -27895,6 +28082,9 @@
+
+   if (POTTER_COMPUTE_API_ROBOTS_308_PATHS.has(p)) {
+     return "https://www.getdasha.com/robots.txt";
+   }
++  if (POTTER_COMPUTE_API_BENCHMARKS_308_PATHS.has(p)) {
++    return "https://www.getdasha.com/benchmarks";
++  }
+   if (POTTER_COMPUTE_API_SITEMAP_308_PATHS.has(p)) {
+     return "https://www.getdasha.com/sitemap.xml";
+   }
+@@ -27936,6 +28126,9 @@
+
+   }
+   if (POTTER_COMPUTE_API_CHAIN_JSON_308_PATHS.has(p)) {
+     return "https://www.getdasha.com/compute/api/chain";
++  }
++  if (POTTER_COMPUTE_API_FACTORY_JSON_308_PATHS.has(p)) {
++    return "https://www.getdasha.com/compute/api/factory";
+   }
+   if (POTTER_PROOF_308_PATHS.has(p)) {
+     return "https://www.getdasha.com/compute/proof";
+@@ -28030,7 +28223,7 @@
+
+       const src = String(path || "").toLowerCase();
+       if ((POTTER_ROOM_308_PATHS.has(src) || POTTER_ROOM_AGENT_DISCOVERY_308_PATHS.has(src) || POTTER_KITS_308_PATHS.has(src) || src === "/room/agent.json" || src === "/room/agent.json/" || src === "/room/health" || src === "/room/health/" || src === "/room/healthz" || src === "/room/healthz/") && u.hostname === "www.getdasha.com" && (u.pathname === "/room" || u.pathname.startsWith("/room/"))) {
+         location = "https://lobby.getdasha.com" + u.pathname + u.search + u.hash;
+-      } else if (u.hostname === "www.getdasha.com" && (u.pathname === "/compute/api" || u.pathname.startsWith("/compute/api/") || u.pathname === "/compute/skill.md" && (POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src) || POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src) || POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src) || POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src) || POTTER_COMPUTE_API_SKILL_308_PATHS.has(src)) || u.pathname === "/benchmarks" && (src === "/api/benchmarks.json" || src === "/api/benchmarks.json/" || src === "/compute/api/benchmarks.json" || src === "/compute/api/benchmarks.json/") || u.pathname === "/compute/proof.json" && POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src) || u.pathname === "/compute/proof" && POTTER_PROOF_308_PATHS.has(src) || u.pathname === "/digest" && POTTER_COMPUTE_DIGEST_308_PATHS.has(src) || u.pathname === "/compute/llms.txt" && POTTER_COMPUTE_API_LLMS_JSON_308_PATHS.has(src) || u.pathname === "/compute/openapi.json" && POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS.has(src) || u.pathname === "/contribute" && POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(src) || u.pathname === "/humans.txt" && POTTER_COMPUTE_HUMANS_308_PATHS.has(src) || POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === "/dasha-compute-open-alpha.tar.gz")) {
++      } else if (u.hostname === "www.getdasha.com" && (u.pathname === "/compute/api" || u.pathname.startsWith("/compute/api/") || u.pathname === "/compute/skill.md" && (POTTER_COMPUTE_API_DOCS_SKILL_308_PATHS.has(src) || POTTER_COMPUTE_DOCS_SKILL_308_PATHS.has(src) || POTTER_COMPUTE_AGENT_DISCOVERY_SKILL_308_PATHS.has(src) || POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src) || POTTER_COMPUTE_API_SKILL_308_PATHS.has(src)) || u.pathname === "/benchmarks" && (src === "/api/benchmarks.json" || src === "/api/benchmarks.json/" || src === "/compute/api/benchmarks.json" || src === "/compute/api/benchmarks.json/" || POTTER_COMPUTE_API_BENCHMARKS_308_PATHS.has(src)) || u.pathname === "/compute/proof.json" && POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST.has(src) || u.pathname === "/compute/proof" && POTTER_PROOF_308_PATHS.has(src) || u.pathname === "/digest" && POTTER_COMPUTE_DIGEST_308_PATHS.has(src) || u.pathname === "/compute/llms.txt" && POTTER_COMPUTE_API_LLMS_JSON_308_PATHS.has(src) || u.pathname === "/compute/openapi.json" && POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS.has(src) || u.pathname === "/contribute" && POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(src) || u.pathname === "/humans.txt" && POTTER_COMPUTE_HUMANS_308_PATHS.has(src) || POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === "/dasha-compute-open-alpha.tar.gz")) {
+         location = "https://lobby.getdasha.com" + u.pathname + u.search + u.hash;
+       }
+     }
+@@ -35456,6 +35649,7 @@
+
+   ensureHtmlLang,
+   expireListingsMarketMemoForTest,
+   filterListingsMarket,
++  fitHomeMuseChrome,
+   forumIndexPageHtml,
+   forumRssXml,
+   forumSitemapXml,

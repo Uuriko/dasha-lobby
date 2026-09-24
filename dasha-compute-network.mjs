@@ -1386,12 +1386,16 @@ export class ComputeNetwork {
     const reviewKey = `${USAGE_REVIEW_PREFIX}${jobId}`;
     const review = await storage.get(reviewKey);
     if (!review) return { ok: false, error: 'no review' };
-    if (review.state === 'accepted') return { ok: true, replay: true };
+    if (review.state === 'accepted' && review.settlementCompleted === true) return { ok: true, replay: true };
     const job = await storage.get(`compute:job:${jobId}`);
     if (!job) return { ok: false, error: 'job expired' };
-    await storage.put(reviewKey, { ...review, state: 'accepted', audit: [...(review.audit || []), { at: now, event: 'accepted', by: String(reviewer).slice(0, 64) }] });
+    const acceptedReview = review.state === 'accepted' ? review : { ...review, state: 'accepted', audit: [...(review.audit || []), { at: now, event: 'accepted', by: String(reviewer).slice(0, 64) }] };
+    if (review.state !== 'accepted') await storage.put(reviewKey, acceptedReview);
     const patch = await this.settleCompletedJob(job, { id: review.providerId }, review.usage_reported, review.usage_gateway, now, { accepted: true });
     await storage.put(`compute:job:${jobId}`, { ...job, ...patch, usage_review: 'accepted' });
+    // Acceptance authorizes settlement; only this later marker confirms it finished.
+    // Retrying an accepted review after a crash reuses idempotent earning/receipt keys.
+    await storage.put(reviewKey, { ...acceptedReview, settlementCompleted: true, settledAt: now });
     return { ok: true, replay: false, ...patch };
   }
 
