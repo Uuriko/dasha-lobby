@@ -7,6 +7,7 @@
 
 import { randomUrlToken } from './dasha-lobby-x.mjs';
 import { COMPUTE_LLMS_URL, COMPUTE_SKILL_URL } from './dasha-compute-agent.mjs';
+import { mintBuyerForKey } from './dasha-compute-ledger.mjs';
 
 export const COMPUTE_GUEST_KEYS_PATH = '/compute/api/guest-keys';
 export const COMPUTE_GUEST_KEYS_URL = `https://lobby.getdasha.com${COMPUTE_GUEST_KEYS_PATH}`;
@@ -303,6 +304,7 @@ async function mintGuestKeyLocked({ storage, ip = 'unknown', pairing = '', name 
     spendWindowStart: now,
   };
   await storage.put(`compute:api-key:${id}`, record);
+  try { await mintBuyerForKey(storage, { keyId: id, owner: null, now }); } catch {}
   return {
     status: 201,
     body: {

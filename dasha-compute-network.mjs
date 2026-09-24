@@ -9,6 +9,7 @@ import {
   findCreditPayment,
   generateReference,
   loadTxBySignature,
+  PRICING_VERSION,
   lockPayAmount,
   lockTipAmount,
   packById,
@@ -16,6 +17,20 @@ import {
   tipCentsFromInput,
   verifyCreditTx,
 } from './dasha-compute-credits.mjs';
+import {
+  appendLedgerEvent,
+  buildLedgerCreatedRow,
+  buildLedgerFailedRow,
+  buildLedgerPayoutRow,
+  buildLedgerRefundRow,
+  buildLedgerSettledRow,
+  exportLedgerEvents,
+  mapLedgerFailureReason,
+  mintBuyerForKey,
+  mintBuyerForOwner,
+  recordProviderOnlineHour,
+  resolveBuyerId,
+} from './dasha-compute-ledger.mjs';
 import {
   createCardCheckoutSession,
   retrieveCardSession,
@@ -1129,7 +1144,16 @@ export class ComputeNetwork {
     const jobs = [];
     for (const [key, job] of await this.state.storage.list({ prefix: 'compute:job:' })) {
       if (!job || Number(job.expiresAt) <= now) {
-        if (job && job.status !== 'complete') await this.refundJobDebit(job, now, 'expired');
+        if (job && job.status !== 'complete') {
+          await this.refundJobDebit(job, now, 'expired');
+          try {
+            await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerFailedRow({
+              jobId: job.id, failureReason: 'timeout',
+              durationMs: Number(job.createdAt) ? now - Number(job.createdAt) : null,
+              createdAtMs: Number(job.createdAt) || null, providerId: job.providerId || null,
+            }), now);
+          } catch {}
+        }
         await this.state.storage.delete(key);
         if (job?.nightId && ['queued', 'leased'].includes(job.status)) await this.finishNight(job, 'failed', null, 'job expired before completion', now);
       }
@@ -1138,6 +1162,13 @@ export class ComputeNetwork {
         if (hadStreamProgress) {
           await this.refundJobDebit(job, now, 'provider cut');
           await this.state.storage.put(key, { ...job, chunks: [], status: 'failed', error: 'provider cut', usage: null, attempts: closeAttempt(job.attempts, 'cut'), messages: null, completedAt: now, providerId: null, leaseExpiresAt: null, expiresAt: now + 10 * 60_000 });
+          try {
+            await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerFailedRow({
+              jobId: job.id, failureReason: 'provider_offline',
+              durationMs: Number(job.createdAt) ? now - Number(job.createdAt) : null,
+              createdAtMs: Number(job.createdAt) || null, providerId: null,
+            }), now);
+          } catch {}
           await this.finishNight(job, 'failed', null, 'provider cut', now);
           await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: true });
         } else {
@@ -1374,6 +1405,16 @@ export class ComputeNetwork {
       latencyMs: job.leasedAt ? now - job.leasedAt : null,
       ...honestLoopFields(job),
       replayKey: `job:${job.id}`,
+      ledger: {
+        path: job.path || null,
+        keyType: job.keyType || null,
+        providerId: provider?.id || job.providerId || null,
+        createdAtMs: Number(job.createdAt || 0) || null,
+        buyerChargeCents: job.debitCents != null ? Number(job.debitCents) : 0,
+        creditUsedCents: null,
+        engine: job.route === 'mixture' ? 'mixture' : 'community',
+        sessionId: job.sessionId || null,
+      },
       now,
     });
     await this.referralCheckM2(job.owner, now);
@@ -1404,7 +1445,8 @@ export class ComputeNetwork {
    *  signed receipt chain and gets covered by a fresh head. Signing failure never
    *  breaks the settle - the receipt stays unsigned (honest degradation). */
   async recordPaidInferenceSettle(input = {}) {
-    const res = await recordSettledInference(this.state.storage, input);
+    const { ledger = null, ...settleInput } = input;
+    const res = await recordSettledInference(this.state.storage, settleInput);
     if (res.ok && !res.replay) {
       try {
         const key = await headsSigningKey(this.env);
@@ -1413,6 +1455,24 @@ export class ComputeNetwork {
           await appendHead(this.state.storage, await makeHead(key, row.hash, await headsTip(this.state.storage)));
         }
       } catch (e) { /* unsigned settle is better than a failed settle */ }
+    }
+    if (res.ok && !res.replay && ledger) {
+      try {
+        await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerSettledRow({
+          receiptId: res.receipt?.id || null,
+          jobId: settleInput.jobId || res.receipt?.job_id || null,
+          providerId: ledger.providerId || null,
+          usage: settleInput.usage,
+          durationMs: ledger.createdAtMs ? Math.max(0, Number(res.receipt?.at || 0) - ledger.createdAtMs) : settleInput.latencyMs,
+          settledAtMs: res.receipt?.at,
+          buyerChargeCents: ledger.buyerChargeCents,
+          creditUsedCents: ledger.creditUsedCents ?? null,
+          providerPayoutCents: ledger.providerPayoutCents !== undefined ? ledger.providerPayoutCents : res.receipt?.cents,
+          hostedInferenceCostUsdMicros: ledger.hostedInferenceCostUsdMicros ?? null,
+          pricingVersion: PRICING_VERSION,
+          engine: ledger.engine || settleInput.engine || null,
+        }), Number(res.receipt?.at || 0) || undefined);
+      } catch { /* ledger logging never breaks settlement */ }
     }
     return res;
   }
@@ -1426,6 +1486,20 @@ export class ComputeNetwork {
     const settle = !failed && input?.settle && typeof input.settle === 'object' ? input.settle : null;
     if (!settle) {
       await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed });
+      if (failed) {
+        try {
+          await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerCreatedRow({
+            jobId: null, requestId: null, path: 'ui_hosted', keyType: 'none',
+            modelId: input?.model || 'gpt-oss-20b', buyerId: null, sessionId: input?.session_id || null,
+            createdAtMs: input?.created_at_ms != null ? Number(input.created_at_ms) : null,
+          }), now);
+          await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerFailedRow({
+            jobId: null, failureReason: mapLedgerFailureReason(input?.failure_reason || 'model_error'),
+            durationMs: input?.created_at_ms != null ? Math.max(0, now - Number(input.created_at_ms)) : null,
+            createdAtMs: input?.created_at_ms != null ? Number(input.created_at_ms) : null, providerId: null,
+          }), now);
+        } catch {}
+      }
       await this.bumpMetric('ask:hosted:complete');
       return json({ ok: true, settled: false }, 202, null, false);
     }
@@ -1445,6 +1519,15 @@ export class ComputeNetwork {
     if (await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}${replayKey}`)) {
       return json({ ok: true, replay: true, settled: false }, 200, null, false);
     }
+    try {
+      const hostedBuyerId = owner ? await resolveBuyerId(this.state.storage, { owner }) : null;
+      await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerCreatedRow({
+        jobId: null, requestId: requestId || null, path: 'ui_hosted',
+        keyType: 'none', modelId: settle.model || 'gpt-oss-20b',
+        buyerId: hostedBuyerId, sessionId: settle.session_id || null,
+        createdAtMs: settle.created_at_ms != null ? Number(settle.created_at_ms) : null,
+      }), now);
+    } catch { /* ledger logging never breaks settle */ }
     await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed: false });
     const res = await this.recordPaidInferenceSettle({
       owner,
@@ -1454,6 +1537,18 @@ export class ComputeNetwork {
       model: 'gpt-oss-20b',
       requestId,
       replayKey,
+      ledger: {
+        path: 'ui_hosted',
+        keyType: 'none',
+        providerId: null,
+        createdAtMs: settle.created_at_ms != null ? Number(settle.created_at_ms) : null,
+        buyerChargeCents: chargedCents,
+        creditUsedCents: null,
+        providerPayoutCents: 0, // economy ruling: nobody is owed a payout on hosted jobs
+        hostedInferenceCostUsdMicros: null, // NULL until the Workers AI bill yields a real per-job number
+        engine: 'hosted',
+        sessionId: settle.session_id || null,
+      },
       now,
     });
     await this.bumpMetric('ask:hosted:complete');
@@ -1518,7 +1613,7 @@ export class ComputeNetwork {
   }
 
 
-  async queueJob(owner, input, now) {
+  async queueJob(owner, input, now, meta = {}) {
     const parsedEffort = parseReasoningEffort(input);
     if (!parsedEffort.ok) return { error: parsedEffort.error, status: 400 };
     const model = String(input.model || '');
@@ -1543,8 +1638,18 @@ export class ComputeNetwork {
     const requestedTemperature = Number(input.temperature);
     const stream = input.stream === true;
     const turns = countConversationTurns(messages);
-    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(input.request_id != null && String(input.request_id).trim() ? { request_id: String(input.request_id).trim().slice(0, 80) } : {}), ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
+    const job = { id: `job_${randomUrlToken(9)}`, owner, model, route, messages, maxTokens: Math.max(1, Math.min(4096, Number(input.max_tokens) || 512)), temperature: Number.isFinite(requestedTemperature) ? Math.max(0, Math.min(2, requestedTemperature)) : 0.6, stream, ...(stream ? { chunks: [] } : {}), status: 'queued', providerId: null, createdAt: now, expiresAt: now + JOB_TTL_MS, ...(meta.path ? { path: String(meta.path) } : {}), ...(meta.keyType ? { keyType: String(meta.keyType) } : {}), ...(meta.keyId ? { keyId: String(meta.keyId) } : {}), ...(input.session_id != null ? { sessionId: String(input.session_id).slice(0, 64) } : {}), request_id: (input.request_id != null && String(input.request_id).trim()) ? String(input.request_id).trim().slice(0, 80) : `req_${randomUrlToken(10)}`, ...(parsedEffort.effort ? { effort: parsedEffort.effort } : {}), ...(turns ? { turns } : {}) };
     await this.state.storage.put(`compute:job:${job.id}`, job);
+    try {
+      const ledgerPath = route === 'self' ? 'self_routed' : (meta.path || null);
+      const ledgerBuyerId = await resolveBuyerId(this.state.storage, { owner, keyId: meta.keyId || null })
+        || (owner ? await mintBuyerForOwner(this.state.storage, { owner, now }) : null);
+      await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerCreatedRow({
+        jobId: job.id, requestId: job.request_id, path: ledgerPath,
+        keyType: meta.keyType || 'none', modelId: model,
+        buyerId: ledgerBuyerId, sessionId: job.sessionId || null, createdAtMs: now,
+      }), now);
+    } catch { /* ledger logging never blocks dispatch */ }
     return { job };
   }
 
@@ -1719,6 +1824,19 @@ export class ComputeNetwork {
       return json({ ok: true, prompt_deleted: true }, 200, allowedOrigin, true);
     }
 
+    // --- private receipt-economics ledger export (operator token; never in the public catalog) ---
+    if ((path === '/compute/api/ledger' || path === '/compute/api/ledger/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const ledgerToken = String(this.env.LEDGER_EXPORT_TOKEN || '');
+      if (!ledgerToken) return maybeHead(request, json({ error: 'not found' }, 404, allowedOrigin || '*', false));
+      if (String(request.headers.get('authorization') || '') !== `Bearer ${ledgerToken}`) {
+        return maybeHead(request, json({ error: 'unauthorized' }, 401, allowedOrigin || '*', false));
+      }
+      const ledgerUrl = new URL(request.url);
+      const ledgerLimit = Math.floor(Number(ledgerUrl.searchParams.get('limit')) || 0) || 500;
+      const ledgerResult = await exportLedgerEvents(this.state.storage, { after: ledgerUrl.searchParams.get('after') || '', limit: ledgerLimit });
+      return maybeHead(request, json(ledgerResult, 200, allowedOrigin || '*', false));
+    }
+
     if ((path === '/compute/api/keys' || path === '/compute/api/keys/') && (request.method === 'GET' || request.method === 'HEAD' || request.method === 'POST')) {
       if (!allowedOrigin) return maybeHead(request, originRequired());
       const owner = identity(await authSessionFromRequest(this.env, request));
@@ -1736,6 +1854,7 @@ export class ComputeNetwork {
         limitCents, limitReset, spendCents: 0, spendWindowStart: now,
       };
       await this.state.storage.put(`compute:api-key:${id}`, record);
+      try { await mintBuyerForKey(this.state.storage, { keyId: id, owner, now }); } catch {}
       await this.bumpMetric('key:create');
       return json({
         id, name, api_key: token,
@@ -1901,7 +2020,7 @@ export class ComputeNetwork {
           return v1err('top up credits', 402, 'invalid_request_error', chatSpend());
         }
       }
-      const queued = await this.queueJob(key.owner, input, now);
+      const queued = await this.queueJob(key.owner, input, now, { path: 'api', keyType: guest ? 'dgk_' : 'dsk_', keyId: key.id });
       if (queued.error) return v1err(queued.error, queued.status, queued.status >= 500 ? 'server_error' : 'invalid_request_error', chatSpend());
       if (queued.job.route !== 'self' && !guest) {
         const debit = await this.debitCredits(key.owner, {
@@ -2106,6 +2225,7 @@ export class ComputeNetwork {
       if (prior) return json({ error: 'already_enrolled', provider_id: prior.id, note: 'This Mac name already redeemed this code. Re-register from the Provide page for a fresh token.' }, 409, allowedOrigin || '*', credentials);
       const providerId = `mac_${randomUrlToken(9)}`, token = `dcp_${randomUrlToken(24)}`;
       await this.state.storage.put(`compute:provider:${providerId}`, { id: providerId, owner: link.owner, name, allowedModels: models, models: [], tokenHash: await sha256(token), createdAt: now, lastSeenAt: 0, createdVia: code });
+      try { await appendLedgerEvent(this.state.storage, 'provider_event', { provider_id: providerId, provider_registered_at_ms: now }, now); } catch {}
       await this.state.storage.put(okey, { ...link, used: Number(link.used) + 1 });
       await this.bumpMetric('provider:enroll');
       return json({ provider_id: providerId, provider_token: token, coordinator_url: 'https://lobby.getdasha.com/compute/api', models, note: 'Copy this token now. Dasha stores only its hash.' }, 201, allowedOrigin || '*', credentials);
@@ -2121,6 +2241,7 @@ export class ComputeNetwork {
       if (!models.length) return json({ error: 'choose at least one supported model' }, 400, allowedOrigin, true);
       const providerId = `mac_${randomUrlToken(9)}`, token = `dcp_${randomUrlToken(24)}`, name = String(input.name || '').trim().slice(0, 64) || 'My Mac';
       await this.state.storage.put(`compute:provider:${providerId}`, { id: providerId, owner, name, allowedModels: models, models: [], tokenHash: await sha256(token), createdAt: now, lastSeenAt: 0 });
+      try { await appendLedgerEvent(this.state.storage, 'provider_event', { provider_id: providerId, provider_registered_at_ms: now }, now); } catch {}
       const referral = input.ref ? await this.referralAttribute(owner, input.ref, now) : null;
       await this.bumpMetric('provider:register');
       return json({ provider_id: providerId, provider_token: token, coordinator_url: 'https://lobby.getdasha.com/compute/api', models, note: 'Copy this token now. Dasha stores only its hash.', ...(referral?.ok ? { referral: 'attributed' } : {}) }, 201, allowedOrigin, true);
@@ -2167,6 +2288,10 @@ export class ComputeNetwork {
       if (hardware) provider.hardware = hardware;
       provider.name = String(input.name || '').trim().slice(0, 64) || provider.name;
       await this.state.storage.put(`compute:provider:${provider.id}`, provider);
+      try { await recordProviderOnlineHour(this.state.storage, provider.id, now); } catch {}
+      if (firstOnline) {
+        try { await appendLedgerEvent(this.state.storage, 'provider_event', { provider_id: provider.id, first_heartbeat_at_ms: now, kit_version: kitVersion || 'version-less' }, now); } catch {}
+      }
       if (firstOnline) await this.referralMilestone(provider.owner, 'm1', [{ to: 'referrer', cents: REF_M1_CENTS }], now);
       const jobs = (await this.prune(now, { night: false, providers: false })).sort((a, b) => a.createdAt - b.createdAt);
       const job = jobs.find(candidate => candidate.status === 'queued' && provider.models.includes(candidate.model) && (candidate.route !== 'self' || provider.owner === candidate.owner));
@@ -2270,7 +2395,7 @@ export class ComputeNetwork {
       if (!allowedOrigin) return originRequired();
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
-      const queued = await this.queueJob(owner, mergeRouteFromHeaders(await body(request, 12 * 1024), request), now);
+      const queued = await this.queueJob(owner, mergeRouteFromHeaders(await body(request, 12 * 1024), request), now, { path: 'ui_ask' });
       if (queued.error) return json({ error: queued.error }, queued.status, allowedOrigin, true);
       const job = queued.job;
       const honesty = effortHonestyFromJob(job);
@@ -2685,6 +2810,13 @@ export class ComputeNetwork {
       });
       if (!result.ok) return json({ error: result.error, min_payout_cents: PROVIDER_MIN_PAYOUT_CENTS, payout_mode: PROVIDER_PAYOUT_MODE }, result.status || 400, allowedOrigin, true);
       const p = result.payout;
+      try {
+        await appendLedgerEvent(this.state.storage, 'payout_event', buildLedgerPayoutRow({
+          payoutId: p.id, providerId: p.providerId || p.owner || owner,
+          requestedAtMs: Number(p.createdAt || now), method: p.method,
+          faceCents: Number(p.usdc_cents || 0), payoutCents: Number(p.payout_cents ?? p.usdc_cents ?? 0),
+        }), now);
+      } catch {}
       await this.bumpMetric('provider:payout');
       return json({
         id: p.id,
@@ -3102,6 +3234,14 @@ export class ComputeNetwork {
     if (refunded.ok && !refunded.replay && job.debitKeyId && job.debitCents) {
       await this.refundApiKeySpend(job.debitKeyId, job.debitCents, now);
     }
+    if (refunded.ok && !refunded.replay) {
+      try {
+        const settledReceipt = await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}job:${job.id}`);
+        await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerRefundRow({
+          receiptId: settledReceipt?.id || null, jobId: job.id, refundCents: Number(job.debitCents || 0),
+        }), now);
+      } catch {}
+    }
     return refunded;
   }
 
@@ -3377,7 +3517,7 @@ export class ComputeNetwork {
 }
 
 
-async function bumpHostedFactory(env, { failed = false, settled = null } = {}) {
+async function bumpHostedFactory(env, { failed = false, settled = null, created_at_ms: bumpCreatedAtMs = null, model: bumpModel = null, session_id: bumpSessionId = null, failure_reason: bumpFailureReason = null } = {}) {
   try {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return;
@@ -3386,11 +3526,21 @@ async function bumpHostedFactory(env, { failed = false, settled = null } = {}) {
       request_id: settled.request_id,
       cents: settled.cents,
       usage: settled.usage || null,
+      created_at_ms: settled.created_at_ms ?? null,
+      model: settled.model ?? null,
+      session_id: settled.session_id ?? null,
     } : null;
     await stub.fetch(new Request(`https://lobby.getdasha.com${HOSTED_FACTORY_BUMP_PATH}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ failed: failed === true, ...(settle ? { settle } : {}) }),
+      body: JSON.stringify({
+        failed: failed === true,
+        ...(settle ? { settle } : {}),
+        ...(bumpCreatedAtMs ? { created_at_ms: bumpCreatedAtMs } : {}),
+        ...(bumpModel ? { model: String(bumpModel).slice(0, 80) } : {}),
+        ...(bumpSessionId ? { session_id: String(bumpSessionId).slice(0, 64) } : {}),
+        ...(bumpFailureReason ? { failure_reason: String(bumpFailureReason).slice(0, 80) } : {}),
+      }),
     }));
   } catch {}
 }
@@ -3495,7 +3645,7 @@ export async function computeApi(request, env, allowedOrigin) {
     kitSigUrl.searchParams.set('url', COMPUTE_KIT_MANIFEST.url);
     return kitStub.fetch(new Request(kitSigUrl.href, request));
   }
-  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path === '/compute/api/org-enroll' || path.startsWith('/compute/api/org-enroll/') || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path === '/compute/api/ledger' || path === '/compute/api/ledger/' || path === '/compute/api/org-enroll' || path.startsWith('/compute/api/org-enroll/') || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
     try {
@@ -3510,6 +3660,7 @@ export async function computeApi(request, env, allowedOrigin) {
   if (!env.AI) return json({ error: 'hosted demo unavailable', code: 'hosted_cut' }, 503, allowedOrigin, true);
   const session = await authSessionFromRequest(env, request), owner = identity(session);
   if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
+  const hostedStartedAtMs = Date.now();
   const input = await body(request, 12 * 1024), messages = chatMessages(input);
   if (!messages) return json({ error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total' }, 400, allowedOrigin, true);
   const parsedEffort = parseReasoningEffort(input);
@@ -3539,6 +3690,9 @@ export async function computeApi(request, env, allowedOrigin) {
     usage: usage || null,
     cents: hostedChargedCents,
     request_id: hostedSpendId,
+    created_at_ms: hostedStartedAtMs,
+    model: 'gpt-oss-20b',
+    session_id: session?.id || null,
     replay_key: `hosted:${hostedSpendId}`
   } : null;
   const system = { role: 'system', content: 'Answer directly and concisely. Do not claim to be running on a community Mac; this hosted demo uses Cloudflare Workers AI.' };
@@ -3568,7 +3722,7 @@ export async function computeApi(request, env, allowedOrigin) {
         }
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
-        bumpHostedFactory(env, { failed: Boolean(failed), settled: failed ? null : hostedSettledPayload(usage) });
+        bumpHostedFactory(env, { failed: Boolean(failed), settled: failed ? null : hostedSettledPayload(usage), created_at_ms: hostedStartedAtMs, model: 'gpt-oss-20b', session_id: session?.id || null });
       };
       const emitError = (controller, message) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: { message, type: 'server_error', code: 'hosted_cut' } })}\n\n`));
@@ -3652,7 +3806,7 @@ export async function computeApi(request, env, allowedOrigin) {
     const prompt_tokens = approxTokens([system.content, ...messages.map((m) => `${m.role}:${m.content}`)].join('\n'));
     const completion_tokens = approxTokens(answer);
     const usage = tokenUsage({ usage: { prompt_tokens, completion_tokens, total_tokens: prompt_tokens + completion_tokens } });
-    await bumpHostedFactory(env, { failed: false, settled: hostedSettledPayload(usage) });
+    await bumpHostedFactory(env, { failed: false, settled: hostedSettledPayload(usage), created_at_ms: hostedStartedAtMs, model: 'gpt-oss-20b', session_id: session?.id || null });
     return json({ answer, model: 'gpt-oss-20b', provider: 'Cloudflare Workers AI', stored: false, usage, ...hostedEffortFace(hostedHonesty), ...(creditBalanceHeader != null ? { balance_cents: Number(creditBalanceHeader) } : {}) }, 200, allowedOrigin, true, { ...dashaChatSpendHeaders({ route: 'hosted', model: 'gpt-oss-20b', spendCents: hostedChargedCents }), ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) });
   } catch {
     await bumpHostedFactory(env, { failed: true });

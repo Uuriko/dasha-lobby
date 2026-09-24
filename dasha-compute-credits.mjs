@@ -302,6 +302,8 @@ export async function loadTxBySignature(env, signature) {
 
 /** Fixed Hosted Ask price past free floor (cents). Community/Mixture do not deduct in v1. */
 export const HOSTED_ASK_PRICE_CENTS = 5;
+/** Price-table version stamped on every ledger money row (bump on any price change). */
+export const PRICING_VERSION = '2026-09-alpha-1';
 
 /**
  * Pure debit math. Fail closed if balance < price.
