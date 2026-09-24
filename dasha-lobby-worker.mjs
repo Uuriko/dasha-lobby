@@ -137,6 +137,7 @@ import {
   ASSET_HASH,
 } from './dasha-lobby-static-gen.mjs';
 import { ComputeNetwork, computeApi, rewriteComputeV1ChatCompletionsPath } from './dasha-compute-network.mjs';
+import { LOBBY_ALARM_HEARTBEAT_KEY, nextAlarmHeartbeat, redactJobError } from './dasha-job-heartbeat.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { COMPUTE_START_PAGE_HTML } from './dasha-compute-start-page.mjs';
@@ -10264,6 +10265,24 @@ export class DashaLobby {
   }
 
   async alarm() {
+    // Always re-arm: when alarmTick() threw, setAlarm was skipped and the
+    // 5-minute chain (chess clocks, compute job expiry, Night Shift) could stop
+    // silently. Record a heartbeat either way (GET /compute/api/health/jobs).
+    const startedAt = Date.now();
+    let failure = null;
+    try { await this.alarmTick(); }
+    catch (error) { failure = error; console.error(`[lobby-alarm] tick failed: ${redactJobError(error?.message ?? error)}`); }
+    try { await this.state.storage.setAlarm(Date.now() + 5 * 60_000); }
+    catch (error) { console.error(`[lobby-alarm] re-arm failed: ${redactJobError(error?.message ?? error)}`); }
+    try {
+      const previous = await this.state.storage.get(LOBBY_ALARM_HEARTBEAT_KEY);
+      await this.state.storage.put(LOBBY_ALARM_HEARTBEAT_KEY, nextAlarmHeartbeat(previous, {
+        ok: !failure, at: startedAt, error: failure?.message ?? failure, durationMs: Date.now() - startedAt,
+      }));
+    } catch (error) { console.error(`[lobby-alarm] heartbeat write failed: ${redactJobError(error?.message ?? error)}`); }
+  }
+
+  async alarmTick() {
     this.history = pruneHistory(this.history);
     await this.state.storage.put('history', this.history.slice(-MAX_HISTORY));
     // Drop expired mutes + idle sockets
@@ -10297,7 +10316,6 @@ export class DashaLobby {
         /* ignore */
       }
     }
-    await this.state.storage.setAlarm(Date.now() + 5 * 60_000);
   }
 
   async persist() {

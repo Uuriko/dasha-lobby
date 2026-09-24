@@ -1,3 +1,4 @@
+import { LOBBY_ALARM_HEARTBEAT_KEY, isJobHealthPath, jobHealthBody } from './dasha-job-heartbeat.mjs';
 import { authSessionFromRequest, randomUrlToken } from './dasha-lobby-x.mjs';
 import {
   CREDIT_DEST,
@@ -1941,6 +1942,12 @@ export class ComputeNetwork {
       const res = json(computeApiRootBody(this.env), 200, allowedOrigin || '*', credentials);
       return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
     }
+    if (isJobHealthPath(path) && (request.method === 'GET' || request.method === 'HEAD')) {
+      const view = jobHealthBody(await this.state.storage.get(LOBBY_ALARM_HEARTBEAT_KEY), Date.now());
+      const res = json(view, view.status === 'ok' ? 200 : 503, allowedOrigin || '*', credentials);
+      res.headers.set('Cache-Control', 'no-store');
+      return maybeHead(request, res);
+    }
     if (isComputeApiHealthzPath(path) && (request.method === 'GET' || request.method === 'HEAD')) {
       return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.1', midstream_fail_honesty: true }, 200, allowedOrigin || '*', credentials));
     }
@@ -3839,6 +3846,14 @@ export async function computeApi(request, env, allowedOrigin) {
   if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
     const res = json(computeApiRootBody(env), 200, allowedOrigin || '*', credentials);
     return request.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
+  }
+  if (isJobHealthPath(path) && (request.method === 'GET' || request.method === 'HEAD')) {
+    // Scheduled-job heartbeat lives in the public lobby Durable Object.
+    const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
+    if (stub) { try { return await stub.fetch(request); } catch {} }
+    const res = json({ schema: 'dasha.job-health/1', status: 'unavailable', jobs: [] }, 503, allowedOrigin || '*', credentials);
+    res.headers.set('Cache-Control', 'no-store');
+    return maybeHead(request, res);
   }
   if (isComputeApiHealthzPath(path) && (request.method === 'GET' || request.method === 'HEAD')) {
     return maybeHead(request, json({ ok: true, service: 'dasha-compute', version: '0.3.1' }, 200, allowedOrigin || '*', credentials));
