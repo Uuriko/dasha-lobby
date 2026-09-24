@@ -1525,6 +1525,7 @@ export class ComputeNetwork {
         await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerSettledRow({
           receiptId: res.receipt?.id || null,
           jobId: settleInput.jobId || res.receipt?.job_id || null,
+          requestId: settleInput.requestId || res.receipt?.request_id || null,
           providerId: ledger.providerId || null,
           usage: settleInput.usage,
           durationMs: ledger.createdAtMs ? Math.max(0, Number(res.receipt?.at || 0) - ledger.createdAtMs) : settleInput.latencyMs,
@@ -1592,12 +1593,21 @@ export class ComputeNetwork {
                 totalTokens: refund.usage?.total_tokens,
               });
               // Buyer paid nothing but tokens were used: refund row keeps the gross hosted cost (economy #321).
+              // Net-zero (economy, #321 review): a refund of a never-settled charge carries
+              // buyer_charge = refund so the row nets to 0 on its own; refund_of is a tracing
+              // label only, never a sum filter. When a settled row already exists for the
+              // request, buyer_charge stays 0 so the weekly sum does not double-count.
+              // receipt_id stays null (join on request_id); basis is 'debited' ('ui_session'
+              // is reserved for free session asks with charge 0).
+              const alreadySettled = Boolean(await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}hosted:${refundRequestId}`));
               await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerRefundRow({
-                receiptId: `hosted_refund_${refundRequestId}`,
+                receiptId: null,
                 jobId: null,
                 requestId: refundRequestId,
                 refundCents: refunded.refunded_cents,
-                chargeBasis: 'ui_session',
+                chargeBasis: 'debited',
+                buyerChargeCents: alreadySettled ? 0 : refunded.refunded_cents,
+                refundOf: alreadySettled ? null : 'unsettled_debit',
                 hostedInferenceCostCents: cost.costCents,
                 hostedInferenceCostBasis: cost.basis,
               }), now);
