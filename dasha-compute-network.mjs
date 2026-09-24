@@ -1602,7 +1602,7 @@ export class ComputeNetwork {
     } catch { /* ledger logging never breaks settle */ }
     await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed: false });
     // Gross per-job Workers AI cost from token usage (traction, Sep 23 2026).
-    // The hosted flow's env.AI.run model is hardcoded at the call sites.
+    // HOSTED_CF_MODEL is shared with the env.AI.run call sites above.
     const hostedCost = hostedInferenceCost({
       model: HOSTED_CF_MODEL,
       promptTokens: settle.usage?.prompt_tokens,
