@@ -25,6 +25,7 @@ import {
   buildLedgerRefundRow,
   buildLedgerSettledRow,
   exportLedgerEvents,
+  hostedInferenceCost,
   mapLedgerFailureReason,
   jobChargeBasis,
   mintBuyerForKey,
@@ -1529,6 +1530,7 @@ export class ComputeNetwork {
           creditUsedCents: ledger.creditUsedCents ?? null,
           providerPayoutCents: ledger.providerPayoutCents !== undefined ? ledger.providerPayoutCents : res.receipt?.cents,
           hostedInferenceCostCents: ledger.hostedInferenceCostCents ?? null,
+          hostedInferenceCostBasis: ledger.hostedInferenceCostBasis ?? null,
           pricingVersion: PRICING_VERSION,
           engine: ledger.engine || settleInput.engine || null,
         }), Number(res.receipt?.at || 0) || undefined);
@@ -1595,6 +1597,14 @@ export class ComputeNetwork {
       }), now);
     } catch { /* ledger logging never breaks settle */ }
     await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed: false });
+    // Gross per-job Workers AI cost from token usage (traction, Sep 23 2026).
+    // The hosted flow's env.AI.run model is hardcoded at the call sites.
+    const hostedCost = hostedInferenceCost({
+      model: '@cf/openai/gpt-oss-20b',
+      promptTokens: settle.usage?.prompt_tokens,
+      completionTokens: settle.usage?.completion_tokens,
+      totalTokens: tokens,
+    });
     const res = await this.recordPaidInferenceSettle({
       owner,
       engine: 'hosted',
@@ -1612,7 +1622,8 @@ export class ComputeNetwork {
         buyerChargeCents: chargedCents,
         creditUsedCents: null,
         providerPayoutCents: 0, // economy ruling: nobody is owed a payout on hosted jobs
-        hostedInferenceCostCents: null, // NULL until the Workers AI bill yields a real per-job number
+        hostedInferenceCostCents: hostedCost.costCents,
+        hostedInferenceCostBasis: hostedCost.basis,
         engine: 'hosted',
         sessionId: settle.session_id || null,
       },

@@ -6,7 +6,7 @@ import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 import {
   LEDGER_EVENT_PREFIX, LEDGER_POH_PREFIX,
   buildLedgerPayoutRow, buildLedgerSettledRow, buildLedgerFailedRow, buildLedgerRefundRow,
-  mapLedgerFailureReason, utcHour, usdMicrosFromCents, jobChargeBasis,
+  mapLedgerFailureReason, utcHour, usdMicrosFromCents, jobChargeBasis, hostedInferenceCost,
 } from './dasha-compute-ledger.mjs';
 
 // ---------- unit: builders + money math ----------
@@ -26,7 +26,7 @@ import {
   assert.equal(settled.payment_fee_usd_micros, null);
   assert.equal(settled.prompt_tokens, 12);
   assert.equal(settled.completion_tokens, 34);
-  // economy ruling: hosted rows payout 0, cost field null until real Workers AI numbers
+  // hosted rows: payout 0 (economy); cost micros null only when the caller cannot compute a cost
   const hosted = buildLedgerSettledRow({ receiptId: 'r2', jobId: null, providerId: null, usage: { total_tokens: 46 }, settledAtMs: 2000, buyerChargeCents: 5, creditUsedCents: null, providerPayoutCents: 0, hostedInferenceCostCents: null, pricingVersion: '2026-09-alpha-1', engine: 'hosted' });
   assert.equal(hosted.provider_payout_usd_micros, 0);
   assert.equal(hosted.hosted_inference_cost_usd_micros, null);
@@ -60,6 +60,30 @@ import {
   assert.equal(buildLedgerFailedRow({ failureReason: 'provider cut' }).failure_reason, 'provider_offline');
   assert.equal(utcHour(0), '1970-01-01T00');
   assert.equal(usdMicrosFromCents(5), 50_000);
+}
+
+// ---------- unit: hosted Workers AI cost (traction implementation points, Sep 23 2026) ----------
+{
+  // split prompt/completion tokens price at their own Neuron rates
+  const split = hostedInferenceCost({ model: '@cf/openai/gpt-oss-20b', promptTokens: 500, completionTokens: 256 });
+  assert.equal(split.basis, 'split_tokens');
+  // (500*18182 + 256*27273) / 1e6 = 16.072888 Neurons; x $0.011/1k x 100c
+  assert.ok(Math.abs(split.costCents - 16.072888 / 1000 * 0.011 * 100) < 1e-12);
+  // total-only (#313 split-token gap): priced at the OUTPUT rate so cost is never understated, and flagged
+  const total = hostedInferenceCost({ model: '@cf/openai/gpt-oss-20b', totalTokens: 756 });
+  assert.equal(total.basis, 'total_tokens_at_output_rate');
+  assert.ok(Math.abs(total.costCents - (756 * 27273 / 1e6) / 1000 * 0.011 * 100) < 1e-12);
+  assert.ok(total.costCents >= split.costCents); // same tokens: output rate never below any split pricing
+  // unknown model or no usable tokens: null, never guessed
+  assert.deepEqual(hostedInferenceCost({ model: '@cf/meta/unknown-model', totalTokens: 100 }), { costCents: null, basis: null });
+  assert.deepEqual(hostedInferenceCost({ model: '@cf/openai/gpt-oss-20b' }), { costCents: null, basis: null });
+  // fractional cents survive conversion - sub-cent jobs are the norm
+  assert.equal(usdMicrosFromCents(split.costCents), Math.round(split.costCents * 10_000));
+  const row = buildLedgerSettledRow({ receiptId: 'rh1', engine: 'hosted', hostedInferenceCostCents: total.costCents, hostedInferenceCostBasis: total.basis });
+  assert.equal(row.hosted_inference_cost_usd_micros, Math.round(total.costCents * 10_000));
+  assert.equal(row.hosted_inference_cost_basis, 'total_tokens_at_output_rate');
+  assert.equal(buildLedgerSettledRow({ receiptId: 'rh2', hostedInferenceCostBasis: 'bogus' }).hosted_inference_cost_basis, null);
+  assert.equal(buildLedgerSettledRow({ receiptId: 'rh3' }).hosted_inference_cost_basis, null);
 }
 
 // ---------- integration harness ----------
