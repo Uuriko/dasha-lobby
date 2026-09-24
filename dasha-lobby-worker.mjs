@@ -1400,7 +1400,7 @@ export function stripHomeCompute(html) {
   }
   return out.replace(
     /<a\b(?=[^>]*\b(?:class=["'][^"']*\bcompute\b|href=(['"])(?:https?:\/\/(?:www\.)?getdasha\.com)?\/compute\1))[^>]*>[\s\S]*?<\/a>/gi,
-    '',
+    (tag) => (/^<a href="\/compute">Compute<\/a>$/i.test(tag) ? tag : ''),
   );
 }
 
