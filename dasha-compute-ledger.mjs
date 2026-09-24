@@ -18,8 +18,13 @@
  * route in (community, mixture) - the chain holds zero hosted receipts, so
  * hosted rows never belong in that sum. Hosted rows carry
  * provider_payout_usd_micros = 0 (nobody is owed a payout on hosted jobs) and
- * hosted_inference_cost_usd_micros NULL until a real per-job Workers AI cost
- * exists (economy ruling, Sep 23 2026).
+ * hosted rows compute hosted_inference_cost_usd_micros from token usage at
+ * GROSS Workers AI list price via hostedInferenceCost(); the row's
+ * hosted_inference_cost_basis says how (split_tokens | total_tokens_at_output_rate).
+ * The gross row cost ignores the 10,000 free Neurons/day allowance: that
+ * allowance is shared by EVERYTHING on the Cloudflare account, not just Dasha
+ * hosted, resets 00:00 UTC daily, and is subtracted in the weekly bill check,
+ * never per row (traction implementation points, Sep 23 2026).
  * credit_used_usd_micros is null until promo/free-credit draw is measurable.
  *
  * Money is integer micro-dollars with the currency in the field name (usd_micros).
@@ -40,9 +45,42 @@ export const LEDGER_KEY_TYPES = ['dgk_', 'dsk_', 'none'];
 export const LEDGER_FAILURE_REASONS = ['provider_offline', 'timeout', 'model_error', 'client_abort'];
 export const LEDGER_CHARGE_BASES = ['debited', 'guest', 'self', 'ui_session'];
 
+export const LEDGER_HOSTED_COST_BASES = ['split_tokens', 'total_tokens_at_output_rate'];
+
+/** Workers AI list price, verified against the live pricing page Sep 23 2026:
+ *  https://developers.cloudflare.com/workers-ai/platform/pricing/
+ *  ($0.011 per 1,000 Neurons; 10,000 free Neurons/day, account-wide). */
+export const WORKERS_AI_USD_PER_1K_NEURONS = 0.011;
+export const HOSTED_MODEL_NEURONS_PER_MTOK = {
+  '@cf/openai/gpt-oss-20b': { input: 18_182, output: 27_273 },
+};
+
+/** Per-job hosted inference cost in CENTS (fractional - sub-cent jobs are normal).
+ *  Split prompt/completion tokens price at their own rates. When only total
+ *  tokens are known (the #313 split-token gap), the total prices at the OUTPUT
+ *  rate - the higher rate, so cost is never understated - and the row's
+ *  hosted_inference_cost_basis flag says so. Unknown model or no usable tokens:
+ *  { costCents: null, basis: null } - null means unknown, never guessed. */
+export function hostedInferenceCost({ model, promptTokens, completionTokens, totalTokens } = {}) {
+  const rates = HOSTED_MODEL_NEURONS_PER_MTOK[String(model || '')];
+  if (!rates) return { costCents: null, basis: null };
+  // null fields are ABSENT, not zero: Number(null) === 0 would price them as a
+  // known-wrong 0 (traction review). Coerce absent to NaN so they fall through.
+  const p = promptTokens == null ? NaN : Number(promptTokens);
+  const c = completionTokens == null ? NaN : Number(completionTokens);
+  const t = totalTokens == null ? NaN : Number(totalTokens);
+  if (Number.isFinite(p) && Number.isFinite(c)) {
+    return { costCents: ((p * rates.input + c * rates.output) / 1e6 / 1000) * WORKERS_AI_USD_PER_1K_NEURONS * 100, basis: 'split_tokens' };
+  }
+  if (Number.isFinite(t)) {
+    return { costCents: ((t * rates.output) / 1e6 / 1000) * WORKERS_AI_USD_PER_1K_NEURONS * 100, basis: 'total_tokens_at_output_rate' };
+  }
+  return { costCents: null, basis: null };
+}
+
 export function usdMicrosFromCents(cents) {
   if (cents == null || !Number.isFinite(Number(cents))) return null; // null means unknown - never invent a zero
-  return Math.max(0, Math.floor(Number(cents))) * 10_000;
+  return Math.max(0, Math.round(Number(cents) * 10_000)); // integer micros; fractional cents (hosted per-job cost) keep sub-cent precision
 }
 
 async function sha256Hex(text) {
@@ -98,7 +136,7 @@ export function buildLedgerCreatedRow({ jobId, requestId, path, keyType, modelId
   };
 }
 
-export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, hostedInferenceCostCents, pricingVersion, engine, chargeBasis } = {}) {
+export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, hostedInferenceCostCents, hostedInferenceCostBasis, pricingVersion, engine, chargeBasis } = {}) {
   return {
     receipt_id: receiptId || null,
     engine: engine || null,
@@ -113,7 +151,8 @@ export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, dur
     buyer_charge_usd_micros: usdMicrosFromCents(buyerChargeCents),
     credit_used_usd_micros: usdMicrosFromCents(creditUsedCents),
     provider_payout_usd_micros: usdMicrosFromCents(providerPayoutCents),
-    hosted_inference_cost_usd_micros: hostedInferenceCostCents == null ? null : usdMicrosFromCents(hostedInferenceCostCents), // param in CENTS; NULL until the Workers AI bill yields a real per-job number - never guessed
+    hosted_inference_cost_usd_micros: hostedInferenceCostCents == null ? null : usdMicrosFromCents(hostedInferenceCostCents), // param in CENTS (fractional ok); null means unknown - never guessed
+    hosted_inference_cost_basis: LEDGER_HOSTED_COST_BASES.includes(hostedInferenceCostBasis) ? hostedInferenceCostBasis : null,
     payment_fee_usd_micros: null,
     pricing_version: String(pricingVersion || 'unversioned'),
   };
