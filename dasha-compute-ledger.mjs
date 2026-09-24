@@ -171,7 +171,7 @@ export function buildLedgerFailedRow({ jobId, failureReason, durationMs, created
   };
 }
 
-export function buildLedgerRefundRow({ receiptId, jobId, refundCents, requestId = null, chargeBasis = null, hostedInferenceCostCents = null, hostedInferenceCostBasis = null, buyerChargeCents = null, refundOf = null } = {}) {
+export function buildLedgerRefundRow({ receiptId, jobId, refundCents, requestId = null, debitRequestId = null, chargeBasis = null, hostedInferenceCostCents = null, hostedInferenceCostBasis = null, buyerChargeCents = null, refundOf = null } = {}) {
   const basis = chargeBasis && LEDGER_CHARGE_BASES.includes(chargeBasis) ? chargeBasis : null;
   const cost = hostedInferenceCostCents == null || !Number.isFinite(Number(hostedInferenceCostCents)) ? null : usdMicrosFromCents(hostedInferenceCostCents);
   const costBasis = cost != null && LEDGER_HOSTED_COST_BASES.includes(hostedInferenceCostBasis) ? hostedInferenceCostBasis : null;
@@ -179,6 +179,7 @@ export function buildLedgerRefundRow({ receiptId, jobId, refundCents, requestId 
     receipt_id: receiptId || null,
     job_id: jobId || null,
     request_id: typeof requestId === 'string' && requestId ? requestId : null,
+    debit_request_id: typeof debitRequestId === 'string' && debitRequestId ? debitRequestId : null,
     status: 'refunded',
     refund_usd_micros: usdMicrosFromCents(refundCents),
     buyer_charge_usd_micros: buyerChargeCents == null || !Number.isFinite(Number(buyerChargeCents)) ? null : usdMicrosFromCents(buyerChargeCents),

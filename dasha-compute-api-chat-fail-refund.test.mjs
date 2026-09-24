@@ -101,7 +101,8 @@ async function leaseNext() {
   assert.equal(refundRow.buyer_charge_usd_micros, 50_000, 'never-settled refund nets to zero on its own row');
   assert.equal(refundRow.refund_of, 'unsettled_debit');
   assert.equal(refundRow.charge_basis, 'debited');
-  assert.equal(refundRow.request_id, `api:${leased.job.id}`);
+  assert.equal(refundRow.request_id, rows.get(`compute:job:${leased.job.id}`)?.request_id, 'aligns with created/settled rows');
+  assert.equal(refundRow.debit_request_id, `api:${leased.job.id}`);
 }
 
 {
@@ -189,4 +190,6 @@ console.log('dasha-compute-api-chat-fail-refund: PASS');
   assert.equal(rr.refund_of, null);
   assert.equal(rr.receipt_id, 'rcpt_settledrace');
   assert.equal(rr.refund_usd_micros, 50_000);
+  assert.equal(rr.request_id, null);
+  assert.equal(rr.debit_request_id, `api:${settleId}`);
 }

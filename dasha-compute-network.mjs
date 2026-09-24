@@ -3405,7 +3405,8 @@ export class ComputeNetwork {
         await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerRefundRow({
           receiptId: settledReceipt?.id || null,
           jobId: job.id,
-          requestId: job.debitRequestId || null,
+          requestId: job.request_id || null, // aligns with created/settled rows; the debit id lives in debit_request_id
+          debitRequestId: job.debitRequestId || null,
           refundCents: debitCents,
           chargeBasis: 'debited',
           buyerChargeCents: settledReceipt ? 0 : debitCents,
