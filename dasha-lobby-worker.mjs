@@ -1262,6 +1262,9 @@ const HTML_SECURITY = {
 };
 
 const htmlHeaders = (extra = {}) => ({ ...HTML_SECURITY, ...extra });
+
+/** Site-edge 308s carry the same hardening as HTML responses (#319): a redirect is still a lobby response. */
+const redirectHardened = (location) => new Response(null, { status: 308, headers: { ...HTML_SECURITY, Location: location } });
 const privateHtmlHeaders = (extra = {}, nonce = '') => ({
   ...HTML_SECURITY,
   'Content-Security-Policy': `default-src 'none'; style-src 'unsafe-inline'; script-src ${nonce ? `'nonce-${nonce}'` : "'none'"}; connect-src 'none'; img-src 'none'; font-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'`,
@@ -6075,7 +6078,7 @@ export function potterHome308Response(request, url) {
       }
     }
   } catch (_) {}
-  return Response.redirect(location, 308);
+  return redirectHardened(location);
 }
 
 /** Webflow still injects a loader for retired project fonts even though Dasha overrides its type. */
@@ -6551,7 +6554,7 @@ export function forumToLobbyRedirect(url) {
     dest.searchParams.set('t', t);
     dest.hash = 'threads';
   }
-  return Response.redirect(dest.href, 308);
+  return redirectHardened(dest.href);
 }
 
 function pngOgHeaders(edge) {
@@ -12063,7 +12066,7 @@ async function productEdge(request, url, env) {
       const dest = new URL(request.url);
       dest.protocol = 'https:';
       dest.hostname = 'lobby.getdasha.com';
-      return Response.redirect(dest.href, 308);
+      return redirectHardened(dest.href);
     }
     const digestRes = await digestEdge(request, env);
     if (digestRes) return digestRes;
@@ -12166,14 +12169,14 @@ async function productEdge(request, url, env) {
   }
   if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/' || url.pathname === '')) {
     const dest = challengeRedirectPath(url.searchParams);
-    if (dest) return Response.redirect(`https://www.getdasha.com${dest}`, 308);
+    if (dest) return redirectHardened(`https://www.getdasha.com${dest}`);
   }
   if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/quiz' || url.pathname === '/quiz/')) {
-    return Response.redirect(`https://www.getdasha.com${quizRedirectPath()}`, 308);
+    return redirectHardened(`https://www.getdasha.com${quizRedirectPath()}`);
   }
   if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/simp' || url.pathname === '/simp/')) {
     const dest = challengeRedirectPath(url.searchParams);
-    if (dest) return Response.redirect(`https://www.getdasha.com${dest}`, 308);
+    if (dest) return redirectHardened(`https://www.getdasha.com${dest}`);
     const board = request.method === 'GET' ? await publicSimpMembers(env).catch(() => null) : null;
     return new Response(request.method === 'HEAD' ? null : servedSimpPageHtml({ board: board ? { editorial: [publicPerryRow()], measured: board } : undefined }), {
       status: 200,
@@ -12343,10 +12346,10 @@ async function productEdge(request, url, env) {
     return jsAsset(CHESS_LOCAL_JS, '*', { headOnly: request.method === 'HEAD' });
   }
   if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/desk' || url.pathname === '/desk/')) {
-    return Response.redirect('https://www.getdasha.com/how-to-buy', 308);
+    return redirectHardened('https://www.getdasha.com/how-to-buy');
   }
   if ((request.method === 'GET' || request.method === 'HEAD') && ['/how','/how/','/howto','/howto/','/how-to','/how-to/','/howtobuy','/howtobuy/','/howto-buy','/howto-buy/','/how_to_buy','/how_to_buy/','/buy','/buy/'].includes(String(url.pathname || '').toLowerCase())) {
-    return Response.redirect('https://www.getdasha.com/how-to-buy', 308);
+    return redirectHardened('https://www.getdasha.com/how-to-buy');
   }
   if ((request.method === 'GET' || request.method === 'HEAD') && isForumChatAliasPath(url.pathname)) {
     return forumToLobbyRedirect(url);
@@ -12359,7 +12362,7 @@ async function productEdge(request, url, env) {
   }
   // Retire SEO-trap paths that must never reappear as product pages.
   if ((request.method === 'GET' || request.method === 'HEAD') && RETIRED_SEO_PATHS.has(url.pathname)) {
-    return Response.redirect('https://www.getdasha.com/', 308);
+    return redirectHardened('https://www.getdasha.com/');
   }
   // Pass through to Webflow (subrequest does not re-invoke this Worker for same zone).
   // Strip personal publisher branding (potterlab / John Potter) from head JSON-LD so the
@@ -12383,9 +12386,10 @@ async function productEdge(request, url, env) {
     });
   }
   if (request.method !== 'GET' || !ct.includes('text/html')) {
-    if (isHome && (request.method === 'GET' || request.method === 'HEAD') && ct.includes('text/html')) {
-      const headers = new Headers(upstream.headers);
-      attachLlmsDescribedBy(headers);
+    if ((request.method === 'GET' || request.method === 'HEAD') && ct.includes('text/html')) {
+      // HEAD (and any non-GET) HTML responses get the same hardening as the GET transform path (#319).
+      const headers = applyHtmlSecurity(new Headers(upstream.headers));
+      if (isHome) attachLlmsDescribedBy(headers);
       return new Response(request.method === 'HEAD' ? null : upstream.body, {
         status: upstream.status,
         statusText: upstream.statusText,
@@ -13557,7 +13561,7 @@ export default {
     // Bare /simp is the board page. /simp/* APIs still go to the lobby DO below.
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/simp' || url.pathname === '/simp/')) {
       const dest = challengeRedirectPath(url.searchParams);
-      if (dest) return Response.redirect(`https://www.getdasha.com${dest}`, 308);
+      if (dest) return redirectHardened(`https://www.getdasha.com${dest}`);
       const board = request.method === 'GET' ? await publicSimpMembers(env).catch(() => null) : null;
       return new Response(request.method === 'HEAD' ? null : servedSimpPageHtml({ board: board ? { editorial: [publicPerryRow()], measured: board } : undefined }), {
         status: 200,
@@ -13661,16 +13665,16 @@ export default {
       });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && RETIRED_SEO_PATHS.has(url.pathname)) {
-      return Response.redirect('https://www.getdasha.com/', 308);
+      return redirectHardened('https://www.getdasha.com/');
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/desk' || url.pathname === '/desk/')) {
-      return Response.redirect('https://www.getdasha.com/how-to-buy', 308);
+      return redirectHardened('https://www.getdasha.com/how-to-buy');
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && ['/how','/how/','/howto','/howto/','/how-to','/how-to/','/howtobuy','/howtobuy/','/howto-buy','/howto-buy/','/how_to_buy','/how_to_buy/','/buy','/buy/'].includes(String(url.pathname || '').toLowerCase())) {
-      return Response.redirect('https://www.getdasha.com/how-to-buy', 308);
+      return redirectHardened('https://www.getdasha.com/how-to-buy');
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/quiz' || url.pathname === '/quiz/')) {
-      return Response.redirect('https://www.getdasha.com/simp', 308);
+      return redirectHardened('https://www.getdasha.com/simp');
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/faucet' || url.pathname === '/faucet/')) {
       return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(FAUCET_PAGE_HTML), {
@@ -13709,7 +13713,7 @@ export default {
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/simp' || url.pathname === '/simp/')) {
       const dest = challengeRedirectPath(url.searchParams);
-      if (dest) return Response.redirect(`https://www.getdasha.com${dest}`, 308);
+      if (dest) return redirectHardened(`https://www.getdasha.com${dest}`);
       const board = request.method === 'GET' ? await publicSimpMembers(env).catch(() => null) : null;
       return new Response(request.method === 'HEAD' ? null : servedSimpPageHtml({ board: board ? { editorial: [publicPerryRow()], measured: board } : undefined }), {
         status: 200,
