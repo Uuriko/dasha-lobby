@@ -140,7 +140,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { COMPUTE_START_PAGE_HTML } from './dasha-compute-start-page.mjs';
 import { CAPS_PAGE_HTML } from './dasha-compute-caps-page.mjs';
-import { LAUNCH_PAGE_HTML, VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
+import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { DOCS_OPENAPI_JSON, DOCS_OPENAPI_YAML, DOCS_PAGE_HTML } from './dasha-docs-page.mjs';
 import { headsSigningKey, KEYS_SCHEMA } from './dasha-compute-heads.mjs';
@@ -178,7 +178,7 @@ export { stripDigestLeftoverDupSectionCss };
 
 /* assets-build overwrites static-gen robots/sitemap; live-verify and disk SoR are this set. */
 const ROBOTS_TXT = `# getdasha.com — public crawl rules (also served at lobby.getdasha.com/robots.txt)
-# Machine-readable identity: /ai.txt, /llms.txt (index), /llms-full.txt (full markdown), /agents.json, /.well-known/mcp.json, /.well-known/agent.json, /compute/skill.md.
+# Machine-readable identity: /ai.txt, /llms.txt (index), /llms-full.txt (full markdown), /agents.json, /.well-known/mcp.json, /.well-known/agent.json, /compute/skill.md, /compute/openapi.json.
 
 User-agent: *
 Allow: /
@@ -196,6 +196,7 @@ Allow: /agents.json
 Allow: /.well-known/mcp.json
 Allow: /.well-known/agent.json
 Allow: /compute/skill.md
+Allow: /compute/openapi.json
 
 Sitemap: https://www.getdasha.com/sitemap.xml
 Sitemap: https://lobby.getdasha.com/sitemap.xml
@@ -350,6 +351,7 @@ compute https://www.getdasha.com/compute
 compute packet https://www.getdasha.com/compute/llms.txt
 agent.json https://www.getdasha.com/.well-known/agent.json
 compute skill https://www.getdasha.com/compute/skill.md
+compute openapi https://www.getdasha.com/compute/openapi.json
 Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.
 mcp https://www.getdasha.com/compute/mcp.json
 Use a Mac https://www.getdasha.com/compute#ask
@@ -380,6 +382,7 @@ The other Dasha is VVAIFU FQ1tyso61AH1tzodyJfSwmzsD3GToybbRNoZxUBz21p8 — not t
 - [Compute spend caps](https://www.getdasha.com/caps)
 - [Compute agent.json](https://www.getdasha.com/.well-known/agent.json)
 - [Compute skill](https://www.getdasha.com/compute/skill.md)
+- [Compute OpenAPI](https://www.getdasha.com/compute/openapi.json)
 - [Compute MCP](https://www.getdasha.com/compute/mcp.json)
 - [Use a Mac](https://www.getdasha.com/compute#ask)
 - [Join a Mac](https://www.getdasha.com/compute#provide)
@@ -512,6 +515,7 @@ Compute: Start. (Do / Provide / Pay / Credits). Pay → Top up USDC/$dasha / Spo
 Agent packet: https://www.getdasha.com/compute/llms.txt
 Agent JSON: https://www.getdasha.com/.well-known/agent.json
 Agent skill: https://www.getdasha.com/compute/skill.md
+OpenAPI: https://www.getdasha.com/compute/openapi.json
 Dasha Compute is Mac inference on getdasha.com — not Dasha.AI voice.
 MCP catalog: https://www.getdasha.com/compute/mcp.json
 Use a Mac: https://www.getdasha.com/compute#ask
@@ -537,6 +541,7 @@ Login: Grok Bot first, then X, then wallet. https://www.getdasha.com/login
 - https://www.getdasha.com/llms-full.txt
 - https://www.getdasha.com/compute/llms.txt
 - https://www.getdasha.com/compute/skill.md
+- https://www.getdasha.com/compute/openapi.json
 - https://www.getdasha.com/.well-known/agent.json
 - https://www.getdasha.com/compute/mcp.json
 - https://www.getdasha.com/sitemap.xml
@@ -1336,6 +1341,7 @@ export function stripDeadNav(html) {
   out = injectFaucetSlimHeader(out);
   out = hideHomeExtraChrome(out);
   out = unlockHomeMobileScroll(out);
+  out = fitHomeMuseChrome(out);
   /* Leftover home dropped-selector CSS after leftover body class was already DOM-stripped. Keep body + .dasha + .dasha-root + #dasha-home + #top. */
   out = stripHomeLeftoverBodyBodyCss(out);
   /* Leftover home dropped-selector CSS after <h3> was never in the home DOM. Keep .dasha h1,.dasha h2. */
@@ -1556,6 +1562,18 @@ export function unlockHomeMobileScroll(html) {
     return src.replace(/<style\b[^>]*id=["']dasha-mobile-scroll["'][^>]*>[\s\S]*?<\/style>/i, style);
   }
   return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${style}</head>`) : style + src;
+}
+
+/** Muse home pill is nowrap inside overflow-x:hidden, so Start and the orbit label clip at 390. Fit only when that pill is in the page. */
+const HOME_MUSE_FIT = '<style id="dasha-home-muse-fit">@media(max-width:700px){.muse-nav-wrap{padding-left:8px;padding-right:8px}.muse-pill{max-width:100%;flex-wrap:wrap;justify-content:center}.muse-pill a{padding:0 9px;font-size:12px}.muse-diagram{width:min(100%,340px);margin-left:auto;margin-right:auto}.muse-flow.req{right:8px}.muse-node.n2{right:6px}}</style>';
+
+export function fitHomeMuseChrome(html) {
+  const src = String(html || '');
+  if (!/class=(['"])[^'"]*\bmuse-pill\b/.test(src)) return src;
+  if (/id=["']dasha-home-muse-fit["']/.test(src)) {
+    return src.replace(/<style\b[^>]*id=["']dasha-home-muse-fit["'][^>]*>[\s\S]*?<\/style>/i, HOME_MUSE_FIT);
+  }
+  return /<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${HOME_MUSE_FIT}</head>`) : HOME_MUSE_FIT + src;
 }
 
 export function stripHeroContribute(html) {
@@ -2435,7 +2453,7 @@ const HOME_BAG_LINE = `<p class="dasha-bag-line"><a href="/bag">Bag</a></p>`;
 const HOME_LIST_DOOR = `<section id="list-door" aria-labelledby="list-title"><style id="dasha-list-door">#list-door{margin:0;padding:36px 0 48px;background:#070608}#list-door .door{display:grid;gap:14px;justify-items:start}#list-door .section-kicker{color:#dfff00;font:800 12px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase}#list-door .section-title{margin:0;color:#f4eddb;font:900 clamp(1.6rem,4vw,2.2rem)/1 Arial,Helvetica,sans-serif}#list-door .door-line{margin:0;color:rgba(244,237,219,.78);font:700 1rem/1.4 Arial,Helvetica,sans-serif}#list-door .pill.list{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #dfff00;color:#dfff00;background:transparent;font:800 14px/1 Arial,Helvetica,sans-serif;text-decoration:none}#list-door .pill.list:focus-visible{outline:3px solid #dfff00;outline-offset:3px}</style><div class="wrap door"><div><p class="section-kicker">List</p><h2 class="section-title" id="list-title">List.</h2><p class="door-line">We list $dasha here.</p></div><a class="pill list" href="/listings">Open List →</a></div></section>`;
 const HOME_GRWM_AIR = '<style id="dasha-grwm-air">#grwm{display:block;margin:0;padding:min(18vh,8rem) 0 min(14vh,6rem);box-sizing:border-box}#grwm video,#grwm .grwm-go{touch-action:pan-y}@media(max-width:800px){#grwm{padding:min(10vh,4rem) 0 min(8vh,3rem)}#grwm .grwm-phone{max-height:min(52svh,420px);width:min(100%,calc(52svh * 720 / 1280))}}</style>';
 const HOME_FAUCET_MOUNT = `<section id="dasha-home-faucet" aria-label="Faucet"><div id="dasha-faucet" data-faucet-api="https://lobby.getdasha.com" data-faucet-still="https://lobby.getdasha.com/client/faucet.avif" data-faucet-still-sri="${FAUCET_STILL_SRI}"></div></section>`;
-const HOME_FAUCET_STYLE = '<style id="dasha-home-faucet-css">#dasha-home-faucet,#dasha-faucet{width:min(36rem,calc(100% - 32px));margin:28px auto 64px}#dasha-home-lede{width:min(40rem,calc(100% - 32px));margin:18px auto 8px;color:var(--paper,#f4eddb);font:900 1.05rem/1.35 Arial,Helvetica,sans-serif}.dasha-bag-line{margin:.6rem 0 0;font:800 .95rem/1.3 Arial,Helvetica,sans-serif}.dasha-bag-line a{color:var(--paper,#f4eddb)}</style>';
+const HOME_FAUCET_STYLE = '<style id="dasha-home-faucet-css">#dasha-home-faucet,#dasha-faucet{width:min(36rem,calc(100% - 32px));margin:28px auto 64px}#dasha-home-faucet{background:#070608;color:#f4eddb;padding:32px 22px 28px;border-radius:28px}#dasha-home-faucet .faucet-card{width:100%;max-width:100%}#dasha-home-lede{width:min(40rem,calc(100% - 32px));margin:18px auto 8px;color:var(--paper,#f4eddb);font:900 1.05rem/1.35 Arial,Helvetica,sans-serif}.dasha-bag-line{margin:.6rem 0 0;font:800 .95rem/1.3 Arial,Helvetica,sans-serif}.dasha-bag-line a{color:var(--paper,#f4eddb)}</style>';
 const FAUCET_SCRIPT = `<script src="https://lobby.getdasha.com/client/faucet.js" integrity="${FAUCET_CLIENT_SRI}" crossorigin="anonymous" defer></script>`;
 
 /** Leftover home style id="dasha-home-play" after Play was never on home. Humans see it in view-source. Faucet CSS + HOME_FAUCET_MOUNT stay. GRWM + Watch belt stay. Distinct leftover vs #dasha-chess iframe CSS. */
@@ -3407,6 +3425,7 @@ export function polishServedSlim(html) {
   /* Leftover /chess unused JS if(!tournament)history.replaceState in tournamentAction success after create-only create-if. Keep tournamentAction(action,name) + tournamentAction('create'. Keep other replaceState. */
   out = stripChessLeftoverTournamentActionReplaceStateJs(out);
   if (!isLobbyLeftoverHomeMobileScrollPage(out) && !isChessLeftoverHomeMobileScrollPage(out)) out = unlockHomeMobileScroll(out);
+  out = fitHomeMuseChrome(out);
   /* Leftover home dropped-selector CSS after leftover body class was already DOM-stripped. Home only. Lobby/chess skip. */
   out = stripHomeLeftoverBodyBodyCss(out);
   /* Leftover home dropped-selector CSS after <h3> was never in the home DOM. Home only. */
@@ -4786,7 +4805,9 @@ const POTTER_ROOM_308_PATHS = new Set([
  * Compute into Room. Exact /room /room/llms.txt stay 200. Card leftover
  * /room/agent.json and probe leftover /room/health are dest special-cases
  * (not this llms.txt set). Probe leftover /room/healthz folds to the live
- * /room/health face (same-host 308, not this set). */
+ * /room/health face (same-host 308, not this set). Kits leftover
+ * /room/kits.json + /api/kits + /api/kits.json fold via POTTER_KITS_308_PATHS
+ * → /room/kits (not this set; not a Room proxy invent). */
 const POTTER_ROOM_AGENT_DISCOVERY_308_PATHS = new Set([
   '/room/skill.md', '/room/skill.md/',
   '/room/agents.md', '/room/agents.md/',
@@ -5261,8 +5282,9 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  AGENTS.md stores as /compute/api/agents.md. Nested swagger.json dest is
  *  /compute/api (same as apex /swagger.json leftover). Exact /compute/api
  *  + product faces stay 200. Must win over the /compute/api/ casefold
- *  catch-all. Do not invent /compute/api/openapi.json leftover (real
- *  OpenAPI face is /compute/openapi.json). No Muse product HTML. No Room
+ *  catch-all. Nested /compute/api/openapi.json leftover lives in
+ *  POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS (real OpenAPI face is
+ *  /compute/openapi.json). No Muse product HTML. No Room
  *  source. Apex /api/benchmarks.json (+/) Title-case 308 → /benchmarks
  *  (face already 200; lobby same-host). Nested /compute/api/benchmarks.json
  *  is already a live leftover 308 — keep it. Do not invent /benchmarks.json
@@ -5276,7 +5298,10 @@ const POTTER_KIT_NAME_308_PATHS = new Set([
  *  /crew.json /bag.json (+slash / Title-case) html-404 while faces 200.
  *  Fold to /contribute /crew /bag. Exact /humans.txt is a 200 text/plain
  *  face (not a Motley leftover into /contribute HTML). Slash /humans.txt/
- *  + nested /compute/api/humans fold to that face. Muse brand door /muse
+ *  + nested /compute/api/humans + /compute/humans + /compute/humans.txt
+ *  + /compute/humans.json fold to that face. Kits leftovers
+ *  /room/kits.json /api/kits /api/kits.json live in POTTER_KITS_308_PATHS.
+ *  Muse brand door /muse
  *  (+slash / Title-case) 308 → / (home is Muse Webflow). Do not fold /muse
  *  → /start — /start is reserved for Muse #225 face. Stay out of /providers
  *  /developers /network /start (Muse #225 HTML). No Muse product HTML. */
@@ -5359,9 +5384,37 @@ const POTTER_HUMANS_TXT_308_PATHS = new Set([
 ]);
 /** Nested Motley leftover /compute/api/humans (+slash / Title-case via
  *  toLowerCase) while /humans.txt is the 200 text/plain face. Must win
- *  over the /compute/api/ casefold catch-all. Do not invent /api/humans. */
+ *  over the /compute/api/ casefold catch-all. Live /compute/api/humans.json
+ *  already 308 → /humans.txt — keep it so tip deploys do not wipe Motley.
+ *  Do not invent /api/humans. Sibling /compute/humans + /compute/humans.txt
+ *  leftovers live in POTTER_COMPUTE_HUMANS_308_PATHS. */
 const POTTER_COMPUTE_API_HUMANS_308_PATHS = new Set([
   '/compute/api/humans', '/compute/api/humans/',
+  '/compute/api/humans.json', '/compute/api/humans.json/',
+]);
+/** Nested Motley leftover /compute/humans + /compute/humans.txt +
+ *  /compute/humans.json (+slash / Title-case via toLowerCase) html-404
+ *  while /humans.txt is the 200 text/plain face (#251). Fold to that
+ *  face, NOT /contribute HTML (live Demigod /humans.txt oddly 308s
+ *  there — keep dest on the tip TEAM face). Nested /compute/api/humans
+ *  stays its Set. Live /compute/api/humans.json already 308 → /humans.txt.
+ *  Do not invent apex /humans. Lobby same-host, not www cross-host. */
+const POTTER_COMPUTE_HUMANS_308_PATHS = new Set([
+  '/compute/humans', '/compute/humans/',
+  '/compute/humans.txt', '/compute/humans.txt/',
+  '/compute/humans.json', '/compute/humans.json/',
+]);
+/** Motley leftover kits.json / api kits (2026-09-18): live GET/HEAD
+ *  /room/kits.json /api/kits /api/kits.json (+slash / Title-case via
+ *  toLowerCase) html-404 while /room/kits is the 200 text/plain catalog.
+ *  Fold to that face. Exact /room/kits + kits.txt family stay 200 Room
+ *  proxy (not this leftover). Do not invent a Room proxy for kits.json.
+ *  Apex /kits stays compute-tab leftover → /compute. Do not invent
+ *  /compute/digest HTML, doctor.md, or PROVIDE.md. Lobby same-host. */
+const POTTER_KITS_308_PATHS = new Set([
+  '/room/kits.json', '/room/kits.json/',
+  '/api/kits', '/api/kits/',
+  '/api/kits.json', '/api/kits.json/',
 ]);
 /** Leftover apex /openapi.yaml (+slash / Title-case) → /compute/openapi.json.
  *  Exact /compute/openapi.yaml stays the 200 YAML spec. */
@@ -5371,8 +5424,9 @@ const POTTER_OPENAPI_YAML_308_PATHS = new Set([
 /** Leftover apex /openapi.json + live Motley /api/openapi.json (+slash /
  *  Title-case) → /compute/openapi.json (real OpenAPI 3.1). /openapi and
  *  /api/openapi (no .json) stay gateway leftovers → /compute/api. Exact
- *  /compute/openapi.json stays the 200 spec. Do not invent
- *  /compute/api/openapi.json leftover. */
+ *  /compute/openapi.json stays the 200 spec. Nested
+ *  /compute/api/openapi.json leftover lives in
+ *  POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS. */
 const POTTER_OPENAPI_JSON_308_PATHS = new Set([
   '/openapi.json', '/openapi.json/',
   '/api/openapi.json', '/api/openapi.json/',
@@ -5441,11 +5495,20 @@ const POTTER_COMPUTE_API_MCP_308_PATHS = new Set([
   '/compute/api/mcp', '/compute/api/mcp/',
 ]);
 /** Nested Motley leftover /compute/api/openapi (+slash / Title-case via
- *  toLowerCase) while /compute/openapi.json is already 200. Do not invent
- *  /compute/api/openapi.json leftover. Must win over the /compute/api/
- *  casefold catch-all. Do not invent /api/openapi. */
+ *  toLowerCase) while /compute/openapi.json is already 200. Sibling
+ *  /compute/api/openapi.json leftover lives in
+ *  POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS. Must win over the
+ *  /compute/api/ casefold catch-all. Do not invent /api/openapi. */
 const POTTER_COMPUTE_API_OPENAPI_308_PATHS = new Set([
   '/compute/api/openapi', '/compute/api/openapi/',
+]);
+/** Nested Motley leftover /compute/api/openapi.json (+slash / Title-case
+ *  via toLowerCase) JSON-404 while /compute/openapi.json is already 200
+ *  OpenAPI 3.1. Bare /compute/api/openapi stays its Set. Must win over
+ *  the /compute/api/ casefold catch-all. Do not invent apex leftovers
+ *  here. Lobby same-host, not www cross-host. */
+const POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS = new Set([
+  '/compute/api/openapi.json', '/compute/api/openapi.json/',
 ]);
 /** Nested Motley leftover /compute/api/contribute (+slash / Title-case via
  *  toLowerCase) while /contribute is already 200. Apex /api/contribute
@@ -5535,6 +5598,9 @@ export function potterHome308Dest(path) {
   if (POTTER_WHICH_308_PATHS.has(p)) return "https://www.getdasha.com/which";
   if (POTTER_LISTINGS_308_PATHS.has(p)) return "https://www.getdasha.com/listings";
   if (p === "/bounty" || p === "/bounty/") return "https://www.getdasha.com/bounties";
+  // Retired Product Hunt launch door (2026-09-17): launch killed, no date.
+  // /launch → /compute so old links and bookmarks land somewhere useful.
+  if (p === "/launch" || p === "/launch/") return "https://www.getdasha.com/compute";
   if (p === "/play" || p === "/play/" || p === "/game" || p === "/game/") {
     return "https://www.getdasha.com/lobby";
   }
@@ -5557,6 +5623,13 @@ export function potterHome308Dest(path) {
   // /room/readyz. Do not fold Compute /compute/healthz here.
   if (p === "/room/healthz" || p === "/room/healthz/") {
     return "https://www.getdasha.com/room/health";
+  }
+  // Leftover /room/kits.json + /api/kits + /api/kits.json (2026-09-18):
+  // live GET/HEAD html-404 while /room/kits is the 200 catalog. Same-host
+  // 308 like other /room doors. Title-case + trailing slash via toLowerCase.
+  // Not the llms.txt set. Not a Room proxy invent. Apex /kits stays tab.
+  if (POTTER_KITS_308_PATHS.has(p)) {
+    return "https://www.getdasha.com/room/kits";
   }
   if (p === "/socials" || p === "/socials/" || p === "/social" || p === "/social/") {
     return "https://www.getdasha.com/lobby";
@@ -5777,7 +5850,7 @@ export function potterHome308Dest(path) {
     if (raw !== p) return "https://www.getdasha.com" + p;
     return null;
   }
-  if (POTTER_HUMANS_TXT_308_PATHS.has(p) || POTTER_COMPUTE_API_HUMANS_308_PATHS.has(p)) {
+  if (POTTER_HUMANS_TXT_308_PATHS.has(p) || POTTER_COMPUTE_API_HUMANS_308_PATHS.has(p) || POTTER_COMPUTE_HUMANS_308_PATHS.has(p)) {
     return "https://www.getdasha.com/humans.txt";
   }
   if (POTTER_OPENAPI_YAML_308_PATHS.has(p) || POTTER_OPENAPI_JSON_308_PATHS.has(p)) {
@@ -5807,7 +5880,7 @@ export function potterHome308Dest(path) {
   if (POTTER_COMPUTE_API_MCP_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/mcp.json";
   }
-  if (POTTER_COMPUTE_API_OPENAPI_308_PATHS.has(p)) {
+  if (POTTER_COMPUTE_API_OPENAPI_308_PATHS.has(p) || POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS.has(p)) {
     return "https://www.getdasha.com/compute/openapi.json";
   }
   if (POTTER_COMPUTE_API_CONTRIBUTE_308_PATHS.has(p) || POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(p)) {
@@ -5909,6 +5982,7 @@ export function potterHome308Response(request, url) {
         (
           POTTER_ROOM_308_PATHS.has(src) ||
           POTTER_ROOM_AGENT_DISCOVERY_308_PATHS.has(src) ||
+          POTTER_KITS_308_PATHS.has(src) ||
           src === '/room/agent.json' ||
           src === '/room/agent.json/' ||
           src === '/room/health' ||
@@ -5942,7 +6016,9 @@ export function potterHome308Response(request, url) {
           (u.pathname === '/compute/proof' && POTTER_PROOF_308_PATHS.has(src)) ||
           (u.pathname === '/digest' && POTTER_COMPUTE_DIGEST_308_PATHS.has(src)) ||
           (u.pathname === '/compute/llms.txt' && POTTER_COMPUTE_API_LLMS_JSON_308_PATHS.has(src)) ||
+          (u.pathname === '/compute/openapi.json' && POTTER_COMPUTE_API_OPENAPI_JSON_308_PATHS.has(src)) ||
           (u.pathname === '/contribute' && POTTER_COMPUTE_API_CONTRIBUTE_JSON_308_PATHS.has(src)) ||
+          (u.pathname === '/humans.txt' && POTTER_COMPUTE_HUMANS_308_PATHS.has(src)) ||
           (POTTER_KIT_NAME_308_PATHS.has(src) && u.pathname === '/dasha-compute-open-alpha.tar.gz')
         )
       ) {
@@ -7194,12 +7270,16 @@ function isComputeBadgePath(pathname) {
   return pathname === '/compute/badge.svg';
 }
 
-/** Kit version manifest (task 20). DEPLOY CHECKLIST: bump version/min_version/url sha256 in the SAME deploy as any kit tar change. */
+/** Kit version manifest (task 20). DEPLOY CHECKLIST: bump version/min_version/url sha256 in the SAME deploy as any kit tar change.
+ *  Published ASSETS tar (live GET /dasha-compute-open-alpha.tar.gz, 2026-09-18):
+ *  sha256 4f48b022… · ~33KB · package.json 0.3.0 · no VERSION file · no openai: backend.
+ *  Live kit.json still advertised 0.3.1 / 43df0883… (mismatch). Tip source 0.3.2
+ *  (residual_alpha / openai:) stays unpublished until Instinct packs ASSETS. */
 const COMPUTE_KIT_JSON = {
-  version: '0.3.2',
-  min_version: '0.3.1',
+  version: '0.3.0',
+  min_version: '0.3.0',
   url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
-  sha256: '725e78e6bae3a4d785a78396284f27e994fff1b82fbdb50c5d546b79a1ab159c',
+  sha256: '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf',
 };
 
 function isComputeKitJsonPath(pathname) {
@@ -13213,16 +13293,6 @@ export default {
       const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
       if (!stub) return new Response(JSON.stringify({ error: 'missing lobby' }), { status: 503, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
       return stub.fetch(request);
-    }
-    if ((request.method === 'GET' || request.method === 'HEAD') && ['/launch', '/launch/'].includes(String(url.pathname || '').toLowerCase())) {
-      return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LAUNCH_PAGE_HTML), {
-        headers: htmlHeaders({
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
-          'X-Dasha-Edge': 'launch',
-          Link: LLMS_DESCRIBEDBY,
-        }),
-      });
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && ['/compute/leaderboard', '/compute/leaderboard/'].includes(String(url.pathname || '').toLowerCase())) {
       return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LEADERBOARD_PAGE_HTML), {

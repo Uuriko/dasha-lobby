@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Live Worker 96798503: presence-strip / Act tape (PRESENCE-ACT-TAPE-SHIP-2026-09-06).
- * Gate Start. shows #presence-act-boot (No Mac advertising / N advertising)
+ * Gate Start. shows #presence-act-boot (SSR … pending → No Mac advertising / N advertising)
  * + enrolled from ocm healthz + #act-tape-boot via formatSettledLine.
  * Post-Start wraps macs+enrolled in #presence-strip and settled in #act-tape.
  * paintPresenceActBoot + paintHonestyPanel mutual exclusion.
@@ -22,7 +22,7 @@ function assertPresenceAct(html, label) {
   assert.match(html, /id=["']presence-act-boot["']/, `${label} presence-act-boot`);
   assert.match(html, /id=["']presence-strip["']/, `${label} presence-strip`);
   assert.match(html, /id=["']act-tape["']/, `${label} act-tape`);
-  assert.match(html, /id=["']presence-community["'][^>]*>No Mac advertising</, `${label} No Mac advertising`);
+  assert.match(html, /id=["']presence-community["'][^>]*data-ssr-mac=["']pending["'][^>]*>…</, `${label} SSR pending (no offline claim before network)`);
   assert.match(html, /id=["']presence-enrolled-boot["']/, `${label} presence-enrolled-boot`);
   assert.match(html, /id=["']act-tape-boot["']/, `${label} act-tape-boot`);
   assert.match(html, /function paintPresenceActBoot\(/, `${label} paintPresenceActBoot`);
@@ -58,6 +58,7 @@ if (puppeteer && existsSync(chrome)) {
     await page.waitForFunction(() => window.__dashaAuthReady === true, { timeout: 8000 }).catch(() => {});
 
     const gate = await page.evaluate(() => {
+      providersOnline = null;
       paintPresenceActBoot();
       const boot = document.getElementById("presence-act-boot");
       const panel = document.getElementById("honesty-panel");
@@ -73,7 +74,7 @@ if (puppeteer && existsSync(chrome)) {
     });
     assert.equal(gate.bootHidden, false, "boot visible on Start.");
     assert.equal(gate.panelHidden, true, "panel hidden on Start.");
-    assert.equal(gate.community, "No Mac advertising");
+    assert.equal(gate.community, "…");
     assert.equal(gate.enrolledHidden, true, "no enrolled invented");
     assert.equal(gate.act, "0 tok · 24h");
 

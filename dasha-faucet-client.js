@@ -265,17 +265,18 @@ function mount(root){
   }
   function hero(){
     var frame=el('div','faucet-frame');
+    frame.hidden=true;
     for(var i=0;i<4;i++)frame.appendChild(el('i','faucet-tick'));
     var img=el('img','faucet-hero');
-    img.src=stillUrl;
     img.alt='';
-    img.width=1024;
-    img.height=1024;
     img.fetchPriority='high';
     if(stillSri){
       img.setAttribute('integrity',stillSri);
       img.crossOrigin='anonymous';
     }
+    img.addEventListener('load',function(){frame.hidden=false;});
+    img.addEventListener('error',function(){frame.hidden=true;});
+    img.src=stillUrl;
     frame.appendChild(img);
     return frame;
   }

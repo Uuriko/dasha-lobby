@@ -2,8 +2,11 @@
 /**
  * Quiet buyer live-model line on /compute from GET /compute/api/network.
  * Live. {models_available ids} only when providers_online>=1 and models nonempty.
- * Empty / fail → No Mac online. Never invent a model. No tok/s. No $0.05/job on Ask.
- * Test-only. No wrangler. No Designer. No plugin.jup.ag. No /which or /contribute.
+ * SSR first paint → … (pending). Empty / fail after network → No Mac online. Never invent a model. No tok/s. No $0.05/job on Ask.
+ * T075 — catalog grow: ternary-bonsai-2-27b is in COMPUTE_CATALOG_MODELS /
+ * growAllowedModels after #248. Live line paints that id when advertised.
+ * Do not demote gemma3-27b. Test-only. No wrangler. No Designer. No plugin.jup.ag.
+ * No /which or /contribute.
  */
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -11,6 +14,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import worker from './dasha-lobby-worker.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
+import { COMPUTE_CATALOG_MODELS, growAllowedModels } from './dasha-compute-network.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const disk = readFileSync(join(root, 'dasha-compute.html'), 'utf8');
@@ -31,20 +35,20 @@ function buyerBlock(html) {
 
 function assertBuyerLiveModels(html, label) {
   assert.match(html, /<!-- buyer-live-models:2026-09-08 -->/, `${label} marker`);
-  assert.match(html, /id=["']buyer-live-line["'][^>]*>No Mac online\.</, `${label} Ask first paint no invented model`);
-  assert.match(html, /id=["']buyer-live-line-build["'][^>]*>No Mac online\.</, `${label} API first paint no invented model`);
+  assert.match(html, /id=["']buyer-live-line["'][^>]*data-ssr-mac=["']pending["'][^>]*>…</, `${label} Ask first paint pending (no offline claim before network)`);
+  assert.match(html, /id=["']buyer-live-line-build["'][^>]*data-ssr-mac=["']pending["'][^>]*>…</, `${label} API first paint pending (no offline claim before network)`);
   assert.match(html, /function paintBuyerLiveLine\(/, `${label} paintBuyerLiveLine`);
   assert.match(html, /paintBuyerLiveLine\(\)/, `${label} paintBuyerLiveLine called`);
   assert.match(html, /api\(['"]\/compute\/api\/network['"]\)/, `${label} reads GET /compute/api/network`);
   assert.match(
     html,
-    /Show Live\. \{models_available ids\} only when providers_online>=1 and models_available nonempty/,
+    /Pending.+until network known.+Live\. ids only when providers_online>=1/,
     `${label} show condition`,
   );
   assert.match(html, /const live=n>=1&&ids\.length>0/, `${label} live = n>=1 && ids`);
   assert.match(html, /'Live\. '\+ids\.join\(' '\)/, `${label} Live. + response ids`);
   assert.match(html, /'No Mac online\.'/, `${label} empty/fail copy`);
-  assert.match(html, /never invent a model/, `${label} never invent`);
+  assert.match(html, /[Nn]ever invent a model/, `${label} never invent`);
   assert.match(html, /No tok\/s/, `${label} skip tok/s`);
   assert.match(html, /No \$0\.05\/job/, `${label} no earn rate on buyer line`);
   assert.match(html, /id=["']ask-free-fine["'][^>]*>3 free \/ 10 min · then credits\./, `${label} Hosted Ask path stays`);
@@ -61,6 +65,13 @@ function assertBuyerLiveModels(html, label) {
   assert.doesNotMatch(block, /tok\/s/, `${label} no tok/s on buyer block`);
 
   assert.match(html, /id=["']earn-rates["'][^>]*>\$0\.05\/job/, `${label} Provide still shows earn rates`);
+  assert.match(html, /value=["']ternary-bonsai-2-27b["']/, `${label} leftover/select lists bonsai`);
+  assert.match(
+    html,
+    /\['ternary-bonsai-2-27b','Ternary-Bonsai-2-27B-PQ2_0','Ternary Bonsai 2 27B','PQ2',24,'community'\]/,
+    `${label} MODELS picker row includes bonsai`,
+  );
+  assert.match(html, /value=["']gemma3-27b["']/, `${label} leftover still lists gemma3-27b`);
   assert.doesNotMatch(html, /plugin\.jup\.ag/, `${label} no plugin`);
   assert.doesNotMatch(html, /id=["']which["']|\/which/, `${label} no /which`);
   assert.doesNotMatch(html, /id=["']contribute["']|\/contribute/, `${label} no /contribute`);
@@ -73,6 +84,16 @@ const res = await worker.fetch(new Request('https://www.getdasha.com/compute'), 
 assert.equal(res.status, 200);
 assert.equal(res.headers.get('x-dasha-edge'), 'compute');
 assertBuyerLiveModels(await res.text(), 'worker.fetch');
+
+const BONSAI = 'ternary-bonsai-2-27b';
+assert.ok([...COMPUTE_CATALOG_MODELS].includes(BONSAI), 'T075 catalog includes Community bonsai after #248');
+assert.ok([...COMPUTE_CATALOG_MODELS].includes('gemma3-27b'), 'T075 does not demote gemma3-27b');
+assert.deepEqual(growAllowedModels(['qwen3-8b'], [BONSAI]).sort(), ['qwen3-8b', BONSAI]);
+assert.ok(!growAllowedModels(['qwen3-8b'], ['qwen3-8b']).includes(BONSAI), 'unpolled bonsai stays locked');
+assert.ok(
+  !growAllowedModels(['qwen3-8b'], ['cactus-needle', 'needle', 'needle2']).some((id) => /needle/i.test(id)),
+  'T070: needle is not a growAllowedModels catalog id',
+);
 
 const chrome = process.env.CHROME_BIN || '/usr/bin/google-chrome';
 let puppeteer;
@@ -93,11 +114,11 @@ if (puppeteer && existsSync(chrome)) {
         askHasEarn: (document.getElementById('step-ask')?.innerText || '').includes('$0.05/job'),
       };
     });
-    assert.equal(first.ask, 'No Mac online.', 'first paint does not invent a model');
-    assert.equal(first.build, 'No Mac online.', 'API first paint does not invent a model');
+    assert.equal(first.ask, '…', 'first paint pending — does not invent a model or claim offline');
+    assert.equal(first.build, '…', 'API first paint pending — does not invent a model or claim offline');
     assert.match(first.hosted, /3 free \/ 10 min · then credits\.|Hosted · unavailable/, 'Hosted Ask path stays');
     assert.equal(first.askHasEarn, false, 'Ask path has no $0.05/job');
-    assert.doesNotMatch(first.ask, /gemma3-27b|qwen3-8b|gpt-oss/);
+    assert.doesNotMatch(first.ask, /gemma3-27b|qwen3-8b|gpt-oss|ternary-bonsai|needle/);
 
     const painted = await page.evaluate(() => {
       const read = () => ({
@@ -114,6 +135,7 @@ if (puppeteer && existsSync(chrome)) {
       return {
         fixture: run(1, ['fixture-model-xyz'], [{ model: 'fixture-model-xyz', measured_providers: 1, tokens_per_second: 31.2 }]),
         two: run(2, ['gemma3-27b', 'qwen3-8b'], [{ model: 'gemma3-27b', measured_providers: 1, tokens_per_second: 2.93 }]),
+        bonsai: run(1, ['ternary-bonsai-2-27b'], [{ model: 'ternary-bonsai-2-27b', measured_providers: 1, tokens_per_second: 4.2 }]),
         zero: run(0, [], []),
         onlineEmptyModels: run(1, [], [{ measured_providers: 1, tokens_per_second: 9 }]),
         modelsButOffline: run(0, ['gemma3-27b'], [{ model: 'gemma3-27b', measured_providers: 1, tokens_per_second: 2.93 }]),
@@ -127,8 +149,12 @@ if (puppeteer && existsSync(chrome)) {
     assert.equal(painted.two.ask, 'Live. gemma3-27b qwen3-8b', 'all models_available ids');
     assert.doesNotMatch(painted.two.ask, /tok\/s|2\.93/);
 
+    assert.equal(painted.bonsai.ask, 'Live. ternary-bonsai-2-27b', 'T075 advertised bonsai paints catalog id');
+    assert.equal(painted.bonsai.build, 'Live. ternary-bonsai-2-27b');
+    assert.doesNotMatch(painted.bonsai.ask, /tok\/s|4\.2|needle|cactus/);
+
     assert.equal(painted.zero.ask, 'No Mac online.', 'empty fleet does not invent a model');
-    assert.doesNotMatch(painted.zero.ask, /Live\.|gemma3|qwen3|fixture-model|gpt-oss/);
+    assert.doesNotMatch(painted.zero.ask, /Live\.|gemma3|qwen3|fixture-model|gpt-oss|ternary-bonsai|needle/);
 
     assert.equal(painted.onlineEmptyModels.ask, 'No Mac online.', 'online without models_available does not invent');
     assert.doesNotMatch(painted.onlineEmptyModels.ask, /gemma3|qwen3|gpt-oss|Live\./);
@@ -166,6 +192,14 @@ if (puppeteer && existsSync(chrome)) {
       await refreshHonesty();
       const live = read();
 
+      window.fetch = stub({
+        providers_online: 1,
+        models_available: ['ternary-bonsai-2-27b'],
+        capacity: [{ model: 'ternary-bonsai-2-27b', measured_providers: 1, tokens_per_second: 4.2 }],
+      });
+      await refreshHonesty();
+      const bonsai = read();
+
       window.fetch = stub({ providers_online: 0, models_available: [], capacity: [] });
       await refreshHonesty();
       const empty = read();
@@ -177,15 +211,17 @@ if (puppeteer && existsSync(chrome)) {
       const failed = read();
 
       window.fetch = orig;
-      return { live, empty, failed };
+      return { live, bonsai, empty, failed };
     });
 
     assert.equal(fetched.live, 'Live. fixture-model-xyz', 'runtime network fixture paints response ids');
     assert.doesNotMatch(fetched.live, /tok\/s|12\.5/);
+    assert.equal(fetched.bonsai, 'Live. ternary-bonsai-2-27b', 'T075 runtime network paints advertised bonsai');
+    assert.doesNotMatch(fetched.bonsai, /tok\/s|4\.2|needle|cactus/);
     assert.equal(fetched.empty, 'No Mac online.', 'runtime empty does not invent a model');
-    assert.doesNotMatch(fetched.empty, /Live\.|fixture-model|gemma3|qwen3/);
+    assert.doesNotMatch(fetched.empty, /Live\.|fixture-model|gemma3|qwen3|ternary-bonsai|needle/);
     assert.equal(fetched.failed, 'No Mac online.', 'fetch fail does not invent a model');
-    assert.doesNotMatch(fetched.failed, /Live\.|fixture-model|gemma3|qwen3|gpt-oss/);
+    assert.doesNotMatch(fetched.failed, /Live\.|fixture-model|gemma3|qwen3|gpt-oss|ternary-bonsai|needle/);
   } finally {
     await browser.close();
   }

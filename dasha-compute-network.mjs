@@ -50,6 +50,7 @@ import {
   listReceiptsForOwner,
   publicSettled24h,
   recordSettledInference,
+  SETTLED_REPLAY_PREFIX,
   sumSettled24h,
 } from './dasha-compute-settled.mjs';
 import {
@@ -92,6 +93,9 @@ import {
   parseGuestApiToken,
   takeGuestRate,
   guestRateInfo,
+  durableGuestRateInfo,
+  withGuestRateLock,
+  pruneGuestRates,
   COMPUTE_GUEST_KEYS_PATH,
   GUEST_KEY_CHAT_MAX,
   GUEST_KEY_CHAT_WINDOW_MS,
@@ -110,8 +114,11 @@ import {
   attachReceiptHonesty,
   countConversationTurns,
   honestLoopFields,
+  residualControlFields,
 } from './dasha-compute-receipt-honesty.mjs';
+import { canAdvertiseModel, filterAdvertisableModels } from './dasha-compute-model-license.mjs';
 export { X402_BILLING_DOCS, x402BillingDocsLine };
+export { canAdvertiseModel, filterAdvertisableModels };
 
 export { HOSTED_ASK_PRICE_CENTS };
 
@@ -159,11 +166,12 @@ export function growAllowedModels(prior, polled = [], catalog = MODELS) {
   const next = new Set();
   for (const model of prior || []) {
     const id = String(model);
-    if (catalog.has(id)) next.add(id);
+    // License gate: catalog membership is not enough — held/unknown stay out.
+    if (catalog.has(id) && canAdvertiseModel(id)) next.add(id);
   }
   for (const model of polled || []) {
     const id = String(model);
-    if (catalog.has(id)) next.add(id);
+    if (catalog.has(id) && canAdvertiseModel(id)) next.add(id);
   }
   return [...next];
 }
@@ -350,6 +358,22 @@ function withV1Cors(res, origin) {
 
 
 const FACTORY_KEY = 'compute:factory:v0';
+/** #299: internal-only DO path for the hosted-chat factory bump. Never listed in computeApi(). */
+export const HOSTED_FACTORY_BUMP_PATH = '/compute/api/internal/hosted-factory-bump';
+const HOSTED_SPEND_ID_RE = /^hosted_[A-Za-z0-9_-]{12,32}$/;
+/** Hosted Ask caps: <=6,000 input chars (~1,500 tokens + system) and max_tokens 256. */
+const HOSTED_MAX_TOKENS = 4096;
+
+/** Tokens for a hosted settle from worker-computed usage; null when absent or out of bounds. */
+function hostedAssertedTokens(usage) {
+  if (!usage || typeof usage !== 'object') return null;
+  const total = Number(usage.total_tokens);
+  const prompt = Number(usage.prompt_tokens);
+  const completion = Number(usage.completion_tokens);
+  const n = Number.isFinite(total) ? total : (Number.isFinite(prompt) && Number.isFinite(completion) ? prompt + completion : NaN);
+  if (!Number.isFinite(n) || n < 0 || n > HOSTED_MAX_TOKENS || Math.floor(n) !== n) return null;
+  return n;
+}
 
 function emptyFactoryCounters() {
   return { jobs: { hosted: 0, community: 0, mixture: 0, failed: 0 }, models: {} };
@@ -877,9 +901,9 @@ function tokenUsage(input) {
   return Object.fromEntries(['prompt_tokens', 'completion_tokens', 'total_tokens'].map(name => [name, Math.max(0, Math.min(10_000_000, Math.floor(Number(source[name]) || 0)))]));
 }
 
-/** Gateway-side metering (observe-only): the DO measures tokens from data it
- *  already proxies. Settlement still uses provider-reported usage; divergence
- *  over 25% is flagged for operator review, never auto-settled. */
+/** Gateway-side metering: the DO measures tokens from data it already proxies.
+ *  #300: settlement bills min(provider, gateway) per field; divergence over 25%
+ *  (or a provider over the anomaly threshold) goes to review and never auto-settles. */
 function approxTokenCount(text) {
   return Math.max(0, Math.ceil(String(text || '').length / 4));
 }
@@ -894,6 +918,26 @@ function usageDiverged(reported, measured) {
   const base = Math.max(a, b);
   return base > 0 && Math.abs(a - b) / base > 0.25;
 }
+/** #300: review trigger. Billing already takes min(provider, gateway), so only over-reporting
+ *  matters: provider completion tokens above gateway * 1.25 + 16 (slack for tiny answers and
+ *  tokenizer drift vs the chars/4 estimate). */
+export const USAGE_INFLATION_RATIO = 1.25;
+export const USAGE_INFLATION_SLACK_TOKENS = 16;
+export function usageInflated(reported, measured) {
+  const a = Math.max(0, Number(reported?.completion_tokens) || 0), b = Math.max(0, Number(measured?.completion_tokens) || 0);
+  return a > b * USAGE_INFLATION_RATIO + USAGE_INFLATION_SLACK_TOKENS;
+}
+/** #300: billed usage never exceeds what the gateway measured. Per field: min(provider, gateway). */
+export function billableUsage(reported, measured) {
+  const pick = (name) => Math.max(0, Math.min(Math.floor(Number(reported?.[name]) || 0), Math.floor(Number(measured?.[name]) || 0)));
+  const prompt_tokens = pick('prompt_tokens'), completion_tokens = pick('completion_tokens');
+  return { prompt_tokens, completion_tokens, total_tokens: prompt_tokens + completion_tokens };
+}
+/** #300: repeated divergence holds every settle for that provider until an operator clears it. */
+export const PROVIDER_ANOMALY_THRESHOLD = 3;
+export const PROVIDER_ANOMALY_WINDOW_MS = 24 * 60 * 60_000;
+export const USAGE_REVIEW_PREFIX = 'compute:usage-review:';
+export const PROVIDER_ANOMALY_PREFIX = 'compute:provider-anomaly:';
 /** Failover evidence: bounded attempt log on the job. */
 function appendAttempt(attempts, providerId, now) {
   return [...(Array.isArray(attempts) ? attempts : []), { provider_id: providerId, leased_at: now, outcome: null }].slice(-8);
@@ -979,7 +1023,7 @@ export function v1HostedFloorListing() {
 
 /** Soft-guest /v1/models data: Hosted floor first, then advertised Community ids. Never Astra/Flash SKUs. */
 export function v1ModelsListData(providers = [], now = Date.now()) {
-  const advertised = [...new Set((Array.isArray(providers) ? providers : []).flatMap((provider) => provider.models || []))];
+  const advertised = filterAdvertisableModels((Array.isArray(providers) ? providers : []).flatMap((provider) => provider.models || []));
   const community = advertised
     .filter((id) => id !== HOSTED_FLOOR_MODEL_ID)
     .map((id) => v1ModelListing(id, providers, now));
@@ -1072,7 +1116,14 @@ export class ComputeNetwork {
   constructor(state, env) { this.state = state; this.env = env; this.rates = new Map(); }
 
   /** Expire / requeue jobs. Poll skips night + provider GC — those are not lease-hot. */
+  guestRateSalt() { return String(this.env?.GUEST_RATE_SALT || this.env?.LOBBY_SESSION_SECRET || ''); }
+
   async prune(now = Date.now(), opts = {}) {
+    // #301: bounded retention for durable guest-rate rows (at most one sweep per 10 min per instance).
+    if (!(this.guestRatePrunedAt > now - 10 * 60_000)) {
+      this.guestRatePrunedAt = now;
+      try { await pruneGuestRates(this.state.storage, now); } catch {}
+    }
     const runNight = opts.night !== false;
     const sweepProviders = opts.providers !== false;
     const jobs = [];
@@ -1270,6 +1321,80 @@ export class ComputeNetwork {
     return counters;
   }
 
+  /** #300: the single settle path for completed community/mixture jobs (result + stream).
+   *  Divergence is checked BEFORE any earning, replay marker or signed settlement is written.
+   *  Divergent jobs (or any job from a provider over the anomaly threshold) go to an idempotent
+   *  review record and settle nothing; the earn replay marker is only written on acceptance. */
+  async settleCompletedJob(job, provider, usage, usageGateway, now = Date.now(), { accepted = false } = {}) {
+    const storage = this.state.storage;
+    const reviewKey = `${USAGE_REVIEW_PREFIX}${job.id}`;
+    const existingReview = await storage.get(reviewKey);
+    if (existingReview && existingReview.state !== 'accepted') return { settle_state: 'review', usage_review: existingReview.reason };
+    if (existingReview && !accepted) return { settle_state: 'review', usage_review: existingReview.reason };
+    const diverged = !accepted && usageInflated(usage, usageGateway);
+    const anomalyKey = `${PROVIDER_ANOMALY_PREFIX}${provider.id}`;
+    let anomaly = await storage.get(anomalyKey);
+    if (anomaly && !(now - Number(anomaly.windowStart || 0) < PROVIDER_ANOMALY_WINDOW_MS) && !anomaly.held) anomaly = null;
+    if (diverged) {
+      anomaly = anomaly || { providerId: provider.id, count: 0, windowStart: now, jobs: [], held: false };
+      anomaly = { ...anomaly, count: Number(anomaly.count || 0) + 1, jobs: [...(anomaly.jobs || []), job.id].slice(-20), updatedAt: now };
+      if (anomaly.count >= PROVIDER_ANOMALY_THRESHOLD) anomaly.held = true;
+      await storage.put(anomalyKey, anomaly);
+    }
+    const held = !accepted && Boolean(anomaly?.held);
+    if (diverged || held) {
+      const review = {
+        jobId: job.id,
+        providerId: provider.id,
+        owner: job.owner || null,
+        route: job.route || null,
+        model: job.model || null,
+        reason: diverged ? 'usage_diverged' : 'provider_anomaly_hold',
+        usage_reported: usage,
+        usage_gateway: usageGateway,
+        state: 'open',
+        createdAt: now,
+        audit: [{ at: now, event: 'opened', reason: diverged ? 'usage_diverged' : 'provider_anomaly_hold' }],
+      };
+      await storage.put(reviewKey, review);
+      return { settle_state: 'review', usage_review: review.reason };
+    }
+    const billed = billableUsage(usage, usageGateway);
+    const accrued = await accrueProviderEarn(storage, { providerId: provider.id, jobId: job.id, usage: billed, now });
+    if (!accrued?.ok) return {};
+    const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
+    await this.recordPaidInferenceSettle({
+      owner: job.owner || null,
+      engine: job.route === 'mixture' ? 'mixture' : 'community',
+      usage: billed,
+      cents: settleCents,
+      jobId: job.id,
+      requestId: job.request_id || null,
+      model: job.model,
+      latencyMs: job.leasedAt ? now - job.leasedAt : null,
+      ...honestLoopFields(job),
+      replayKey: `job:${job.id}`,
+      now,
+    });
+    await this.referralCheckM2(job.owner, now);
+    return { usage_billed: billed, ...(settleCents > 0 ? { settle_cents: settleCents, settle_state: 'pending_operator' } : {}) };
+  }
+
+  /** #300 operator path (no public route yet): accept an open review and settle on gateway-capped usage. Idempotent. */
+  async acceptUsageReview(jobId, { now = Date.now(), reviewer = 'operator' } = {}) {
+    const storage = this.state.storage;
+    const reviewKey = `${USAGE_REVIEW_PREFIX}${jobId}`;
+    const review = await storage.get(reviewKey);
+    if (!review) return { ok: false, error: 'no review' };
+    if (review.state === 'accepted') return { ok: true, replay: true };
+    const job = await storage.get(`compute:job:${jobId}`);
+    if (!job) return { ok: false, error: 'job expired' };
+    await storage.put(reviewKey, { ...review, state: 'accepted', audit: [...(review.audit || []), { at: now, event: 'accepted', by: String(reviewer).slice(0, 64) }] });
+    const patch = await this.settleCompletedJob(job, { id: review.providerId }, review.usage_reported, review.usage_gateway, now, { accepted: true });
+    await storage.put(`compute:job:${jobId}`, { ...job, ...patch, usage_review: 'accepted' });
+    return { ok: true, replay: false, ...patch };
+  }
+
   /** Paid-inference settle only (credits or community earn). Replay-safe.
    *  When the heads signing key is configured, every fresh settle also joins the
    *  signed receipt chain and gets covered by a fresh head. Signing failure never
@@ -1287,6 +1412,50 @@ export class ComputeNetwork {
     }
     return res;
   }
+  /** #299: hosted-chat factory bump + optional paid settle. Only reachable from the worker's own
+   *  bumpHostedFactory(). The settlement is derived from the server-side charged record
+   *  (compute:credit-spend:<owner>:<request_id>, written by debitCredits). Caller cents/usage/request
+   *  facts are checked against that record, never trusted. Validation happens before any write:
+   *  mismatch or missing record -> 409 with no write; replay -> 200 with no write. */
+  async recordHostedFactoryBump(input = {}, now = Date.now()) {
+    const failed = input?.failed === true;
+    const settle = !failed && input?.settle && typeof input.settle === 'object' ? input.settle : null;
+    if (!settle) {
+      await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed });
+      await this.bumpMetric('ask:hosted:complete');
+      return json({ ok: true, settled: false }, 202, null, false);
+    }
+    const reject = (reason) => json({ error: 'settle rejected', reason }, 409, null, false);
+    const owner = String(settle.owner || '').trim();
+    const requestId = String(settle.request_id || '');
+    if (!owner || !HOSTED_SPEND_ID_RE.test(requestId)) return reject('bad assertion');
+    const charged = await this.state.storage.get(`compute:credit-spend:${owner}:${requestId}`);
+    const chargedCents = Math.max(0, Math.floor(Number(charged?.cents) || 0));
+    if (!charged || chargedCents <= 0) return reject('no charged record');
+    if (charged.reason !== 'hosted-ask') return reject('charged record reason mismatch');
+    if (charged.refundedAt) return reject('charged record refunded');
+    if (settle.cents != null && Math.floor(Number(settle.cents)) !== chargedCents) return reject('cents mismatch');
+    const tokens = hostedAssertedTokens(settle.usage);
+    if (tokens == null) return reject('usage mismatch');
+    const replayKey = `hosted:${requestId}`;
+    if (await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}${replayKey}`)) {
+      return json({ ok: true, replay: true, settled: false }, 200, null, false);
+    }
+    await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed: false });
+    const res = await this.recordPaidInferenceSettle({
+      owner,
+      engine: 'hosted',
+      usage: { total_tokens: tokens },
+      cents: chargedCents,
+      model: 'gpt-oss-20b',
+      requestId,
+      replayKey,
+      now,
+    });
+    await this.bumpMetric('ask:hosted:complete');
+    return json({ ok: true, settled: Boolean(res?.ok && !res.replay), receipt_id: res?.receipt?.id || null }, 202, null, false);
+  }
+
   async factoryPayload(now = Date.now()) {
     await this.prune(now);
     const counters = await this.loadFactoryCounters();
@@ -1352,7 +1521,7 @@ export class ComputeNetwork {
     let messages = chatMessages(input);
     if (!messages) return { error: 'send 1–12 user/assistant messages, max 2,000 characters each and 6,000 total', status: 400 };
     if (input.tools != null || input.tool_choice != null || input.functions != null || input.function_call != null) return { error: 'tools and function calling are not supported on this gateway yet; strip tools/tool_choice and send plain messages', status: 400 };
-    if (!MODELS.has(model)) return { error: 'unsupported model', status: 400 };
+    if (!MODELS.has(model) || !canAdvertiseModel(model)) return { error: 'unsupported model', status: 400 };
     messages = withModelIdentityHint(messages, model);
     messages = withNoThinkHint(messages, model);
     if (!takeRate(this.rates, owner, 5)) return { error: 'community limit reached; try again shortly', status: 429 };
@@ -1461,7 +1630,7 @@ export class ComputeNetwork {
     if (isComputeGuestKeyPath(path)) {
       const guestProbe = computeGuestKeyResponse(request);
       if (guestProbe) return guestProbe;
-      return handleGuestKeyWrite(request, { storage: this.state.storage, rates: this.rates });
+      return handleGuestKeyWrite(request, { storage: this.state.storage, rates: this.rates, salt: this.guestRateSalt() });
     }
     if ((path === '/compute/api' || path === '/compute/api/' || path === '/compute/api/status' || path === '/compute/api/status/') && (request.method === 'GET' || request.method === 'HEAD')) {
       const res = json(computeApiRootBody(this.env), 200, allowedOrigin || '*', credentials);
@@ -1483,7 +1652,7 @@ export class ComputeNetwork {
       if (existing.length >= 20) return json({ error: 'Night Shift task limit reached' }, 409, allowedOrigin, true);
       const input = await body(request, 12 * 1024), title = String(input.title || '').trim().slice(0, 80), prompt = String(input.prompt || '').trim(), model = String(input.model || ''), template = String(input.template || 'custom'), repeat = String(input.repeat || 'none'), requestedAt = Number(input.run_at), nextRunAt = Number.isFinite(requestedAt) ? Math.max(now, requestedAt) : now;
       if (!title || !prompt || prompt.length > 6000) return json({ error: 'title and prompt are required; prompt maximum is 6000 characters' }, 400, allowedOrigin, true);
-      if (!MODELS.has(model) || !NIGHT_TEMPLATES[template] || !['none', ...Object.keys(NIGHT_INTERVALS)].includes(repeat)) return json({ error: 'unsupported model, template, or repeat schedule' }, 400, allowedOrigin, true);
+      if (!MODELS.has(model) || !canAdvertiseModel(model) || !NIGHT_TEMPLATES[template] || !['none', ...Object.keys(NIGHT_INTERVALS)].includes(repeat)) return json({ error: 'unsupported model, template, or repeat schedule' }, 400, allowedOrigin, true);
       await this.prune(now);
       // Schedule even with 0 Macs — runNightTasks fires when a matching provider comes online.
       const task = { id: `night_${randomUrlToken(9)}`, owner, title, prompt, model, template, repeat, approvalRequired: input.approval_required === true, stepIndex: 0, steps: NIGHT_STEP_COUNTS[template], status: 'scheduled', nextRunAt, lastRunAt: null, lastCompletedAt: null, lastJobId: null, artifacts: [], createdAt: now };
@@ -1667,7 +1836,8 @@ export class ComputeNetwork {
       if (!key) return v1err(invalidApiKeyMessage(request), 401, 'authentication_error');
       if (!guestKeyAllows(key, 'chat')) return v1err('guest key cannot use this endpoint', 403, 'invalid_request_error');
       if (isGuestApiKey(key)) {
-        const guestRate = guestRateInfo(this.rates, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS);
+        // #301: durable, serialized - survives DO eviction and redeploy.
+        const guestRate = await withGuestRateLock(this.state.storage, () => durableGuestRateInfo(this.state.storage, `guest-chat:${key.id}`, GUEST_KEY_CHAT_MAX, GUEST_KEY_CHAT_WINDOW_MS, { now: Date.now(), salt: this.guestRateSalt() }));
         if (!guestRate.ok) {
           return v1err('guest key rate limited; try again shortly', 429, 'invalid_request_error', {
             'Retry-After': String(guestRate.retryAfterSeconds),
@@ -1799,29 +1969,15 @@ export class ComputeNetwork {
     if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && (request.method === 'GET' || request.method === 'HEAD')) {
       return maybeHead(request, json(await this.factoryPayload(now), 200, allowedOrigin || '*', credentials));
     }
-    if ((path === '/compute/api/factory' || path === '/compute/api/factory/') && request.method === 'POST') {
-      // Internal hosted bump from computeApi via DO stub. Low-sensitivity counters; rate-limited.
-      const input = await body(request);
-      if (String(input?.source || '') !== 'hosted-chat') return json({ error: 'not found' }, 404, allowedOrigin, credentials);
+    if (path === HOSTED_FACTORY_BUMP_PATH && request.method === 'POST') {
+      // #299: internal-only. computeApi() never forwards this path (public callers get 404 there),
+      // and a request that arrived through Cloudflare's edge carries CF-Connecting-IP, which the
+      // worker-built bumpHostedFactory() request never does. Settlement facts come from the
+      // server-side charged record, never from the body.
+      if (request.headers.get('cf-connecting-ip')) return json({ error: 'not found' }, 404, allowedOrigin, credentials);
       if (!takeRate(this.rates, 'factory:hosted-bump', 120, 60_000)) return json({ error: 'rate limited' }, 429, allowedOrigin, credentials);
-      const failed = input.failed === true;
-      await this.recordFactoryOutcome({ engine: 'hosted', model: 'gpt-oss-20b', failed });
-      const settle = input?.settled && typeof input.settled === 'object' ? input.settled : null;
-      if (!failed && settle && settle.paid === true) {
-        await this.recordPaidInferenceSettle({
-          owner: settle.owner || null,
-          engine: 'hosted',
-          usage: settle.usage || null,
-          tokens: settle.tokens,
-          cents: settle.cents != null ? settle.cents : HOSTED_ASK_PRICE_CENTS,
-          model: 'gpt-oss-20b',
-          requestId: settle.request_id || null,
-          replayKey: settle.replay_key || (settle.request_id ? `hosted:${settle.request_id}` : null),
-          now: Date.now()
-        });
-      }
-      await this.bumpMetric('ask:hosted:complete');
-      return json({ ok: true }, 202, allowedOrigin, credentials);
+      const input = await body(request);
+      return this.recordHostedFactoryBump(input);
     }
 
     // Funnel telemetry (task 22): client beacon intake. anon_id is a client-local UUID used ONLY
@@ -1877,7 +2033,7 @@ export class ComputeNetwork {
       await this.prune(now);
       const providers = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].filter(provider => now - Number(provider.lastSeenAt || 0) < FRESH_MS);
       const jobs = [...(await this.state.storage.list({ prefix: 'compute:job:' })).values()];
-      const models = [...new Set(providers.flatMap(provider => provider.models || []))];
+      const models = filterAdvertisableModels(providers.flatMap(provider => provider.models || []));
       const capacity = models.map(model => {
         const serving = providers.filter(provider => provider.models?.includes(model)), measured = serving.map(provider => provider.hardware?.benchmarks?.find(row => row.model === model)?.tokens_per_second).filter(Number.isFinite);
         const tps = measured.length ? measured.reduce((sum, value) => sum + value, 0) / measured.length : 0;
@@ -1939,7 +2095,7 @@ export class ComputeNetwork {
       const okey = `compute:org-enroll:${code}`, link = await this.state.storage.get(okey);
       if (!link || link.revoked || Number(link.expiresAt) <= now) return json({ error: 'invalid or expired enroll code' }, 404, allowedOrigin || '*', credentials);
       if (Number(link.used) >= Number(link.quota)) return json({ error: 'enroll code quota exhausted' }, 409, allowedOrigin || '*', credentials);
-      const models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model)))];
+      const models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model) && canAdvertiseModel(model)))];
       if (!models.length) return json({ error: 'choose at least one supported model' }, 400, allowedOrigin || '*', credentials);
       const name = String(input.name || '').trim().slice(0, 64) || 'My Mac';
       const prior = [...(await this.state.storage.list({ prefix: 'compute:provider:' })).values()].find(p => p.createdVia === code && p.name === name);
@@ -1957,7 +2113,7 @@ export class ComputeNetwork {
       const owner = identity(await authSessionFromRequest(this.env, request));
       if (!owner) return json({ error: 'login required' }, 401, allowedOrigin, true);
       if (!takeRate(this.rates, `register:${owner}`, 3)) return json({ error: 'provider registration rate limited' }, 429, allowedOrigin, true);
-      const input = await body(request), models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model)))];
+      const input = await body(request), models = [...new Set((Array.isArray(input.models) ? input.models : []).map(String).filter(model => MODELS.has(model) && canAdvertiseModel(model)))];
       if (!models.length) return json({ error: 'choose at least one supported model' }, 400, allowedOrigin, true);
       const providerId = `mac_${randomUrlToken(9)}`, token = `dcp_${randomUrlToken(24)}`, name = String(input.name || '').trim().slice(0, 64) || 'My Mac';
       await this.state.storage.put(`compute:provider:${providerId}`, { id: providerId, owner, name, allowedModels: models, models: [], tokenHash: await sha256(token), createdAt: now, lastSeenAt: 0 });
@@ -2044,28 +2200,11 @@ export class ComputeNetwork {
       const usageGateway = gatewayUsage(job, answer);
       let settlePatch = {};
       if (!error && job.route !== 'self') {
-        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-        if (accrued?.ok) {
-          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
-          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
-          await this.recordPaidInferenceSettle({
-            owner: job.owner || null,
-            engine: job.route === 'mixture' ? 'mixture' : 'community',
-            usage,
-            cents: settleCents,
-            jobId: job.id,
-            requestId: job.request_id || null,
-            model: job.model,
-            latencyMs: job.leasedAt ? now - job.leasedAt : null,
-            ...honestLoopFields(job),
-            replayKey: `job:${job.id}`,
-            now,
-          });
-          await this.referralCheckM2(job.owner, now);
-        }
+        settlePatch = await this.settleCompletedJob(job, provider, usage, usageGateway, now);
       }
       if (error) await this.refundJobDebit(job, now, error);
-      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, usage_gateway: usageGateway, ...(usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), attempts: closeAttempt(job.attempts, error ? 'failed' : 'complete'), messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch });
+      const residual = residualControlFields(input, job.model);
+      await this.state.storage.put(key, { ...job, status: error ? 'failed' : 'complete', answer: error ? null : answer, error: error || null, usage, usage_gateway: usageGateway, ...(usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), attempts: closeAttempt(job.attempts, error ? 'failed' : 'complete'), messages: null, completedAt: now, expiresAt: now + 10 * 60_000, ...settlePatch, ...residual });
       await this.finishNight(job, error ? 'failed' : 'complete', error ? null : answer, error || null, now);
       await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed: Boolean(error) });
       return json({ accepted: true }, 202);
@@ -2093,30 +2232,13 @@ export class ComputeNetwork {
       const usageGateway = finishedEarly ? gatewayUsage(job, joinedStripped) : job.usage_gateway || null;
       let settlePatch = {};
       if (!streamError && input.done && job.route !== 'self') {
-        const accrued = await accrueProviderEarn(this.state.storage, { providerId: provider.id, jobId: job.id, usage, now });
-        if (accrued?.ok) {
-          const settleCents = Math.max(0, Math.floor(Number(accrued.usdc_cents) || 0));
-          if (settleCents > 0) settlePatch = { settle_cents: settleCents, settle_state: 'pending_operator' };
-          await this.recordPaidInferenceSettle({
-            owner: job.owner || null,
-            engine: job.route === 'mixture' ? 'mixture' : 'community',
-            usage,
-            cents: settleCents,
-            jobId: job.id,
-            requestId: job.request_id || null,
-            model: job.model,
-            latencyMs: job.leasedAt ? now - job.leasedAt : null,
-            ...honestLoopFields(job),
-            replayKey: `job:${job.id}`,
-            now,
-          });
-          await this.referralCheckM2(job.owner, now);
-        }
+        settlePatch = await this.settleCompletedJob(job, provider, usage, usageGateway, now);
       }
       const failed = Boolean(streamError);
       const finished = failed || Boolean(input.done);
       if (failed) await this.refundJobDebit(job, now, streamError);
-      await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, ...(usageGateway ? { usage_gateway: usageGateway } : {}), ...(finishedEarly && usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), ...(finishedEarly ? { attempts: closeAttempt(job.attempts, failed ? 'failed' : 'complete') } : {}), messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch });
+      const residual = finished ? residualControlFields(input, job.model) : {};
+      await this.state.storage.put(key, { ...job, chunks: failed ? [] : input.done ? [joinedStripped] : chunks, status: failed ? 'failed' : input.done ? 'complete' : 'leased', error: streamError || null, usage: failed ? null : usage, ...(usageGateway ? { usage_gateway: usageGateway } : {}), ...(finishedEarly && usageDiverged(usage, usageGateway) ? { usage_diverged: true } : {}), ...(finishedEarly ? { attempts: closeAttempt(job.attempts, failed ? 'failed' : 'complete') } : {}), messages: finished ? null : job.messages, completedAt: finished ? now : null, leaseExpiresAt: now + LEASE_MS, expiresAt: finished ? now + 10 * 60_000 : now + LEASE_MS + 60_000, ...settlePatch, ...residual });
       if (finished) {
         await this.finishNight(job, failed ? 'failed' : 'complete', failed ? null : joinedStripped, streamError || null, now);
         await this.recordFactoryOutcome({ engine: job.route === 'mixture' ? 'mixture' : 'community', model: job.model, failed });
@@ -2452,46 +2574,6 @@ export class ComputeNetwork {
         issued_at: new Date(now).toISOString(),
         verify: 'checkpoint.sig = ed25519 over the UTF-8 bytes of checkpoint.text with the signer key from /keys.json; head.hash = sha256(JSON.stringify({ts,tip,prev_head_hash})); head.sig per /compute/llms.txt. Store a checkpoint and compare against future /heads responses to catch a rewritten tail.',
       }, 200, '*', false, { 'Cache-Control': 'no-cache' }));
-    }
-    if (path === '/compute/api/launch-notify/count' || path === '/compute/api/launch-notify/count/') {
-      const items = [...await this.state.storage.list({ prefix: 'launch:notify:' })].filter((entry) => !String(entry[0]).startsWith('launch:notify:ip:'));
-      return maybeHead(request, json({ count: items.length }, 200, allowedOrigin, true));
-    }
-    if (path === '/compute/api/launch-notify' || path === '/compute/api/launch-notify/') {
-      if (request.method === 'DELETE') {
-        const removeInput = await body(request);
-        const removeEmail = String(removeInput && removeInput.email || '').trim().toLowerCase();
-        if (!/^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/.test(removeEmail)) {
-          return maybeHead(request, json({ error: 'a valid email address is required' }, 400, allowedOrigin, true));
-        }
-        const removeKey = 'launch:notify:' + removeEmail;
-        const removeExisting = await this.state.storage.get(removeKey);
-        if (removeExisting) {
-          await this.state.storage.delete(removeKey);
-        }
-        return maybeHead(request, json({ ok: true, status: removeExisting ? 'removed' : 'not_found' }, 200, allowedOrigin, true));
-      }
-      if (request.method !== 'POST') {
-        return maybeHead(request, json({ error: 'method not allowed; POST {email} here, DELETE {email} to remove, GET count at /compute/api/launch-notify/count' }, 405, allowedOrigin, true));
-      }
-      const launchInput = await body(request);
-      const launchEmail = String(launchInput && launchInput.email || '').trim().toLowerCase();
-      if (!/^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/.test(launchEmail)) {
-        return maybeHead(request, json({ error: 'a valid email address is required' }, 400, allowedOrigin, true));
-      }
-      const launchIp = request.headers.get('cf-connecting-ip') || 'unknown';
-      const launchIpKey = 'launch:notify:ip:' + launchIp + ':' + Math.floor(Date.now() / 36e5);
-      const launchIpCount = Number(await this.state.storage.get(launchIpKey) || 0);
-      if (launchIpCount >= 5) {
-        return maybeHead(request, json({ error: 'rate limited; try again later' }, 429, allowedOrigin, true));
-      }
-      await this.state.storage.put(launchIpKey, launchIpCount + 1);
-      const launchKey = 'launch:notify:' + launchEmail;
-      const launchExisting = await this.state.storage.get(launchKey);
-      if (!launchExisting) {
-        await this.state.storage.put(launchKey, { email: launchEmail, ts: Date.now() });
-      }
-      return maybeHead(request, json({ ok: true, status: launchExisting ? 'already' : 'subscribed' }, launchExisting ? 200 : 201, allowedOrigin, true));
     }
     const headsArchiveMatch = path.match(/^\/heads\/archive\/(\d{4}-\d{2}-\d{2})\.json$/);
     if (headsArchiveMatch && (request.method === 'GET' || request.method === 'HEAD')) {
@@ -3295,14 +3377,16 @@ async function bumpHostedFactory(env, { failed = false, settled = null } = {}) {
   try {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return;
-    await stub.fetch(new Request('https://lobby.getdasha.com/compute/api/factory', {
+    const settle = !failed && settled && typeof settled === 'object' && settled.request_id ? {
+      owner: settled.owner || null,
+      request_id: settled.request_id,
+      cents: settled.cents,
+      usage: settled.usage || null,
+    } : null;
+    await stub.fetch(new Request(`https://lobby.getdasha.com${HOSTED_FACTORY_BUMP_PATH}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        source: 'hosted-chat',
-        failed: failed === true,
-        ...(settled && typeof settled === 'object' ? { settled } : {})
-      })
+      body: JSON.stringify({ failed: failed === true, ...(settle ? { settle } : {}) }),
     }));
   } catch {}
 }
@@ -3347,12 +3431,13 @@ async function spendHostedAskCredits(env, request, { requestId = null } = {}) {
 
 /** Signed kit installer manifest (mirrors COMPUTE_KIT_JSON in dasha-lobby-worker.mjs;
  *  parity asserted in dasha-openapi-contract.test.mjs). The worker injects these values
- *  into the kit-sig DO call so callers can never get an attacker-chosen statement signed. */
+ *  into the kit-sig DO call so callers can never get an attacker-chosen statement signed.
+ *  Pins the published ASSETS tar bytes (4f48b022…, package.json 0.3.0) — not tip 0.3.2. */
 const COMPUTE_KIT_MANIFEST = {
-  version: '0.3.2',
-  min_version: '0.3.1',
+  version: '0.3.0',
+  min_version: '0.3.0',
   url: 'https://www.getdasha.com/dasha-compute-open-alpha.tar.gz',
-  sha256: '725e78e6bae3a4d785a78396284f27e994fff1b82fbdb50c5d546b79a1ab159c',
+  sha256: '4f48b0221dded4a6817da3baa1c04cd29b8edd5ec0ecc5771485aa170310edcf',
 };
 
 export async function computeApi(request, env, allowedOrigin) {
@@ -3379,6 +3464,8 @@ export async function computeApi(request, env, allowedOrigin) {
       note: 'counters count every attempted job by route, incl. failures and free guest calls; the receipt chain records settled paid jobs only; prompts not included; settled_24h = paid-inference only',
     }, 200, allowedOrigin || '*', credentials));
   }
+  // #299: the public factory route is read-only. Any other method stops here, before the DO.
+  if (path === '/compute/api/factory' || path === '/compute/api/factory/') return computeApiError('not found', 404, allowedOrigin, credentials);
   if ((path === '/compute/api/v1' || path === '/compute/api/v1/') && (request.method === 'GET' || request.method === 'HEAD')) {
     return computeV1Gateway(request, allowedOrigin, credentials);
   }
@@ -3404,7 +3491,7 @@ export async function computeApi(request, env, allowedOrigin) {
     kitSigUrl.searchParams.set('url', COMPUTE_KIT_MANIFEST.url);
     return kitStub.fetch(new Request(kitSigUrl.href, request));
   }
-  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/factory' || path === '/compute/api/factory/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path === '/compute/api/org-enroll' || path.startsWith('/compute/api/org-enroll/') || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
+  if (path === '/compute/api/event' || path === '/compute/api/event/' || path === '/compute/api/metrics' || path === '/compute/api/metrics/' || path === '/compute/api/chain' || path === '/compute/api/chain/' || path === '/compute/api/verify' || path === '/compute/api/verify/' || path === '/compute/api/network' || path === '/compute/api/network/' || path === '/compute/api/pricing' || path === '/compute/api/pricing/' || path === '/compute/api/models' || path === '/compute/api/models/' || path.startsWith('/compute/api/sponsors') || path.startsWith('/compute/api/providers/') || path === '/compute/api/providers' || path === '/compute/api/org-enroll' || path.startsWith('/compute/api/org-enroll/') || path.startsWith('/compute/api/keys') || path.startsWith('/compute/api/guest-keys') || path.startsWith('/compute/api/night') || path.startsWith('/compute/api/credits') || path.startsWith('/compute/api/provider/') || path.startsWith('/compute/api/receipts') || path.startsWith('/compute/api/referral') || path === '/compute/api/v1' || path === '/compute/api/v1/' || path.startsWith('/compute/api/v1/') || path === '/compute/api/jobs' || path === '/compute/api/jobs/' || /^\/compute\/api\/jobs\/[A-Za-z0-9_-]+\/?$/.test(path)) {
     const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
     if (!stub) return json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
     try {
@@ -3412,10 +3499,6 @@ export async function computeApi(request, env, allowedOrigin) {
     } catch {
       return computeApiError('internal error; the request may already be accepted. If you received a job id (job_id field or X-Dasha-Job header), GET /compute/api/jobs/<id> for the recorded outcome; retry with the same Idempotency-Key to avoid a second charge.', 500, allowedOrigin, credentials, 'server_error');
     }
-  }
-  if (path === '/compute/api/launch-notify' || path === '/compute/api/launch-notify/' || path === '/compute/api/launch-notify/count' || path === '/compute/api/launch-notify/count/') {
-    const stub = env?.LOBBY?.get(env.LOBBY.idFromName('public'));
-    return stub ? stub.fetch(request) : json({ error: 'community network unavailable' }, 503, allowedOrigin, credentials);
   }
   if (path !== '/compute/api/chat' && path !== '/compute/api/chat/') return computeApiError('not found', 404, allowedOrigin, credentials);
   if (request.method !== 'POST') return maybeHead(request, computeApiError('method not allowed', 405, allowedOrigin, credentials));

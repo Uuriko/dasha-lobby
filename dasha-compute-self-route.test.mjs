@@ -22,6 +22,10 @@ assert.match(html, /ownMacOnline/);
 assert.match(html, /paintAskMyMac/);
 assert.match(html, /route=['"]self['"]/);
 assert.match(html, /Your Mac is offline\./);
+assert.match(html, /self-route-composer:2026-09-18/);
+assert.match(html, /id=["']ask-composer["'][\s\S]*?id=["']ask-mymac["'][\s\S]*?id=["']ask-more["']/, 'My Mac chip lives in the composer, not More');
+assert.match(html, /preferSelfOff/);
+assert.match(html, /else if\(!preferSelfOff&&eng!=='self'&&eng!=='hosted'\)preferSelf=true/, 'own online Mac prefers self');
 assert.doesNotMatch(html, /fake Mac|Designer|#44/);
 
 const now = 1_000_000;

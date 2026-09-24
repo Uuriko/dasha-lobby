@@ -297,6 +297,14 @@ footer.listed-on img{display:block;height:32px;width:auto}
 .presence-act-boot{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.55em;row-gap:2px;margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
 .presence-act-boot[hidden]{display:none!important}
 .presence-act-boot .honesty-sep{color:var(--line);user-select:none}
+/* compute-grid:2026-09-18 — quiet live strip; honest counts only */
+.compute-grid{margin:0 0 22px;display:grid;gap:8px}
+.compute-grid-kicker{margin:0;color:var(--muted);font:400 12px/1.3 Arial,Helvetica,sans-serif;letter-spacing:.02em}
+.compute-grid-stats{display:flex;flex-wrap:wrap;gap:10px 22px;font-variant-numeric:tabular-nums}
+.compute-grid-cell{display:grid;gap:2px;min-width:3.5rem}
+.compute-grid-cell[hidden]{display:none!important}
+.compute-grid-val{color:var(--paper);font:800 15px/1.15 Arial,Helvetica,sans-serif}
+.compute-grid-lbl{color:var(--muted);font:400 11px/1.2 Arial,Helvetica,sans-serif}
 /* Cinematic Start depth — CSS only. No dancer mesh. */
 #step-gate.gate-cinematic{position:relative;isolation:isolate}
 #step-gate.gate-cinematic::before{content:'';position:absolute;left:50%;top:-3rem;width:min(46rem,148%);height:22rem;transform:translateX(-50%);pointer-events:none;z-index:0;background:radial-gradient(ellipse 52% 48% at 50% 40%,color-mix(in srgb,var(--acid) 16%,transparent) 0%,transparent 64%),radial-gradient(ellipse 82% 72% at 50% 18%,color-mix(in srgb,var(--violet) 26%,#2a1730) 0%,transparent 72%);filter:blur(10px)}
@@ -341,7 +349,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
 @media(prefers-reduced-motion:reduce){#top-state .t-digit-group .t-digit{animation:none!important;filter:none!important;transform:none!important}}
 </style>
 <link rel="describedby" href="/llms.txt" type="text/plain"><link rel="describedby" href="/llms-full.txt" type="text/plain"></head>
-<body data-step="gate"><a href="/launch" style="position:fixed;right:14px;bottom:14px;z-index:9999;background:#070608;border:1px solid #dfff00;color:#dfff00;font:800 12px/1 Arial,Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:10px 14px;border-radius:999px;text-decoration:none">Product Hunt · Sep 18</a>
+<body data-step="gate">
 <main class="shell">
 <a class="skip" href="#prompt">Skip to do</a>
 <header class="topbar">
@@ -362,6 +370,24 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <span class="honesty-sep" id="gate-inspect-sep" aria-hidden="true" hidden>·</span>
     <span class="tf-micro" id="gate-inspect-live" hidden></span>
   </p>
+  <!-- compute-grid:2026-09-18 — Macs on the network; live /network + /factory only; omit missing/zero volume -->
+  <div class="compute-grid" id="compute-grid" data-grid="live" aria-live="polite">
+    <p class="compute-grid-kicker">Macs on the network.</p>
+    <div class="compute-grid-stats">
+      <div class="compute-grid-cell" id="grid-macs-cell">
+        <span class="compute-grid-val" id="grid-macs">—</span>
+        <span class="compute-grid-lbl">online</span>
+      </div>
+      <div class="compute-grid-cell" id="grid-tokens-cell" hidden>
+        <span class="compute-grid-val" id="grid-tokens">—</span>
+        <span class="compute-grid-lbl">tokens · 24h</span>
+      </div>
+      <div class="compute-grid-cell" id="grid-requests-cell" hidden>
+        <span class="compute-grid-val" id="grid-requests">—</span>
+        <span class="compute-grid-lbl">requests · 24h</span>
+      </div>
+    </div>
+  </div>
     <div class="side" id="side" role="group" aria-label="Console side">
     <button type="button" class="side-btn" id="side-buyer" aria-pressed="false">Use compute</button>
     <button type="button" class="side-btn" id="side-provider" aria-pressed="false">Run a Mac</button>
@@ -534,6 +560,8 @@ footer.listed-on img{display:block;height:32px;width:auto}
 <section class="tf-step" id="step-model" data-tf="model" hidden>
   <button type="button" class="tf-back" data-back="how">← Back</button>
   <h1 class="tf-q">Which model?</h1>
+  <!-- model-license:2026-09-18 — quiet; not a first-paint wall -->
+  <p class="fine" id="model-license-fine">License-cleared weights only.</p>
   <div class="tf-choices" id="model-choices" role="group" aria-label="Model"></div>
   <div class="model-row" id="model-row" hidden>
     <label for="model">Model</label>
@@ -597,6 +625,11 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <div class="ask-links">
       <button class="tf-quiet" id="change-engine" type="button" title="Change engine" aria-label="Change engine">Hosted</button>
       <select id="ask-model" class="ask-model-pill" aria-label="Model" hidden></select>
+      <!-- self-route-composer:2026-09-18 — My Mac stays in the composer, not buried in More -->
+      <button type="button" class="tf-quiet" id="ask-prefer-mymac" title="Prefer your Mac when online · else Community" aria-label="Prefer my Mac" aria-pressed="false" hidden>Prefer my Mac</button>
+      <span class="ask-door-sep" id="ask-prefer-mymac-sep" aria-hidden="true" hidden>·</span>
+      <button type="button" class="tf-quiet" id="ask-mymac" title="Run on your Mac · free" aria-label="My Mac · free" hidden>My Mac · free</button>
+      <span class="ask-door-sep" id="ask-mymac-sep" aria-hidden="true" hidden>·</span>
     </div>
     <div class="actions" id="ask-send">
       <button class="primary" id="run-demo" type="button" hidden disabled>Run</button>
@@ -606,7 +639,8 @@ footer.listed-on img{display:block;height:32px;width:auto}
   </div>
     <p class="fine" id="ask-free-fine">3 free / 10 min · then credits.</p>
     <!-- buyer-live-models:2026-09-08 -->
-    <p class="fine" id="buyer-live-line" aria-live="polite">No Mac online.</p>
+    <!-- ssr-mac-pending:2026-09-17: ellipsis until network known; never claim offline while unknown -->
+    <p class="fine" id="buyer-live-line" aria-live="polite" data-ssr-mac="pending">…</p>
     <nav class="ask-nav" id="ask-nav" aria-label="Ask">
       <button type="button" class="tf-quiet" id="ask-provide" title="Join with a Mac" aria-label="Provide · Join with a Mac">Provide</button>
       <button type="button" class="tf-quiet" id="ask-ocm" title="OCM console" aria-label="Marketplace · OCM console">Marketplace</button>
@@ -615,10 +649,6 @@ footer.listed-on img{display:block;height:32px;width:auto}
     <details class="ask-more" id="ask-more">
       <summary class="ask-more-sum">More</summary>
     <div class="ask-doors" id="ask-doors">
-      <button type="button" class="tf-quiet" id="ask-prefer-mymac" title="Prefer your Mac when online · else Community" aria-label="Prefer my Mac" aria-pressed="false" hidden>Prefer my Mac</button>
-      <span class="ask-door-sep" id="ask-prefer-mymac-sep" aria-hidden="true" hidden>·</span>
-      <button type="button" class="tf-quiet" id="ask-mymac" title="Run on your Mac · free" aria-label="My Mac · free" hidden>My Mac · free</button>
-      <span class="ask-door-sep" id="ask-mymac-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="ask-community" title="Community Mac online" aria-label="Community" hidden>Community</button>
       <span class="ask-door-sep" id="ask-community-sep" aria-hidden="true" hidden>·</span>
       <button type="button" class="tf-quiet" id="ask-hosted" title="Hosted" aria-label="Hosted" hidden>Hosted</button>
@@ -846,7 +876,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
 
 <section class="tf-step" id="step-night" data-tf="night" hidden>
   <button type="button" class="tf-back" data-back="how">← Back</button>
-  <h1 class="tf-q" id="night-q">No Mac online.</h1>
+  <h1 class="tf-q" id="night-q" data-ssr-mac="pending">…</h1>
   <div id="night-offer" hidden role="status" aria-live="polite">
     <p class="fine" id="night-offer-copy" hidden aria-hidden="true"></p>
     <div class="tf-choices" id="night-choices">
@@ -896,6 +926,7 @@ footer.listed-on img{display:block;height:32px;width:auto}
   <p class="fine" id="provide-prefer-mlx">Prefer MLX when you can · Ollama ≥0.33.1 · models on internal SSD.</p>
   <p class="fine" id="provide-keepalive">Keep Ollama warm · OLLAMA_KEEP_ALIVE=-1 on launch agent · advertise ≠ mid-Ask inference.</p>
   <p class="fine" id="provide-softdoctor">Doctor soft-warns · battery / Low Power / thermal / SIP · never fails solely · not attestation.</p>
+  <p class="fine" id="provide-license-fine">Advertise license-cleared models only.</p>
   <section id="provider-faq">
     <p class="fine" id="provide-faq-earn">Earn $0.05/job + $0.01/1k completion tokens. Buyer price is separate: $0.05 per successful job, billed from prepaid credits.</p>
     <p class="fine" id="provide-faq-demand">Busy network · more jobs. Stay warm. Same rate.</p>
@@ -970,7 +1001,7 @@ DASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b python3 provider/agent.py --
         <p class="fine" id="buyer-faq-credits">Community spends credits. Your Mac is free.</p>
         <p class="fine" id="buyer-faq-cap">Key cap $5 / month · 402 after.</p>
       </div>
-      <p class="fine" id="buyer-live-line-build" aria-live="polite">No Mac online.</p>
+      <p class="fine" id="buyer-live-line-build" aria-live="polite" data-ssr-mac="pending">…</p>
       <p class="fine" id="compat-lead">OpenAI-compatible. Change the base URL.</p>
       <p class="fine" id="build-free-fine">3 free / 10 min · then credits.</p>
       <p class="fine" id="compat-openai-label">OpenAI</p>
@@ -1001,7 +1032,7 @@ https://lobby.getdasha.com/compute/api/v1</pre>
 
 <aside id="presence-act-boot" class="fine presence-act-boot" aria-live="polite" data-presence-act="boot">
   <span id="presence-strip-boot" data-presence="live" title="Community advertising ≠ OCM enrolled">
-    <span id="presence-community">No Mac advertising</span>
+    <span id="presence-community" data-ssr-mac="pending">…</span>
     <span class="honesty-sep" id="presence-enrolled-boot-sep" aria-hidden="true" hidden>·</span>
     <span id="presence-enrolled-boot" hidden></span>
   </span>
@@ -1014,7 +1045,7 @@ https://lobby.getdasha.com/compute/api/v1</pre>
   <span id="honesty-hosted" class="honesty-ok">Hosted · live</span>
   <span class="honesty-sep" aria-hidden="true">·</span>
   <span id="presence-strip" data-presence="live" title="Community advertising ≠ OCM enrolled">
-    <span id="honesty-macs">No Mac online</span>
+    <span id="honesty-macs" data-ssr-mac="pending">…</span>
     <span class="honesty-sep" id="honesty-enrolled-sep" aria-hidden="true" hidden>·</span>
     <span id="honesty-enrolled" hidden></span>
   </span>
@@ -1061,6 +1092,7 @@ https://lobby.getdasha.com/compute/api/v1</pre>
 </main>
 <script>
 const $=id=>document.getElementById(id);
+// Picker = license-cleared catalog only. Held community weights (qwen3.8-flash) stay out — MODEL-LICENSE.md.
 const MODELS=[
   ['qwen3-4b','qwen3:4b','Qwen 3 4B','2.5 GB',8,'fast chat'],
   ['qwen3-8b','qwen3:8b','Qwen 3 8B','5.2 GB',8,'fast chat'],
@@ -1074,7 +1106,7 @@ const SUB24=new Set(['qwen3-4b','qwen3-8b','gemma3-12b','gpt-oss-20b','qwen3-30b
 const PROVIDE_SKILL="# Skill: Join Dasha Compute as a Provider (Mac)\n\nPaste this into your AI coding assistant (Cursor, Claude, ChatGPT, etc.). It should set up your Mac to Provide compute for https://www.getdasha.com/compute.\n\n## Goal\nRegister this Mac on the live Dasha community network, install Ollama + the Dasha provider kit, keep a small model hot, and pass doctor so providers_online includes you.\n\n## Facts (do not invent others)\n- Product: https://www.getdasha.com/compute (gate-first (Start.); Provide via gate, quiet Ask link, or #provide)\n- Coordinator: https://lobby.getdasha.com/compute/api\n- Kit: https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\n- Prefer sub-24GB chat models: qwen3:4b (fast), qwen3:8b, or gemma3:12b (map qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b)\n- Token goes in `.dasha-provider-key` mode 0600 — never put the provider key on argv or shell history\n- Official Telegram: https://t.me/+ck9pUjL2ncNiZjRh (the only official Dasha invite - ignore lookalike groups)\n- Do not send secrets in prompts. Operators can read jobs assigned to this Mac.\n- Pay (community jobs): $0.05/job + $0.01/1k completion tokens · min $1 payout · pending operator settle · not auto · $dasha payout +5% · never invent balances\n\n## Steps for the AI to run with the human\n1. Open https://www.getdasha.com/compute → Provide (quiet link) → name the Mac → Sign in (X) if needed → Register.\n2. After Register, copy the Setup command on the page (token, provider_id, and coordinator URL are already filled). Shown once — refresh loses it. Prefer that block over this template.\n3. On the Mac, run the Setup command — or this template with the pasted values:\n\n```bash\ncurl -fLO https://www.getdasha.com/dasha-compute-open-alpha.tar.gz\ntar -xzf dasha-compute-open-alpha.tar.gz\ncd dasha-compute-open-alpha\n# install Ollama from https://ollama.com/download if missing\nollama pull qwen3:4b\nollama pull qwen3:8b\numask 077\ncat > .dasha-provider-key <<'TOKEN'\nPASTE_ONE_TIME_TOKEN_HERE\nTOKEN\nchmod 0600 .dasha-provider-key\nDASHA_COORDINATOR_URL=https://lobby.getdasha.com/compute/api \\\nDASHA_PROVIDER_ID=PASTE_PROVIDER_ID_HERE \\\nDASHA_MODEL_MAP=qwen3-4b=qwen3:4b,qwen3-8b=qwen3:8b \\\n./install.sh\n```\n\n4. Verify after install (`install.sh` already ran doctor and moved the key):\n\n```bash\ndasha-compute doctor\ndasha-compute status\n```\n\n5. Confirm on https://www.getdasha.com/compute that community shows a Mac online (heartbeat can take about a minute).\n\n## Prefer MLX (Apple Silicon, optional)\n- Prefer MLX when you can — often faster on Apple Silicon; Ollama still works.\n- Recommend Ollama ≥0.33.1 on Mac providers (doctor soft-warns if older; never fails solely for an older build). Do not invent kit env vars for MLX.\n- Keep models on internal SSD — slow/external storage risks Metal timeouts (Ollama 0.33.1 notes).\n- Official Ollama path (live docs): Ollama ≥0.33.1 + models tagged `*-mlx` (example: `gemma4:12b-mlx`). Doctor prints an engine/MLX badge when a structured-output-capable MLX build is detected.\n- Else quiet note: for speed, LM Studio MLX server or `mlx_lm`; keep mapped Ollama chat models so Dasha heartbeats still work.\n- `dasha-compute doctor` prints a soft `mlx` hint when detectable; never fails solely for missing MLX.\n- After install, `dasha-compute benchmark` writes measured tok/s; doctor soft-hints if missing. Ask shows measured tok/s only when heartbeats include benchmarks — never invent.\n- Stay on sub-24GB chat (qwen3:4b / qwen3:8b / gemma3:12b). Do not require a 36GB bar.\n\n## Host power / thermal / SIP (soft)\n- `dasha-compute doctor` soft-warns when on battery, Low Power Mode, elevated thermal pressure, or SIP disabled/unreadable (Darwin best-effort).\n- Never fails solely for battery / AC / Low Power / thermal / SIP.\n- Local OS health only — never claims Secure Enclave, TEE, Nitro, or network `sip_enabled` attestation.\n\n## Keep-alive (sub-24GB)\n- Keep the chat model loaded via Ollama service keep-alive (OLLAMA_KEEP_ALIVE=-1 on the launch agent / service — a shell export alone is not enough for the macOS app).\n- A sleeping Mac is offline to buyers: the agent holds `caffeinate -is` while it runs (system sleep prevented on AC; battery can still sleep). For an always-on server Mac, also `sudo pmset -a sleep 0`. Doctor soft-warns when system sleep is enabled.\n- Do not pin 27B on a 16–24GB Air for interactive chat; use 4B/8B/12B.\n- `dasha-compute doctor` soft-hints when a mapped model looks ≥27B, and when mapped chat is cold in Ollama `/api/ps` (keep-alive). Never fails solely for size or keep-alive.\n- Advertising/heartbeat OK while mid-Ask fails with `provider inference failed: URLError` → localhost Ollama on `127.0.0.1:11434` was refused/reset. Soft doctor does not block advertise alone — fix Ollama keep-alive / restart service.\n\n## Success\n- dasha-compute doctor exits 0\n- Heartbeats succeed\n- A Community Run from another session can complete on this Mac\n\n## If stuck\n- Re-register for a fresh token\n- Check dasha-compute logs\n- Ensure outbound HTTPS to lobby.getdasha.com works (no inbound ports required)\n- Mid-Ask `URLError` / partial stream while still online → `curl -sS http://127.0.0.1:11434/api/ps` (and `/api/tags`); set OLLAMA_KEEP_ALIVE=-1 on the Ollama launch agent; restart Ollama; re-run `dasha-compute doctor` (keepalive soft is OK — exit should still be 0)\n";
 const USE_SKILL="# Skill: Use Dasha Compute (run a prompt)\n\nPaste this into your AI assistant so it can help you run https://www.getdasha.com/compute — Hosted demo or community Macs — without becoming a provider.\n\n## Goal\nGet a working answer from Dasha Compute: Hosted (Cloudflare Workers AI) or Community/Mixture (Macs), including queue-when-no-Mac.\n\n## Facts\n- URL: https://www.getdasha.com/compute\n- Flow is Typeform-style: cold boot → Start. (Do / Provide / Pay / Credits). Do → Community when a Mac is advertising · else Hosted · quiet Provide / Marketplace / Host · Change engine for Hosted/Community/Mixture · model if community → Run. Pay → Top up (USDC / $dasha) / Sponsor (tip USDC / $dasha; wallet OK without login · quiet named tip credits when signed in). Credits → balance + Use credits / Top up. No card yet.\n- Login with X is required to Run or queue\n- Hosted model: gpt-oss-20b · 3 free / 10 min · then credits\n- API base (power users): https://lobby.getdasha.com/compute/api/v1\n- API billing: non-self `v1/chat/completions` spends prepaid credits via USDC/$dasha ($0.05/job); self-route (own Mac) free; key spend cap is runaway protection — not a free allowance. Top up via Pay / Credits · no card.\n- API usage: OpenAI-style `usage` on non-stream JSON and on the SSE final `finish_reason=stop` chunk (v1 chat/completions + Hosted Ask). `GET /compute/api/jobs/:id` returns stored `usage` (+ `route`) when present — never invent tokens. See `GET /compute/api/v1` → `usage`.\n- Marketplace: https://www.getdasha.com/compute/ocm\n- Which key / which base: Compute chat uses `dsk_` or guest `dgk_` on https://lobby.getdasha.com/compute/api/v1. OCM uses `ocm_live_` on https://www.getdasha.com/compute/ocm/v1. Never swap. Compute X login is not an OCM session.\n- Do not paste secrets into prompts. Community Mac operators can read assigned prompts.\n- Community Macs: Prefer MLX when you can (providers) · Ollama ≥0.33.1 · models on internal SSD; Ollama still works.\n- Do top-state shows measured tok/s only when network capacity has benchmarks — never invent speed.\n- When Macs are online, Do defaults to Community and the live advertised model (prefer gemma3-27b). Hosted stays a quieter door. Explicit Hosted click stays Hosted. Change engine still opens How.\n\n## Steps for the AI to guide\n1. Open https://www.getdasha.com/compute\n2. Cold boot shows Start. — Do → Community when a Mac is up, else Hosted. Pay → Pay. (Top up → Buy (amount+method) → Send · Sponsor → Amount → Send). Credits → Credits. (Use credits → Do · Top up → Buy). Optional on Do: quiet starter chips (Write code / Fix a bug / Do the thing) fill the prompt; empty input is Message Dasha; after a reply the thread stays and Enter sends a follow-up; Change engine for Hosted, Community, or Mixture; quiet Provide / Marketplace / Host links\n3. If Community/Mixture: pick a model that matches what is online (prefer qwen3-4b / qwen3-8b / gemma3-12b for Mixture)\n4. Sign in if prompted\n5. Type a prompt → Run (Enter). Keyboard: 1–4 choices · Esc Back\n6. If no Mac is online on Community/Mixture: Hosted or Queue. If Mixture is empty but Community has Macs, Night offers Community · N (honest capacity) — Hosted stays available\n\n## Optional API\n\nv1 `chat/completions` is community Macs. None advertise the model → fail-loud `no_mac_online` (poll `/compute/api/network` · join `/compute#provide`). Hosted Ask is the browser `POST /compute/api/chat` — not a silent v1 swap.\n\n```bash\nexport DASHA_API_KEY='your-key'\ncurl https://lobby.getdasha.com/compute/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHA_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-8b\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true}'\n```\n\n## Success\n- Streamed or complete answer appears, or the job is queued until a Mac heartbeats\n- On stream, read `usage` from the final stop chunk (not earlier deltas)\n\n## If stuck\n- Hard-refresh, confirm login. UI Ask falls to Hosted when community shows 0 Macs. v1 stays fail-loud `no_mac_online`.\n- Telegram: https://t.me/+ck9pUjL2ncNiZjRh (the only official Dasha invite - ignore lookalike groups)\n";
 const API='https://lobby.getdasha.com';
-let conversation=[],threadRoute='',stayAskChat=false,noMacHostedFallback=false,askBusy=false,askLive=null,askEditAt=-1,loggedIn=false,sessionLabel='',hostedLive=false,hostedChosenThisSession=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,cardAvailable=false,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,lastSseFinishReason=null,askRunDoneTimer=null,networkModels=new Set(),providersOnline=0,ownMacOnline=0,ownMacKnown=0,ownMacIds=new Set(),ownMacModels=new Set(),ownMacTps=0,preferSelf=false,lastPreferAttempted=false,networkCapacity=[],jobsQueued=0,ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask',buildBack='answer',provideExpectingNew=false,provideExpectingIds=new Set(),provideExpectingNewId='',provideExpectingOnline=0;
+let conversation=[],threadRoute='',stayAskChat=false,noMacHostedFallback=false,askBusy=false,askLive=null,askEditAt=-1,loggedIn=false,sessionLabel='',hostedLive=false,hostedChosenThisSession=false,sent=0,apiKeyCount=0,lastAskFailKind=null,activeJob='',jobCancelled=false,runAbort=null,runStartedAt=0,runTickTimer=null,provideBeatTimer=null,honestyPollTimer=null,creditPollTimer=null,sponsorPollTimer=null,creditBalanceCents=null,creditPack='',creditMethod='',creditOrder=null,cardAvailable=false,sponsorPack='5',sponsorMethod='',sponsorOrder=null,sponsorTarget='network',sponsorCustomCents=null,earnLoaded=false,earnTotalUsdc=null,earnTotalJobs=0,earnMethod='usdc',earnPref=null,earnPending=[],earnRates=null,settled24h={tokens:0,jobs:0,cents:0},lastPaidReceipt=null,lastSseUsage=null,lastSseSettle=null,lastSseReceipt=null,lastSseFinishReason=null,askRunDoneTimer=null,networkModels=new Set(),providersOnline=null,ownMacOnline=0,ownMacKnown=0,ownMacIds=new Set(),ownMacModels=new Set(),ownMacTps=0,preferSelf=false,preferSelfOff=false,lastPreferAttempted=false,networkCapacity=[],jobsQueued=0,ocmHosts=null,tfStep='gate',nightQueueIntent=false,cameFromHow=false,cameFromGate=false,provideBack='ask',buildBack='answer',provideExpectingNew=false,provideExpectingIds=new Set(),provideExpectingNewId='',provideExpectingOnline=0;
 
 // Funnel telemetry (task 22): aggregate counters only. anon id is a local UUID, never an identity.
 function anonId(){let id='';try{id=localStorage.getItem('dasha-anon-id')||''}catch(e){}if(!id){try{id=crypto.randomUUID()}catch(e){id='00000000-0000-4000-8000-'+String(Math.random()).slice(2,14).padEnd(12,'0')}try{localStorage.setItem('dasha-anon-id',id)}catch(e){}}return id}
@@ -2409,10 +2441,12 @@ function paintAskMyMac(){
   const chip=$('ask-mymac'),sep=$('ask-mymac-sep'),prefer=$('ask-prefer-mymac'),preferSep=$('ask-prefer-mymac-sep'),engSelf=$('eng-self');
   const online=!!loggedIn&&ownMacOnline>=1;
   const known=!!loggedIn&&ownMacKnown>=1;
+  const eng=$('engine')?.value||'hosted';
   // Soft Prefer stays visible when an owned Mac is registered but offline — hard My Mac · free stays fail-closed.
   const showPrefer=online||known;
   const showHard=online;
   if(!online)preferSelf=false;
+  else if(!preferSelfOff&&eng!=='self'&&eng!=='hosted')preferSelf=true;
   if(prefer){
     prefer.hidden=!showPrefer;
     prefer.setAttribute('aria-pressed',preferSelf?'true':'false');
@@ -2621,11 +2655,14 @@ async function auth(){
   hostedLive=status?.live===true;
   loggedIn=session?.loggedIn===true;
   sessionLabel=loggedIn?sessionLabelFrom(session):'';
-  networkModels=new Set(network?.models_available||[]);
-  providersOnline=Number.isInteger(network?.providers_online)?network.providers_online:0;
-  networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];
-  applyJobsQueued(network);
-  cardAvailable=network?.card_available===true;
+  // Only stamp providersOnline from a fulfilled network response — failed fetch stays null (pending …), never claim offline while unknown.
+  if(network){
+    networkModels=new Set(network?.models_available||[]);
+    providersOnline=Number.isInteger(network?.providers_online)?network.providers_online:0;
+    networkCapacity=Array.isArray(network?.capacity)?network.capacity:[];
+    applyJobsQueued(network);
+    cardAvailable=network?.card_available===true;
+  }
   $('live-dot').classList.toggle('live',hostedLive||providersOnline>=1);
   window.__dashaAuthReady=true;
   updateProvideAuth();
@@ -2634,7 +2671,7 @@ async function auth(){
   if(tfStep==='night')paintNightAuth();
   if(tfStep==='ask'||tfStep==='how'||tfStep==='model')updateRun();
   if(loggedIn){loadProviders();loadApiKeys();loadCreditsBalance()}
-  else {creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;ownMacOnline=0;ownMacKnown=0;ownMacIds=new Set();ownMacModels=new Set();ownMacTps=0;preferSelf=false;clearProvideExpecting();paintCreditsBalance();paintEarn();paintAnswerApi();paintAskMyMac()}
+  else {creditBalanceCents=null;apiKeyCount=0;earnLoaded=false;earnTotalUsdc=null;earnTotalJobs=0;earnPending=[];earnRates=null;ownMacOnline=0;ownMacKnown=0;ownMacIds=new Set();ownMacModels=new Set();ownMacTps=0;preferSelf=false;preferSelfOff=false;clearProvideExpecting();paintCreditsBalance();paintEarn();paintAnswerApi();paintAskMyMac()}
   paintPayMethod();
   paintGateAuth();
   paintSettled24h();
@@ -2735,6 +2772,7 @@ function paintNightAuth(reason){
 function paintNightH1(){
   const h1=$('night-q')||document.querySelector('#step-night .tf-q');
   if(!h1)return;
+  if(!Number.isInteger(providersOnline)){h1.textContent='…';return;}
   const eng=$('engine')?.value||'';
   if(providersOnline===0)h1.textContent='No Mac online.';
   else if(eng==='mixture')h1.textContent='No Mixture Mac.';
@@ -3467,8 +3505,34 @@ function paintGateProof(){
     }
   }
 }
+function paintComputeGrid(){
+  // Honest live strip. Unknown → dash. Known-zero Macs → dash (no 0 theater). Tokens/requests only when factory volume > 0.
+  const macs=$('grid-macs'),tokCell=$('grid-tokens-cell'),reqCell=$('grid-requests-cell'),tok=$('grid-tokens'),req=$('grid-requests');
+  if(macs){
+    if(Number.isInteger(providersOnline)&&providersOnline>=1){
+      macs.textContent=String(providersOnline);
+      macs.title=providersOnline===1?'1 Mac advertising':'Community advertising (providers_online)';
+    }else{
+      macs.textContent='—';
+      macs.title=Number.isInteger(providersOnline)?'No Mac advertising':'Waiting on /compute/api/network';
+    }
+  }
+  const tokens=Math.max(0,Math.floor(Number(settled24h?.tokens)||0));
+  const jobs=Math.max(0,Math.floor(Number(settled24h?.jobs)||0));
+  if(tokCell){
+    const show=tokens>0;
+    tokCell.hidden=!show;
+    if(show&&tok)tok.textContent=formatSettledTok(tokens);
+  }
+  if(reqCell){
+    const show=jobs>0;
+    reqCell.hidden=!show;
+    if(show&&req)req.textContent=String(jobs);
+  }
+}
 function paintPresenceActBoot(){
   paintGateProof();
+  paintComputeGrid();
   const boot=$('presence-act-boot');
   if(!boot)return;
   const onGate=tfStep==='gate';
@@ -3477,26 +3541,32 @@ function paintPresenceActBoot(){
   if(!onGate)return;
   const community=$('presence-community');
   if(community){
-    const n=Number.isInteger(providersOnline)?providersOnline:0;
-    let model='';
-    let tpsLabel='';
-    if(n>=1){
-      const row=(networkCapacity||[])[0];
-      const tps=Number(row?.tokens_per_second);
-      const mp=Number(row?.measured_providers||0);
-      model=row?.model?String(row.model):'';
-      // Advertising only (providers_online) — never pad enrolled OCM hosts.
-      if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
-      if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
+    if(!Number.isInteger(providersOnline)){
+      community.textContent='…';
+      community.removeAttribute('title');
+      community.removeAttribute('aria-label');
+    }else{
+      const n=providersOnline;
+      let model='';
+      let tpsLabel='';
+      if(n>=1){
+        const row=(networkCapacity||[])[0];
+        const tps=Number(row?.tokens_per_second);
+        const mp=Number(row?.measured_providers||0);
+        model=row?.model?String(row.model):'';
+        // Advertising only (providers_online) — never pad enrolled OCM hosts.
+        if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
+        if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
+      }
+      if(n===0)community.textContent='No Mac advertising';
+      else{
+        const bits=[n+' advertising'];
+        if(model)bits.push(model);
+        if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
+        community.textContent=bits.join(' · ');
+      }
+      community.title=n>=1?'Community advertising (providers_online) · not OCM enrolled':'Community advertising · none online';
     }
-    if(n===0)community.textContent='No Mac advertising';
-    else{
-      const bits=[n+' advertising'];
-      if(model)bits.push(model);
-      if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
-      community.textContent=bits.join(' · ');
-    }
-    community.title=n>=1?'Community advertising (providers_online) · not OCM enrolled':'Community advertising · none online';
   }
   const enrolled=$('presence-enrolled-boot');
   const enrolledSep=$('presence-enrolled-boot-sep');
@@ -3520,9 +3590,16 @@ function paintPresenceActBoot(){
   }
 }
 function paintBuyerLiveLine(){
-  // Show Live. {models_available ids} only when providers_online>=1 and models_available nonempty.
-  // Else No Mac online. — never invent a model. Hosted Ask path stays. No tok/s. No $0.05/job.
-  const n=Number.isInteger(providersOnline)?providersOnline:0;
+  // Pending (…) until network known. Live. ids only when providers_online>=1 + models nonempty.
+  // Known-zero → No Mac online. Never invent a model. Hosted Ask stays. No tok/s. No $0.05/job.
+  if(!Number.isInteger(providersOnline)){
+    for(const id of ['buyer-live-line','buyer-live-line-build']){
+      const el=$(id);
+      if(el)el.textContent='…';
+    }
+    return;
+  }
+  const n=providersOnline;
   const ids=[...(networkModels||[])].map(id=>String(id||'').trim()).filter(Boolean);
   const live=n>=1&&ids.length>0;
   const text=live?('Live. '+ids.join(' ')):'No Mac online.';
@@ -3570,41 +3647,53 @@ function paintHonestyPanel(){
   }
   const macs=$('honesty-macs');
   if(macs){
-    const n=Number.isInteger(providersOnline)?providersOnline:0;
-    let tpsLabel='';
-    let model='';
-    if(n>=1){
-      const row=(networkCapacity||[])[0];
-      const tps=Number(row?.tokens_per_second);
-      const mp=Number(row?.measured_providers||0);
-      model=row?.model?String(row.model):'';
-      // Advertising only (providers_online) — never pad enrolled OCM hosts.
-      if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
-      // Live measured only — stamp capacity[].tokens_per_second; never invent/pad.
-      if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
-    }
-    if(n===0)macs.textContent='No Mac online';
-    else{
-      // Quiet presence: N online · model id · ~tok/s — only fields live network has.
-      const bits=[n+' online'];
-      if(model)bits.push(model);
-      if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
-      macs.textContent=bits.join(' · ');
-    }
-    let title='';
-    if(n>=1&&(model||tpsLabel)){
-      const tbits=[];
-      if(model)tbits.push(model);
-      if(tpsLabel)tbits.push(tpsLabel+' tok/s measured');
-      title=tbits.join(' · ');
-    }
-    if(title){macs.title=title;macs.setAttribute('aria-label',title)}
-    else{macs.removeAttribute('title');macs.removeAttribute('aria-label')}
-    const strip=$('presence-strip');
-    if(strip){
-      strip.title='Community advertising ≠ OCM enrolled';
-      strip.dataset.advertising=String(n);
-      strip.dataset.enrolled=Number.isInteger(ocmHosts)?String(ocmHosts):'';
+    if(!Number.isInteger(providersOnline)){
+      macs.textContent='…';
+      macs.removeAttribute('title');
+      macs.removeAttribute('aria-label');
+      const strip=$('presence-strip');
+      if(strip){
+        strip.title='Community advertising ≠ OCM enrolled';
+        strip.dataset.advertising='';
+        strip.dataset.enrolled=Number.isInteger(ocmHosts)?String(ocmHosts):'';
+      }
+    }else{
+      const n=providersOnline;
+      let tpsLabel='';
+      let model='';
+      if(n>=1){
+        const row=(networkCapacity||[])[0];
+        const tps=Number(row?.tokens_per_second);
+        const mp=Number(row?.measured_providers||0);
+        model=row?.model?String(row.model):'';
+        // Advertising only (providers_online) — never pad enrolled OCM hosts.
+        if(!model&&networkModels&&networkModels.size)model=[...networkModels][0]||'';
+        // Live measured only — stamp capacity[].tokens_per_second; never invent/pad.
+        if(mp>=1&&Number.isFinite(tps)&&tps>0)tpsLabel=formatTokPerSec(tps)||'';
+      }
+      if(n===0)macs.textContent='No Mac online';
+      else{
+        // Quiet presence: N online · model id · ~tok/s — only fields live network has.
+        const bits=[n+' online'];
+        if(model)bits.push(model);
+        if(tpsLabel)bits.push('~'+tpsLabel+' tok/s');
+        macs.textContent=bits.join(' · ');
+      }
+      let title='';
+      if(n>=1&&(model||tpsLabel)){
+        const tbits=[];
+        if(model)tbits.push(model);
+        if(tpsLabel)tbits.push(tpsLabel+' tok/s measured');
+        title=tbits.join(' · ');
+      }
+      if(title){macs.title=title;macs.setAttribute('aria-label',title)}
+      else{macs.removeAttribute('title');macs.removeAttribute('aria-label')}
+      const strip=$('presence-strip');
+      if(strip){
+        strip.title='Community advertising ≠ OCM enrolled';
+        strip.dataset.advertising=String(n);
+        strip.dataset.enrolled=Number.isInteger(ocmHosts)?String(ocmHosts):'';
+      }
     }
   }
   const enrolled=$('honesty-enrolled');
@@ -4565,13 +4654,14 @@ $('ask-model')?.addEventListener('change',()=>{
 $('ask-prefer-mymac')?.addEventListener('click',()=>{
   if(ownMacOnline<1)return; // offline Prefer chip is visibility-only
   preferSelf=!preferSelf;
+  preferSelfOff=!preferSelf;
   cameFromHow=true;cameFromGate=false;
   if(!preferSelf){paintAskMyMac();updateRun();return}
   const eng=$('engine')?.value;
   if(eng!=='community'&&eng!=='mixture')setEngine('community',true);
   else{paintAskMyMac();updateRun();}
 });
-$('ask-mymac')?.addEventListener('click',()=>{if(ownMacOnline<1)return;preferSelf=false;cameFromHow=true;cameFromGate=false;setEngine('self');});
+$('ask-mymac')?.addEventListener('click',()=>{if(ownMacOnline<1)return;preferSelf=false;preferSelfOff=true;cameFromHow=true;cameFromGate=false;setEngine('self');});
 $('ask-community')?.addEventListener('click',()=>{if(providersOnline<1)return;preferSelf=false;cameFromHow=true;cameFromGate=false;setEngine('community',true);});
 $('ask-hosted')?.addEventListener('click',()=>{if(window.__dashaAuthReady&&hostedLive===false)return;hostedChosenThisSession=true;preferSelf=false;cameFromHow=true;cameFromGate=false;setEngine('hosted',true);});
 $('ask-provide')?.addEventListener('click',()=>{provideBack='ask';clearPaySponsorFine();showTf('provide-name');});

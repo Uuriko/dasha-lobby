@@ -24,6 +24,9 @@ const MODEL_PRICING_USD = { request: '0.05', prompt: '0', completion: '0', curre
 import {
   COMPUTE_GUEST_KEYS_PATH,
   GUEST_KEY_CHAT_MAX,
+  GUEST_KEY_MINT_WINDOW_MS,
+  GUEST_RATE_PREFIX,
+  pruneGuestRates,
   GUEST_KEY_KIND,
   GUEST_KEY_MINT_CURL,
   GUEST_KEY_MINT_MAX,
@@ -447,5 +450,57 @@ assert.equal(afterRevoke.status, 401, 'revoked guest key');
 assert.equal([...storage.rows.keys()].some(k => /email|phone|ssn/i.test(k)), false, 'no people-data');
 assert.equal([...storage.rows.keys()].some(k => String(k).startsWith('compute:api-key:key_')), false, 'must not invent developer keys');
 assert.ok(GUEST_KEY_CHAT_MAX >= 1);
+
+// #301: guest limits are durable (DO storage), serialized, hashed, and bounded.
+{
+  const env301 = { ALLOWED_ORIGINS: 'https://www.getdasha.com', LOBBY_SESSION_SECRET: 'guest-301-salt' };
+  const store = memoryStorage();
+  const ip = '198.51.100.77';
+  const mintReq = () => new Request('https://lobby.getdasha.com/compute/api/guest-keys', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip }, body: '{}',
+  });
+  const first = new ComputeNetwork({ storage: store }, env301);
+  for (let i = 0; i < GUEST_KEY_MINT_MAX; i++) assert.equal((await first.fetch(mintReq())).status, 201, `mint ${i + 1}`);
+  assert.equal((await first.fetch(mintReq())).status, 429, 'exhausted');
+  const restarted = new ComputeNetwork({ storage: store }, env301); // eviction / redeploy: fresh instance, same storage
+  assert.equal((await restarted.fetch(mintReq())).status, 429, 'exhausted mint limit survives DO restart');
+  const keys = [...store.rows.keys()].filter(k => k.startsWith(GUEST_RATE_PREFIX));
+  assert.ok(keys.length >= 1);
+  assert.equal(JSON.stringify([...store.rows]).includes(ip), false, 'client IP never stored in clear');
+  for (const k of keys) assert.match(k, /^compute:guest-rate:[0-9a-f]{64}$/);
+
+  // Concurrent mints cannot exceed the max.
+  const conc = memoryStorage();
+  const t0 = 1_800_000_000_000;
+  const results = await Promise.all(Array.from({ length: 12 }, () => mintGuestKey({ storage: conc, ip: '203.0.113.200', now: t0 })));
+  assert.equal(results.filter(r => r.status === 201).length, GUEST_KEY_MINT_MAX, 'concurrent mints capped');
+  assert.equal(results.filter(r => r.status === 429).length, 12 - GUEST_KEY_MINT_MAX);
+  assert.equal([...conc.rows.keys()].filter(k => k.startsWith('compute:api-key:')).length, GUEST_KEY_MINT_MAX, 'no extra keys created');
+
+  // Window resets exactly once: a full window later, max more mints, then 429 again.
+  assert.equal((await mintGuestKey({ storage: conc, ip: '203.0.113.200', now: t0 + GUEST_KEY_MINT_WINDOW_MS - 1 })).status, 429, 'still inside window');
+  const after = [];
+  for (let i = 0; i < GUEST_KEY_MINT_MAX + 2; i++) after.push((await mintGuestKey({ storage: conc, ip: '203.0.113.200', now: t0 + GUEST_KEY_MINT_WINDOW_MS + i })).status);
+  assert.deepEqual(after, [...Array(GUEST_KEY_MINT_MAX).fill(201), 429, 429], 'window resets once');
+
+  // Bounded retention: expired rows are pruned.
+  assert.ok(await pruneGuestRates(conc, t0 + 10 * GUEST_KEY_MINT_WINDOW_MS) >= 1);
+  assert.equal([...conc.rows.keys()].filter(k => k.startsWith(GUEST_RATE_PREFIX)).length, 0);
+
+  // Guest chat limit survives a restart.
+  const chatStore = memoryStorage();
+  const mintedChat = await mintGuestKey({ storage: chatStore, ip: '203.0.113.201' });
+  assert.equal(mintedChat.status, 201);
+  const chatReq = () => new Request('https://lobby.getdasha.com/compute/api/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${mintedChat.body.api_key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'qwen3-8b', messages: [{ role: 'user', content: 'hi' }] }),
+  });
+  const netA = new ComputeNetwork({ storage: chatStore }, env301);
+  for (let i = 0; i < GUEST_KEY_CHAT_MAX; i++) assert.notEqual((await netA.fetch(chatReq())).status, 429, `guest chat ${i + 1} under limit`);
+  assert.equal((await netA.fetch(chatReq())).status, 429, 'guest chat exhausted');
+  const netB = new ComputeNetwork({ storage: chatStore }, env301);
+  assert.equal((await netB.fetch(chatReq())).status, 429, 'guest chat limit survives DO restart');
+}
 
 console.log('dasha-compute-guest-key: PASS (live mint + rate-limit + expired + guest chat; no plugin.jup.ag)');

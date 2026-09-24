@@ -95,7 +95,7 @@ function recordingLobby() {
         return {
           async fetch(request) {
             const url = new URL(request.url);
-            if (url.pathname.replace(/\/$/, '') === '/compute/api/factory' && request.method === 'POST') {
+            if (url.pathname === '/compute/api/internal/hosted-factory-bump' && request.method === 'POST') {
               const body = await request.json().catch(() => ({}));
               bumps.push(body);
               return new Response(JSON.stringify({ ok: true }), {
@@ -150,9 +150,8 @@ const secret = 'hosted-denial-honesty-secret';
   assert.equal(body.error, 'model request failed; try again');
   assert.equal(body.code, 'hosted_cut');
   assert.equal(bumps.length, 1);
-  assert.equal(bumps[0].source, 'hosted-chat');
   assert.equal(bumps[0].failed, true);
-  assert.equal(bumps[0].settled, undefined, 'no settle on Hosted fail');
+  assert.equal(bumps[0].settle, undefined, 'no settle on Hosted fail');
 }
 
 {
@@ -179,7 +178,7 @@ const secret = 'hosted-denial-honesty-secret';
   assert.equal(body.code, 'hosted_cut');
   assert.equal(body.error, 'model request failed; try again');
   assert.equal(bumps[0]?.failed, true);
-  assert.equal(bumps[0]?.settled, undefined);
+  assert.equal(bumps[0]?.settle, undefined);
 }
 
 {
@@ -212,7 +211,7 @@ const secret = 'hosted-denial-honesty-secret';
   await new Promise((r) => setTimeout(r, 20));
   assert.equal(bumps.length, 1);
   assert.equal(bumps[0].failed, true);
-  assert.equal(bumps[0].settled, undefined, 'SSE fail never stamps settle');
+  assert.equal(bumps[0].settle, undefined, 'SSE fail never stamps settle');
 }
 
 {
@@ -247,7 +246,7 @@ const secret = 'hosted-denial-honesty-secret';
   assert.doesNotMatch(text, /"finish_reason":"stop"/);
   await new Promise((r) => setTimeout(r, 20));
   assert.equal(bumps[0]?.failed, true);
-  assert.equal(bumps[0]?.settled, undefined);
+  assert.equal(bumps[0]?.settle, undefined);
 }
 
 const chrome = process.env.CHROME_BIN || '/usr/bin/google-chrome';

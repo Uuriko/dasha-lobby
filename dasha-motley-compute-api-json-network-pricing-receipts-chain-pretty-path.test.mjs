@@ -65,7 +65,7 @@ assert.doesNotMatch(chainSet, /['"]\/muse['"]/, 'do not restack #241 /muse');
 assert.doesNotMatch(networkSet, /['"]\/compute\/api\/llms['"]/, 'do not restack #241 /compute/api/llms');
 assert.doesNotMatch(pricingSet, /['"]\/compute\/api\/agents['"]/, 'do not restack #241 /compute/api/agents');
 assert.doesNotMatch(receiptsSet, /['"]\/\.well-known\/ai-plugin\.json['"]/, 'do not restack #241 ai-plugin');
-assert.doesNotMatch(chainSet, /['"]\/compute\/api\/openapi\.json['"]/, 'do not invent /compute/api/openapi.json');
+assert.doesNotMatch(chainSet, /['"]\/compute\/api\/openapi\.json['"]/, 'openapi.json leftover lives in its Set');
 
 const discoveryMap = workerSrc.match(/const POTTER_MOTLEY_AGENT_DISCOVERY_308_DEST = new Map\(\[[\s\S]*?\]\);/)[0];
 assert.doesNotMatch(discoveryMap, /['"]\/compute\/api\/network\.json['"]/, 'network.json leftover lives in its Set, not Motley map');
@@ -141,7 +141,6 @@ const STAY_OUT = [
   '/api/pricing.json',
   '/api/receipts.json',
   '/api/chain.json',
-  '/compute/api/openapi.json',
 ];
 
 for (const path of NETWORK_FOLDS) {

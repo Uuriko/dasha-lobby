@@ -222,6 +222,12 @@ assert.match(FAUCET_CLIENT_JS, /function jarEmpty\(\)\{var s=state\.status;if\(!
   assert.ok(walk(root).some((n) => String(n.className).includes('faucet-door')), 'door card skips fade');
   const heroes = walk(root).filter((n) => n.tagName === 'IMG' && String(n.className).includes('faucet-hero'));
   assert.equal(heroes.length, 1, 'JS paints one framed hero');
+  const frame = heroes[0].parentNode;
+  assert.equal(frame.hidden, true, 'missing still stays hidden until it loads');
+  heroes[0].listeners.error[0]();
+  assert.equal(frame.hidden, true, 'failed still does not leave a black frame');
+  heroes[0].listeners.load[0]();
+  assert.equal(frame.hidden, false, 'loaded still shows the frame');
   assert.equal(leftover.hidden, true, 'static leftover hidden if present');
   assert.ok(!texts(root).includes('jar empty'), 'first paint is not jar empty');
   const fill = buttons(root).find((b) => b._text === 'Fill the jar');

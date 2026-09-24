@@ -148,6 +148,113 @@ def model_map():
 
 MODELS = model_map()
 
+BONSAI_PUBLIC_ID = "ternary-bonsai-2-27b"
+BONSAI_RESIDUAL_SITES = 129
+
+
+def backend_spec(local):
+    """Parse DASHA_MODEL_MAP locals. Ollama tag, or openai:<base>:<model>."""
+    raw = str(local or "").strip()
+    if raw.startswith("openai:"):
+        rest = raw[len("openai:"):]
+        if "://" not in rest:
+            return None
+        if rest.count(":") < 1:
+            return None
+        base, model = rest.rsplit(":", 1)
+        if not base.strip() or not model.strip():
+            return None
+        if not (base.startswith("http://") or base.startswith("https://")):
+            return None
+        return {"kind": "openai", "base": base.rstrip("/"), "model": model.strip()}
+    return {"kind": "ollama", "model": raw}
+
+
+def is_bonsai_id(*parts):
+    return any("bonsai" in str(part or "").lower() for part in parts)
+
+
+def residual_alpha():
+    """DASHA_RESIDUAL_ALPHA. Default 0 = stock (no residual intervention)."""
+    raw = os.getenv("DASHA_RESIDUAL_ALPHA", "0")
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return 0.0
+    if not (float("-inf") < value < float("inf")):
+        return 0.0
+    return value
+
+
+def openai_chat_extras(public, local):
+    """Chat extras for an openai: Bonsai backend. Empty unless bonsai + openai map."""
+    spec = backend_spec(local)
+    if not spec or spec.get("kind") != "openai":
+        return {}
+    if not is_bonsai_id(public, spec.get("model"), local):
+        return {}
+    alpha = residual_alpha()
+    return {"residual_alpha": alpha, "alpha": alpha}
+
+
+def result_residual_fields(job):
+    local = MODELS.get(job.get("model"), "")
+    extras = openai_chat_extras(job.get("model"), local)
+    if not extras:
+        return {}
+    return {"residual_alpha": extras["residual_alpha"], "residual_site_count": BONSAI_RESIDUAL_SITES}
+
+
+def openai_installed_ids(base):
+    data = request_json(f"{base}/models", timeout=5)
+    rows = data.get("data") if isinstance(data, dict) else None
+    ids = set()
+    if isinstance(rows, list):
+        for row in rows:
+            if isinstance(row, dict) and row.get("id"):
+                ids.add(str(row["id"]))
+    return ids
+
+
+def openai_usage(result):
+    usage = result.get("usage") or {}
+    prompt = int(usage.get("prompt_tokens") or 0)
+    completion = int(usage.get("completion_tokens") or 0)
+    return {"prompt_tokens": prompt, "completion_tokens": completion, "total_tokens": prompt + completion}
+
+
+def openai_chat_payload(job, stream, spec):
+    payload = {
+        "model": spec["model"],
+        "messages": job["messages"],
+        "stream": stream,
+        "temperature": job.get("temperature", 0.7),
+        "max_tokens": job.get("max_tokens", 1024),
+    }
+    payload.update(openai_chat_extras(job["model"], MODELS[job["model"]]))
+    return payload
+
+
+def residual_soft_report():
+    """Soft residual-control line for mapped Bonsai. Never fails doctor."""
+    rows = []
+    for public, local in MODELS.items():
+        if not is_bonsai_id(public, local):
+            continue
+        spec = backend_spec(local) or {"kind": "ollama"}
+        alpha = residual_alpha()
+        stock = "stock" if alpha == 0 else "adjusted"
+        rows.append(f"{public} · {spec.get('kind')} · α={alpha:g} {stock}")
+    if not rows:
+        return
+    print(
+        "residual  ok · "
+        + "; ".join(rows)
+        + f" · {BONSAI_RESIDUAL_SITES} residual writers expected · bit-identical pack · Apple Silicon local · never fails doctor"
+    )
+    if residual_alpha() == 0:
+        print("residual  hint · DASHA_RESIDUAL_ALPHA default 0 = stock behavior · same pack, optional residual control")
+
 
 def no_think_tokens():
     raw = os.getenv("DASHA_NO_THINK", "qwen")
@@ -157,24 +264,84 @@ def no_think_tokens():
 NO_THINK = no_think_tokens()
 
 
-def think_disabled(local_model):
+def truthy_flag(value):
+    if value is True:
+        return True
+    if value is False or value is None:
+        return False
+    return str(value).strip().lower() in ("1", "true", "on", "yes")
+
+
+def think_opted_in(job=None):
+    """Explicit think mode: job.think or DASHA_OLLAMA_THINK=1/true/on."""
+    job = job or {}
+    if truthy_flag(job.get("think")):
+        return True
+    return truthy_flag(os.getenv("DASHA_OLLAMA_THINK"))
+
+
+def think_disabled(local_model, job=None):
+    """Community Ask / Ollama stream defaults think off so content arrives promptly.
+
+    Opt in with job.think or DASHA_OLLAMA_THINK=1. DASHA_NO_THINK (default qwen)
+    still force-disables matching models unless job.think is set explicitly.
+    """
+    job = job or {}
     name = str(local_model or "").lower()
-    return any(token in name for token in NO_THINK)
+    force_off = any(token in name for token in NO_THINK)
+    if truthy_flag(job.get("think")):
+        return False
+    if force_off:
+        return True
+    return not think_opted_in(job)
 
 
 def chat_payload(job, stream):
     local = MODELS[job["model"]]
-    payload = {"model": local, "messages": job["messages"], "stream": stream, "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)}}
-    if think_disabled(local):
-        payload["think"] = False
+    payload = {
+        "model": local,
+        "messages": job["messages"],
+        "stream": stream,
+        "options": {"temperature": job.get("temperature", 0.7), "num_predict": job.get("max_tokens", 1024)},
+        "think": not think_disabled(local, job),
+    }
     return payload
 
 
-def answer_content(message, local):
+def answer_content(message, local, job=None):
     content = str(message.get("content") or "")
-    if not content and not think_disabled(local):
+    if not content and not think_disabled(local, job):
         content = str(message.get("thinking") or message.get("reasoning") or "")
     return content
+
+
+def final_assistant_content(reply):
+    """Final assistant content only. Never thinking/reasoning."""
+    if reply is None:
+        return ""
+    if isinstance(reply, str):
+        return reply
+    if not isinstance(reply, dict):
+        return ""
+    message = reply.get("message")
+    if isinstance(message, dict):
+        return str(message.get("content") or "")
+    if any(key in reply for key in ("content", "thinking", "reasoning")):
+        return str(reply.get("content") or "")
+    nested = reply.get("reply")
+    if nested is not None and nested is not reply:
+        return final_assistant_content(nested)
+    return ""
+
+
+def score_warm_ok(reply):
+    """True only if final assistant content equals or starts with WARM_OK.
+
+    Thinking/reasoning text that merely mentions WARM_OK is never success.
+    A bare string is treated as content and must start with WARM_OK — substring is not enough.
+    """
+    text = final_assistant_content(reply).lstrip()
+    return text == "WARM_OK" or text.startswith("WARM_OK")
 
 
 def make_request(url, method="GET", payload=None, token=None):
@@ -234,10 +401,32 @@ def run_ollama(job):
         timeout=600,
     )
     message = result.get("message") or {}
-    content = answer_content(message, MODELS[job["model"]])
+    content = answer_content(message, MODELS[job["model"]], job)
     if not content.strip():
         raise RuntimeError("empty completion")
-    return {"content": content, "finish_reason": "stop", "usage": usage_from(result)}
+    return {"content": content, "finish_reason": "stop", "usage": usage_from(result), **result_residual_fields(job)}
+
+
+def run_openai(job, spec):
+    result = request_json(
+        f"{spec['base']}/chat/completions",
+        method="POST",
+        payload=openai_chat_payload(job, False, spec),
+        timeout=600,
+    )
+    choice = (result.get("choices") or [{}])[0]
+    message = choice.get("message") or {}
+    content = str(message.get("content") or "")
+    if not content.strip():
+        raise RuntimeError("empty completion")
+    return {"content": content, "finish_reason": "stop", "usage": openai_usage(result), **result_residual_fields(job)}
+
+
+def run_inference(job):
+    spec = backend_spec(MODELS[job["model"]])
+    if spec and spec.get("kind") == "openai":
+        return run_openai(job, spec)
+    return run_ollama(job)
 
 
 def report(job_id, result):
@@ -285,8 +474,8 @@ def stream_ollama(job, cancelled):
             final = event
             message = event.get("message") or {}
             # Prefer assistant content. Thinking/reasoning-only chunks are forwarded only when the model
-            # is allowed to think; no-think models never leak chain-of-thought as answer deltas.
-            content = answer_content(message, MODELS[job["model"]])
+            # is allowed to think; Community Ask defaults think:false so content arrives without CoT.
+            content = answer_content(message, MODELS[job["model"]], job)
             if content:
                 report_chunk(job["id"], delta=content)
                 sent = True
@@ -297,8 +486,58 @@ def stream_ollama(job, cancelled):
     if not sent:
         # Fail closed — coordinator rejects empty stream done; do not mark success with blank answer.
         raise RuntimeError("empty completion")
-    report_chunk(job["id"], done=True, finish_reason="stop", usage=usage_from(final))
+    report_chunk(job["id"], done=True, finish_reason="stop", usage=usage_from(final), **result_residual_fields(job))
     return True
+
+
+def stream_openai(job, spec, cancelled):
+    if cancelled.is_set():
+        return False
+    request = make_request(
+        f"{spec['base']}/chat/completions",
+        method="POST",
+        payload=openai_chat_payload(job, True, spec),
+    )
+    sent = False
+    usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    with urllib.request.urlopen(request, timeout=600) as response:
+        for raw_line in response:
+            if cancelled.is_set():
+                return False
+            line = raw_line.decode("utf-8").strip()
+            if not line or line.startswith(":"):
+                continue
+            if line.startswith("data:"):
+                line = line[5:].strip()
+            if line == "[DONE]":
+                break
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if event.get("error"):
+                raise RuntimeError(str(event["error"]))
+            if event.get("usage"):
+                usage = openai_usage(event)
+            choices = event.get("choices") or []
+            delta = (choices[0].get("delta") or {}) if choices else {}
+            content = str(delta.get("content") or "")
+            if content:
+                report_chunk(job["id"], delta=content)
+                sent = True
+    if cancelled.is_set():
+        return False
+    if not sent:
+        raise RuntimeError("empty completion")
+    report_chunk(job["id"], done=True, finish_reason="stop", usage=usage, **result_residual_fields(job))
+    return True
+
+
+def stream_inference(job, cancelled):
+    spec = backend_spec(MODELS[job["model"]])
+    if spec and spec.get("kind") == "openai":
+        return stream_openai(job, spec, cancelled)
+    return stream_ollama(job, cancelled)
 
 
 OLLAMA_MLX_MIN = (0, 33, 1)
@@ -634,19 +873,45 @@ def doctor():
             failures += 1
             print(f"gateway   failed · {error}", file=sys.stderr)
     ready_locals = []
+    ollama_map = {}
+    openai_map = {}
+    for public, local in MODELS.items():
+        spec = backend_spec(local)
+        if spec and spec.get("kind") == "openai":
+            openai_map[public] = spec
+        else:
+            ollama_map[public] = local
     try:
-        installed = installed_models()
-        ready_locals = [local for local in MODELS.values() if local in installed]
-        ready = [f"{public}→{local}" for public, local in MODELS.items() if local in installed]
-        missing = [local for local in MODELS.values() if local not in installed]
-        print("ollama    ok" + (f" · ready: {', '.join(ready)}" if ready else " · no mapped model installed"))
-        if missing:
-            failures += 1
-            print("models    failed · missing: " + ", ".join(missing), file=sys.stderr)
-            print("pull      " + " or ".join(f"ollama pull {model}" for model in missing), file=sys.stderr)
+        if ollama_map:
+            installed = installed_models()
+            ready_locals = [local for local in ollama_map.values() if local in installed]
+            ready = [f"{public}→{local}" for public, local in ollama_map.items() if local in installed]
+            missing = [local for local in ollama_map.values() if local not in installed]
+            print("ollama    ok" + (f" · ready: {', '.join(ready)}" if ready else " · no mapped model installed"))
+            if missing:
+                failures += 1
+                print("models    failed · missing: " + ", ".join(missing), file=sys.stderr)
+                print("pull      " + " or ".join(f"ollama pull {model}" for model in missing), file=sys.stderr)
+        else:
+            print("ollama    ok · no Ollama maps")
     except Exception as error:
-        failures += 1
-        print(f"ollama    failed · {error}", file=sys.stderr)
+        if ollama_map:
+            failures += 1
+            print(f"ollama    failed · {error}", file=sys.stderr)
+        else:
+            print(f"ollama    soft · {error}")
+    for public, spec in openai_map.items():
+        try:
+            ids = openai_installed_ids(spec["base"])
+            if spec["model"] in ids:
+                print(f"openai    ok · {public}→{spec['model']} @ {spec['base']}")
+            else:
+                failures += 1
+                print(f"openai    failed · missing {spec['model']} at {spec['base']}/models", file=sys.stderr)
+        except Exception as error:
+            failures += 1
+            print(f"openai    failed · {error}", file=sys.stderr)
+    residual_soft_report()
     prefer_mlx_report()
     size_soft_report()
     keepalive_soft_report(ready_locals)
@@ -690,12 +955,54 @@ def doctor():
     return failures
 
 
+def collect_available():
+    """public→local for backends that are actually up. Ollama throw stays loud."""
+    available = {}
+    ollama_names = None
+    for public, local in MODELS.items():
+        spec = backend_spec(local)
+        if spec and spec.get("kind") == "openai":
+            try:
+                if spec["model"] in openai_installed_ids(spec["base"]):
+                    available[public] = local
+            except Exception:
+                continue
+            continue
+        if ollama_names is None:
+            ollama_names = installed_models()
+        if local in ollama_names:
+            available[public] = local
+    return available
+
+
 def benchmark():
-    installed = installed_models()
     rows = []
     tokens = max(16, min(256, int(os.getenv("DASHA_BENCHMARK_TOKENS", "64"))))
+    ollama_names = None
     for public, local in MODELS.items():
-        if local not in installed:
+        spec = backend_spec(local)
+        if spec and spec.get("kind") == "openai":
+            started = time.monotonic()
+            result = request_json(
+                f"{spec['base']}/chat/completions",
+                method="POST",
+                payload={
+                    "model": spec["model"],
+                    "messages": [{"role": "user", "content": "In one paragraph, explain why local AI compute is useful."}],
+                    "stream": False,
+                    "temperature": 0,
+                    "max_tokens": tokens,
+                    **openai_chat_extras(public, local),
+                },
+                timeout=600,
+            )
+            elapsed = time.monotonic() - started
+            generated = openai_usage(result)["completion_tokens"]
+            rows.append({"model": public, "openai_model": spec["model"], "tokens": generated, "seconds": round(elapsed, 3), "tokens_per_second": round(generated / elapsed, 2) if elapsed else 0})
+            continue
+        if ollama_names is None:
+            ollama_names = installed_models()
+        if local not in ollama_names:
             continue
         started = time.monotonic()
         result = request_json(f"{OLLAMA_URL}/api/chat", method="POST", payload={"model": local, "messages": [{"role": "user", "content": "In one paragraph, explain why local AI compute is useful."}], "stream": False, "options": {"temperature": 0, "num_predict": tokens}}, timeout=600)
@@ -829,9 +1136,9 @@ def main():
     ollama_wait = 1
     while RUNNING and not available:
         try:
-            available = {public: local for public, local in MODELS.items() if local in installed_models()}
+            available = collect_available()
             if not available:
-                print("no configured Ollama model is installed yet - run with --doctor for pull commands; waiting", file=sys.stderr)
+                print("no configured model is installed yet - run with --doctor for pull commands; waiting", file=sys.stderr)
         except Exception as error:
             print(f"Ollama unavailable: {error}; retrying in {ollama_wait}s", file=sys.stderr)
         if available or args.once:
@@ -880,12 +1187,12 @@ def main():
                 if COORDINATOR.endswith('/compute/api'):
                     heartbeat.start()
                 if job.get("stream"):
-                    if stream_ollama(job, cancelled):
+                    if stream_inference(job, cancelled):
                         print(f"completed {job['id']}")
                     else:
                         print(f"cancelled {job['id']}")
                 else:
-                    result = run_ollama(job)
+                    result = run_inference(job)
                     stop_heartbeat.set()
                     if heartbeat.is_alive():
                         heartbeat.join(10)

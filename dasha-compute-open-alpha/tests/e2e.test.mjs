@@ -329,3 +329,58 @@ assert buf.getvalue() == "", buf.getvalue()
 `;
   execFileSync("python3", ["-B", "-c", probe], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
 });
+
+test("Community Ask defaults think false; thinking-only is never WARM_OK", () => {
+  const probe = `
+import importlib.util, os, threading
+spec = importlib.util.spec_from_file_location("dasha_compute_agent", "provider/agent.py")
+agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(agent)
+agent.MODELS = {"qwen3-4b": "qwen3:4b", "gemma3-12b": "gemma3:12b"}
+os.environ.pop("DASHA_OLLAMA_THINK", None)
+
+thinking_only = {"message": {"content": "", "thinking": "So I need to output \\"WARM_OK Qwen3-4b\\" first"}}
+assert agent.score_warm_ok(thinking_only) is False, thinking_only
+assert agent.score_warm_ok({"content": "", "thinking": "mention WARM_OK three times WARM_OK WARM_OK"}) is False
+assert agent.score_warm_ok("So I need to output WARM_OK Qwen3-") is False
+assert agent.score_warm_ok({"message": {"content": "WARM_OK qwen3-4b", "thinking": "I should say WARM_OK"}}) is True
+assert agent.score_warm_ok("WARM_OK") is True
+assert agent.score_warm_ok("WARM_OK qwen3-4b") is True
+
+job = {"id": "job_ask", "model": "qwen3-4b", "messages": [{"role": "user", "content": "hi"}], "temperature": 0.6, "max_tokens": 64}
+payload = agent.chat_payload(job, True)
+assert payload["think"] is False, payload
+assert agent.answer_content({"content": "", "thinking": "secret CoT"}, "qwen3:4b", job) == ""
+assert agent.answer_content({"content": "WARM_OK qwen3-4b", "thinking": "secret"}, "qwen3:4b", job) == "WARM_OK qwen3-4b"
+gemma = agent.chat_payload({**job, "model": "gemma3-12b"}, False)
+assert gemma["think"] is False, gemma
+
+opted = agent.chat_payload({**job, "think": True}, True)
+assert opted["think"] is True, opted
+assert agent.answer_content({"content": "", "thinking": "allowed CoT"}, "qwen3:4b", {"think": True}) == "allowed CoT"
+
+os.environ["DASHA_OLLAMA_THINK"] = "1"
+assert agent.think_disabled("qwen3:4b") is True
+assert agent.think_disabled("gemma3:12b") is False
+os.environ["DASHA_OLLAMA_THINK"] = "0"
+
+chunks = []
+agent.report_chunk = lambda _job_id, **chunk: chunks.append(chunk)
+class ContentAfterThink:
+    def __enter__(self): return self
+    def __exit__(self, *_args): return False
+    def __iter__(self):
+        return iter([
+            b'{"message":{"content":"","thinking":"I should output WARM_OK qwen3-4b first"}}\\n',
+            b'{"message":{"content":"WARM_OK qwen3-4b","thinking":""},"done":true}\\n',
+        ])
+agent.urllib.request.urlopen = lambda *_args, **_kwargs: ContentAfterThink()
+ok = agent.stream_ollama({"id": "job_warm", "model": "qwen3-4b", "messages": []}, threading.Event())
+assert ok is True
+assert chunks[0] == {"delta": "WARM_OK qwen3-4b"}, chunks
+assert chunks[1]["done"] is True, chunks
+assert all("I should output" not in str(chunk) for chunk in chunks), chunks
+assert agent.score_warm_ok({"message": {"content": chunks[0]["delta"]}}) is True
+`;
+  execFileSync("python3", ["-B", "-c", probe], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
+});

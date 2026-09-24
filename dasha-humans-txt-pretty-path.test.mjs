@@ -3,7 +3,9 @@
  * Honest /humans.txt face: GET/HEAD 200 text/plain on www + lobby.
  * Body prefix is humans.txt TEAM, not Contribute HTML.
  * Slash + Title-case 308 → /humans.txt. Nested /compute/api/humans same dest.
- * Exact /humans.txt dest is null. Do not invent apex /humans.
+ * /compute/humans + /compute/humans.txt leftover lives in
+ * POTTER_COMPUTE_HUMANS_308_PATHS. Exact /humans.txt dest is null.
+ * Do not invent apex /humans.
  * Disk only. No Designer. Never plugin.jup.ag. No people-data.
  */
 import assert from 'node:assert/strict';
@@ -19,6 +21,7 @@ assert.match(workerSrc, /const HUMANS_TXT = /, 'humans.txt face constant');
 assert.match(workerSrc, /Exact \/humans\.txt is a 200 text\/plain/, 'humans face comment');
 assert.match(workerSrc, /POTTER_HUMANS_TXT_308_PATHS/, 'slash leftover set');
 assert.match(workerSrc, /POTTER_COMPUTE_API_HUMANS_308_PATHS/, 'nested leftover set');
+assert.match(workerSrc, /POTTER_COMPUTE_HUMANS_308_PATHS/, 'compute humans leftover set');
 const humansConst = workerSrc.match(/const HUMANS_TXT = `[\s\S]*?`;/)[0];
 assert.doesNotMatch(humansConst, /trydemigod|demigod/i, 'humans.txt face stays off Demigod');
 
