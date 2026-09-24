@@ -18,7 +18,7 @@ import {
 const src = readFileSync(new URL('./dasha-compute-network.mjs', import.meta.url), 'utf8');
 assert.match(src, /function openaiError\(/);
 assert.match(src, /openaiErrorBody\(/);
-assert.match(src, /errors: 'openai \+ status\/reason\/hint\/next'/);
+assert.match(src, /errors: "v1 routes: openai \+ status\/reason\/hint\/next; site routes: flat \{error\}/); // #320 both envelopes named
 assert.doesNotMatch(src, /plugin\.jup\.ag/);
 assert.doesNotMatch(src, /potter[_-]?key|DASHA_POTTER|people-data/i);
 
@@ -229,7 +229,9 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
 
   const gw = await pair(host, '/compute/api/v1', {}, fetchImpl);
   assert.equal(gw.status, 200, `${host} /v1`);
-  assert.equal(gw.body.errors, 'openai + status/reason/hint/next');
+  assert.match(gw.body.errors, /v1 routes: openai \+ status\/reason\/hint\/next/, 'v1 envelope named');
+  assert.match(gw.body.errors, /site routes: flat \{error\}/, 'site envelope named (#320)');
+  assert.match(gw.body.errors, /401 = no credentials, 403 = origin required or authenticated-but-not-allowed/, 'status contract named');
   assert.equal(gw.body.guest_keys, '/compute/api/guest-keys', `${host} /v1 guest_keys`);
   assert.equal(gw.body.guest_key?.path, '/compute/api/guest-keys', `${host} /v1 guest_key.path`);
   assert.doesNotMatch(JSON.stringify(gw.body), /plugin\.jup\.ag/);
