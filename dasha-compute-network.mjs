@@ -26,6 +26,7 @@ import {
   buildLedgerSettledRow,
   exportLedgerEvents,
   mapLedgerFailureReason,
+  jobChargeBasis,
   mintBuyerForKey,
   mintBuyerForOwner,
   recordProviderOnlineHour,
@@ -1410,8 +1411,9 @@ export class ComputeNetwork {
         keyType: job.keyType || null,
         providerId: provider?.id || job.providerId || null,
         createdAtMs: Number(job.createdAt || 0) || null,
-        buyerChargeCents: job.debitCents != null ? Number(job.debitCents) : 0,
-        creditUsedCents: null,
+        chargeBasis: jobChargeBasis(job),
+        buyerChargeCents: job.debitRequestId ? (job.debitCents != null ? Number(job.debitCents) : null) : 0,
+        creditUsedCents: job.keyType === 'dgk_' ? 0 : null,
         engine: job.route === 'mixture' ? 'mixture' : 'community',
         sessionId: job.sessionId || null,
       },
@@ -1465,6 +1467,7 @@ export class ComputeNetwork {
           usage: settleInput.usage,
           durationMs: ledger.createdAtMs ? Math.max(0, Number(res.receipt?.at || 0) - ledger.createdAtMs) : settleInput.latencyMs,
           settledAtMs: res.receipt?.at,
+          chargeBasis: ledger.chargeBasis ?? null,
           buyerChargeCents: ledger.buyerChargeCents,
           creditUsedCents: ledger.creditUsedCents ?? null,
           providerPayoutCents: ledger.providerPayoutCents !== undefined ? ledger.providerPayoutCents : res.receipt?.cents,
@@ -1472,6 +1475,12 @@ export class ComputeNetwork {
           pricingVersion: PRICING_VERSION,
           engine: ledger.engine || settleInput.engine || null,
         }), Number(res.receipt?.at || 0) || undefined);
+        if (ledger.chargeBasis == null || (ledger.chargeBasis === 'debited' && ledger.buyerChargeCents == null)) {
+          await appendLedgerEvent(this.state.storage, 'anomaly', {
+            ref_job_id: settleInput.jobId || res.receipt?.job_id || null,
+            reason: ledger.chargeBasis === 'debited' ? 'debited_without_cents' : 'charge_basis_undetermined',
+          }, Number(res.receipt?.at || 0) || undefined);
+        }
       } catch { /* ledger logging never breaks settlement */ }
     }
     return res;
@@ -1542,6 +1551,7 @@ export class ComputeNetwork {
         keyType: 'none',
         providerId: null,
         createdAtMs: settle.created_at_ms != null ? Number(settle.created_at_ms) : null,
+        chargeBasis: 'debited',
         buyerChargeCents: chargedCents,
         creditUsedCents: null,
         providerPayoutCents: 0, // economy ruling: nobody is owed a payout on hosted jobs

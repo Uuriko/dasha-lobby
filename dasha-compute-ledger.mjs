@@ -38,6 +38,7 @@ export const LEDGER_EXPORT_LIMIT_MAX = 1000;
 export const JOB_PATHS = ['api', 'ui_ask', 'ui_hosted', 'self_routed'];
 export const LEDGER_KEY_TYPES = ['dgk_', 'dsk_', 'none'];
 export const LEDGER_FAILURE_REASONS = ['provider_offline', 'timeout', 'model_error', 'client_abort'];
+export const LEDGER_CHARGE_BASES = ['debited', 'guest', 'self', 'ui_session'];
 
 export function usdMicrosFromCents(cents) {
   if (cents == null || !Number.isFinite(Number(cents))) return null; // null means unknown - never invent a zero
@@ -71,6 +72,18 @@ export async function appendLedgerEvent(storage, kind, row, now = Date.now()) {
   return key;
 }
 
+/** Economy ruling (Sep 23 2026): derive the charge basis from the job record.
+ *  A debit marker means 'debited' (buyer_charge = debitCents; a debit marker
+ *  WITHOUT debitCents is inconsistent -> buyer_charge null + anomaly row, never 0).
+ *  Self-routes, guest keys, and session UI asks are free by construction -> 0. */
+export function jobChargeBasis(job = {}) {
+  if (job.debitRequestId) return 'debited';
+  if (job.route === 'self') return 'self';
+  if (job.keyType === 'dgk_') return 'guest';
+  if (job.path === 'ui_ask') return 'ui_session';
+  return null; // undeterminable - caller writes null money + an anomaly row
+}
+
 export function buildLedgerCreatedRow({ jobId, requestId, path, keyType, modelId, buyerId, sessionId, createdAtMs } = {}) {
   return {
     job_id: jobId || null,
@@ -85,7 +98,7 @@ export function buildLedgerCreatedRow({ jobId, requestId, path, keyType, modelId
   };
 }
 
-export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, hostedInferenceCostCents, pricingVersion, engine } = {}) {
+export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, durationMs, settledAtMs, buyerChargeCents, creditUsedCents, providerPayoutCents, hostedInferenceCostCents, pricingVersion, engine, chargeBasis } = {}) {
   return {
     receipt_id: receiptId || null,
     engine: engine || null,
@@ -96,6 +109,7 @@ export function buildLedgerSettledRow({ receiptId, jobId, providerId, usage, dur
     completion_tokens: fin(usage?.completion_tokens),
     duration_ms: fin(durationMs),
     settled_at_ms: fin(settledAtMs),
+    charge_basis: LEDGER_CHARGE_BASES.includes(chargeBasis) ? chargeBasis : null,
     buyer_charge_usd_micros: usdMicrosFromCents(buyerChargeCents),
     credit_used_usd_micros: usdMicrosFromCents(creditUsedCents),
     provider_payout_usd_micros: usdMicrosFromCents(providerPayoutCents),

@@ -6,7 +6,7 @@ import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 import {
   LEDGER_EVENT_PREFIX, LEDGER_POH_PREFIX,
   buildLedgerPayoutRow, buildLedgerSettledRow, buildLedgerFailedRow,
-  mapLedgerFailureReason, utcHour, usdMicrosFromCents,
+  mapLedgerFailureReason, utcHour, usdMicrosFromCents, jobChargeBasis,
 } from './dasha-compute-ledger.mjs';
 
 // ---------- unit: builders + money math ----------
@@ -39,6 +39,18 @@ import {
   assert.equal(usdMicrosFromCents(undefined), null);
   assert.equal(usdMicrosFromCents(null), null);
   assert.equal(usdMicrosFromCents(0), 0);
+  // economy ruling: charge_basis matrix
+  assert.equal(jobChargeBasis({ debitRequestId: 'api:job_1', debitCents: 5 }), 'debited');
+  assert.equal(jobChargeBasis({ route: 'self' }), 'self');
+  assert.equal(jobChargeBasis({ keyType: 'dgk_' }), 'guest');
+  assert.equal(jobChargeBasis({ path: 'ui_ask' }), 'ui_session');
+  assert.equal(jobChargeBasis({ path: 'api', keyType: 'dsk_' }), null); // api non-guest without a debit marker: undeterminable
+  assert.equal(jobChargeBasis({}), null);
+  const basisRow = buildLedgerSettledRow({ receiptId: 'r4', jobId: 'j4', chargeBasis: 'guest', buyerChargeCents: 0, creditUsedCents: 0, providerPayoutCents: 3 });
+  assert.equal(basisRow.charge_basis, 'guest');
+  assert.equal(basisRow.buyer_charge_usd_micros, 0);
+  assert.equal(basisRow.credit_used_usd_micros, 0); // guest keys never touch credits
+  assert.equal(buildLedgerSettledRow({ receiptId: 'r5', chargeBasis: 'bogus' }).charge_basis, null);
   assert.equal(mapLedgerFailureReason('provider cut'), 'provider_offline');
   assert.equal(mapLedgerFailureReason('expired'), 'timeout');
   assert.equal(mapLedgerFailureReason('cancelled'), 'client_abort');
@@ -145,7 +157,7 @@ const res = await network.recordPaidInferenceSettle({
   usage: { prompt_tokens: 12, completion_tokens: 34, total_tokens: 46 },
   cents: 8, jobId: 'job_ledgertest', requestId: 'req_ledgertest', model: 'qwen3-8b',
   latencyMs: 1500, replayKey: 'job:job_ledgertest', now: settleNow,
-  ledger: { path: 'api', keyType: 'dsk_', providerId: creds.provider_id, createdAtMs: settleNow - 1500, buyerChargeCents: 5, creditUsedCents: 5, sessionId: null },
+  ledger: { path: 'api', keyType: 'dsk_', providerId: creds.provider_id, createdAtMs: settleNow - 1500, chargeBasis: 'debited', buyerChargeCents: 5, creditUsedCents: null, sessionId: null },
 });
 assert.equal(res.ok, true);
 assert.equal(res.replay, false);
@@ -158,6 +170,8 @@ assert.equal(srow.provider_id, creds.provider_id);
 assert.equal(srow.provider_payout_usd_micros, res.receipt.cents * 10_000); // per-row tie-out invariant
 assert.equal(srow.buyer_charge_usd_micros, 50_000);
 assert.equal(srow.pricing_version, '2026-09-alpha-1');
+assert.equal(srow.charge_basis, 'debited');
+assert.equal(srow.credit_used_usd_micros, null);
 assert.equal(srow.duration_ms, 1500);
 const resReplay = await network.recordPaidInferenceSettle({
   owner: 'ledger_owner', engine: 'community', usage: { prompt_tokens: 12, completion_tokens: 34, total_tokens: 46 },
@@ -167,6 +181,22 @@ const resReplay = await network.recordPaidInferenceSettle({
 });
 assert.equal(resReplay.replay, true);
 assert.equal(ledgerRows('job_event').filter((r) => r.status === 'settled').length, 1);
+
+// anomaly: debited without debitCents -> buyer_charge null + anomaly row, never a silent 0
+const anom = await network.recordPaidInferenceSettle({
+  owner: 'ledger_owner', engine: 'community', usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+  cents: 5, jobId: 'job_anomaly', requestId: 'req_anomaly', model: 'qwen3-8b',
+  latencyMs: 10, replayKey: 'job:job_anomaly', now: settleNow,
+  ledger: { path: 'api', keyType: 'dsk_', chargeBasis: 'debited', buyerChargeCents: null },
+});
+assert.equal(anom.ok, true);
+const anomSettled = ledgerRows('job_event').filter((r) => r.status === 'settled' && r.job_id === 'job_anomaly');
+assert.equal(anomSettled.length, 1);
+assert.equal(anomSettled[0].buyer_charge_usd_micros, null);
+const anomRows = ledgerRows('anomaly');
+assert.equal(anomRows.length, 1);
+assert.equal(anomRows[0].reason, 'debited_without_cents');
+assert.equal(anomRows[0].ref_job_id, 'job_anomaly');
 
 // refund -> new row pointing at the original receipt; originals untouched
 rows.set('compute:credit-spend:ledger_owner:api:job_ledgertest', { cents: 5, reason: 'api-chat', createdAt: settleNow });
@@ -191,7 +221,7 @@ assert.equal(body1.rows.length, 3);
 assert.equal(body1.has_more, true);
 const page2 = await network.fetch(new Request(`https://lobby.getdasha.com/compute/api/ledger?limit=100&after=${encodeURIComponent(body1.cursor)}`, { headers: { Authorization: 'Bearer ledger-test-token' } }), origin);
 const body2 = await page2.json();
-const total = ledgerRows('job_event').length + ledgerRows('buyer_event').length + ledgerRows('provider_event').length + ledgerRows('payout_event').length;
+const total = ledgerRows('job_event').length + ledgerRows('buyer_event').length + ledgerRows('provider_event').length + ledgerRows('payout_event').length + ledgerRows('anomaly').length;
 assert.equal(body1.rows.length + body2.rows.length, total);
 assert.equal(body2.has_more, false);
 const overlap = new Set([...body1.rows, ...body2.rows].map((r) => r.ledger_key));
