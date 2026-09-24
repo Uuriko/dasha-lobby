@@ -77,6 +77,13 @@ import {
   // unknown model or no usable tokens: null, never guessed
   assert.deepEqual(hostedInferenceCost({ model: '@cf/meta/unknown-model', totalTokens: 100 }), { costCents: null, basis: null });
   assert.deepEqual(hostedInferenceCost({ model: '@cf/openai/gpt-oss-20b' }), { costCents: null, basis: null });
+  // null fields PRESENT (not missing) are absent, never zero: Number(null) === 0 must not reach isFinite
+  const nullSplit = hostedInferenceCost({ model: '@cf/openai/gpt-oss-20b', promptTokens: null, completionTokens: null, totalTokens: 756 });
+  assert.equal(nullSplit.basis, 'total_tokens_at_output_rate');
+  assert.ok(Math.abs(nullSplit.costCents - total.costCents) < 1e-12);
+  assert.deepEqual(hostedInferenceCost({ model: '@cf/openai/gpt-oss-20b', promptTokens: null, completionTokens: null }), { costCents: null, basis: null });
+  const halfNull = hostedInferenceCost({ model: '@cf/openai/gpt-oss-20b', promptTokens: null, completionTokens: 256, totalTokens: 756 });
+  assert.equal(halfNull.basis, 'total_tokens_at_output_rate');
   // fractional cents survive conversion - sub-cent jobs are the norm
   assert.equal(usdMicrosFromCents(split.costCents), Math.round(split.costCents * 10_000));
   const row = buildLedgerSettledRow({ receiptId: 'rh1', engine: 'hosted', hostedInferenceCostCents: total.costCents, hostedInferenceCostBasis: total.basis });

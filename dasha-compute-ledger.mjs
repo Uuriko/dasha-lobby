@@ -64,7 +64,11 @@ export const HOSTED_MODEL_NEURONS_PER_MTOK = {
 export function hostedInferenceCost({ model, promptTokens, completionTokens, totalTokens } = {}) {
   const rates = HOSTED_MODEL_NEURONS_PER_MTOK[String(model || '')];
   if (!rates) return { costCents: null, basis: null };
-  const p = Number(promptTokens), c = Number(completionTokens), t = Number(totalTokens);
+  // null fields are ABSENT, not zero: Number(null) === 0 would price them as a
+  // known-wrong 0 (traction review). Coerce absent to NaN so they fall through.
+  const p = promptTokens == null ? NaN : Number(promptTokens);
+  const c = completionTokens == null ? NaN : Number(completionTokens);
+  const t = totalTokens == null ? NaN : Number(totalTokens);
   if (Number.isFinite(p) && Number.isFinite(c)) {
     return { costCents: ((p * rates.input + c * rates.output) / 1e6 / 1000) * WORKERS_AI_USD_PER_1K_NEURONS * 100, basis: 'split_tokens' };
   }

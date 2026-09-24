@@ -33,6 +33,10 @@ import {
   recordProviderOnlineHour,
   resolveBuyerId,
 } from './dasha-compute-ledger.mjs';
+
+/** The hosted flow's Workers AI model. Shared by the env.AI.run call sites and
+ *  the ledger cost computation so a model change updates both at once. */
+const HOSTED_CF_MODEL = '@cf/openai/gpt-oss-20b';
 import {
   createCardCheckoutSession,
   retrieveCardSession,
@@ -1600,7 +1604,7 @@ export class ComputeNetwork {
     // Gross per-job Workers AI cost from token usage (traction, Sep 23 2026).
     // The hosted flow's env.AI.run model is hardcoded at the call sites.
     const hostedCost = hostedInferenceCost({
-      model: '@cf/openai/gpt-oss-20b',
+      model: HOSTED_CF_MODEL,
       promptTokens: settle.usage?.prompt_tokens,
       completionTokens: settle.usage?.completion_tokens,
       totalTokens: tokens,
@@ -3793,7 +3797,7 @@ export async function computeApi(request, env, allowedOrigin) {
   const system = { role: 'system', content: 'Answer directly and concisely. Do not claim to be running on a community Mac; this hosted demo uses Cloudflare Workers AI.' };
   try {
     if (input.stream === true) {
-      const run = await env.AI.run('@cf/openai/gpt-oss-20b', { stream: true, messages: [system, ...messages], max_tokens: 256, temperature: 0.6, ...hostedEffortKnob });
+      const run = await env.AI.run(HOSTED_CF_MODEL, { stream: true, messages: [system, ...messages], max_tokens: 256, temperature: 0.6, ...hostedEffortKnob });
       const encoder = new TextEncoder();
       const headers = { ...SECURITY, ...cors(allowedOrigin, true), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', ...dashaChatSpendHeaders({ route: 'hosted', model: 'gpt-oss-20b', spendCents: hostedChargedCents }), ...effortResponseHeaders(hostedHonesty), ...(creditBalanceHeader != null ? { 'X-Dasha-Balance-Cents': creditBalanceHeader } : {}) };
       let completionText = '';
@@ -3894,7 +3898,7 @@ export async function computeApi(request, env, allowedOrigin) {
       });
       return new Response(stream, { headers });
     }
-    const result = await env.AI.run('@cf/openai/gpt-oss-20b', { messages: [system, ...messages], max_tokens: 256, temperature: 0.6, ...hostedEffortKnob });
+    const result = await env.AI.run(HOSTED_CF_MODEL, { messages: [system, ...messages], max_tokens: 256, temperature: 0.6, ...hostedEffortKnob });
     const answer = String(result?.response || result?.result?.response || result?.choices?.[0]?.message?.content || '').trim();
     if (!answer) throw new Error('empty model response');
     const approxTokens = (t) => Math.max(0, Math.ceil(String(t || '').length / 4));
