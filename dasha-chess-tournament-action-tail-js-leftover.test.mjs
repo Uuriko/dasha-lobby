@@ -235,7 +235,7 @@ const HOME = `<!doctype html><html lang="en"><head>
 assert.equal(stripChessLeftoverTournamentActionTailJs(HOME), HOME, "home is not a chess leftover tournamentAction tail JS page");
 
 {
-  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess"), {});
+  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess?play=1"), {});
   assert.equal(chess.status, 200);
   assert.equal(chess.headers.get("x-dasha-edge"), "chess");
   const html = await chess.text();

@@ -234,7 +234,7 @@ function assertDescribedBy(res, path) {
   assert.match(link, /<\/llms-full\.txt>; rel="describedby"/, `${path} HTTP Link llms-full.txt`);
 }
 
-const crawlerHtml = ['/lobby', '/compute', '/crew', '/digest', '/how-to-buy', '/privacy', '/faucet', '/bag', '/login', '/contribute', '/chess'];
+const crawlerHtml = ['/lobby', '/compute', '/crew', '/digest', '/how-to-buy', '/privacy', '/faucet', '/bag', '/login', '/contribute'];
 for (const path of crawlerHtml) {
   const res = await edgeWorker.fetch(new Request(`https://www.getdasha.com${path}`), {});
   assertDescribedBy(res, path);
@@ -242,15 +242,18 @@ for (const path of crawlerHtml) {
   assert.match(body, /<link rel="describedby" href="\/llms\.txt"/, `${path} HTML describedby llms.txt`);
   assert.match(body, /<link rel="describedby" href="\/llms-full\.txt"/, `${path} HTML describedby llms-full.txt`);
 }
-for (const path of ['/lobby', '/faucet', '/how-to-buy', '/login', '/chess']) {
+for (const path of ['/lobby', '/faucet', '/how-to-buy', '/login']) {
   const res = await edgeWorker.fetch(new Request(`https://lobby.getdasha.com${path}`), {});
   assertDescribedBy(res, `lobby host ${path}`);
 }
 
 
 {
-  const chess = await edgeWorker.fetch(new Request('https://www.getdasha.com/chess'), {});
-  assertDescribedBy(chess, '/chess');
+  const door = await edgeWorker.fetch(new Request('https://www.getdasha.com/chess'), {});
+  assert.equal(door.status, 308, 'bare /chess product door');
+  assert.equal(door.headers.get('location'), 'https://www.getdasha.com/');
+  const chess = await edgeWorker.fetch(new Request('https://www.getdasha.com/chess?play=1'), {});
+  assertDescribedBy(chess, '/chess?play=1');
   assert.equal(chess.headers.get('x-dasha-edge'), 'chess');
   const csp = chess.headers.get('content-security-policy') || '';
   assert.match(csp, /frame-ancestors 'self' https:\/\/www\.getdasha\.com/, 'chess CSP still allows embed iframe');

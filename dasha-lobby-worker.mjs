@@ -243,7 +243,6 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/compute/start</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/caps</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/how-to-buy</loc><lastmod>2026-09-16</lastmod></url>
-  <url><loc>https://www.getdasha.com/chess</loc><lastmod>2026-09-01</lastmod></url>
   <url><loc>https://www.getdasha.com/privacy</loc><lastmod>2026-09-04</lastmod></url>
   <url><loc>https://www.getdasha.com/llms.txt</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/llms-full.txt</loc><lastmod>2026-09-16</lastmod></url>
@@ -1388,7 +1387,7 @@ const DASHA_SLIM_BUY_HREF = `https://jup.ag/swap?sell=So111111111111111111111111
 /** Home slim first paint: wordmark + Menu + Buy. Drop leftover Webflow .dasha-nav, nav.nav wrap, leftover home footer, and leftover skip-link from the document. Do not unhide it. */
 export const SIWG_BUTTON_HTML = `<a class="siwg" data-grok-login href="/login#grok"><svg class="siwg-icon" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="#111"/><path d="M5 24V16.2C5 10.8 9 6.6 14 6.6s9 4.2 9 9.6V24Z" fill="#fff"/><ellipse cx="10.8" cy="15.4" rx="1.9" ry="2.7" transform="rotate(-22 10.8 15.4)" fill="#1a1224"/><ellipse cx="17.2" cy="15.4" rx="1.9" ry="2.7" transform="rotate(22 17.2 15.4)" fill="#1a1224"/></svg>Sign in with Grok Bot</a>`;
 const FAUCET_SLIM_STYLE = '<style id="dasha-faucet-slim">.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 18px;border-bottom:1px solid rgba(244,237,219,.32);background:var(--ink,#070608);position:sticky;top:0;z-index:50}.word{color:var(--paper,#f4eddb);font:900 17px/1 Arial,Helvetica,sans-serif;letter-spacing:-.03em;text-transform:uppercase;text-decoration:none;min-height:48px;display:inline-flex;align-items:center}.word b{color:var(--acid,#dfff00);font:inherit}.nav-drop{position:relative;margin-left:auto}.nav-drop>summary{list-style:none;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;padding:0 12px;color:var(--paper,#f4eddb);font:900 1rem/1 Arial,Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.04em}.nav-drop>summary::-webkit-details-marker{display:none}.nav-drop-list{position:absolute;right:0;top:calc(100% + 4px);min-width:17rem;display:flex;flex-direction:column;background:var(--ink,#070608);border:1px solid rgba(244,237,219,.32);z-index:60}.nav-drop-list a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 14px;color:var(--paper,#f4eddb);font:800 14px/1.2 Arial,Helvetica,sans-serif;text-decoration:none}.nav-drop-list .siwg{background:transparent;color:var(--paper,#f4eddb);box-shadow:none;border-radius:0;font:800 14px/1.2 Arial,Helvetica,sans-serif}.nav-drop-list .siwg-icon{width:22px;height:22px;flex:0 0 22px;display:block;border-radius:6px}.buy{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 16px;background:var(--acid,#dfff00);color:var(--ink,#070608);font:900 1rem/1 "Arial Black",Helvetica,Arial,sans-serif;text-transform:uppercase;letter-spacing:.04em;text-decoration:none;box-shadow:4px 4px 0 var(--hot,#ff3b81)}.buy:focus-visible,.word:focus-visible,.nav-drop>summary:focus-visible,.nav-drop-list a:focus-visible{outline:3px solid var(--acid,#dfff00);outline-offset:3px}</style>';
-const FAUCET_SLIM_HEADER = `<header class="bar"><a class="word" href="https://www.getdasha.com/">$<b>dasha</b></a><!-- siwg-nav-drop:2026-09-07 --><details class="nav-drop"><summary>Menu</summary><div class="nav-drop-list">${SIWG_BUTTON_HTML}<a href="/lobby">Chat</a><a href="/how-to-buy">Buy</a><a href="/listings">List</a><a href="/bag">Bag</a></div></details><a class="buy" href="${DASHA_SLIM_BUY_HREF}" target="_blank" rel="noopener noreferrer">Buy</a></header>`;
+const FAUCET_SLIM_HEADER = `<header class="bar"><a class="word" href="https://www.getdasha.com/">$<b>dasha</b></a><!-- siwg-nav-drop:2026-09-07 --><details class="nav-drop"><summary>Menu</summary><div class="nav-drop-list">${SIWG_BUTTON_HTML}<a href="/lobby">Chat</a><a href="/compute">Compute</a><a href="/how-to-buy">Buy</a><a href="/bag">Bag</a></div></details><a class="buy" href="${DASHA_SLIM_BUY_HREF}" target="_blank" rel="noopener noreferrer">Buy</a></header>`;
 
 export function stripHomeCompute(html) {
   let out = String(html || '');
@@ -2727,7 +2726,9 @@ export function orderHomeLongPage(html) {
   const styleBit = HOME_FAUCET_STYLE;
   const grwmBit = grwm.cut || '';
   const listBit = listDoor.cut || HOME_LIST_DOOR;
-  const block = `${lede}${chatBit}${simpBit}${faucetBit}${styleBit}${grwmBit}${listBit}`;
+  // Simp and List stay reachable, after GRWM, so they are not first-paint peers of Chat.
+  const secondary = `<div class="home-secondary">${simpBit}${listBit}</div>`;
+  const block = `${lede}${chatBit}${faucetBit}${styleBit}${grwmBit}${secondary}`;
   const hero = /<header\b(?=[^>]*\bid=["']content["'])[^>]*>[\s\S]*?<\/header>/i.exec(out)
     || /<header\b(?=[^>]*\bclass=["'][^"']*\bdasha-hero\b)[^>]*>[\s\S]*?<\/header>/i.exec(out);
   if (hero) {
@@ -3537,7 +3538,12 @@ const POTTER_HOME_308_PATHS = new Set([
   // /compute/dancer folds via POTTER_COMPUTE_TAB → /compute.
   // Do not restore the dancer. Max one path-family.
   "/dancer",
-  "/dancer/"
+  "/dancer/",
+  // Chess product door collapses like /studio. Play stays when the request
+  // carries embed, game, g, challenge, tournament, or play (see
+  // chessPlayQueryKeepsPage). Chess handlers and /chess/* APIs stay.
+  "/chess",
+  "/chess/"
 ]);
 const POTTER_HOWTO_308_PATHS = new Set([
   "/dasha",
@@ -5997,9 +6003,20 @@ export function potterHome308Dest(path) {
   return null;
 }
 
+const CHESS_PLAY_QUERY = ['embed', 'game', 'g', 'challenge', 'tournament', 'play'];
+
+/** In-room Play and live tables keep /chess. The bare product door 308s home. */
+export function chessPlayQueryKeepsPage(url) {
+  if (!(url instanceof URL)) return false;
+  const p = url.pathname.toLowerCase();
+  if (p !== '/chess' && p !== '/chess/') return false;
+  return CHESS_PLAY_QUERY.some((key) => String(url.searchParams.get(key) || '').trim());
+}
+
 export function potterHome308Response(request, url) {
   const path = url instanceof URL ? url.pathname : String(url || '');
   if (request && request.method !== 'GET' && request.method !== 'HEAD') return null;
+  if (url instanceof URL && chessPlayQueryKeepsPage(url)) return null;
   const dest = potterHome308Dest(path);
   if (!dest) return null;
   let location = dest;

@@ -154,7 +154,6 @@ const STAY_200 = [
   ['/contribute', null],
   ['/bounties', null],
   ['/listings', null],
-  ['/chess', null],
   ['/compute/proof.json', null],
 ];
 
@@ -178,6 +177,7 @@ for (const [path, dest] of INVENT_FOLDS) {
 for (const [path, dest] of STAY_200) {
   assert.equal(potterHome308Dest(path), dest, `${path} stays 200`);
 }
+assert.equal(potterHome308Dest('/chess'), 'https://www.getdasha.com/', 'bare /chess product door 308s home');
 for (const path of STAY_OUT) {
   assert.equal(potterHome308Dest(path), null, `do not invent ${path}`);
 }
@@ -268,7 +268,8 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
     assert.equal(listings.status, 200, `${host} /listings ${method} stays 200`);
     if (method === 'HEAD') assert.equal(await listings.text(), '');
     const chess = await edgeWorker.fetch(new Request(`https://${host}/chess`, { method }), env);
-    assert.equal(chess.status, 200, `${host} /chess ${method} stays 200`);
+    assert.equal(chess.status, 308, `${host} /chess ${method} product door`);
+    assert.equal(chess.headers.get('location'), 'https://www.getdasha.com/');
     if (method === 'HEAD') assert.equal(await chess.text(), '');
     const proof = await edgeWorker.fetch(new Request(`https://${host}/compute/proof.json`, { method }), env);
     assert.equal(proof.status, 200, `${host} /compute/proof.json ${method} stays 200`);

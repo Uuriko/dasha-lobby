@@ -95,7 +95,7 @@ assert.match(liveOut, /id="dasha-home-lede"/, 'first-paint lede names culture + 
   const quiz = liveOut.indexOf('id="simp-door"');
   const faucet = liveOut.indexOf('id="dasha-home-faucet"');
   const grwm = liveOut.indexOf('id="grwm"');
-  assert.ok(chat >= 0 && quiz > chat && faucet > quiz && grwm > faucet, 'reel is Chat, Quiz, Faucet, then GRWM');
+  assert.ok(chat >= 0 && faucet > chat && grwm > faucet && quiz > grwm, 'reel is Chat, Faucet, GRWM, then Quiz');
 }
 assert.doesNotMatch(liveOut, /Loading studio|Open Studio|editable Dasha Studio/i, 'no studio 200 copy');
 assert.match(liveOut, /id="dasha-faucet"/, 'live keeps faucet');

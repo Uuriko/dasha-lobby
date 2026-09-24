@@ -61,8 +61,12 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.equal(head.status, 200, `HEAD ${origin}/client/chess-local.js 200`);
   assert.equal(await head.text(), '', `HEAD ${origin}/client/chess-local.js empty`);
 
-  const chess = await edgeWorker.fetch(new Request(`${origin}/chess`), {});
-  assert.equal(chess.status, 200, `${origin}/chess 200`);
+  const door = await edgeWorker.fetch(new Request(`${origin}/chess`), {});
+  assert.equal(door.status, 308, `${origin}/chess product door 308`);
+  assert.equal(door.headers.get('location'), 'https://www.getdasha.com/');
+
+  const chess = await edgeWorker.fetch(new Request(`${origin}/chess?play=1`), {});
+  assert.equal(chess.status, 200, `${origin}/chess?play=1 200`);
   assert.match(chess.headers.get('link') || '', /<\/llms\.txt>; rel="describedby"/, `${origin}/chess HTTP Link llms.txt`);
   assert.match(chess.headers.get('link') || '', /<\/llms-full\.txt>; rel="describedby"/, `${origin}/chess HTTP Link llms-full.txt`);
   assert.match(chess.headers.get('content-security-policy') || '', /frame-ancestors 'self'/, `${origin}/chess CSP still allows embed`);

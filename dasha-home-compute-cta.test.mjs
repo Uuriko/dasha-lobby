@@ -42,14 +42,21 @@ function visibleText(html) {
     .replace(/<script[\s\S]*?<\/script>/gi, '');
 }
 
-function assertNoVisibleComputeCta(html, label) {
+function assertNoVisibleComputeCta(html, label, { menu = false } = {}) {
   const paint = firstPaint(html);
   const visible = visibleText(paint);
   assert.doesNotMatch(html, /id=["']dasha-home-compute["']/, `${label} no force-show style`);
   assert.doesNotMatch(html, /id=["']compute-door["']/, `${label} no compute-door`);
   assert.doesNotMatch(visible, /Try the console/, `${label} no Try the console`);
-  assert.doesNotMatch(visible, /<a\b[^>]*href=["'][^"']*\/compute[^"']*["'][^>]*>/i, `${label} no visible /compute link`);
-  assert.doesNotMatch(visible, />\s*Compute\s*</, `${label} no Compute heading`);
+  if (menu) {
+    assert.match(visible, /<a href="\/compute">Compute<\/a>/, `${label} menu Compute`);
+    const withoutMenu = visible.replace(/<a href="\/compute">Compute<\/a>/, '');
+    assert.doesNotMatch(withoutMenu, /<a\b[^>]*href=["'][^"']*\/compute[^"']*["'][^>]*>/i, `${label} no compute-door link`);
+    assert.doesNotMatch(withoutMenu, />\s*Compute\s*</, `${label} no Compute heading`);
+  } else {
+    assert.doesNotMatch(visible, /<a\b[^>]*href=["'][^"']*\/compute[^"']*["'][^>]*>/i, `${label} no visible /compute link`);
+    assert.doesNotMatch(visible, />\s*Compute\s*</, `${label} no Compute heading`);
+  }
   assert.match(paint, /\$<b>dasha<\/b>/, `${label} first paint $dasha`);
   assert.match(paint, /href="\/lobby">Chat</, `${label} first paint Chat`);
   assert.match(paint, />Buy</, `${label} first paint Buy`);
@@ -80,7 +87,7 @@ assert.doesNotMatch(mounted, /id=["']compute-door["']/, 'mount cuts leftover doo
 assert.match(mounted, /id=["']dasha-home-faucet["']|id=["']dasha-faucet["']/, 'faucet still mounts');
 
 const full = stripHomeOtherCoinWarning(stripDeadNav(LEFTOVER));
-assertNoVisibleComputeCta(full, 'stripDeadNav');
+assertNoVisibleComputeCta(full, 'stripDeadNav', { menu: true });
 assert.match(full, /id=["']dasha-home-faucet["']|id=["']dasha-faucet["']/, 'full still mounts faucet');
 assert.match(full, /id=["']chat-door["']/, 'full keeps chat-door');
 

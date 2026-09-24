@@ -79,11 +79,11 @@ function escapeHtml(value) {
 
 function navHtml(active) {
   const items = [
-    ['/start', 'Home', 'start'],
+    ['/lobby', 'Chat', 'lobby'],
     ['/compute', 'Compute', 'compute'],
-    ['/providers', 'Providers', 'providers'],
-    ['/developers', 'Developers', 'developers'],
-    ['/network', 'Network', 'network'],
+    ['/how-to-buy', 'Buy', 'buy'],
+    ['/bag', 'Bag', 'bag'],
+    ['/login#grok', 'Sign in', 'signin'],
   ];
   const links = items
     .map(([href, label, key]) => {
@@ -91,7 +91,22 @@ function navHtml(active) {
       return `<a class="muse-tab" href="${href}"${on}>${label}</a>`;
     })
     .join('');
-  return `<div class="muse-chrome"><nav class="muse-pill" aria-label="Product">${links}</nav><a class="muse-start" href="${MUSE_START_HREF}">Start</a></div>`;
+  return `<div class="muse-chrome"><nav class="muse-pill" aria-label="Product">${links}</nav></div>`;
+}
+
+function secondaryNavHtml() {
+  const items = [
+    ['/start', 'Start'],
+    ['/providers', 'Providers'],
+    ['/developers', 'Developers'],
+    ['/network', 'Network'],
+    ['/crew', 'Crew'],
+    ['/listings', 'Listings'],
+    ['/digest', 'Digest'],
+    ['/simp', 'Simp'],
+  ];
+  const links = items.map(([href, label]) => `<a href="${href}">${label}</a>`).join('');
+  return `<nav class="muse-secondary" aria-label="More">${links}</nav>`;
 }
 
 function buyHtml() {
@@ -119,11 +134,6 @@ function homeExtra() {
     <a class="muse-cta" href="${MUSE_PROVIDE_HREF}">Connect a Mac</a>
     <a class="muse-cta" href="${MUSE_START_HREF}">Run a job</a>
   </div>
-</section>
-<section class="muse-sides" aria-label="Choose a side">
-  <h2>In. Across. Back.</h2>
-  <p>Choose a side.</p>
-  <p class="muse-fine"><a href="/providers">Connect a Mac →</a> <a href="/developers">Run a job →</a> <a href="/network">See the network →</a></p>
 </section>
 <div class="muse-acid-band" aria-hidden="true"></div>`;
 }
@@ -162,7 +172,7 @@ a{color:inherit}.skip{position:absolute;left:-9999px}.skip:focus{left:12px;top:1
 .muse-ways,.muse-sides{padding:28px 0}
 .muse-ways h2,.muse-sides h2{margin:0 0 10px;font:900 clamp(36px,6vw,72px)/.9 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.04em}
 .muse-pair{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
-.muse-fine{display:flex;flex-wrap:wrap;gap:16px;color:var(--muted)}
+.muse-fine,.muse-secondary{display:flex;flex-wrap:wrap;gap:16px;color:var(--muted)}
 .muse-acid-band{height:88px;margin:36px -16px 0;background:var(--acid);border-radius:28px 28px 0 0}
 .muse-foot{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding-top:28px;color:var(--muted);font-size:13px}
 .muse-foot code{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--ink)}
@@ -212,13 +222,14 @@ ${navHtml(kind)}
     </div>
     ${home ? orbitalHtml() : ''}
   </section>
-  ${kind === 'start' ? homeExtra() : kind === 'network' ? `<p class="muse-fine"><a href="/providers">Connect a Mac →</a> <a href="/developers">Run a job →</a></p>` : ''}
+  ${kind === 'start' ? homeExtra() : ''}
 </main>
 <footer class="muse-foot">
   <span>Dasha routes work to Apple silicon.</span>
   <code>${MUSE_MINT}</code>
   ${buyHtml()}
   <a href="${MUSE_JUP}" target="_blank" rel="noopener noreferrer">Jupiter ↗</a>
+  ${secondaryNavHtml()}
 </footer>
 </div>
 </body>

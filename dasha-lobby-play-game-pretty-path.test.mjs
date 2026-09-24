@@ -3,7 +3,7 @@
  * Leftover pretty path (Worker 024cbf58): live /play /game (+slash / Title-case)
  * html-404 → 308 https://www.getdasha.com/lobby. Chess is in-room Play, never a
  * leftover door. /arcade /games stay 404 — Arcade is draft PR #44 only.
- * Exact /chess /lobby /privacy stay 200 (null dest). Bare /price stays the 200
+ * Bare /chess 308s home. /lobby /privacy stay 200 (null dest). Bare /price stays the 200
  * JSON token-price API. Disk only. No Designer. Never plugin.jup.ag.
  */
 import assert from 'node:assert/strict';
@@ -39,7 +39,7 @@ const STAY_404 = [
   '/arcade', '/arcade/', '/Arcade', '/ARCADE',
   '/games', '/games/', '/Games', '/GAMES',
 ];
-const UNTOUCHED = ['/chess', '/lobby', '/price', '/privacy'];
+const UNTOUCHED = ['/lobby', '/price', '/privacy'];
 
 for (const path of FOLDS) {
   assert.equal(potterHome308Dest(path), LOBBY, path);
@@ -50,6 +50,7 @@ for (const path of STAY_404) {
 for (const path of UNTOUCHED) {
   assert.equal(potterHome308Dest(path), null, `${path} stays 200 handler`);
 }
+assert.equal(potterHome308Dest('/chess'), `${WWW}/`, 'bare /chess product door 308s home');
 assert.equal(potterHome308Dest('/playground'), COMPUTE, '/playground still compute-tab, not lobby');
 assert.equal(potterHome308Dest('/compute/playground'), COMPUTE, '/compute/playground still compute-tab');
 assert.equal(potterHome308Dest('/app'), COMPUTE, '/app → compute (shipped next hop)');
@@ -105,9 +106,12 @@ for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {
   }
 
   const chess = await edgeWorker.fetch(new Request(`https://${host}/chess`), env);
-  assert.equal(chess.status, 200, `${host} /chess stays 200`);
+  assert.equal(chess.status, 308, `${host} /chess product door 308s home`);
+  assert.equal(chess.headers.get('location'), `${WWW}/`);
+  const play = await edgeWorker.fetch(new Request(`https://${host}/chess?play=1`), env);
+  assert.equal(play.status, 200, `${host} /chess?play=1 stays 200`);
   if (host === 'www.getdasha.com') {
-    assert.equal(chess.headers.get('x-dasha-edge'), 'chess');
+    assert.equal(play.headers.get('x-dasha-edge'), 'chess');
   }
 
   const lobby = await edgeWorker.fetch(new Request(`https://${host}/lobby`), env);

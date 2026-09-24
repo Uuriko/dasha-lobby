@@ -168,7 +168,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "id rename is per-style, not eat-the-
 }
 
 {
-  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess"), {});
+  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess?play=1"), {});
   assert.equal(chess.status, 200);
   const html = await chess.text();
   assert.match(html, /function jup\(/, "chess jup() stays");

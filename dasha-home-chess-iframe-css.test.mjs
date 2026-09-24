@@ -160,7 +160,7 @@ assert.ok(gone.length > LIVE.length * 0.7, "CSS drop is per-rule, not eat-the-pa
 }
 
 {
-  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess"), {});
+  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess?play=1"), {});
   assert.equal(chess.status, 200);
   const html = await chess.text();
   const chessMobile = (html.match(/<style\b[^>]*id=["']dasha-mobile-scroll["'][^>]*>[\s\S]*?<\/style>/i) || [""])[0];

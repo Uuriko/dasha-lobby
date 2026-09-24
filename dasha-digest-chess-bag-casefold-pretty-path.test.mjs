@@ -61,8 +61,9 @@ for (const path of [
 }
 
 // Bare /Chess stays on product map (same dest as other Title-case products)
-assert.equal(potterHome308Dest('/Chess'), `${WWW}/chess`);
-assert.equal(potterHome308Dest('/chess'), null, 'bare lowercase /chess stays 200');
+assert.equal(potterHome308Dest('/Chess'), `${WWW}/`);
+assert.equal(potterHome308Dest('/chess'), `${WWW}/`, 'bare /chess product door 308s home');
+assert.equal(potterHome308Dest('/chess/'), `${WWW}/`, 'bare /chess/ product door 308s home');
 
 const env = {};
 for (const host of ['www.getdasha.com', 'lobby.getdasha.com']) {

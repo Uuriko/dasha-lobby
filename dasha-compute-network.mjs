@@ -449,10 +449,39 @@ function computeV1Gateway(request, allowedOrigin, credentials) {
       note: '24h dgk_ chat+models. Copy once.',
     },
     errors: 'openai + status/reason/hint/next',
+    // Brain / Hands / Files. Counts are not invented here — Hands points at network.providers_online.
     layers: {
-      brain: 'Workers gateway + Hosted Ask + signed receipt chain',
-      hands: 'Community Mac (#provide) / Hosted Workers AI floor',
-      files: 'Drives (R2 binding DRIVES). Dream via Hosted Ask writes memory/dreamed.json. Works with providers_online=0.',
+      brain: {
+        summary: 'Workers gateway + Hosted Ask + signed receipt chain',
+        chat_completions: '/compute/api/v1/chat/completions',
+        hosted_ask: '/compute/api/chat',
+        models: '/compute/api/v1/models',
+        receipts: '/compute/api/receipts',
+        chain: '/compute/api/chain',
+      },
+      hands: {
+        summary: 'Community Mac (#provide) / Hosted Workers AI floor',
+        providers: '/compute/api/providers',
+        network: '/compute/api/v1/network',
+        provide: '/compute#provide',
+        kit: '/compute/skill.md',
+        online_count: {
+          path: '/compute/api/v1/network',
+          field: 'providers_online',
+        },
+      },
+      files: {
+        summary: 'Drives (R2 binding DRIVES). Dream via Hosted Ask writes memory/dreamed.json. Works with providers_online=0.',
+        drives: '/compute/api/v1/drives',
+        object: '/compute/api/v1/drives/:id/objects/*path',
+        dream: '/compute/api/v1/drives/:id/dream',
+        snapshot: '/compute/api/v1/drives/:id/snapshot',
+        unbound: {
+          status: 'failed',
+          reason: 'drives_unavailable',
+          hint: 'Bind R2 as DRIVES. Drives do not need a Mac.',
+        },
+      },
     },
     drives: '/compute/api/v1/drives',
     dream: '/compute/api/v1/drives/:id/dream',

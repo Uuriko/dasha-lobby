@@ -18,6 +18,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import edgeWorker, {
   applyDigestTape,
+  chessPlayQueryKeepsPage,
   orderHomeLongPage,
   potterHome308Dest,
   potterHome308Response,
@@ -71,8 +72,8 @@ function assertNavDrop(html, label) {
   const drop = (html.match(/<details class="nav-drop">[\s\S]*?<\/details>/) || [''])[0];
   assert.match(drop, /<summary>Menu<\/summary>/, `${label} Menu`);
   const hrefs = [...drop.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(hrefs, ['/login#grok', '/lobby', '/how-to-buy', '/listings', '/bag'], `${label} menu hrefs`);
-  assert.doesNotMatch(drop, /\/simp|\/faucet|\/verse|\/learn|\/desk|\/compute/i, `${label} no retired menu doors`);
+  assert.deepEqual(hrefs, ['/login#grok', '/lobby', '/compute', '/how-to-buy', '/bag'], `${label} menu hrefs`);
+  assert.doesNotMatch(drop, /\/simp|\/faucet|\/verse|\/learn|\/desk|\/listings|\/crew|\/network|\/providers|\/developers|\/digest|\/start/i, `${label} no demoted menu doors`);
 }
 
 function assertHomeContract(html, label) {
@@ -317,7 +318,7 @@ for (const path of ['/Compute', '/Compute/', '/COMPUTE']) {
 }
 for (const [path, want] of [
   ['/Lobby', 'https://www.getdasha.com/lobby'],
-  ['/Chess', 'https://www.getdasha.com/chess'],
+  ['/Chess', 'https://www.getdasha.com/'],
   ['/Bag', 'https://www.getdasha.com/bag'],
   ['/Simp', 'https://www.getdasha.com/simp'],
   ['/Crew', 'https://www.getdasha.com/crew'],
@@ -332,7 +333,10 @@ for (const [path, want] of [
   assert.equal(potterHome308Dest(path), want, path);
 }
 assert.equal(potterHome308Dest('/lobby'), null);
-assert.equal(potterHome308Dest('/chess'), null);
+assert.equal(potterHome308Dest('/chess'), 'https://www.getdasha.com/');
+assert.equal(potterHome308Dest('/chess/'), 'https://www.getdasha.com/');
+assert.equal(chessPlayQueryKeepsPage(new URL('https://www.getdasha.com/chess?embed=1')), true);
+assert.equal(chessPlayQueryKeepsPage(new URL('https://www.getdasha.com/chess')), false);
 assert.equal(potterHome308Dest('/privacy'), null);
 assert.equal(potterHome308Dest('/how-to-buy'), null);
 for (const path of ['/verify', '/verify/']) {

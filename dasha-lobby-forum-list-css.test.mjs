@@ -135,7 +135,7 @@ assert.match(asStandaloneLobbyPage(lobbyDisk), new RegExp(MINT), "standalone dis
 }
 
 {
-  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess"), {});
+  const chess = await edgeWorker.fetch(new Request("https://www.getdasha.com/chess?play=1"), {});
   assert.equal(chess.status, 200);
   const html = await chess.text();
   assert.doesNotMatch(html, /id=["']dasha-mobile-scroll["']/, "prior leftover chess mobile-scroll stays dropped");
