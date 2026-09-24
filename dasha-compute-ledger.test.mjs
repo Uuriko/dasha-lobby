@@ -5,7 +5,7 @@ import { ComputeNetwork } from './dasha-compute-network.mjs';
 import { COOKIE, createSessionToken } from './dasha-lobby-x.mjs';
 import {
   LEDGER_EVENT_PREFIX, LEDGER_POH_PREFIX,
-  buildLedgerPayoutRow, buildLedgerSettledRow, buildLedgerFailedRow,
+  buildLedgerPayoutRow, buildLedgerSettledRow, buildLedgerFailedRow, buildLedgerRefundRow,
   mapLedgerFailureReason, utcHour, usdMicrosFromCents, jobChargeBasis,
 } from './dasha-compute-ledger.mjs';
 
@@ -51,6 +51,8 @@ import {
   assert.equal(basisRow.buyer_charge_usd_micros, 0);
   assert.equal(basisRow.credit_used_usd_micros, 0); // guest keys never touch credits
   assert.equal(buildLedgerSettledRow({ receiptId: 'r5', chargeBasis: 'bogus' }).charge_basis, null);
+  assert.equal(buildLedgerRefundRow({ receiptId: 'r6', jobId: 'j6', refundCents: null }).refund_usd_micros, null); // missing debitCents -> null, not 0
+  assert.equal(buildLedgerSettledRow({ receiptId: 'r7', chargeBasis: null, buyerChargeCents: null }).buyer_charge_usd_micros, null); // basis undeterminable -> null
   assert.equal(mapLedgerFailureReason('provider cut'), 'provider_offline');
   assert.equal(mapLedgerFailureReason('expired'), 'timeout');
   assert.equal(mapLedgerFailureReason('cancelled'), 'client_abort');
@@ -197,6 +199,19 @@ const anomRows = ledgerRows('anomaly');
 assert.equal(anomRows.length, 1);
 assert.equal(anomRows[0].reason, 'debited_without_cents');
 assert.equal(anomRows[0].ref_job_id, 'job_anomaly');
+
+// undeterminable basis -> charge_basis null + anomaly row
+const und = await network.recordPaidInferenceSettle({
+  owner: 'ledger_owner', engine: 'community', usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+  cents: 5, jobId: 'job_undetermined', requestId: 'req_und', model: 'qwen3-8b',
+  latencyMs: 10, replayKey: 'job:job_undetermined', now: settleNow,
+  ledger: { path: null, keyType: null, chargeBasis: null, buyerChargeCents: null },
+});
+assert.equal(und.ok, true);
+const undSettled = ledgerRows('job_event').filter((r) => r.status === 'settled' && r.job_id === 'job_undetermined');
+assert.equal(undSettled[0].charge_basis, null);
+assert.equal(undSettled[0].buyer_charge_usd_micros, null);
+assert.equal(ledgerRows('anomaly').filter((r) => r.reason === 'charge_basis_undetermined').length, 1);
 
 // refund -> new row pointing at the original receipt; originals untouched
 rows.set('compute:credit-spend:ledger_owner:api:job_ledgertest', { cents: 5, reason: 'api-chat', createdAt: settleNow });

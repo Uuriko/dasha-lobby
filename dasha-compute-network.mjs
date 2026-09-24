@@ -1412,7 +1412,9 @@ export class ComputeNetwork {
         providerId: provider?.id || job.providerId || null,
         createdAtMs: Number(job.createdAt || 0) || null,
         chargeBasis: jobChargeBasis(job),
-        buyerChargeCents: job.debitRequestId ? (job.debitCents != null ? Number(job.debitCents) : null) : 0,
+        buyerChargeCents: job.debitRequestId
+          ? (job.debitCents != null ? Number(job.debitCents) : null)
+          : (jobChargeBasis(job) == null ? null : 0),
         creditUsedCents: job.keyType === 'dgk_' ? 0 : null,
         engine: job.route === 'mixture' ? 'mixture' : 'community',
         sessionId: job.sessionId || null,
@@ -3248,7 +3250,7 @@ export class ComputeNetwork {
       try {
         const settledReceipt = await this.state.storage.get(`${SETTLED_REPLAY_PREFIX}job:${job.id}`);
         await appendLedgerEvent(this.state.storage, 'job_event', buildLedgerRefundRow({
-          receiptId: settledReceipt?.id || null, jobId: job.id, refundCents: Number(job.debitCents || 0),
+          receiptId: settledReceipt?.id || null, jobId: job.id, refundCents: job.debitCents != null ? Number(job.debitCents) : null,
         }), now);
       } catch {}
     }
