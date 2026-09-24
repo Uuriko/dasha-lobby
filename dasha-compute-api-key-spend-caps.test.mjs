@@ -168,4 +168,30 @@ assert.match(page, /api-key-limit/, 'page #api-key-limit');
 assert.match(page, /Credits (?:·|\\u00b7) Cap \$5 \/ month/, 'page default cap hint');
 assert.match(page, /limit_cents/, 'page posts limit_cents');
 
+// #323: concurrent charges on the same key serialize; the cap holds.
+{
+  const raceNow = Date.now();
+  rows.set('compute:api-key:key_race', {
+    id: 'key_race', owner: 'x:race-owner', name: 'Race', prefix: 'dsk_racekeyrac', tokenHash: 'x',
+    createdAt: raceNow, lastUsedAt: 0, limitCents: 10, limitReset: 'monthly', spendCents: 0, spendWindowStart: raceNow,
+  });
+  const staleRead = rows.get('compute:api-key:key_race'); // what two concurrent requests would both hold
+  const [first, second] = await Promise.all([
+    network.chargeApiKeySpend(staleRead, 7, raceNow),
+    network.chargeApiKeySpend(staleRead, 7, raceNow),
+  ]);
+  assert.equal([first, second].filter((r) => r.ok).length, 1, 'exactly one concurrent charge fits the cap');
+  const denied = [first, second].find((r) => !r.ok);
+  assert.equal(denied.status, 402);
+  assert.equal(rows.get('compute:api-key:key_race').spendCents, 7, 'cap holds under concurrency');
+  // a refund racing a charge serializes too: 7 + 2 - 4 lands exactly 5
+  const [charge2, refund1] = await Promise.all([
+    network.chargeApiKeySpend(rows.get('compute:api-key:key_race'), 2, raceNow),
+    network.refundApiKeySpend('key_race', 4, raceNow),
+  ]);
+  assert.equal(charge2.ok, true);
+  assert.equal(refund1.ok, true);
+  assert.equal(rows.get('compute:api-key:key_race').spendCents, 5, 'serialized charge+refund lands exactly');
+}
+
 console.log('dasha-compute-api-key-spend-caps: PASS');
