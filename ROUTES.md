@@ -67,6 +67,7 @@ Treasury: `DwpCrg5qfCMW11a9FYFsAR9ZYQUYKNhfLdnzpci7sYgb`
 | `/job` `/compute/job` `/api/job` | 308 | `https://www.getdasha.com/compute/api/jobs` |
 | `/receipt` `/receipts` `/compute/receipt` `/compute/receipts` `/api/receipt` `/api/receipts` | 308 | `https://www.getdasha.com/compute/api/receipts` |
 | `/api/keys` | 308 | `https://www.getdasha.com/compute/api/keys` |
+| `/api/readyz` `/api/pricing` | 308 | `https://www.getdasha.com/compute/api/readyz` and `https://www.getdasha.com/compute/api/pricing` (apex leftovers; same `potterHome308Dest` helper as `/api/healthz`; +slash / Title-case; lobby same-host; bare `/readyz` stays out; bare `/pricing` stays `/compute`) |
 | `/gateway` `/compute/gateway` `/endpoint` `/endpoints` `/sdk` `/cli` `/devtools` `/sdk-docs` `/api-reference` + remaining `/compute/*` peers | 308 | `https://www.getdasha.com/compute/api` |
 | `/v1` `/v1/models` | 308 | `https://www.getdasha.com/compute/api` (apex leftover; same dest as `/docs` `/swagger`; never a fake `/v1` JSON proxy) |
 | `/compute/api/docs` | 308 | `https://www.getdasha.com/compute/skill.md` (docs face; distinct from apex `/sdk-docs` `/api-reference` gateway leftovers → `/compute/api`) |
