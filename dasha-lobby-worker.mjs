@@ -8130,6 +8130,14 @@ function crewKitResponse(request, env) {
 }
 
 
+/** Ship-gate: bare /privacy and /privacy/ are a 200 on this Worker for www and lobby.
+ *  H1 Privacy. Do not send this path to the lobby host. Other product doors stay as they are.
+ */
+export function isPrivacyPagePath(pathname) {
+  const p = String(pathname || '');
+  return p === '/privacy' || p === '/privacy/';
+}
+
 function privacyPageResponse(request) {
   return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(stripPrivacyLeftoverCodeCss(stripPrivacyDroppedCtaCss(PRIVACY_HTML))), {
     status: 200,
@@ -11935,7 +11943,7 @@ async function productEdge(request, url, env) {
     if (simpOg) return simpOg;
     const productAsset = await workerStaticAssetResponse(request, url, env);
     if (productAsset) return productAsset;
-    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/privacy' || url.pathname === '/privacy/')) {
+    if ((request.method === 'GET' || request.method === 'HEAD') && isPrivacyPagePath(url.pathname)) {
       return privacyPageResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && isComputeSkillPath(url.pathname)) {
@@ -13161,6 +13169,10 @@ export default {
         headers: { Location: url.href, 'Cache-Control': 'public, max-age=3600' },
       });
     }
+    // Before room, muse, and potter 308s. www /privacy must stay this 200.
+    if ((request.method === 'GET' || request.method === 'HEAD') && isPrivacyPagePath(url.pathname)) {
+      return privacyPageResponse(request);
+    }
     const kitRelease = await computeDownloadResponse(request);
     if (kitRelease) return kitRelease;
     {
@@ -13176,9 +13188,6 @@ export default {
     if (potter308) return potter308;
     if (isMailSmokePath(url.pathname)) {
       return handleMailSmoke(request, env);
-    }
-    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/privacy' || url.pathname === '/privacy/')) {
-      return privacyPageResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/contribute' || url.pathname === '/contribute/')) {
       return contributePageResponse(request);
