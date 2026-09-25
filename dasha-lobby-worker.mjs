@@ -4883,7 +4883,9 @@ const POTTER_FAUCET_DOOR_308_PATHS = new Set([
 ]);
 /** Pretty health probes: live /compute/health(z) (+slash) 308 → /compute/api/healthz.
  *  Leftover /compute/readyz (+slash / Title-case) 308 → /compute/api/readyz
- *  (parallel to healthz). Do not invent /compute/ready /compute/ping /readyz. */
+ *  (parallel to healthz). Apex /api/readyz (+slash) same dest as /api/healthz's
+ *  sibling. Do not invent /compute/ready /compute/ping /readyz. Bare /pricing
+ *  stays the compute tab; apex /api/pricing is the dest if below. */
 const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
   '/compute/health', '/compute/health/',
   '/compute/healthz', '/compute/healthz/',
@@ -4891,6 +4893,7 @@ const POTTER_COMPUTE_HEALTHZ_308_PATHS = new Set([
   // apex /api/{jobs,status,network,healthz,health} — health aliases land here.
   '/api/healthz', '/api/healthz/',
   '/api/health', '/api/health/',
+  '/api/readyz', '/api/readyz/',
 ]);
 /** Leftover /swagger-ui /swagger-ui.html /api-docs /swagger /openapi /swagger_ui /api_docs /compute/swagger-ui /compute/api-docs /gateway /compute/gateway /docs /endpoint /endpoints /sdk /cli /compute/endpoint /compute/endpoints /devtools /devtool /developer-docs /sdk-docs /cli-docs /sdks-docs /api-reference /sdk-reference /cli-reference /developer-api /dev-api /compute/devtools /compute/devtool /compute/developer-docs /compute/cli-docs /compute/sdks-docs /compute/sdk-reference /compute/cli-reference /compute/developer-api /compute/dev-api /v1 /v1/models (+slash) → /compute/api.
  *  /compute/sdk /compute/sdk-docs /compute/cli /compute/api-reference fold via POTTER_COMPUTE_DOCS_SKILL_308_PATHS. */
@@ -5836,8 +5839,15 @@ export function potterHome308Dest(path) {
   if (p === "/compute/healthz" || p === "/compute/healthz/" || p === "/compute/health" || p === "/compute/health/" || p === "/api/healthz" || p === "/api/healthz/" || p === "/api/health" || p === "/api/health/") {
     return "https://www.getdasha.com/compute/api/healthz";
   }
-  if (p === "/compute/readyz" || p === "/compute/readyz/") {
+  if (p === "/compute/readyz" || p === "/compute/readyz/" || p === "/api/readyz" || p === "/api/readyz/") {
     return "https://www.getdasha.com/compute/api/readyz";
+  }
+  // Leftover apex /api/pricing (+slash / Title-case via toLowerCase) html-404
+  // while /compute/api/pricing is 200 JSON. Same potterHome308Dest helper as
+  // /api/healthz. Bare /pricing and /compute/pricing stay the compute tab.
+  // Do not invent /api/pricing.json (that stay-out lives on the .json set).
+  if (p === "/api/pricing" || p === "/api/pricing/") {
+    return "https://www.getdasha.com/compute/api/pricing";
   }
   if (p === "/compute/v1" || p === "/compute/v1/") {
     return "https://www.getdasha.com/compute/api/v1";
