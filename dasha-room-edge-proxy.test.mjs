@@ -2,7 +2,8 @@
 /**
  * Project Room edge reverse-proxy: /room HTML door on apex+www+lobby.
  * Packet at /room/llms.txt. Accept: text/plain /room → packet.
- * /room/kits + kits.txt family → origin /kits.txt.
+ * /room/kits + kits.txt family → room.trydemigod.com/kits.txt
+ * (staging workers.dev is Cloudflare 1042). Other doors stay on staging.
  * GET+HEAD. Query ignored.
  * Site-root /.well-known/agent.json stays Compute.
  * Disk only. No Designer. No wrangler deploy. Never plugin.jup.ag.
@@ -15,6 +16,7 @@ import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
 import { COMPUTE_AGENT_JSON } from './dasha-compute-agent.mjs';
 import {
   ROOM_EDGE,
+  ROOM_KITS_ORIGIN,
   ROOM_ORIGIN,
   isRoomDiscoveryPath,
   normalizeRoomPath,
@@ -44,6 +46,8 @@ assert.match(routesSrc, /Accept: text\/plain/, 'ROUTES.md names Accept text/plai
 assert.doesNotMatch(proxySrc, /arcade|multichain|x402|people-data|ocm\//, 'proxy stays on Room door + discovery');
 
 assert.equal(ROOM_ORIGIN, 'https://project-room-staging.getdasha.workers.dev');
+assert.equal(ROOM_KITS_ORIGIN, 'https://room.trydemigod.com');
+assert.match(routesSrc, /room\.trydemigod\.com\/kits\.txt/, 'ROUTES.md names live kits origin');
 assert.equal(normalizeRoomPath('/Room/LLMS.TXT/'), '/room/llms.txt');
 assert.equal(normalizeRoomPath('/room/'), '/room/');
 assert.equal(roomUpstreamPath('/room'), '/room');
@@ -76,6 +80,17 @@ assert.equal(isRoomDiscoveryPath('/.well-known/agent.json'), false);
 assert.equal(roomUpstreamUrl('/room'), `${ROOM_ORIGIN}/room`);
 assert.equal(roomUpstreamUrl('/room/'), `${ROOM_ORIGIN}/room`);
 assert.equal(roomUpstreamUrl('/room/.well-known/agent.json'), `${ROOM_ORIGIN}/.well-known/agent.json`);
+assert.equal(roomUpstreamUrl('/room/kits'), `${ROOM_KITS_ORIGIN}/kits.txt`, 'lobby kits catalog uses the live Room origin');
+assert.equal(roomUpstreamUrl('/room/kits/'), `${ROOM_KITS_ORIGIN}/kits.txt`);
+assert.equal(roomUpstreamUrl('/Room/Kits'), `${ROOM_KITS_ORIGIN}/kits.txt`, 'Title-case kits still hits the live catalog');
+assert.equal(roomUpstreamUrl('/room/kit'), `${ROOM_KITS_ORIGIN}/kits.txt`);
+assert.equal(roomUpstreamUrl('/room/kits.txt'), `${ROOM_KITS_ORIGIN}/kits.txt`);
+assert.equal(roomUpstreamUrl('/room/kits.md'), `${ROOM_KITS_ORIGIN}/kits.txt`);
+assert.equal(roomUpstreamUrl('/room/kit.txt'), `${ROOM_KITS_ORIGIN}/kits.txt`);
+assert.equal(roomUpstreamUrl('/room/kit.md'), `${ROOM_KITS_ORIGIN}/kits.txt`);
+assert.equal(roomUpstreamUrl('/room/kits.json'), null, 'kits.json stays a 308, not a second proxy');
+assert.doesNotMatch(roomUpstreamUrl('/room/kits'), /workers\.dev/, 'kits must not fetch staging workers.dev');
+assert.match(roomUpstreamUrl('/room'), /project-room-staging\.getdasha\.workers\.dev/, 'HTML door stays on staging');
 assert.equal(potterHome308Dest('/room'), null, '/room is not a leftover 308');
 assert.equal(potterHome308Dest('/room/'), null, '/room/ is not a leftover 308');
 assert.equal(potterHome308Dest('/room/kits'), null, '/room/kits is a 200 catalog, not leftover 308');
@@ -115,7 +130,14 @@ const stubFetch = async (href, init = {}) => {
     headers: headersIn,
     search: url.search,
   });
-  assert.equal(url.origin, ROOM_ORIGIN, 'upstream stays on Room origin');
+  assert.ok(
+    url.origin === ROOM_ORIGIN || url.origin === ROOM_KITS_ORIGIN,
+    'upstream stays on a Room origin',
+  );
+  if (url.origin === ROOM_KITS_ORIGIN) {
+    assert.equal(url.pathname, '/kits.txt', 'live kits origin only serves the catalog path');
+    assert.equal(headersIn.get('user-agent'), 'dasha-lobby', 'kits upstream sends a custom user-agent');
+  }
   assert.equal(url.search, '', 'do not forward query to origin');
   if (url.pathname === '/room' && roomAcceptsPlain({ headers: headersIn })) {
     return new Response(LLMS, {
@@ -199,13 +221,14 @@ const PATHS = [
   { path: '/room?cb=1', type: /text\/html/, body: ROOM_HTML, upstream: '/room' },
   { path: '/room/llms.txt', type: /text\/plain/, body: LLMS, upstream: '/llms.txt' },
   { path: '/room/llms-full.txt', type: /text\/plain/, body: LLMS_FULL, upstream: '/llms-full.txt' },
-  { path: '/room/kits', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
-  { path: '/room/kits/', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
-  { path: '/room/kits.txt', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
-  { path: '/room/kits.md', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
-  { path: '/room/kit', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
-  { path: '/room/kit.txt', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
-  { path: '/room/kit.md', type: /text\/plain/, body: KITS, upstream: '/kits.txt' },
+  { path: '/room/kits', type: /text\/plain/, body: KITS, upstream: '/kits.txt', origin: ROOM_KITS_ORIGIN },
+  { path: '/room/kits/', type: /text\/plain/, body: KITS, upstream: '/kits.txt', origin: ROOM_KITS_ORIGIN },
+  { path: '/Room/Kits', type: /text\/plain/, body: KITS, upstream: '/kits.txt', origin: ROOM_KITS_ORIGIN },
+  { path: '/room/kits.txt', type: /text\/plain/, body: KITS, upstream: '/kits.txt', origin: ROOM_KITS_ORIGIN },
+  { path: '/room/kits.md', type: /text\/plain/, body: KITS, upstream: '/kits.txt', origin: ROOM_KITS_ORIGIN },
+  { path: '/room/kit', type: /text\/plain/, body: KITS, upstream: '/kits.txt', origin: ROOM_KITS_ORIGIN },
+  { path: '/room/kit.txt', type: /text\/plain/, body: KITS, upstream: '/kits.txt', origin: ROOM_KITS_ORIGIN },
+  { path: '/room/kit.md', type: /text\/plain/, body: KITS, upstream: '/kits.txt', origin: ROOM_KITS_ORIGIN },
   { path: '/room/.well-known/agent.json', type: /application\/json/, body: ROOM_AGENT, upstream: '/.well-known/agent.json' },
   { path: '/room/api/health', type: /application\/json/, body: HEALTH, upstream: '/api/health' },
 ];
@@ -213,7 +236,7 @@ const PATHS = [
 const prevFetch = globalThis.fetch;
 globalThis.fetch = async (input, init) => {
   const href = String(input?.url || input);
-  if (href.startsWith(ROOM_ORIGIN)) return stubFetch(href, init);
+  if (href.startsWith(ROOM_ORIGIN) || href.startsWith(ROOM_KITS_ORIGIN)) return stubFetch(href, init);
   throw new Error('unexpected fetch ' + href);
 };
 try {
@@ -232,7 +255,7 @@ try {
         } else {
           assert.equal(await res.text(), spec.body, `${host}${spec.path} GET body`);
         }
-        assert.equal(calls.at(-1).href, `${ROOM_ORIGIN}${spec.upstream}`, `${host}${spec.path} ${method} origin`);
+        assert.equal(calls.at(-1).href, `${spec.origin || ROOM_ORIGIN}${spec.upstream}`, `${host}${spec.path} ${method} origin`);
         assert.equal(calls.at(-1).search, '', `${host}${spec.path} ${method} no query`);
       }
     }

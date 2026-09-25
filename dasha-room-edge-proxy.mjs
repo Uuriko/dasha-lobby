@@ -4,13 +4,18 @@
  * Accept: text/plain on /room (+slash) → origin /room packet (same bytes as
  * /room/llms.txt). Browsers keep the HTML door.
  * /room/llms.txt + packet/card/health stay prefix-preserving discovery docs.
- * /room/kits (+ kits.txt family) → origin /kits.txt catalog. Not Compute.
- * Does NOT overwrite site-root /.well-known/agent.json (Compute card).
+ * /room/kits (+ kits.txt family) → live catalog /kits.txt on room.trydemigod.com.
+ * Staging workers.dev answers Cloudflare 1042, including /kits.txt, so the
+ * kits family does not use ROOM_ORIGIN. Other Room doors stay on staging.
+ * Not Compute. Does NOT overwrite site-root /.well-known/agent.json.
  * Leftover skill/card/health synonyms stay 308 (not this map).
  * Never Jupiter plugin host.
  */
 
 export const ROOM_ORIGIN = 'https://project-room-staging.getdasha.workers.dev';
+/** Live Project Room catalog. www /room/kits and this host serve the same bytes. */
+export const ROOM_KITS_ORIGIN = 'https://room.trydemigod.com';
+const ROOM_KITS_UPSTREAM = '/kits.txt';
 export const ROOM_EDGE = 'room-discovery';
 
 const HOP_BY_HOP = new Set([
@@ -28,8 +33,9 @@ const HOP_BY_HOP = new Set([
   'set-cookie',
 ]);
 
-/** Exact lobby doors → project-room-staging paths. HTML door is /room.
- *  Kits family maps to origin /kits.txt (staging /kits + /kit 404). */
+/** Exact lobby doors → upstream paths. HTML door is /room on ROOM_ORIGIN.
+ *  Kits family maps to /kits.txt on ROOM_KITS_ORIGIN (live /kits matches
+ *  /kits.txt; staging workers.dev is 1042). */
 const ROOM_UPSTREAM = Object.freeze({
   '/room': '/room',
   '/room/': '/room',
@@ -81,7 +87,8 @@ export function isRoomDiscoveryPath(pathname) {
 export function roomUpstreamUrl(pathname) {
   const upstream = roomUpstreamPath(pathname);
   if (!upstream) return null;
-  return ROOM_ORIGIN + upstream;
+  const origin = upstream === ROOM_KITS_UPSTREAM ? ROOM_KITS_ORIGIN : ROOM_ORIGIN;
+  return origin + upstream;
 }
 
 /** Live www+lobby: Accept text/plain (and no text/html) on /room serves the
@@ -112,12 +119,14 @@ function failClosed(status, error) {
   });
 }
 
-function outboundRequestHeaders(request) {
+function outboundRequestHeaders(request, upstreamPath) {
   const headers = new Headers();
   const skip = extraHopByHop(request.headers);
   const accept = request.headers.get('accept');
   if (accept && !skip.has('accept')) headers.set('accept', accept);
   headers.set('accept-encoding', 'identity');
+  // Room asks for a custom User-Agent. Kits is the live origin.
+  if (upstreamPath === ROOM_KITS_UPSTREAM) headers.set('user-agent', 'dasha-lobby');
   return headers;
 }
 
@@ -158,7 +167,7 @@ export async function roomDiscoveryResponse(request, opts = {}) {
   const doFetch = opts.fetch || globalThis.fetch;
   const init = {
     method: 'GET',
-    headers: outboundRequestHeaders(request),
+    headers: outboundRequestHeaders(request, upstreamPath),
     redirect: 'manual',
   };
   if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
