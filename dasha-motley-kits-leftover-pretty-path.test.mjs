@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
-import { roomUpstreamPath } from './dasha-room-edge-proxy.mjs';
+import { roomUpstreamPath, roomUpstreamUrl } from './dasha-room-edge-proxy.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
@@ -90,6 +90,13 @@ assert.match(tabSet, /['"]\/kits['"]/, 'apex /kits stays compute-tab leftover');
 assert.equal(roomUpstreamPath('/room/kits.json'), null, 'kits.json stays out of ROOM_UPSTREAM');
 assert.equal(roomUpstreamPath('/room/kits.json/'), null, 'kits.json slash stays out of ROOM_UPSTREAM');
 assert.equal(roomUpstreamPath('/room/kits'), '/kits.txt', '/room/kits stays catalog proxy');
+assert.equal(
+  roomUpstreamUrl('/room/kits'),
+  'https://room.trydemigod.com/kits.txt',
+  'lobby /room/kits fetches the live catalog, not staging workers.dev',
+);
+assert.doesNotMatch(roomUpstreamUrl('/room/kits'), /workers\.dev/);
+assert.equal(roomUpstreamUrl('/room/kits.json'), null);
 
 const WWW = 'https://www.getdasha.com';
 const LOBBY = 'https://lobby.getdasha.com';

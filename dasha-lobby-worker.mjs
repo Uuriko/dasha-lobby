@@ -5427,8 +5427,9 @@ const POTTER_COMPUTE_HUMANS_308_PATHS = new Set([
  *  www /room/* is the Room worker (more specific than www.getdasha.com/*),
  *  so this 308 does not run there until deploy route
  *  www.getdasha.com/room/kits.json* wins. Do not map kits.json in
- *  ROOM_UPSTREAM (staging workers.dev is 1042; the live catalog is
- *  Room's /room/kits). */
+ *  ROOM_UPSTREAM. Lobby /room/kits is the 200 catalog: the proxy fetches
+ *  https://room.trydemigod.com/kits.txt (staging workers.dev is
+ *  Cloudflare 1042). */
 const POTTER_KITS_308_PATHS = new Set([
   '/room/kits.json', '/room/kits.json/',
   '/api/kits', '/api/kits/',

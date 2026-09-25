@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import edgeWorker, { potterHome308Dest } from './dasha-lobby-worker.mjs';
-import { roomUpstreamPath } from './dasha-room-edge-proxy.mjs';
+import { roomUpstreamPath, roomUpstreamUrl } from './dasha-room-edge-proxy.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const workerSrc = readFileSync(join(root, 'dasha-lobby-worker.mjs'), 'utf8');
@@ -78,6 +78,8 @@ const KITS = [
 ];
 for (const path of KITS) {
   assert.equal(roomUpstreamPath(path), '/kits.txt', `${path} → origin /kits.txt`);
+  assert.equal(roomUpstreamUrl(path), 'https://room.trydemigod.com/kits.txt', `${path} → live catalog`);
+  assert.doesNotMatch(roomUpstreamUrl(path), /workers\.dev/, `${path} is not staging 1042`);
   assert.equal(potterHome308Dest(path), null, `${path} is not leftover 308`);
 }
 assert.equal(roomUpstreamPath('/room/kits.json'), null, 'do not invent /room/kits.json');
