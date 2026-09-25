@@ -377,6 +377,7 @@ const env = { LOBBY: mockLobby, ALLOWED_ORIGINS: 'https://www.getdasha.com,https
   const privacy = await edgeWorker.fetch(new Request('https://www.getdasha.com/privacy'), {});
   assert.equal(privacy.status, 200, '/privacy 200 not 308');
   assert.equal(privacy.headers.get('x-dasha-edge'), 'privacy');
+  assert.equal(privacy.headers.get('location'), null, 'www /privacy is not a lobby redirect');
   const body = await privacy.text();
   assert.match(body, /<h1>Privacy<\/h1>/);
   assert.match(body, /<title>Dasha privacy<\/title>/);
