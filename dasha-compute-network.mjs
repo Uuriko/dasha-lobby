@@ -57,15 +57,12 @@ import {
   createPendingPayout,
   earningsCatalog,
   extractPayoutSecret,
-  isValidSolanaTxSignature,
   listPendingProviderPayouts,
-  markProviderPayoutPaid,
   normalizeEarnRow,
   normalizePayoutPref,
   payoutSecretOk,
   publicPayoutRow,
-  solscanTxUrl,
-  usdcRawFromCents,
+  settleProviderPayout,
 } from './dasha-compute-provider-earn.mjs';
 import { sendTipTransfer } from './dasha-faucet-solana.mjs';
 import {
@@ -3066,70 +3063,65 @@ export class ComputeNetwork {
       }
       const input = await body(request);
       const payoutId = String(input?.payout_id || input?.id || '').trim();
-      let signature = String(input?.signature || '').trim();
+      const signature = String(input?.signature || '').trim();
       const note = input?.note != null ? String(input.note) : null;
 
       if (!payoutId) return json({ error: 'payout_id required' }, 400, allowedOrigin || '*', false);
 
-      const existing = await this.state.storage.get(`compute:provider-payout:${payoutId}`);
-      if (!existing || typeof existing !== 'object') {
-        return json({ error: 'payout not found' }, 404, allowedOrigin || '*', false);
-      }
-
-      // Optional auto-send: only USDC + explicit COMPUTE_PAYOUT_KEYPAIR (never faucet tip key).
-      let auto = null;
-      if (!signature && autoSendUsdcEnabled(this.env) && String(existing.method || '') === 'usdc') {
-        const amountRaw = BigInt(usdcRawFromCents(existing.payout_cents ?? existing.usdc_cents));
-        if (amountRaw <= 0n) return json({ error: 'invalid amount' }, 400, allowedOrigin || '*', false);
-        const sent = await sendTipTransfer(this.env, {
-          destOwner: existing.wallet,
-          amountRaw,
-          mint: PROVIDER_USDC_MINT,
-          secret: computePayoutKeypair(this.env),
-        });
-        if (!sent.ok) {
+      // #337: the status gate, durable 'processing' claim, transfer ordering, and
+      // crash recovery live in settleProviderPayout. The route only injects the
+      // transfer fn and maps results. Auto-send stays USDC-only with an explicit
+      // COMPUTE_PAYOUT_KEYPAIR (never the faucet tip key).
+      const autoSend = autoSendUsdcEnabled(this.env)
+        ? ({ destOwner, amountRaw }) => sendTipTransfer(this.env, {
+            destOwner,
+            amountRaw,
+            mint: PROVIDER_USDC_MINT,
+            secret: computePayoutKeypair(this.env),
+          })
+        : null;
+      const result = await settleProviderPayout(this.state.storage, {
+        payoutId,
+        signature,
+        note,
+        now,
+        autoSend,
+      });
+      if (!result.ok) {
+        if (result.status === 404) {
+          return json({ error: result.error }, 404, allowedOrigin || '*', false);
+        }
+        if (result.status === 400 && result.error === 'signature required') {
           return json({
-            error: sent.error || 'auto-send failed',
-            detail: sent.detail || null,
+            error: 'signature required',
+            hint: String(result.method) === 'dasha'
+              ? 'dasha settle is mark-paid only in v1; send tokens then POST signature'
+              : 'send USDC manually then POST signature, or set COMPUTE_PAYOUT_KEYPAIR for auto USDC',
+            payout_mode: PROVIDER_PAYOUT_MODE,
+            auto_send: autoSendUsdcEnabled(this.env),
+          }, 400, allowedOrigin || '*', false);
+        }
+        if (result.autoSendAttempted) {
+          return json({
+            error: result.error,
+            detail: result.detail,
             payout_mode: PROVIDER_PAYOUT_MODE,
             auto_send: true,
           }, 502, allowedOrigin || '*', false);
         }
-        signature = sent.signature;
-        auto = { signature: sent.signature, solscan: sent.solscan || solscanTxUrl(sent.signature) };
-      }
-
-      if (!signature) {
-        // dasha (and usdc without keypair) — operator must supply chain signature
         return json({
-          error: 'signature required',
-          hint: String(existing.method) === 'dasha'
-            ? 'dasha settle is mark-paid only in v1; send tokens then POST signature'
-            : 'send USDC manually then POST signature, or set COMPUTE_PAYOUT_KEYPAIR for auto USDC',
+          error: result.error,
+          ...(result.hint ? { hint: result.hint } : {}),
           payout_mode: PROVIDER_PAYOUT_MODE,
-          auto_send: autoSendUsdcEnabled(this.env),
-        }, 400, allowedOrigin || '*', false);
-      }
-      if (!isValidSolanaTxSignature(signature)) {
-        return json({ error: 'invalid signature' }, 400, allowedOrigin || '*', false);
-      }
-
-      const result = await markProviderPayoutPaid(this.state.storage, {
-        payoutId,
-        signature,
-        note: note || (auto ? 'paid — Worker auto USDC send' : null),
-        now,
-      });
-      if (!result.ok) {
-        return json({ error: result.error, payout_mode: PROVIDER_PAYOUT_MODE }, result.status || 400, allowedOrigin || '*', false);
+        }, result.status || 400, allowedOrigin || '*', false);
       }
       const pub = publicPayoutRow(result.payout);
       return json({
         ...pub,
         replay: !!result.replay,
         payout_mode: PROVIDER_PAYOUT_MODE,
-        auto_send: !!auto,
-        auto,
+        auto_send: !!result.auto,
+        auto: result.auto || null,
       }, 200, allowedOrigin || '*', false);
     }
 

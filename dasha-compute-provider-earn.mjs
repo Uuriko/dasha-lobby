@@ -314,7 +314,8 @@ export function publicPayoutRow(row) {
 
 /**
  * Pending → paid with on-chain signature. Replay-safe for same signature.
- * Rejects already-paid (different sig) and cancelled.
+ * Rejects already-paid (different sig) and cancelled. A 'processing' row
+ * (durable auto-send claim, #337) completes only for its recorded signature.
  */
 export async function markProviderPayoutPaid(storage, {
   payoutId,
@@ -342,7 +343,14 @@ export async function markProviderPayoutPaid(storage, {
     }
     return { ok: false, status: 409, error: 'already paid' };
   }
-  if (status !== 'pending') {
+  if (status === 'processing') {
+    // #337: a claimed auto-send settle crashed after the transfer was recorded.
+    // Complete only for the very signature the claim recorded; never for another.
+    const claimed = String(row.signature || '').trim();
+    if (!claimed || claimed !== sig) {
+      return { ok: false, status: 409, error: 'settlement in progress' };
+    }
+  } else if (status !== 'pending') {
     return { ok: false, status: 409, error: `cannot settle status ${status || 'unknown'}` };
   }
 
@@ -356,6 +364,136 @@ export async function markProviderPayoutPaid(storage, {
   };
   await storage.put(key, next);
   return { ok: true, replay: false, payout: next };
+}
+
+
+/** Per-payout serialization for settle mutations (#337): DOs interleave concurrent
+ * requests at awaits, so the status gate, the durable claim, and the transfer must
+ * sit inside one queued section per payout (same idiom as the api-key spend lock). */
+const payoutSettleLocks = new Map();
+async function withPayoutSettleLock(key, fn) {
+  const prev = payoutSettleLocks.get(key) || Promise.resolve();
+  const run = prev.then(() => fn());
+  const marker = run.catch(() => {});
+  payoutSettleLocks.set(key, marker);
+  marker.then(() => { if (payoutSettleLocks.get(key) === marker) payoutSettleLocks.delete(key); });
+  return run;
+}
+
+/**
+ * Fail-closed provider payout settle (#337).
+ *
+ * The Worker-owned money path (USDC auto-send) gates on payout status BEFORE any
+ * transfer, holds a durable 'processing' claim across the network send, records
+ * the returned signature before marking paid, and completes idempotently:
+ *   pending → processing (claim, no signature) → processing+signature → paid
+ * - paid / cancelled / foreign-status rows are rejected BEFORE any transfer.
+ * - A retry that finds 'processing' WITHOUT a recorded signature gets 409
+ *   'settlement in progress' — the transfer may have gone out, so never auto-resend;
+ *   the operator verifies on-chain and POSTs the signature (completes the mark).
+ * - A retry that finds 'processing' WITH a recorded signature skips the transfer
+ *   and completes the mark (crash recovery).
+ * - autoSend is injected: async ({ destOwner, amountRaw }) =>
+ *   { ok, signature, solscan?, error?, detail? }. Pass null to require an
+ *   operator-supplied signature (no Worker funds move on that path).
+ */
+export async function settleProviderPayout(storage, {
+  payoutId,
+  signature = '',
+  note = null,
+  now = Date.now(),
+  autoSend = null,
+} = {}) {
+  const id = String(payoutId || '').trim();
+  const sig = String(signature || '').trim();
+  if (!id) return { ok: false, status: 400, error: 'payout_id required' };
+  if (sig && !isValidSolanaTxSignature(sig)) return { ok: false, status: 400, error: 'invalid signature' };
+
+  const key = `compute:provider-payout:${id}`;
+  return withPayoutSettleLock(key, async () => {
+    const row = await storage.get(key);
+    if (!row || typeof row !== 'object') return { ok: false, status: 404, error: 'payout not found' };
+
+    const status = String(row.status || '');
+    if (status === 'cancelled' || status === 'canceled') {
+      return { ok: false, status: 409, error: 'payout cancelled' };
+    }
+    if (status === 'paid') {
+      const prior = String(row.signature || '').trim();
+      if (prior && (!sig || prior === sig)) return { ok: true, replay: true, payout: row };
+      return { ok: false, status: 409, error: 'already paid' };
+    }
+    if (status === 'processing') {
+      const claimed = String(row.signature || '').trim();
+      if (claimed) {
+        // Transfer already went out with this signature: finish the mark, never resend.
+        const done = await markProviderPayoutPaid(storage, { payoutId: id, signature: claimed, note, now });
+        if (!done.ok) return done;
+        return { ...done, auto: { signature: claimed, solscan: solscanTxUrl(claimed) } };
+      }
+      if (sig) {
+        // Operator supplies the chain signature for an in-flight settle: record, then complete.
+        await storage.put(key, { ...row, signature: sig, updatedAt: now });
+        return markProviderPayoutPaid(storage, { payoutId: id, signature: sig, note, now });
+      }
+      return {
+        ok: false,
+        status: 409,
+        error: 'settlement in progress',
+        hint: 'a previous auto-send attempt may have transferred; verify on-chain, then POST the signature or reset the payout',
+      };
+    }
+    if (status !== 'pending') {
+      return { ok: false, status: 409, error: `cannot settle status ${status || 'unknown'}` };
+    }
+
+    if (sig) {
+      // Operator-supplied signature on a pending payout: no Worker funds move.
+      return markProviderPayoutPaid(storage, { payoutId: id, signature: sig, note, now });
+    }
+    if (!autoSend || String(row.method || '') !== 'usdc') {
+      return { ok: false, status: 400, error: 'signature required', method: row.method || null };
+    }
+    const amountRaw = BigInt(usdcRawFromCents(row.payout_cents ?? row.usdc_cents));
+    if (amountRaw <= 0n) return { ok: false, status: 400, error: 'invalid amount' };
+
+    // Durable claim BEFORE any transfer: a concurrent or replayed settle now sees
+    // 'processing' and gets 409 instead of sending a second transfer.
+    await storage.put(key, { ...row, status: 'processing', signature: null, settleAttemptAt: now, updatedAt: now });
+
+    const sent = await autoSend({ destOwner: row.wallet, amountRaw });
+    if (!sent || !sent.ok || !sent.signature) {
+      // Fail closed: the transfer may have partially gone out (e.g. confirmation
+      // timeout). Keep the claim, record the error, never auto-resend.
+      await storage.put(key, {
+        ...row,
+        status: 'processing',
+        signature: null,
+        settleAttemptAt: now,
+        updatedAt: now,
+        settleError: String((sent && sent.error) || 'auto-send failed').slice(0, 240),
+      });
+      return {
+        ok: false,
+        status: 502,
+        error: (sent && sent.error) || 'auto-send failed',
+        detail: (sent && sent.detail) || null,
+        autoSendAttempted: true,
+      };
+    }
+
+    // Record the signature durably BEFORE marking paid: a crash after the transfer
+    // leaves processing+signature, which a retry completes without resending.
+    await storage.put(key, { ...row, status: 'processing', signature: sent.signature, settleAttemptAt: now, updatedAt: now });
+    const done = await markProviderPayoutPaid(storage, {
+      payoutId: id,
+      signature: sent.signature,
+      note: note || 'paid — Worker auto USDC send',
+      now,
+    });
+    if (!done.ok) return done;
+    return { ...done, auto: { signature: sent.signature, solscan: sent.solscan || solscanTxUrl(sent.signature) } };
+  });
 }
 
 /** Operator list: all pending payouts (id, owner, method, wallet, cents). */
