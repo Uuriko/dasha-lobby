@@ -71,9 +71,9 @@ assert.match(html, /providers_online/);
 assert.match(html, /jobs_queued/);
 
 // Canonical Telegram invite + anti-impersonation copy.
-assert.match(html, /https:\/\/t\.me\/\+ck9pUjL2ncNiZjRh/);
+assert.match(html, /https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh/);
 assert.match(html, /only official Dasha invite - ignore lookalike groups/);
-assert.ok(!html.includes('xB7S8mIQaKFiZjRh'), 'no stale Telegram invite');
+assert.ok(!html.includes('ck9pUjL2ncNiZjRh'), 'no stale Telegram invite');
 
 // Quiet links from the /compute gate and /compute/proof.
 assert.match(COMPUTE_PAGE_HTML, /id="gate-start" href="\/compute\/start"/);

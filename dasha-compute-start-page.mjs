@@ -97,13 +97,13 @@ JOB=$(echo "$RESP" | jq -r .job_id)</pre>
 <p><b>No capacity.</b> The call returns <code>no_mac_online</code> when no community Mac advertises your model. That is deliberate fail-loud, never a silent fallback. Poll <code>/compute/api/network</code>, or run the same prompt on the Hosted path in the <a href="/compute">/compute</a> UI (Hosted is Cloudflare Workers AI, clearly labeled, 3 free / 10 min).</p>
 <p><b>Receipt pending.</b> Settlement shows <code>pending_operator</code> while the operator settles the job; the receipt itself is signed at completion. If verify returns not-found seconds after the call, wait a minute and re-run the same lookup - the id is stable.</p>
 <p><b>Not yet anchored.</b> A verdict of verified-but-not-<code>ANCHORED</code> means your receipt is in the chain but the next signed checkpoint has not been issued yet. Checkpoints land about hourly; re-check <code>/heads/checkpoint</code> and the verdict later.</p>
-<p><b>Verifier failed.</b> A failed check on a receipt this network issued is an incident, full stop. The page names the exact failed check - report it on <a href="https://t.me/+ck9pUjL2ncNiZjRh" target="_blank" rel="noopener noreferrer">Telegram</a>.</p>
+<p><b>Verifier failed.</b> A failed check on a receipt this network issued is an incident, full stop. The page names the exact failed check - report it on <a href="https://t.me/+xB7S8mIQaKFiZjRh" target="_blank" rel="noopener noreferrer">Telegram</a>.</p>
 </div>
 
 <h2>What it costs</h2>
 <p class="fine">Community jobs settle at a flat $0.05 per successful completion plus $0.01 per 1k completion tokens, paid from prepaid USDC or $dasha credits - no card rail today. Guest calls are free inside the rate limits above. Current card/rail state is public on <a href="/compute/proof">/compute/proof</a>.</p>
 
-<p class="fine">Official Telegram (the only official Dasha invite - ignore lookalike groups): <a href="https://t.me/+ck9pUjL2ncNiZjRh" target="_blank" rel="noopener noreferrer">https://t.me/+ck9pUjL2ncNiZjRh</a>. Do not paste secrets into prompts; community Mac operators can read assigned prompts.</p>
+<p class="fine">Official Telegram (the only official Dasha invite - ignore lookalike groups): <a href="https://t.me/+xB7S8mIQaKFiZjRh" target="_blank" rel="noopener noreferrer">https://t.me/+xB7S8mIQaKFiZjRh</a>. Do not paste secrets into prompts; community Mac operators can read assigned prompts.</p>
 </main>
 <script>
 (function(){

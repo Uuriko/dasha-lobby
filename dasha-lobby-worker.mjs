@@ -5685,7 +5685,7 @@ export function potterHome308Dest(path) {
   }
   if (POTTER_FAUCET_DOOR_308_PATHS.has(p)) return "https://www.getdasha.com/faucet";
   if (p === "/tg" || p === "/tg/" || p === "/telegram" || p === "/telegram/") {
-    return "https://t.me/+ck9pUjL2ncNiZjRh";
+    return "https://t.me/+xB7S8mIQaKFiZjRh";
   }
   if (p === "/quiz" || p === "/quiz/" || p === "/simp-quiz" || p === "/simp-quiz/") {
     return "https://www.getdasha.com/simp";
@@ -6372,7 +6372,7 @@ export function stripLobbyLeftoverForumBodyCss(html) {
  * Humans see leftover pin <a>TG</a> in view-source.
  * Distinct leftover vs leftover id="forum-play" / leftover .forum-back / leftover .forum-form.
  * Keep .forum-pin + .forum-ca + #forum-copy + pin Copy script.
- * Keep footer Telegram https://t.me/+ck9pUjL2ncNiZjRh only. Do not ban all t.me.
+ * Keep footer Telegram https://t.me/+xB7S8mIQaKFiZjRh only. Do not ban all t.me.
  * Lobby only. Do not eat footer Telegram. Do not eat header Buy.
  */
 export function stripLobbyLeftoverForumPinTg(html) {
@@ -6382,7 +6382,7 @@ export function stripLobbyLeftoverForumPinTg(html) {
     /(<p\b[^>]*\bclass=["'][^"']*\bforum-pin\b[^"']*["'][^>]*>)([\s\S]*?)(<\/p>)/gi,
     (full, open, inner, close) => {
       const next = String(inner).replace(
-        /\s*<a\b(?=[^>]*\bhref=["']https:\/\/t\.me\/\+ck9pUjL2ncNiZjRh["'])[^>]*>\s*TG\s*<\/a>/gi,
+        /\s*<a\b(?=[^>]*\bhref=["']https:\/\/t\.me\/\+xB7S8mIQaKFiZjRh["'])[^>]*>\s*TG\s*<\/a>/gi,
         '',
       );
       return open + next + close;
@@ -6395,7 +6395,7 @@ export function stripLobbyLeftoverForumPinTg(html) {
  * (quiet-pin is mint chip + Copy; no <a> inside .forum-pin). Humans see leftover mixed
  * .forum-pin a in view-source (.forum-pin a,.forum-copy). Distinct leftover vs leftover pin TG dump.
  * Keep .forum-copy + .forum-pin + .forum-ca + #forum-copy. Keep footer Telegram
- * https://t.me/+ck9pUjL2ncNiZjRh. Keep .dasha-lobby + class=forum-play + #forum-play-go + #dasha-forum.
+ * https://t.me/+xB7S8mIQaKFiZjRh. Keep .dasha-lobby + class=forum-play + #forum-play-go + #dasha-forum.
  * Lobby only. Do not eat .forum-copy. Do not eat footer Telegram. Do not restore pin TG dump.
  */
 export function stripLobbyLeftoverForumPinACss(html) {
