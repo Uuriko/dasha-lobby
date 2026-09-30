@@ -143,6 +143,7 @@ import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { COMPUTE_START_PAGE_HTML } from './dasha-compute-start-page.mjs';
 import { CAPS_PAGE_HTML } from './dasha-compute-caps-page.mjs';
 import { WEEKLY_PAGE_HTML } from './dasha-weekly-page.mjs';
+import { HOW_AGENTS_PAY_PAGE_HTML } from './dasha-how-agents-pay-page.mjs';
 import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { DOCS_OPENAPI_JSON, DOCS_OPENAPI_YAML, DOCS_PAGE_HTML } from './dasha-docs-page.mjs';
@@ -244,6 +245,7 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/compute/proof</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/start</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/caps</loc><lastmod>2026-09-15</lastmod></url>
+  <url><loc>https://www.getdasha.com/compute/how-agents-pay-for-inference</loc><lastmod>2026-09-29</lastmod></url>
   <url><loc>https://www.getdasha.com/weekly</loc><lastmod>2026-09-29</lastmod></url>
   <url><loc>https://www.getdasha.com/how-to-buy</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/privacy</loc><lastmod>2026-09-04</lastmod></url>
@@ -7959,6 +7961,17 @@ function weeklyPageResponse(request) {
   });
 }
 
+function howAgentsPayPageResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(HOW_AGENTS_PAY_PAGE_HTML), {
+    status: 200,
+    headers: htmlHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'how-agents-pay',
+    }),
+  });
+}
+
 /* /compute/proof.json + /compute/proof.md: machine-readable twins of the proof
  * page. Aggregates the same public endpoints the page reads, live, so every
  * field is one click from its source. Subfetch failures degrade to null with
@@ -11985,6 +11998,9 @@ async function productEdge(request, url, env) {
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/weekly' || url.pathname === '/weekly/')) {
       return weeklyPageResponse(request);
     }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/how-agents-pay-for-inference' || url.pathname === '/compute/how-agents-pay-for-inference/')) {
+      return howAgentsPayPageResponse(request);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
       return computeProofJsonResponse(request, env);
     }
@@ -13233,6 +13249,9 @@ export default {
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/weekly' || url.pathname === '/weekly/')) {
       return weeklyPageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/how-agents-pay-for-inference' || url.pathname === '/compute/how-agents-pay-for-inference/')) {
+      return howAgentsPayPageResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
       return computeProofJsonResponse(request, env);
