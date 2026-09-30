@@ -4,7 +4,8 @@
  * (engine / at / job_id), not the mirror-appendix prototype (model / ts).
  * Canonical signed body: {job_id, engine, tokens, cents, at, prev_hash} in that
  * key order, hashed as sha256(JSON.stringify(body)); sig = ed25519 over the
- * UTF-8 bytes of the hex hash (same semantics as appendix heads.mjs v0.1).
+ * UTF-8 bytes of the hex hash, wire-encoded base64 (same semantics as
+ * appendix heads.mjs v0.1).
  * Key: env.DASHA_HEADS_ED25519_SK = base64 32-byte ed25519 seed. Without it the
  * ladder degrades honestly: receipts stay unsigned, /heads + /keys.json 503.
  */
