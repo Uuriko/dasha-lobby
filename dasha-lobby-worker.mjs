@@ -142,6 +142,7 @@ import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
 import { COMPUTE_PROOF_PAGE_HTML } from './dasha-compute-proof-page.mjs';
 import { COMPUTE_START_PAGE_HTML } from './dasha-compute-start-page.mjs';
 import { CAPS_PAGE_HTML } from './dasha-compute-caps-page.mjs';
+import { WEEKLY_PAGE_HTML } from './dasha-weekly-page.mjs';
 import { VERIFY_PAGE_HTML } from './dasha-verify-page.mjs';
 import { BENCHMARKS_PAGE_HTML } from './dasha-benchmarks-page.mjs';
 import { DOCS_OPENAPI_JSON, DOCS_OPENAPI_YAML, DOCS_PAGE_HTML } from './dasha-docs-page.mjs';
@@ -243,6 +244,7 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>https://www.getdasha.com/compute/proof</loc><lastmod>2026-09-15</lastmod></url>
   <url><loc>https://www.getdasha.com/compute/start</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/caps</loc><lastmod>2026-09-15</lastmod></url>
+  <url><loc>https://www.getdasha.com/weekly</loc><lastmod>2026-09-29</lastmod></url>
   <url><loc>https://www.getdasha.com/how-to-buy</loc><lastmod>2026-09-16</lastmod></url>
   <url><loc>https://www.getdasha.com/privacy</loc><lastmod>2026-09-04</lastmod></url>
   <url><loc>https://www.getdasha.com/llms.txt</loc><lastmod>2026-09-16</lastmod></url>
@@ -7946,6 +7948,17 @@ function capsPageResponse(request) {
   });
 }
 
+function weeklyPageResponse(request) {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(WEEKLY_PAGE_HTML), {
+    status: 200,
+    headers: htmlHeaders({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Dasha-Edge': 'weekly',
+    }),
+  });
+}
+
 /* /compute/proof.json + /compute/proof.md: machine-readable twins of the proof
  * page. Aggregates the same public endpoints the page reads, live, so every
  * field is one click from its source. Subfetch failures degrade to null with
@@ -11969,6 +11982,9 @@ async function productEdge(request, url, env) {
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/caps' || url.pathname === '/caps/')) {
       return capsPageResponse(request);
     }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/weekly' || url.pathname === '/weekly/')) {
+      return weeklyPageResponse(request);
+    }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
       return computeProofJsonResponse(request, env);
     }
@@ -13214,6 +13230,9 @@ export default {
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/caps' || url.pathname === '/caps/')) {
       return capsPageResponse(request);
+    }
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/weekly' || url.pathname === '/weekly/')) {
+      return weeklyPageResponse(request);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/compute/proof.json' || url.pathname === '/compute/proof.json/')) {
       return computeProofJsonResponse(request, env);
