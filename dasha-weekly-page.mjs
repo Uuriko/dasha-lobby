@@ -51,7 +51,7 @@ a{color:#9ec1ff}
 <li><strong>Chain:</strong> 300 settled jobs, $15.00 paid to providers, 62,551 tokens. No settled jobs since Sep 25 - the cause is under diagnosis; the full history still verifies, receipt by receipt.</li>
 <li><strong>Supply:</strong> one founding provider online (kit 0.3.1). An overnight nap Sep 28-29 recovered by 11:27 AM PT Sep 29. Trailing 7-day measured uptime was 66% as of Sep 28 noon; the nap lowered it further. Uptime this week is a single laptop - we publish it because it is measured, not because it is pretty.</li>
 <li><strong>Shipped this week:</strong> a buyer-onboarding audit with six concrete friction fixes; two code fixes written and queued for review - a provider anomaly-hold expiry (holds now time out after 24h instead of lasting forever) and a fail-loud bound on the network hop (a wedged backend now answers 504 with retry guidance instead of starving clients silently).</li>
-<li><strong>Try it:</strong> mint a guest key and make your first call in about two minutes - no account, no card. <a href="https://www.getdasha.com/compute">getdasha.com/compute</a>. Then check your own usage on the public chain: <a href="https://lobby.getdasha.com/compute/api/chain">lobby.getdasha.com/compute/api/chain</a>.</li>
+<li><strong>Try it:</strong> mint a guest key and make your first call in about two minutes - no account, no card. <a href="https://www.getdasha.com/compute">getdasha.com/compute</a>. Then watch settled jobs on the public chain: <a href="https://lobby.getdasha.com/compute/api/chain">lobby.getdasha.com/compute/api/chain</a>.</li>
 </ul>
 <p class="when">Entry dated September 29, 2026. Numbers are as-of that date.</p>
 </section>

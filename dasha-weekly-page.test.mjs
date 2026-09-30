@@ -29,6 +29,7 @@ for (const fact of [
   '504 with retry guidance',
   'https://www.getdasha.com/compute',
   'https://lobby.getdasha.com/compute/api/chain',
+  'watch settled jobs on the public chain',
   '<link rel="canonical" href="https://www.getdasha.com/weekly">',
   'og:title',
   'twitter:card',
@@ -36,6 +37,7 @@ for (const fact of [
   assert.ok(WEEKLY_PAGE_HTML.includes(fact), `weekly page states: ${fact}`);
 }
 assert.doesNotMatch(WEEKLY_PAGE_HTML, /plugin\.jup\.ag/, 'no plugin');
+assert.ok(!WEEKLY_PAGE_HTML.includes('check your own usage on the public chain'), 'no false guest-chain promise');
 
 // /weekly stays 200 (not a 308 leftover)
 assert.equal(potterHome308Dest('/weekly'), null, '/weekly stays 200');
