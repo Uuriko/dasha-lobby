@@ -2904,7 +2904,7 @@ export class ComputeNetwork {
         head,
         tip,
         issued_at: new Date(now).toISOString(),
-        verify: 'checkpoint.sig = ed25519 over the UTF-8 bytes of checkpoint.text with the signer key from /keys.json; head.hash = sha256(JSON.stringify({ts,tip,prev_head_hash})); head.sig per /compute/llms.txt. Store a checkpoint and compare against future /heads responses to catch a rewritten tail.',
+        verify: 'checkpoint.sig = base64 ed25519 signature over the UTF-8 bytes of checkpoint.text with the signer key from /keys.json; head.hash = sha256(JSON.stringify({ts,tip,prev_head_hash})); head.sig per /compute/llms.txt. Store a checkpoint and compare against future /heads responses to catch a rewritten tail.',
       }, 200, '*', false, { 'Cache-Control': 'no-cache' }));
     }
     const headsArchiveMatch = path.match(/^\/heads\/archive\/(\d{4}-\d{2}-\d{2})\.json$/);
