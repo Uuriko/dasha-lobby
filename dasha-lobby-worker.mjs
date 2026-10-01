@@ -133,9 +133,9 @@ import {
   CHESS_PAGE_HTML,
   CHESS_LOCAL_JS,
   LOBBY_PAGE_HTML,
-  LOGIN_PAGE_HTML,
   ASSET_HASH,
 } from './dasha-lobby-static-gen.mjs';
+import { renderLoginPage } from './dasha-login-gating.mjs';
 import { ComputeNetwork, computeApi, rewriteComputeV1ChatCompletionsPath } from './dasha-compute-network.mjs';
 import { LOBBY_ALARM_HEARTBEAT_KEY, nextAlarmHeartbeat, redactJobError } from './dasha-job-heartbeat.mjs';
 import { COMPUTE_PAGE_HTML } from './dasha-compute-page.mjs';
@@ -8186,8 +8186,8 @@ function privacyPageResponse(request) {
   });
 }
 
-function loginPageResponse(request) {
-  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(LOGIN_PAGE_HTML), {
+function loginPageResponse(request, env) {
+  return new Response(request.method === 'HEAD' ? null : attachLlmsHtmlLinks(renderLoginPage(env)), {
     status: 200,
     headers: htmlLlmsHeaders({
       'Content-Type': 'text/html; charset=utf-8',
@@ -12241,7 +12241,7 @@ async function productEdge(request, url, env) {
     return bountiesFeedResponse(request);
   }
   if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/login' || url.pathname === '/login/')) {
-    return loginPageResponse(request);
+    return loginPageResponse(request, env);
   }
   if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/' || url.pathname === '')) {
     const dest = challengeRedirectPath(url.searchParams);
@@ -13619,7 +13619,7 @@ export default {
     }
 
     if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/login' || url.pathname === '/login/')) {
-      return loginPageResponse(request);
+      return loginPageResponse(request, env);
     }
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/.well-known/security.txt') {
       return securityTxtResponse(request, url.hostname);
