@@ -1067,7 +1067,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     function requestCode(isResend) {
       dashaBeacon(isResend ? 'resend:email' : 'start:email');
       var email = emailInput.value.trim();
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
+      if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) { fail('Enter a valid email address.'); return; }
       sendBtn.disabled = true; resendBtn.disabled = true;
       say('', isResend ? 'Sending a new code...' : 'Sending code...');
       fetch(API + '/auth/email/start', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) })
@@ -1099,7 +1099,7 @@ export const LOGIN_PAGE_HTML = `<!doctype html>
     verifyBtn.addEventListener('click', function () {
       var email = emailInput.value.trim();
       var code = codeInput.value.trim();
-      if (!/^\d{6}$/.test(code)) { fail('Enter the 6-digit code.'); return; }
+      if (!/^\\d{6}$/.test(code)) { fail('Enter the 6-digit code.'); return; }
       if (codeSentAt && Date.now() - codeSentAt >= 600000) { codeExpired(); return; }
       verifyBtn.disabled = true; say('', 'Checking...');
       fetch(API + '/auth/email/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, code: code }) })
