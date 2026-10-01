@@ -115,6 +115,12 @@ assert.equal(bad.status, 400);
   const body = await res.json();
   assert.match(body.error, /Could not send the sign-in code/);
   assert.equal(downRows.has('emailLogins') && Boolean(downRows.get('emailLogins')['mac@example.com']), false, 'nothing stored on send failure');
+  // observability: failure metric bumped, internal-only last-error record kept (never public)
+  const metricKey = `compute:metric:${new Date().toISOString().slice(0, 10)}:signin:fail:email`;
+  assert.equal(downRows.get(metricKey), 1, 'signin:fail:email metric bumped');
+  const lastErr = downRows.get('emailLoginLastError');
+  assert.ok(lastErr && typeof lastErr.at === 'number' && String(lastErr.error).length > 0, 'internal last-error record kept');
+  assert.doesNotMatch(JSON.stringify(body), /down/, 'provider detail not exposed to browser');
   resendBehavior = async () => new Response(JSON.stringify({ id: 'mail_123' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 }
 
