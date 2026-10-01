@@ -77,7 +77,7 @@ assert.match(COMPUTE_SKILL_MD, new RegExp(`^curl -sS ${COMPUTE_NETWORK.replace(/
 assert.match(COMPUTE_SKILL_MD, new RegExp(`^curl -sS ${COMPUTE_API_BASE.replace(/\./g, '\\.')}/models$`, 'm'), 'public models');
 assert.match(COMPUTE_SKILL_MD, /Authorization: Bearer \$DASHA_API_KEY/, 'keyed Bearer');
 assert.match(COMPUTE_SKILL_MD, /\/chat\/completions/, 'keyed chat');
-assert.match(COMPUTE_SKILL_MD, /"model":"gemma3-27b"/, 'model from list');
+assert.match(COMPUTE_SKILL_MD, /"model":"qwen3-4b"/, 'model from list');
 assert.match(COMPUTE_SKILL_MD, /Pick `model` from the models list\./, 'model from models list');
 assert.match(COMPUTE_SKILL_MD, /^## Receipts \/ Community \/ Hosted$/m, 'receipts heading');
 assert.match(COMPUTE_SKILL_MD, /Receipts: signed, chained, publicly verifiable\./, 'receipts one-liner');

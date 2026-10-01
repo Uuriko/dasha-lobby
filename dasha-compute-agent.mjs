@@ -51,7 +51,7 @@ curl -sS ${COMPUTE_API_BASE}/models
 curl -sS ${COMPUTE_API_BASE}/chat/completions \\
   -H "Authorization: Bearer $DASHA_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"gemma3-27b","messages":[{"role":"user","content":"hi"}]}'
+  -d '{"model":"qwen3-4b","messages":[{"role":"user","content":"hi"}]}'
 
 from openai import OpenAI
 OpenAI(base_url="${COMPUTE_API_BASE}", api_key=os.environ["DASHA_API_KEY"])

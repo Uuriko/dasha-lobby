@@ -118,7 +118,7 @@ assert.match(
 assert.equal(COMPUTE_LLMS_TXT.includes(COMPUTE_FIRST_CALL_TXT), true, 'packet embeds First call');
 assert.match(COMPUTE_LLMS_TXT, /^## First call$/m, 'packet First call heading');
 assert.match(COMPUTE_LLMS_TXT, /Authorization: Bearer \$DASHA_API_KEY/, 'packet keyed curl');
-assert.match(COMPUTE_LLMS_TXT, /"model":"gemma3-27b"/, 'packet first-call model');
+assert.match(COMPUTE_LLMS_TXT, /"model":"qwen3-4b"/, 'packet first-call model');
 assert.match(COMPUTE_LLMS_TXT, /^Community: a peer Mac runs the job\.$/m, 'Community one-liner');
 assert.match(COMPUTE_LLMS_TXT, /^v1 chat\/completions: community Macs\. None advertise the model → no_mac_online \(poll \/compute\/api\/network · join \/compute#provide\)\.$/m, 'v1 fail-loud one-liner');
 assert.match(COMPUTE_LLMS_TXT, /^Hosted Ask: browser POST \/compute\/api\/chat \(status\.live Workers AI\)\. Not a silent v1 swap\.$/m, 'Hosted Ask one-liner');
