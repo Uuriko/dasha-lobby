@@ -2818,6 +2818,8 @@ export class ComputeNetwork {
       const receipts = await listChain(this.state.storage);
       return maybeHead(request, json({
         schema: 'settled.chain.v0',
+        signer_key_url: 'https://www.getdasha.com/keys.json',
+        signed_fields: ['job_id', 'engine', 'tokens', 'cents', 'at', 'prev_hash'],
         receipts,
       }, 200, '*', false, { 'Cache-Control': 'no-cache' }));
     }
