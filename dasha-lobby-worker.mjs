@@ -13411,7 +13411,7 @@ export default {
         }),
       });
     }
-    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/keys.json') {
+    if ((request.method === 'GET' || request.method === 'HEAD') && (url.pathname === '/keys.json' || url.pathname === '/compute/api/keys.json')) {
       const headsKey = await headsSigningKey(env);
       if (!headsKey) {
         return new Response(JSON.stringify({ error: 'signing not configured' }), {

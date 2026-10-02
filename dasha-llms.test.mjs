@@ -267,7 +267,7 @@ for (const origin of ['https://www.getdasha.com', 'https://lobby.getdasha.com'])
   assert.equal(fullBody.includes(COMPUTE_FIRST_CALL_TXT), true, `${origin}/llms-full.txt First call`);
   assert.match(fullBody, /^## First call$/m, `${origin}/llms-full.txt First call heading`);
   assert.match(fullBody, /Authorization: Bearer \$DASHA_API_KEY/, `${origin}/llms-full.txt keyed curl`);
-  assert.match(fullBody, /"model":"gemma3-27b"/, `${origin}/llms-full.txt first-call model`);
+  assert.match(fullBody, /"model":"qwen3-4b"/, `${origin}/llms-full.txt first-call model`);
   assert.doesNotMatch(fullBody.split('## Compute buyer FAQ')[0], /\$0\.05\/job/, `${origin}/llms-full.txt buyer lines have no Earn rate`);
   assert.doesNotMatch(fullBody, /Show HN/);
 

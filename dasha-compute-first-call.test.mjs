@@ -34,7 +34,7 @@ function assertFirstCall(body, label) {
   assert.match(body, new RegExp(`^curl -sS ${COMPUTE_API_BASE.replace(/\./g, '\\.')}/models$`, 'm'), `${label} public models`);
   assert.match(body, /Authorization: Bearer \$DASHA_API_KEY/, `${label} keyed Bearer`);
   assert.match(body, /\/chat\/completions/, `${label} keyed chat`);
-  assert.match(body, /"model":"gemma3-27b"/, `${label} model from list`);
+  assert.match(body, /"model":"qwen3-4b"/, `${label} model from list`);
   assert.match(
     body,
     new RegExp(`OpenAI\\(base_url="${COMPUTE_API_BASE.replace(/\./g, '\\.')}", api_key=os\\.environ\\["DASHA_API_KEY"\\]\\)`),
