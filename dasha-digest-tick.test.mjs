@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Worker-side Dexscreener tick for /digest.json. Home remount overlays GET /price.
+ * Worker-side Dexscreener tick for /digest.json. Home remount is news-only:
+ * no /price fetch, no price overlay (PRODUCT-200 HD-06 honesty fix).
  * Browser never hits Dexscreener. Failure stays honest (hide stale numbers).
  */
 import assert from 'node:assert/strict';
@@ -140,8 +141,9 @@ assert.equal(tickFromDex(null), null);
 
 const remount = digestRemountScript();
 assert.match(remount, /\/digest\.json/);
-assert.match(remount, /priceHref=['"]\/price['"]/);
-assert.match(remount, /tickFromPrice/);
+assert.doesNotMatch(remount, /\/price/, 'home tape quotes no price (PRODUCT-200 HD-06 honesty)');
+assert.doesNotMatch(remount, /tickFromPrice/, 'no price tick builder in remount');
+assert.doesNotMatch(remount, /p\.priceUsd/, 'no priceUsd read in remount');
 assert.match(remount, /hideStaleDex/);
 assert.doesNotMatch(remount, /pack\.tick/);
 assert.match(remount, /dasha-crew-line|crew-line/);
@@ -156,4 +158,4 @@ assert.match(workerSrc, /applyLiveTick/);
 assert.match(workerSrc, /tick: pack\.tick/);
 assert.doesNotMatch(workerSrc, /plugin\.jup\.ag/);
 
-console.log('dasha-digest-tick: PASS (worker Dex tick, remount /price overlay, cache, honest fail)');
+console.log('dasha-digest-tick: PASS (worker Dex tick, remount news-only, cache, honest fail)');
