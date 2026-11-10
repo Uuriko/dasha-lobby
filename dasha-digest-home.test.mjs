@@ -18,6 +18,7 @@ import {
   DEFAULT,
   HOME_TAPE_LIMIT,
   digestRemountScript,
+  dropPriceTick,
   homeTapeItems,
   injectDigestRemount,
   injectDigestSection,
@@ -53,6 +54,12 @@ function countRows(html) {
 assert.equal(HOME_TAPE_LIMIT, 5);
 assert.equal(homeTapeItems(DEFAULT.items).length, 5);
 assert.match(homeTapeItems(DEFAULT.items)[0].title, /\$dasha \$/);
+// HD-06 honesty: the home render path drops the price quote before slicing.
+assert.doesNotMatch(
+  homeTapeItems(dropPriceTick(DEFAULT.items))[0].title,
+  /\$dasha \$\d/,
+  'home tape leads with news, not a price quote',
+);
 assert.equal(homeTapeItems([]).length, 0);
 
 // empty items still no-op
@@ -143,7 +150,8 @@ assert.ok(ordered.indexOf('id="dasha-digest"') > ordered.indexOf('id="grwm"'));
 assert.doesNotMatch(ordered, /id=["']grok-door["']/, 'ordered home has no grok-door');
 assert.doesNotMatch(firstPaint(ordered), /id=["']dasha-digest["']/);
 
-assert.match(workerSrc, /homeTapeItems\(\(await publicDigest\(env\)\)\.items\)/);
+assert.match(workerSrc, /homeTapeItems\(dropPriceTick\(\(await publicDigest\(env\)\)\.items\)\)/, 'home tape drops the price quote (HD-06)');
+assert.match(workerSrc, /honestCaption:\s*true/, 'home tape carries the honest sentence');
 assert.match(workerSrc, /if \(isHome\) \{\s*try \{ html = applyDigestTape/);
 
 {
@@ -178,14 +186,15 @@ assert.match(workerSrc, /if \(isHome\) \{\s*try \{ html = applyDigestTape/);
 const remount = digestRemountScript();
 assert.match(remount, /\/digest\.json/, 'remount fetches /digest.json');
 assert.match(remount, /setAttribute\('href','\/digest'\)/, 'remount keeps /digest permalink');
-assert.match(remount, /priceHref=['"]\/price['"]/, 'remount fetches same-origin /price');
-assert.match(remount, /tickFromPrice/, 'remount paints tape from /price fields');
-assert.match(remount, /p\.priceUsd/, 'remount reads /price priceUsd');
-assert.match(remount, /p\.change&&Number\(p\.change\.h24\)/, 'remount reads /price change.h24');
-assert.match(remount, /p\.liquidityUsd/, 'remount reads /price liquidityUsd');
-assert.match(remount, /p\.pair/, 'remount uses /price pair only');
-assert.match(remount, /setInterval\(go,60000\)/, 'remount refreshes /price ~60s');
-assert.match(remount, /hideStaleDex/, 'remount hides stale Dex numbers if /price fails');
+assert.doesNotMatch(remount, /\/price/, 'home tape quotes no price (PRODUCT-200 HD-06 honesty)');
+assert.doesNotMatch(remount, /tickFromPrice/, 'remount has no price tick builder');
+assert.doesNotMatch(remount, /p\.priceUsd/, 'remount reads no priceUsd');
+assert.doesNotMatch(remount, /p\.change&&Number\(p\.change\.h24\)/, 'remount reads no change.h24');
+assert.doesNotMatch(remount, /p\.liquidityUsd/, 'remount reads no liquidityUsd');
+assert.doesNotMatch(remount, /p\.pair/, 'remount uses no pair');
+assert.match(remount, /setInterval\(go,60000\)/, 'remount refreshes news ~60s');
+assert.match(remount, /hideStaleDex/, 'remount hides stale Dex numbers');
+assert.match(remount, /reputation receipts; cash comes later/, 'remount carries the honest sentence');
 assert.doesNotMatch(remount, /pack\.tick/, 'evening digest tick is not the home tape number');
 assert.doesNotMatch(remount, /53uxQtB9pcjWvCHguz3JTTndvuKqGxhrD37EetnCpump/, 'remount does not invent mint');
 assert.doesNotMatch(remount, /9KkDpvUQRqXjiuyMFcy1CwqrxLwDcGGUR2Cap2Qt7bU7/, 'remount does not invent pair');
@@ -215,8 +224,8 @@ assert.doesNotMatch(paint, /id=["']chess-door["']/);
 {
   const remounted = injectDigestRemount('<!doctype html><html><head></head><body id="dasha-home"></body></html>');
   const leftover = stripHomeStudioFirstPaint(remounted);
-  assert.match(leftover, /id=["']dasha-digest-remount["']/, 'leftover /price strip keeps remount');
-  assert.match(leftover, /priceHref=['"]\/price['"]/, 'leftover strip keeps same-origin /price fetch');
+  assert.match(leftover, /id=["']dasha-digest-remount["']/, 'leftover strip keeps remount');
+  assert.doesNotMatch(leftover, /\/price/, 'leftover strip keeps the price-free remount (HD-06)');
 }
 
 assert.match(workerSrc, /injectDigestRemount\(html\)/);

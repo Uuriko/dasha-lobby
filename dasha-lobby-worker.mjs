@@ -171,6 +171,7 @@ import {
   applyLiveTick,
   digestPageHtml,
   digestSectionHtml,
+  dropPriceTick,
   fetchLiveTick,
   homeTapeItems,
   injectDigestRemount,
@@ -11820,17 +11821,17 @@ async function publicForumThreads(env) {
   return data.threads;
 }
 
-export function applyDigestTape(html, items) {
+export function applyDigestTape(html, items, opts = {}) {
   const rows = normalizeItems(items);
   if (!rows.length) return String(html || '');
   const src = String(html || '');
-  const section = digestSectionHtml(rows, { pageHref: '/digest' });
+  const section = digestSectionHtml(rows, { pageHref: '/digest', honestCaption: opts.honestCaption === true });
   if (!section) return src;
   let out = src;
   if (/id=["']dasha-digest["']/.test(src)) {
     out = src.replace(/<section id="dasha-digest">[\s\S]*?<\/section>/, () => section);
   } else {
-    out = injectDigestSection(src, rows, { pageHref: '/digest' });
+    out = injectDigestSection(src, rows, { pageHref: '/digest', honestCaption: opts.honestCaption === true });
   }
   /* Leftover remount on /lobby after boot is home-only. Home remount + /digest.json stay. #dasha-forum / #forum-play-go stay. */
   return injectDigestRemount(out);
@@ -12496,7 +12497,7 @@ async function productEdge(request, url, env) {
   if (isHome) html = linkHomeWhich(html);
   if (isHome) html = stripHomeTokenClutter(html);
   if (isHome) {
-    try { html = applyDigestTape(html, homeTapeItems((await publicDigest(env)).items)); } catch {}
+    try { html = applyDigestTape(html, homeTapeItems(dropPriceTick((await publicDigest(env)).items)), { honestCaption: true }); } catch {}
     html = injectDigestRemount(html);
     html = stripHomeWebflowPush(html);
   }

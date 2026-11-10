@@ -356,16 +356,36 @@ export async function fetchLiveTick(fetcher = fetch) {
   return null;
 }
 
-const SECTION_CSS = `#dasha-digest{margin:3.25rem 0 0;padding:2.2rem 1.25rem 0;border-top:1px solid rgba(244,237,219,.18)}#dasha-digest h2{margin:0 0 1.15rem;font:900 clamp(1.35rem,3vw,2rem)/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.03em;text-transform:uppercase}#dasha-digest h2 a{margin-left:.7rem;color:var(--muted,#c8bea8);font:700 .82rem/1 Arial,Helvetica,sans-serif;letter-spacing:0;text-transform:none;text-decoration:none}#dasha-digest ol{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}#dasha-digest li{margin:0;display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:baseline}#dasha-digest .dd-src{color:var(--muted,#c8bea8);font:800 .72rem/1 Arial,Helvetica,sans-serif;letter-spacing:.07em;text-transform:uppercase}#dasha-digest a.dd-row{color:var(--acid,#dfff00);font:700 1.02rem/1.35 Arial,Helvetica,sans-serif;text-decoration:none}#dasha-digest a.dd-row:focus-visible,#dasha-digest h2 a:focus-visible{outline:3px solid var(--acid,#dfff00);outline-offset:3px}`;
+const SECTION_CSS = `#dasha-digest{margin:3.25rem 0 0;padding:2.2rem 1.25rem 0;border-top:1px solid rgba(244,237,219,.18)}#dasha-digest h2{margin:0 0 1.15rem;font:900 clamp(1.35rem,3vw,2rem)/1 "Arial Black",Helvetica,Arial,sans-serif;letter-spacing:-.03em;text-transform:uppercase}#dasha-digest h2 a{margin-left:.7rem;color:var(--muted,#c8bea8);font:700 .82rem/1 Arial,Helvetica,sans-serif;letter-spacing:0;text-transform:none;text-decoration:none}#dasha-digest ol{list-style:none;margin:0;padding:0;display:grid;gap:.75rem}#dasha-digest li{margin:0;display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:baseline}#dasha-digest .dd-src{color:var(--muted,#c8bea8);font:800 .72rem/1 Arial,Helvetica,sans-serif;letter-spacing:.07em;text-transform:uppercase}#dasha-digest a.dd-row{color:var(--acid,#dfff00);font:700 1.02rem/1.35 Arial,Helvetica,sans-serif;text-decoration:none}#dasha-digest a.dd-row:focus-visible,#dasha-digest h2 a:focus-visible{outline:3px solid var(--acid,#dfff00);outline-offset:3px}#dasha-digest .dd-honest{margin:.95rem 0 0;color:var(--muted,#c8bea8);font:700 .9rem/1.5 Arial,Helvetica,sans-serif}`;
 
-export function digestSectionHtml(items, { pageHref = '/digest' } = {}) {
+/** The honest sentence every money-adjacent surface carries. */
+export const HONEST_CAPTION = 'today this pays in reputation receipts; cash comes later.';
+
+/** True for the Dexscreener price-quote row (live tick or stale seed).
+ * On the home tape that quote reads as live cash value for earnings; the
+ * product pays in reputation receipts, so the home tape drops these rows. */
+export function isPriceTickRow(row) {
+  const r = row && typeof row === 'object' ? row : null;
+  if (!r) return false;
+  if (r.kind !== 'tape') return false;
+  if (String(r.source || '').trim().toLowerCase() !== 'dexscreener') return false;
+  return /dexscreener\.com\/solana\//i.test(String(r.href || ''));
+}
+
+/** Home tape honesty: strip the Dexscreener price quote; news rows pass through. */
+export function dropPriceTick(items) {
+  return normalizeItems(items).filter((row) => !isPriceTickRow(row));
+}
+
+export function digestSectionHtml(items, { pageHref = '/digest', honestCaption = false } = {}) {
   const rows = normalizeItems(items);
   if (!rows.length) return '';
   const permalink = pageHref ? `<a href="${escapeHtml(pageHref)}">/digest</a>` : '';
   const lis = rows.map((row) => (
     `<li><span class="dd-src">${escapeHtml(row.source)}</span> · <a class="dd-row" href="${escapeHtml(row.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.title)}</a></li>`
   )).join('');
-  return `<section id="dasha-digest"><style>${SECTION_CSS}</style><h2>Tape.${permalink}</h2><ol>${lis}</ol></section>`;
+  const caption = honestCaption === true ? `<p class="dd-honest">${escapeHtml(HONEST_CAPTION)}</p>` : '';
+  return `<section id="dasha-digest"><style>${SECTION_CSS}</style><h2>Tape.${permalink}</h2><ol>${lis}</ol>${caption}</section>`;
 }
 
 const PAGE_CSS = `:root{--ink:#070608;--paper:#f4eddb;--acid:#dfff00;--hot:#ff3b81;--line:rgba(244,237,219,.32)}
@@ -485,10 +505,10 @@ export function injectDigestSection(html, items, opts) {
 const REMOUNT_CSS = SECTION_CSS.replace(/#dasha-digest/g, '#__TAPE__');
 
 /** Client remount after server Tape. HEAD only.
- * Fetches /digest.json for news rows, then overlays Dexscreener price/change/liq
- * from same-origin GET /price (not the evening digest snapshot).
- * /price fail keeps last good this session, else hides stale Dex numbers.
- * Crew stays hidden if both remount fetches fail.
+ * Fetches /digest.json for news rows only. No price overlay: the home tape
+ * must not quote a live Dexscreener price/change/liq (reads as cash value now;
+ * the product pays in reputation receipts). Stale Dex numbers stay hidden.
+ * Crew stays hidden if the remount fetch fails.
  * Leftover window.Webflow.push dropped after webflow.js was already DOM-stripped.
  * Leftover remount querySelector('footer') dropped after home footer was already DOM-stripped.
  * Leftover remount on /lobby dropped after boot is home-only.
@@ -577,34 +597,18 @@ export function digestRemountScript() {
       }
       return list;
     }
-    function tickFromPrice(p){
-      if(!p||p.ok===false)return null;
-      var price=Number(p.priceUsd);
-      if(!(price>0)||!isFinite(price))return null;
-      function fmtUsd(n){
-        var x=Number(n);
-        if(!isFinite(x)||x<=0)return '';
-        if(x>=1)return x.toFixed(2);
-        if(x>=0.01)return x.toFixed(4);
-        return x.toFixed(7).replace(/0+$/,'').replace(/\\.$/,'');
-      }
-      var usd=fmtUsd(price);
-      if(!usd)return null;
-      var dol=String.fromCharCode(36);
-      var bits=['$dasha '+dol+usd];
-      var ch=p.change&&Number(p.change.h24);
-      if(isFinite(ch))bits.push(ch.toFixed(1)+'% 24h');
-      var liq=Number(p.liquidityUsd);
-      if(isFinite(liq)&&liq>0)bits.push('liq '+dol+liq.toFixed(2));
-      var pair=String(p.pair||'').trim();
-      if(!pair)return null;
-      var href=cleanHref('https://dexscreener.com/solana/'+pair.toLowerCase());
-      if(!href)return null;
-      return {source:'Dexscreener',title:bits.join(' \u00b7 '),href:href};
+    function honestLine(){
+      var p=document.createElement('p');
+      p.className='dd-honest';
+      p.appendChild(document.createTextNode('today this pays in reputation receipts; cash comes later.'));
+      return p;
     }
-    function paint(items,tick){
-      var list=firstRows(items,tick);
-      if(!tick)list=hideStaleDex(list);
+    function isDexRow(r){
+      return r&&String(r.source||'').trim().toLowerCase()==='dexscreener'
+        &&/dexscreener\\.com\\/solana\\//i.test(String(r.href||''));
+    }
+    function paint(items){
+      var list=hideStaleDex(firstRows(items)).filter(function(r){return !isDexRow(r);});
       if(!list.length)return false;
       var id=tapeId();
       var sec=document.getElementById(id);
@@ -631,6 +635,7 @@ export function digestRemountScript() {
       sec.appendChild(style);
       sec.appendChild(h2);
       sec.appendChild(ol);
+      sec.appendChild(honestLine());
       var grok=document.getElementById('grok-door')||document.querySelector('#grok-door');
       var grwm=document.getElementById('grwm');
       var main=document.querySelector('main');
@@ -640,19 +645,15 @@ export function digestRemountScript() {
       crewAfter(sec);
       return true;
     }
-    var lastPriceTick=null;
-    var priceTimer=0;
+    var lastPack=null;
+    var newsTimer=0;
     function go(){
-      var priceHref='/price';
-      Promise.all([
-        fetch('/digest.json',{credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
-        fetch(priceHref,{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
-      ]).then(function(both){
-        var pack=both[0];
-        var live=tickFromPrice(both[1]);
-        if(live)lastPriceTick=live;
-        if(!pack&&!lastPriceTick)return;
-        paint(pack&&pack.items||[],lastPriceTick);
+      fetch('/digest.json',{credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+      .then(function(pack){
+        if(pack)lastPack=pack;
+        var items=lastPack&&lastPack.items||[];
+        if(!items.length)return;
+        paint(items);
       }).catch(function(){});
     }
     function boot(){
@@ -661,7 +662,7 @@ export function digestRemountScript() {
       function run(){
         requestAnimationFrame(function(){
           go();
-          if(!priceTimer)priceTimer=setInterval(go,60000);
+          if(!newsTimer)newsTimer=setInterval(go,60000);
         });
       }
       if(document.readyState==='complete')run();
