@@ -155,7 +155,10 @@ const linkedMetric = await callback(
 restoreMetric();
 assert.equal(linkedMetric.status, 200, 'optional metric storage does not break link');
 assert.match(await linkedMetric.text(), /Linked @potter/);
-assert.equal([...metricStore.map.values()].reduce((n, v) => n + Number(v), 0), 1, 'X sign-in metric bumps when storage is provided');
+const { readLoginMetrics } = await import('./dasha-login-metrics.mjs');
+const xCounters = await readLoginMetrics(metricStore);
+assert.equal(xCounters['x:callback:success'], 1, 'X sign-in success event recorded when storage is provided');
+assert.ok(xCounters['lat:x:callback:count'] >= 1, 'X callback latency histogram observed');
 
 const restoreFail = installXFetch({ tokenOk: false });
 const state3 = 'state-fail-1';
