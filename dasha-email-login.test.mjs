@@ -137,5 +137,76 @@ assert.equal(bad.status, 400);
   assert.ok(Number(fourthBody.waitMs) > 0, 'waitMs present');
 }
 
+// 9. Retry queue + classification: transient 500 -> queued; pump delivers after recovery;
+//    config 401 -> never queued. All observable, browser copy stays generic.
+{
+  const { lobby: retryLobby, ready: r5, rows: retryRows } = makeLobby(env);
+  await r5;
+  const retryEmail = 'retry-flow@example.com';
+  resendBehavior = async () => new Response('{"error":"boom"}', { status: 500 });
+  const before = resendCalls.length;
+  const res = await retryLobby.fetch(new Request('https://lobby.getdasha.com/auth/email/start', {
+    method: 'POST', headers: originHeaders, body: JSON.stringify({ email: retryEmail }),
+  }));
+  assert.equal(res.status, 502);
+  assert.equal(resendCalls.length, before + 1, 'one attempt');
+  const metricKey = (n) => `compute:metric:${new Date().toISOString().slice(0, 10)}:${n}`;
+  assert.equal(retryRows.get(metricKey('signin:fail:email')), 1, 'fail metric');
+  assert.equal(retryRows.get(metricKey('signin:fail:email:transient')), 1, 'classified transient metric');
+  assert.equal(retryRows.get(metricKey('mail:send:fail:transient')), 1, 'rail metric');
+  assert.equal(retryRows.get(metricKey('mail:retry:queued')), 1, 'retry queued metric');
+  const lastErr = retryRows.get('emailLoginLastError');
+  assert.equal(lastErr.kind, 'transient', 'last error classified');
+  assert.equal(lastErr.retryable, true, 'transient is retryable');
+  assert.equal(retryRows.has('emailLogins') && Boolean(retryRows.get('emailLogins')[retryEmail]), false, 'pending login not stored before delivery');
+  const queue = retryRows.get('mailRetryQueue');
+  assert.equal(queue.length, 1, 'one retry entry');
+  assert.equal(queue[0].kind, 'email-login', 'entry kind');
+  assert.equal(queue[0].lastKind, 'transient', 'entry failure kind');
+  assert.ok(queue[0].payload && queue[0].payload.login && queue[0].payload.login.codeHash, 'payload carries code hash, not plaintext');
+  // plaintext code rests only inside the bounded queue entry (needed to deliver it)
+  const queuedCode = queue[0].text.match(/\b(\d{6})\b/)[1];
+  assert.match(queuedCode, /^\d{6}$/);
+
+  // pump endpoint is internal-only
+  const noGate = await retryLobby.fetch(new Request('https://lobby.getdasha.com/internal/mail/retry', { method: 'POST' }));
+  assert.equal(noGate.status, 403, 'retry pump gated');
+  const getPump = await retryLobby.fetch(new Request('https://lobby.getdasha.com/internal/mail/retry', {
+    method: 'GET', headers: { 'x-dasha-internal': 'email-login-test-secret' },
+  }));
+  assert.equal(getPump.status, 405, 'pump is POST-only');
+
+  // provider recovers; make the entry due and pump via the internal endpoint
+  resendBehavior = async () => new Response(JSON.stringify({ id: 'mail_retry_ok' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  retryRows.get('mailRetryQueue')[0].nextAt = Date.now() - 1;
+  const pump = await retryLobby.fetch(new Request('https://lobby.getdasha.com/internal/mail/retry', {
+    method: 'POST', headers: { 'x-dasha-internal': 'email-login-test-secret' },
+  }));
+  assert.equal(pump.status, 200, 'pump 200');
+  const pumpBody = await pump.json();
+  assert.deepEqual([pumpBody.ok, pumpBody.sent, pumpBody.pending], [true, 1, 0], 'pump delivered');
+  assert.equal(retryRows.has('mailRetryQueue'), false, 'queue drained');
+  assert.equal(retryRows.get(metricKey('mail:send:ok')), 1, 'send ok metric on retry delivery');
+  // pending login persisted on delivery (hash-only) and the delivered code verifies
+  const stored = retryRows.get('emailLogins')[retryEmail];
+  assert.ok(stored.codeHash && !JSON.stringify(stored).includes(queuedCode), 'hash only after delivery');
+  const verify = await retryLobby.fetch(new Request('https://lobby.getdasha.com/auth/email/verify', {
+    method: 'POST', headers: originHeaders, body: JSON.stringify({ email: retryEmail, code: queuedCode }),
+  }));
+  assert.equal(verify.status, 200, 'retried code verifies');
+
+  // config failure (bad key): 502 honest copy, classified config, NEVER queued
+  resendBehavior = async () => new Response(JSON.stringify({ name: 'invalid_api_key' }), { status: 401 });
+  const cfg = await retryLobby.fetch(new Request('https://lobby.getdasha.com/auth/email/start', {
+    method: 'POST', headers: originHeaders, body: JSON.stringify({ email: 'cfg-fail@example.com' }),
+  }));
+  assert.equal(cfg.status, 502);
+  assert.match((await cfg.json()).error, /Could not send the sign-in code/);
+  assert.equal(retryRows.get(metricKey('signin:fail:email:config')), 1, 'config classified');
+  assert.equal(retryRows.get('emailLoginLastError').kind, 'config', 'last error config');
+  assert.equal(retryRows.has('mailRetryQueue'), false, 'config failures never queued');
+  resendBehavior = async () => new Response(JSON.stringify({ id: 'mail_123' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+}
+
 globalThis.fetch = realFetch;
 console.log('dasha-email-login.test.mjs: all assertions passed');
